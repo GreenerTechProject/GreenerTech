@@ -4,7 +4,7 @@ from database.config import db
 
 auth_bp = Blueprint('auth', __name__)
 
-@auth_bp.route('/login', methods=['GET'])
+@auth_bp.route('/login', methods=['POST'])
 def login():
     data = request.get_json()
     user = User.query.filter_by(email=data['email']).first()
