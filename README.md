@@ -30,6 +30,8 @@ git checkout {branch}
 git add .
 git commit -m "Comment"
 git push
+
+git pull && docker-compose down -v && docker-compose up -d --build
 ```
 
 
