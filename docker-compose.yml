@@ -3,7 +3,7 @@ version: '3.8'
 services:
   backend:
     build:
-      context: ./backend
+      context: ./
       dockerfile: ../backend.Dockerfile
     container_name: greenertech-backend
     ports:
@@ -28,7 +28,7 @@ services:
 
   frontend:
     build:
-      context: ./front-end-ui
+      context: ./
       dockerfile: ../frontend.Dockerfile
     container_name: greenertech-frontend
     ports:
