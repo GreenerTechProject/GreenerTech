@@ -6,7 +6,7 @@ import os
 from .routes.auth import auth_bp
 # from .routes.data import data_bp
 # from .routes.robot import robot_bp
-# from database.config import init_db
+from database.config import init_db
 
 def create_app():
     app = Flask(__name__)
@@ -16,7 +16,7 @@ def create_app():
     
 
     # Initialiser la base de données
-    # init_db(app)
+    init_db(app)
 
 
     # Enregistrer les Blueprints
