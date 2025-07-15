@@ -6,7 +6,7 @@ db = SQLAlchemy()
 migrate = Migrate()
 
 def init_db(app):
-    from models import User  # Import all models so they register with SQLAlchemy
+    from app.models import User  # Import all models so they register with SQLAlchemy
     app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv("DATABASE_URL") #localhost :5433
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
