@@ -1,4 +1,6 @@
-Flask
-psycopg2-binary
-Flask-SQLAlchemy
+flask
+flask_cors
+flask_sqlalchemy
+flask-migrate
 python-dotenv
+psycopg2-binary
