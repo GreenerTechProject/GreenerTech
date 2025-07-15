@@ -63,13 +63,13 @@ Look for a container with a name like `greenertech-db` or image like `postgres`.
 ### ✅ **Step 2: Access the container shell**
 
 ```bash
-docker exec -it greenertech-db bash
+docker exec -it greenertech-backend bash
 ```
 
 *If it's Alpine-based (no bash), use:*
 
 ```bash
-docker exec -it greenertech-db sh
+docker exec -it greenertech-backend sh
 ```
 
 ---
