@@ -214,6 +214,40 @@ psql -U <user> -d <dbname> < backup.sql
 
 
 
+-------------
+-------------
+-------------
+-------------
 
 
+### ✅ 3. **Create Migration Folder**
 
+Run the following to initialize migrations:
+
+```bash
+flask db init
+```
+
+This will create a `migrations/` folder.
+
+---
+
+### ✅ 4. **Generate Migration Script**
+
+After defining or updating models in `models/`, run:
+
+```bash
+flask db migrate -m "Initial migration"
+```
+
+This generates a migration script in `migrations/versions/`.
+
+---
+
+### ✅ 5. **Apply Migration to PostgreSQL**
+
+Apply the generated schema to your database:
+
+```bash
+flask db upgrade
+```
