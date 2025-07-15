@@ -33,6 +33,9 @@ git push
 
 git pull ; docker-compose down -v ; docker-compose up -d --build
 git add . ; git commit -m "Update Project" ; git push
+
+rm -rf migrations ; flask db init ; flask db migrate -m "create users table" ; flask db upgrade
+
 ```
 
 
