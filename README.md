@@ -23,3 +23,11 @@ Pour arrêter le projet :
 ```bash
 docker-compose down -v
 ```
+
+Pour le Dev : 
+```bash
+git checkout {branch}
+git add .
+git commit -m "Comment"
+git push
+```
