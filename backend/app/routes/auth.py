@@ -7,7 +7,7 @@ auth_bp = Blueprint('auth', __name__)
 @auth_bp.route('/login', methods=['GET'])
 def login():
     data = request.get_json()
-    user = User.query.filter_by(username=data['username']).first()
+    user = User.query.filter_by(email=data['email']).first()
     if user and user.password == data['password']:
         return jsonify({"message": "Login successful222222222"}), 200
     return jsonify({"message": "Invalid credentials"}), 401
