@@ -3,7 +3,7 @@ from flask_cors import CORS
 
 from dotenv import load_dotenv
 import os
-from .routes.auth import auth_bp
+from .routes.routes import *
 # from .routes.data import data_bp
 # from .routes.robot import robot_bp
 from database.config import init_db
@@ -20,7 +20,7 @@ def create_app():
 
 
     # Enregistrer les Blueprints
-    app.register_blueprint(auth_bp, url_prefix='/api/auth')
+    app.register_blueprint(all_bp, url_prefix='/api')
     # app.register_blueprint(data_bp, url_prefix='/api/data')
     # app.register_blueprint(robot_bp, url_prefix='/api/robot')
 
