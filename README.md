@@ -35,7 +35,8 @@ git add . ; git commit -m "Update Project" ; git push
 
 git pull ; docker-compose down -v ; docker-compose up -d --build
 
-docker exec -it greenertech-backend bash ; rm -rf migrations ; flask db init ; flask db migrate -m "create tables" ; flask db upgrade
+docker exec -it greenertech-backend bash
+rm -rf migrations ; flask db init ; flask db migrate -m "create tables" ; flask db upgrade
 
 ```
 
