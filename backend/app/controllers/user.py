@@ -24,3 +24,19 @@ def register():
     db.session.add(new_user)
     db.session.commit()
     return jsonify({"message": "User registered successfully"}), 201
+
+
+def update_user(user_id):
+    data = request.get_json()
+    user = User.query.get(user_id)
+
+    if not user:
+        return jsonify({"message": "User not found"}), 404
+
+    user.name = data.get('name', user.name)
+    user.email = data.get('email', user.email)
+    user.password = data.get('password', user.password) 
+    user.role = data.get('role', user.role)
+
+    db.session.commit()
+    return jsonify({"message": "User updated successfully"}), 200
