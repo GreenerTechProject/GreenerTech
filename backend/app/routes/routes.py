@@ -1,5 +1,5 @@
 from flask import Blueprint
-from app.controllers.user import register, login , delete_user, update_user
+from app.controllers.user import register, login , delete_user, update_user, get_user
 
 all_bp = Blueprint('all_bp', __name__)
 all_bp.route('/register', methods=['POST'])(register)
