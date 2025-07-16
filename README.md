@@ -31,10 +31,11 @@ git add .
 git commit -m "Comment"
 git push
 
-git pull ; docker-compose down -v ; docker-compose up -d --build
 git add . ; git commit -m "Update Project" ; git push
 
-rm -rf migrations ; flask db init ; flask db migrate -m "create users table" ; flask db upgrade
+git pull ; docker-compose down -v ; docker-compose up -d --build
+
+docker exec -it greenertech-backend bash ; rm -rf migrations ; flask db init ; flask db migrate -m "create tables" ; flask db upgrade
 
 ```
 
