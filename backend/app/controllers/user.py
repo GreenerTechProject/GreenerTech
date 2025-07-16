@@ -50,3 +50,18 @@ def update_user(user_id):
 
     db.session.commit()
     return jsonify({"message": "User updated successfully"}), 200
+
+def get_user(user_id):
+    user = User.query.get(user_id)
+    if not user:
+        return jsonify({"message": "User not found"}), 404
+
+    user_data = {
+        "id": user.id,
+        "name": user.name,
+        "email": user.email,
+        "role": user.role,
+        "created_at": user.created_at.isoformat(),
+        "updated_at": user.updated_at.isoformat()
+    }
+    return jsonify(user_data), 200
