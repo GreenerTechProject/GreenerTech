@@ -1,15 +1,50 @@
-from flask import Blueprint, request, jsonify
+import jwt
+from datetime import datetime, timedelta
+from flask import Blueprint, request, jsonify, current_app
 from app.models.user import User
 from database.config import db
+from functools import wraps
 
+# === AUTH DECORATOR ===
+def token_required(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        token = None
+        if 'Authorization' in request.headers:
+            token = request.headers['Authorization'].split(" ")[1]
+
+        if not token:
+            return jsonify({"message": "Token is missing!"}), 401
+
+        try:
+            data = jwt.decode(token, current_app.config['SECRET_KEY'], algorithms=["HS256"])
+            current_user = User.query.get(data['user_id'])
+            if not current_user:
+                return jsonify({"message": "User not found"}), 401
+        except jwt.ExpiredSignatureError:
+            return jsonify({"message": "Token expired"}), 401
+        except jwt.InvalidTokenError:
+            return jsonify({"message": "Invalid token"}), 401
+
+        return f(current_user, *args, **kwargs)
+    return decorated
+
+# === LOGIN ===
 def login():
     data = request.get_json()
     user = User.query.filter_by(email=data['email']).first()
+
     if user and user.password == data['password']:
-        return jsonify({"message": "Login successful"}), 200
+        token = jwt.encode({
+            'user_id': user.id,
+            'exp': datetime.utcnow() + timedelta(hours=24)
+        }, current_app.config['SECRET_KEY'], algorithm="HS256")
+
+        return jsonify({"token": token}), 200
+
     return jsonify({"message": "Invalid credentials"}), 401
 
-
+# === REGISTER ===
 def register():
     data = request.get_json()
     if User.query.filter_by(email=data['email']).first():
@@ -18,50 +53,42 @@ def register():
     new_user = User(
         name=data['name'],
         email=data['email'],
-        password=data['password'],  # Consider hashing in real apps
+        password=data['password'],  # À chiffrer dans un vrai projet
         role=data.get('role', 'user')
     )
     db.session.add(new_user)
     db.session.commit()
     return jsonify({"message": "User registered successfully"}), 201
 
-
-def delete_user(user_id):
-    user = User.query.get(user_id)
-    if not user:
-        return jsonify({"message": "User not found"}), 404
-
-    db.session.delete(user)
+# === DELETE USER ===
+@token_required
+def delete_user(current_user):
+    db.session.delete(current_user)
     db.session.commit()
-    return jsonify({"message": f"User with ID {user_id} deleted successfully"}), 
+    return jsonify({"message": f"User with ID {current_user.id} deleted successfully"}), 200
 
-
-def update_user(user_id):
+# === UPDATE USER ===
+@token_required
+def update_user(current_user):
     data = request.get_json()
-    user = User.query.get(user_id)
 
-    if not user:
-        return jsonify({"message": "User not found"}), 404
-
-    user.name = data.get('name', user.name)
-    user.email = data.get('email', user.email)
-    user.password = data.get('password', user.password) 
-    user.role = data.get('role', user.role)
+    current_user.name = data.get('name', current_user.name)
+    current_user.email = data.get('email', current_user.email)
+    current_user.password = data.get('password', current_user.password)
+    current_user.role = data.get('role', current_user.role)
 
     db.session.commit()
     return jsonify({"message": "User updated successfully"}), 200
 
-def get_user(user_id):
-    user = User.query.get(user_id)
-    if not user:
-        return jsonify({"message": "User not found"}), 404
-
+# === GET USER ===
+@token_required
+def get_user(current_user):
     user_data = {
-        "id": user.id,
-        "name": user.name,
-        "email": user.email,
-        "role": user.role,
-        "created_at": user.created_at.isoformat(),
-        "updated_at": user.updated_at.isoformat()
+        "id": current_user.id,
+        "name": current_user.name,
+        "email": current_user.email,
+        "role": current_user.role,
+        "created_at": current_user.created_at.isoformat(),
+        "updated_at": current_user.updated_at.isoformat()
     }
     return jsonify(user_data), 200
