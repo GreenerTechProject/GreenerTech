@@ -10,6 +10,7 @@ from database.config import init_db
 
 def create_app():
     app = Flask(__name__)
+    load_dotenv()
     CORS(app)
 
     app.config['SECRET_KEY'] = os.getenv("SECRET_KEY")
