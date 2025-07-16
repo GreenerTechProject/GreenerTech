@@ -101,6 +101,10 @@ If you just want to run `psql` directly:
 
 ```bash
 docker exec -it greenertech-db psql -U postgres -d postgres
+
+\c greenertech
+\dt
+SELECT * FROM users;
 ```
 
 ---
