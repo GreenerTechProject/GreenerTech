@@ -26,6 +26,16 @@ def register():
     return jsonify({"message": "User registered successfully"}), 201
 
 
+def delete_user(user_id):
+    user = User.query.get(user_id)
+    if not user:
+        return jsonify({"message": "User not found"}), 404
+
+    db.session.delete(user)
+    db.session.commit()
+    return jsonify({"message": f"User with ID {user_id} deleted successfully"}), 
+
+
 def update_user(user_id):
     data = request.get_json()
     user = User.query.get(user_id)
