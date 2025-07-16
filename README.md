@@ -21,7 +21,7 @@ docker-compose up -d --build
 
 Pour arrêter le projet :
 ```bash
-docker-compose down -v
+docker-compose down
 ```
 
 Pour le Dev : 
@@ -31,10 +31,12 @@ git add .
 git commit -m "Comment"
 git push
 
-git pull ; docker-compose down -v ; docker-compose up -d --build
 git add . ; git commit -m "Update Project" ; git push
 
-rm -rf migrations ; flask db init ; flask db migrate -m "create users table" ; flask db upgrade
+git pull ; docker-compose down ; docker-compose up -d --build
+
+docker exec -it greenertech-backend bash
+rm -rf migrations ; flask db init ; flask db migrate -m "create tables" ; flask db upgrade
 
 ```
 
@@ -63,13 +65,13 @@ Look for a container with a name like `greenertech-db` or image like `postgres`.
 ### ✅ **Step 2: Access the container shell**
 
 ```bash
-docker exec -it greenertech-db bash
+docker exec -it greenertech-backend bash
 ```
 
 *If it's Alpine-based (no bash), use:*
 
 ```bash
-docker exec -it greenertech-db sh
+docker exec -it greenertech-backend sh
 ```
 
 ---
@@ -99,6 +101,10 @@ If you just want to run `psql` directly:
 
 ```bash
 docker exec -it greenertech-db psql -U postgres -d postgres
+
+\c greenertech
+\dt
+SELECT * FROM users;
 ```
 
 ---
