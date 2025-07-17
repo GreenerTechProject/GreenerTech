@@ -25,7 +25,7 @@ def get_all_domaines():
 
 @token_required
 @role_required("directeur")
-def get_domaine_by_id(id):
+def get_domaine(id):
     domaine = Domaine.query.get_or_404(id)
     return jsonify(domaine.to_dict()), 200
 
