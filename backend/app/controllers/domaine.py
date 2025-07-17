@@ -1,27 +1,49 @@
 from flask import request, jsonify
 from app.models.domaine import Domaine
+from app.models.points_gps import GroupCor
 from database.config import db
 from app.utils.security import token_required, role_required
 from app.models.entreprise import Entreprise
+import time
 
 @token_required
 @role_required("directeur")
 def create_domaine(current_user):
     data = request.get_json()
+
     # Récupérer entreprise liée au directeur connecté
     entreprise = Entreprise.query.filter_by(id_user=current_user.id).first()
     if not entreprise:
         return jsonify({"message": "Aucune entreprise associée à cet utilisateur"}), 404
 
+    # Générer un id_group_cor unique (timestamp par exemple)
+    id_group_cor = int(time.time())
+
+    gps_points = data.get('gps_points', [])
+    if not gps_points:
+        return jsonify({"message": "Veuillez fournir une liste de points GPS"}), 400
+
+    # Créer chaque point group_cor
+    for point in gps_points:
+        gc = GroupCor(
+            id_group_cor=id_group_cor,
+            point_x=point['point_x'],
+            point_y=point['point_y'],
+            ordre=point.get('ordre', 0)
+        )
+        db.session.add(gc)
+
+    # Créer le domaine
     domaine = Domaine(
         nom=data['nom'],
-        localisation=data.get('localisation'),
-        superficie=data.get('superficie'),
+        id_group_cor=id_group_cor,
         id_entreprise=entreprise.id
     )
     db.session.add(domaine)
     db.session.commit()
-    return jsonify({"message": "Domaine créé", "domaine": domaine.to_dict()}), 201
+
+    return jsonify({"message": "Domaine et points GPS créés", "domaine": domaine.to_dict()}), 201
+
 
 @token_required
 @role_required("directeur")
@@ -53,12 +75,24 @@ def update_domaine(current_user, id):
 
     data = request.get_json()
     domaine.nom = data.get('nom', domaine.nom)
-    domaine.localisation = data.get('localisation', domaine.localisation)
-    domaine.superficie = data.get('superficie', domaine.superficie)
-    # id_entreprise ne devrait pas changer via update, donc on ne le modifie pas
+
+    gps_points = data.get('gps_points')
+    if gps_points:
+        # Supprimer les anciens points liés
+        GroupCor.query.filter_by(id_group_cor=domaine.id_group_cor).delete()
+
+        for point in gps_points:
+            new_point = GroupCor(
+                id_group_cor=domaine.id_group_cor,
+                point_x=point['point_x'],
+                point_y=point['point_y'],
+                ordre=point.get('ordre', 0)
+            )
+            db.session.add(new_point)
 
     db.session.commit()
     return jsonify({"message": "Domaine mis à jour", "domaine": domaine.to_dict()}), 200
+
 
 @token_required
 @role_required("directeur")

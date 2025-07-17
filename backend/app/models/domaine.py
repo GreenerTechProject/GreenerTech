@@ -1,19 +1,28 @@
+from sqlalchemy import Column, Integer, String, ForeignKey
+from sqlalchemy.orm import relationship
 from database.config import db
 
 class Domaine(db.Model):
-    __tablename__ = 'domaines'
+    __tablename__ = "domaines"
 
-    id = db.Column(db.Integer, primary_key=True)
-    nom = db.Column(db.String(100), nullable=False)
-    localisation = db.Column(db.String(255), nullable=False)
-    superficie = db.Column(db.Float, nullable=True)
-    id_entreprise = db.Column(db.Integer, nullable=False)
+    id = Column(Integer, primary_key=True)
+    nom = Column(String, nullable=False)
+    id_group_cor = Column(Integer, ForeignKey("group_cor.id_group_cor"))
+    id_entreprise = Column(Integer, ForeignKey("entreprises.id"), nullable=False)
+
+    # Add this line for relationship access to GroupCor entries
+    group_coords = relationship(
+        "GroupCor",
+        primaryjoin="Domaine.id_group_cor == GroupCor.id_group_cor",
+        lazy="joined",
+        viewonly=True
+    )
 
     def to_dict(self):
         return {
-            'id': self.id,
-            'nom': self.nom,
-            'localisation': self.localisation,
-            'superficie': self.superficie,
-            'id_entreprise': self.id_entreprise
+            "id": self.id,
+            "nom": self.nom,
+            "id_group_cor": self.id_group_cor,
+            "id_entreprise": self.id_entreprise,
+            "group_coords": [g.to_dict() for g in self.group_coords] if self.group_coords else []
         }
