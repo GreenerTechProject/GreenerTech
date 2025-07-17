@@ -17,7 +17,7 @@ services:
   migrate:
     build: .
     command: >
-      sh -c "flask db upgrade"
+      sh -c "flask db init || true && flask db migrate -m 'create tables' || true && flask db upgrade"
     depends_on:
       - db
 
