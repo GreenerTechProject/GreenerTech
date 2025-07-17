@@ -10,6 +10,7 @@ COPY backend .
 
 CMD /bin/sh -c '\
 sleep 1 && \
+rm -rf migrations && \
 flask db init 2>/dev/null || true && \
 flask db migrate -m "create tables" 2>/dev/null || true && \
 flask db upgrade && \
