@@ -4,30 +4,31 @@ from flask import Blueprint, request, jsonify, current_app
 from app.models.user import User
 from database.config import db
 from functools import wraps
+from app.utils.security import token_required, generate_token ,role_required
 
 # === AUTH DECORATOR ===
-def token_required(f):
-    @wraps(f)
-    def decorated(*args, **kwargs):
-        token = None
-        if 'Authorization' in request.headers:
-            token = request.headers['Authorization'].split(" ")[1]
+# def token_required(f):
+#     @wraps(f)
+#     def decorated(*args, **kwargs):
+#         token = None
+#         if 'Authorization' in request.headers:
+#             token = request.headers['Authorization'].split(" ")[1]
 
-        if not token:
-            return jsonify({"message": "Token is missing!"}), 401
+#         if not token:
+#             return jsonify({"message": "Token is missing!"}), 401
 
-        try:
-            data = jwt.decode(token, current_app.config['SECRET_KEY'], algorithms=["HS256"])
-            current_user = User.query.get(data['user_id'])
-            if not current_user:
-                return jsonify({"message": "User not found"}), 401
-        except jwt.ExpiredSignatureError:
-            return jsonify({"message": "Token expired"}), 401
-        except jwt.InvalidTokenError:
-            return jsonify({"message": "Invalid token"}), 401
+#         try:
+#             data = jwt.decode(token, current_app.config['SECRET_KEY'], algorithms=["HS256"])
+#             current_user = User.query.get(data['user_id'])
+#             if not current_user:
+#                 return jsonify({"message": "User not found"}), 401
+#         except jwt.ExpiredSignatureError:
+#             return jsonify({"message": "Token expired"}), 401
+#         except jwt.InvalidTokenError:
+#             return jsonify({"message": "Invalid token"}), 401
 
-        return f(current_user, *args, **kwargs)
-    return decorated
+#         return f(current_user, *args, **kwargs)
+#     return decorated
 
 # === LOGIN ===
 def login():
@@ -35,11 +36,7 @@ def login():
     user = User.query.filter_by(email=data['email']).first()
 
     if user and user.password == data['password']:
-        token = jwt.encode({
-            'user_id': user.id,
-            'exp': datetime.utcnow() + timedelta(hours=24)
-        }, current_app.config['SECRET_KEY'], algorithm="HS256")
-
+        token = generate_token(user.id)
         return jsonify({"token": token}), 200
 
     return jsonify({"message": "Invalid credentials"}), 401
@@ -81,7 +78,9 @@ def update_user(current_user):
     return jsonify({"message": "User updated successfully"}), 200
 
 # === GET USER ===
+
 @token_required
+@role_required(['directeur']) 
 def get_user(current_user):
     user_data = {
         "id": current_user.id,
