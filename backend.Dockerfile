@@ -9,7 +9,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY backend .
 
 CMD /bin/sh -c '\
-sleep 1; && \
+sleep 1 && \
 flask db init 2>/dev/null || true && \
 flask db migrate -m "create tables" 2>/dev/null || true && \
 flask db upgrade && \
