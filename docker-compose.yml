@@ -14,12 +14,6 @@ services:
       - SECRET_KEY=5b837dfb2b22cf4e6bfb91c6cc768e4f
     depends_on:
       - db
-  migrate:
-    build: .
-    command: >
-      sh -c "flask db init || true && flask db migrate -m 'create tables' || true && flask db upgrade"
-    depends_on:
-      - db
 
   db:
     image: postgres:14
