@@ -17,6 +17,7 @@ Comment lancer le projet avec Docker
 Assurez-vous d’avoir Docker installé sur votre machine. Ensuite, vous pouvez construire et lancer le conteneur Docker de la façon suivante :
 ```bash
 docker-compose up -d --build
+docker exec -it greenertech-backend bash -c "rm -rf migrations && flask db init && flask db migrate -m 'create tables' && flask db upgrade"
 ```
 
 Pour arrêter le projet :
@@ -29,14 +30,16 @@ Pour le Dev :
 git checkout {branch}
 git add .
 git commit -m "Comment"
-git push
+git push```
 
 git add . ; git commit -m "Update Project" ; git push
 
 git pull ; docker-compose down ; docker-compose up -d --build
+```
 
-docker exec -it greenertech-backend bash -c "rm -rf migrations && flask db init && flask db migrate -m 'create tables' && flask db upgrade"
-
+Update DB :
+```bash
+docker exec -it greenertech-backend bash -c "flask db migrate -m 'update tables' && flask db upgrade"
 ```
 
 
@@ -222,43 +225,3 @@ psql -U <user> -d <dbname> < backup.sql
 | View active connections  | `SELECT * FROM pg_stat_activity;`                            |
 
 ---
-
-
-
--------------
--------------
--------------
--------------
-
-
-### ✅ 3. **Create Migration Folder**
-
-Run the following to initialize migrations:
-
-```bash
-flask db init
-```
-
-This will create a `migrations/` folder.
-
----
-
-### ✅ 4. **Generate Migration Script**
-
-After defining or updating models in `models/`, run:
-
-```bash
-flask db migrate -m "Initial migration"
-```
-
-This generates a migration script in `migrations/versions/`.
-
----
-
-### ✅ 5. **Apply Migration to PostgreSQL**
-
-Apply the generated schema to your database:
-
-```bash
-flask db upgrade
-```
