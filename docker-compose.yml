@@ -9,7 +9,9 @@ services:
     ports:
       - "5000:5000"
     environment:
+      - FLASK_ENV=development
       - DATABASE_URL=postgresql://postgres:postgres@db:5432/greenertech
+      - SECRET_KEY=5b837dfb2b22cf4e6bfb91c6cc768e4f
     depends_on:
       - db
 
