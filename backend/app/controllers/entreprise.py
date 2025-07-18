@@ -22,7 +22,7 @@ def create_entreprise(current_user):
 # === Récupérer l'entreprise du directeur connecté ===
 @token_required
 @role_required("directeur")
-def get_my_entreprise(current_user):
+def get_entreprise(current_user):
     entreprises = Entreprise.query.filter_by(id_user=str(current_user.id)).all()
     
     if not entreprises:
