@@ -18,12 +18,13 @@ def create_entreprise(current_user):
     )
     db.session.add(entreprise)
     db.session.commit()
-    return jsonify({"message": "Entreprise créée avec succès"}), 201
+   #return jsonify({"message": "Entreprise créée avec succès", "entreprise": entreprise.to_dict()}), 201
+    return jsonify(entreprise.to_dict()), 201
 
 # === Récupérer l'entreprise du directeur connecté ===
 @token_required
 @role_required("directeur")
-def get_my_entreprise(current_user):
+def get_entreprise(current_user):
     entreprises = Entreprise.query.filter_by(id_user=str(current_user.id)).all()
     
     if not entreprises:
@@ -57,7 +58,8 @@ def update_entreprise(current_user):
     entreprise.email = data.get('email', entreprise.email)
 
     db.session.commit()
-    return jsonify({"message": "Entreprise mise à jour"}), 200
+    #return jsonify({"message": "Entreprise mise à jour"}), 200
+    return jsonify(entreprise.to_dict()), 200
 
 # === Supprimer l'entreprise du directeur ===
 @token_required
