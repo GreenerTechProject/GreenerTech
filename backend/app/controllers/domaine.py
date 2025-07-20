@@ -18,7 +18,7 @@ def create_domaine(current_user):
 
 
     # Récupérer le dernier id_group_cor existant (max)
-    last_id_group_cor = db.session.query(func.max(Domaine.id_group_cor)).scalar()
+    last_id_group_cor = db.session.query(func.max(GroupCor.id_group_cor)).scalar()
     if last_id_group_cor is None:
         last_id_group_cor = 0  # si pas encore d'enregistrement
 
