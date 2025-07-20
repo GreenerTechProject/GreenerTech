@@ -3,8 +3,8 @@ from datetime import datetime, timedelta
 from flask import Blueprint, request, jsonify, current_app
 from app.models.user import User
 from database.config import db
-from functools import wraps
-from app.utils.security import token_required, generate_token ,role_required
+#from functools import wraps
+from app.utils.security import token_required, generate_token, role_required
 
 # === AUTH DECORATOR ===
 # def token_required(f):

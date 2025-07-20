@@ -6,9 +6,9 @@ from app.controllers.domaine import create_domaine, get_domaine, get_all_domaine
 all_bp = Blueprint('all_bp', __name__)
 all_bp.route('/register', methods=['POST'])(register)
 all_bp.route('/login', methods=['POST'])(login)
-all_bp.route('/user', methods=['DELETE'])(delete_user)
-all_bp.route('/user', methods=['PUT'])(update_user)
 all_bp.route('/user', methods=['GET'])(get_user)
+all_bp.route('/user', methods=['PUT'])(update_user)
+all_bp.route('/user', methods=['DELETE'])(delete_user)
 
 
 all_bp.route('/entreprise', methods=['POST'])(create_entreprise)
