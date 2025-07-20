@@ -17,9 +17,11 @@ def create_domaine(current_user):
         return jsonify({"message": "Aucune entreprise associée à cet utilisateur"}), 404
 
     # Générer un id_group_cor unique (timestamp par exemple)
-    id_group_cor = int(time.time())
+    import random
+    id_group_cor = int(time.time() * 1000) + random.randint(1, 999)
 
-    gps_points = data.get('gps_points', [])
+
+    gps_points = data.get('position', [])
     if not gps_points:
         return jsonify({"message": "Veuillez fournir une liste de points GPS"}), 400
 
@@ -102,6 +104,8 @@ def delete_domaine(current_user, id):
     if not entreprise or domaine.id_entreprise != entreprise.id:
         return jsonify({"message": "Non autorisé"}), 403
 
+    GroupCor.query.filter_by(id_group_cor=domaine.id_group_cor).delete()
     db.session.delete(domaine)
     db.session.commit()
+    
     return jsonify({"message": "Domaine supprimé"}), 200
