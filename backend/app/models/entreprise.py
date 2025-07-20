@@ -11,3 +11,15 @@ class Entreprise(db.Model):
     adresse = Column(String)
     id_fiscale = Column(String)
     email = Column(String)
+
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "nom": self.nom,
+            "id_user": self.id_user,
+            "status_juridique": self.status_juridique,
+            "adresse": self.adresse,
+            "id_fiscale": self.id_fiscale,
+            "email": self.email
+        }
