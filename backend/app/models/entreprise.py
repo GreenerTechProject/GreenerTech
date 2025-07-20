@@ -9,5 +9,5 @@ class Entreprise(db.Model):
     id_user = Column(Integer, ForeignKey('users.id'), nullable=False)
     status_juridique = Column(String)
     adresse = Column(String)
-    id_fiscale = Column(Integer)
+    id_fiscale = Column(String)
     email = Column(String)
