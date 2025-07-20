@@ -9,9 +9,9 @@ from sqlalchemy import func
 
 @token_required
 #@role_required("directeur")
-def create_bilan(current_user, id):
-    #serre = Serre.query.get_or_404(id)
+def create_bilan(current_user):
     data = request.get_json()
+    #serre = Serre.query.get_or_404(data['id_serre'])
 
     # Récupérer entreprise liée au directeur connecté
     entreprise = Entreprise.query.filter_by(id_user=current_user.id).first()
