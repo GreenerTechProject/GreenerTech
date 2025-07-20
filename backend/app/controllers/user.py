@@ -55,7 +55,9 @@ def register():
     )
     db.session.add(new_user)
     db.session.commit()
-    return jsonify({"message": "User registered successfully"}), 201
+    
+    token = generate_token(user.id)
+    return jsonify({"message": "User registered successfully", "token": token}), 201
 
 # === DELETE USER ===
 @token_required
