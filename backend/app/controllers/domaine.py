@@ -4,7 +4,7 @@ from app.models.points_gps import GroupCor
 from database.config import db
 from app.utils.security import token_required, role_required
 from app.models.entreprise import Entreprise
-import time
+from sqlalchemy import func
 
 @token_required
 @role_required("directeur")
@@ -16,9 +16,13 @@ def create_domaine(current_user):
     if not entreprise:
         return jsonify({"message": "Aucune entreprise associée à cet utilisateur"}), 404
 
-    # Générer un id_group_cor unique (timestamp par exemple)
-    import random
-    id_group_cor = int(time.time() * 1000) + random.randint(1, 999)
+
+    # Récupérer le dernier id_group_cor existant (max)
+    last_id_group_cor = db.session.query(func.max(Domaine.id_group_cor)).scalar()
+    if last_id_group_cor is None:
+        last_id_group_cor = 0  # si pas encore d'enregistrement
+
+    id_group_cor = last_id_group_cor + 1
 
 
     gps_points = data.get('position', [])
