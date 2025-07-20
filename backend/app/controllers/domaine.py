@@ -29,8 +29,8 @@ def create_domaine(current_user):
     for point in gps_points:
         gc = GroupCor(
             id_group_cor=id_group_cor,
-            point_x=point['point_x'],
-            point_y=point['point_y'],
+            point_x=point['latitude'],
+            point_y=point['longitude'],
             ordre=point.get('ordre', 0)
         )
         db.session.add(gc)
