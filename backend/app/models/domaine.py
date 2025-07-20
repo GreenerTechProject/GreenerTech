@@ -1,3 +1,7 @@
+from sqlalchemy import Column, Integer, String, ForeignKey
+from sqlalchemy.orm import relationship
+from database.config import db
+
 class Domaine(db.Model):
     __tablename__ = "domaines"
 
