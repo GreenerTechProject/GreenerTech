@@ -48,7 +48,8 @@ def create_domaine(current_user):
     db.session.add(domaine)
     db.session.commit()
 
-    return jsonify({"message": "Domaine et points GPS créés", "domaine": domaine.to_dict()}), 201
+    #return jsonify({"message": "Domaine et points GPS créés", "domaine": domaine.to_dict()}), 201
+    return jsonify(domaine.to_dict()), 201
 
 
 @token_required
@@ -97,7 +98,8 @@ def update_domaine(current_user, id):
             db.session.add(new_point)
 
     db.session.commit()
-    return jsonify({"message": "Domaine mis à jour", "domaine": domaine.to_dict()}), 200
+    #return jsonify({"message": "Domaine mis à jour", "domaine": domaine.to_dict()}), 200
+    return jsonify(domaine.to_dict()), 200
 
 
 @token_required

@@ -21,7 +21,7 @@ class Domaine(db.Model):
         return {
             "id": self.id,
             "nom": self.nom,
-            "id_group_cor": self.id_group_cor,
+            #"id_group_cor": self.id_group_cor,
             "id_entreprise": self.id_entreprise,
             "position": [g.to_dict() for g in self.group_coords] if self.group_coords else []
         }
