@@ -51,7 +51,7 @@ all_bp.route('/bilan/<int:id>', methods=['DELETE'])(delete_bilan)
 
 
 all_bp.route('/api/autorisation', methods=['POST'])(create_autorisation)
-all_bp.route('/api/autorisation', methods=['GET'])(get_autorisations)
+all_bp.route('/api/autorisation', methods=['GET'])(get_autorisation)
 all_bp.route('/api/autorisation/<int:autorisation_id>', methods=['DELETE'])(delete_autorisation)
 
 
