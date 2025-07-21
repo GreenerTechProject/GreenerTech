@@ -84,7 +84,6 @@ def update_user(current_user):
 # === GET USER ===
 
 @token_required
-@role_required(['directeur']) 
 def get_user(current_user):
     user_data = {
         "id": current_user.id,
