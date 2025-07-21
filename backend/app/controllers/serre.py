@@ -6,9 +6,10 @@ from app.models.entreprise import Entreprise
 from database.config import db
 from sqlalchemy import func
 from app.utils.security import token_required, role_required
+from app.models.bilan import Bilan
 
 @token_required
-@role_required("directeur")
+@role_required("directeur" , "technicien_superieur")
 def create_serre(current_user):
     data = request.get_json()
 
@@ -48,7 +49,7 @@ def create_serre(current_user):
 
 
 @token_required
-@role_required("directeur")
+@role_required("directeur" , "technicien_superieur")
 def get_all_serres(current_user):
     entreprise = Entreprise.query.filter_by(id_user=current_user.id).first()
     if not entreprise:
@@ -62,7 +63,7 @@ def get_all_serres(current_user):
 
 
 @token_required
-@role_required("directeur")
+@role_required("directeur" , "technicien_superieur")
 def get_serre(current_user, id):
     serre = Serre.query.get_or_404(id)
     domaine = Domaine.query.get(serre.id_domaine)
@@ -74,7 +75,7 @@ def get_serre(current_user, id):
 
 
 @token_required
-@role_required("directeur")
+@role_required("directeur" , "technicien_superieur")
 def update_serre(current_user, id):
     serre = Serre.query.get_or_404(id)
     domaine = Domaine.query.get(serre.id_domaine)
@@ -102,7 +103,7 @@ def update_serre(current_user, id):
 
 
 @token_required
-@role_required("directeur")
+@role_required("directeur" , "technicien_superieur")
 def delete_serre(current_user, id):
     serre = Serre.query.get_or_404(id)
     domaine = Domaine.query.get(serre.id_domaine)
@@ -115,3 +116,23 @@ def delete_serre(current_user, id):
     db.session.commit()
 
     return jsonify({"message": "Serre supprimée"}), 200
+
+
+@token_required
+@role_required("directeur" , "technicien_superieur")
+def get_bilans_by_serre(current_user, id_serre):
+    entreprise = Entreprise.query.filter_by(id_user=current_user.id).first()
+    if not entreprise:
+        return jsonify({"message": "Aucune entreprise associée"}), 404
+
+    # Vérifier que la serre existe et appartient bien à l'entreprise
+    serre = Serre.query.get_or_404(id_serre)
+    domaine = Domaine.query.get(serre.id_domaine)
+    if not domaine or domaine.id_entreprise != entreprise.id:
+        return jsonify({"message": "Non autorisé"}), 403
+
+    bilans = Bilan.query.filter_by(id_serre=id_serre).all()
+    return jsonify([b.to_dict() for b in bilans]), 200
+
+
+
