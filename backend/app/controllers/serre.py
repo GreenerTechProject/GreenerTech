@@ -1,111 +1,111 @@
-# app/controllers/serre.py
 from flask import request, jsonify
 from app.models.serre import Serre
+# from app.models.domaine import Domaine
+from app.models.CorSerre import CorSerre
 from database.config import db
 from app.utils.security import token_required, role_required
-from datetime import datetime
+import time
 
-@token_required
-@role_required(['directeur' , 'technicien_superieur'])
-def ajouter_serre(current_user):
+
+# @token_required
+# @role_required("directeur")
+def create_serre(current_user):
     data = request.get_json()
 
-    nom_serre = data.get("nom_serre")
-    id_group_cor = data.get("id_group_cor")
-    date_creation = data.get("date_creation")
-    id_domaine = data.get("id_domaine")
+    # Vérifier que le domaine existe et appartient à l'entreprise du directeur
+    domaine = Domaine.query.get(data.get('id_domaine'))
+    if not domaine:
+        return jsonify({"message": "Domaine non trouvé"}), 404
 
-    if not all([nom_serre, id_group_cor, date_creation, id_domaine]):
-        return jsonify({"message": "All fields are required."}), 400
+    # Optionnel : vérifier que domaine appartient bien à l'entreprise du directeur
+    # entreprise = ...
+    # if domaine.id_entreprise != entreprise.id:
+    #     return jsonify({"message": "Non autorisé"}), 403
 
-    try:
-        nouvelle_serre = Serre(
-            nom_serre=nom_serre,
-            id_group_cor=id_group_cor,
-            date_creation=datetime.strptime(date_creation, "%Y-%m-%d"),
-            id_domaine=id_domaine
+    # Créer la serre
+    serre = Serre(
+        nom_serre=data.get('nom_serre'),
+        date_creation=data.get('date_creation'),  # Assure-toi du format date
+        id_domaine=domaine.id
+    )
+    db.session.add(serre)
+    db.session.commit()
+
+    # Créer les points cor_serre associés
+    cor_points = data.get('cor_points', [])
+    for point in cor_points:
+        cor = CorSerre(
+            id_serre=serre.id,
+            point_x=point['point_x'],
+            point_y=point['point_y'],
+            ordre=point.get('ordre', 0)
         )
+        db.session.add(cor)
+    db.session.commit()
 
-        db.session.add(nouvelle_serre)
-        db.session.commit()
+    return jsonify({"message": "Serre créée", "serre": serre.to_dict()}), 201
 
-        return jsonify({"message": "Serre added successfully."}), 201
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({"message": f"Error: {str(e)}"}), 500
 
 @token_required
-@role_required(['directeur', 'technicien_superieur'])
+@role_required("directeur")
 def get_serres(current_user):
+    # Récupérer toutes les serres du domaine(s) du directeur (simplifié ici)
+    # Si tu souhaites filtrer selon entreprise/directeur, ajoute la logique
+
     serres = Serre.query.all()
-    result = []
-
-    for serre in serres:
-        result.append({
-            "id": serre.id,
-            "nom_serre": serre.nom_serre,
-            "id_group_cor": serre.id_group_cor,
-            "date_creation": serre.date_creation.strftime("%Y-%m-%d"),
-            "id_domaine": serre.id_domaine
-        })
-
-    return jsonify(result), 200
-
-@token_required
-@role_required(['directeur', 'technicien_superieur'])
-def modifier_serre(current_user, serre_id):
-    data = request.get_json()
-    serre = Serre.query.get(serre_id)
-
-    if not serre:
-        return jsonify({"message": "Serre not found."}), 404
-
-    try:
-        serre.nom_serre = data.get("nom_serre", serre.nom_serre)
-        serre.id_group_cor = data.get("id_group_cor", serre.id_group_cor)
-        serre.date_creation = datetime.strptime(data.get("date_creation"), "%Y-%m-%d") if data.get("date_creation") else serre.date_creation
-        serre.id_domaine = data.get("id_domaine", serre.id_domaine)
-
-        db.session.commit()
-        return jsonify({"message": "Serre updated successfully."}), 200
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({"message": f"Update error: {str(e)}"}), 500
-
-
-# Suppression d'une serre
-@token_required
-@role_required(['directeur', 'technicien_superieur'])
-def supprimer_serre(current_user, serre_id):
-    serre = Serre.query.get(serre_id)
-
-    if not serre:
-        return jsonify({"message": "Serre not found."}), 404
-
-    try:
-        db.session.delete(serre)
-        db.session.commit()
-        return jsonify({"message": "Serre deleted successfully."}), 200
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({"message": f"Deletion error: {str(e)}"}), 500
-    
-@token_required
-@role_required(['directeur', 'technicien_superieur'])
-def get_serre_by_id(current_user, serre_id):
-    serre = Serre.query.get(serre_id)
-
-    if not serre:
-        return jsonify({"message": "Serre not found."}), 404
-
-    result = {
-        "id": serre.id,
-        "nom_serre": serre.nom_serre,
-        "id_group_cor": serre.id_group_cor,
-        "date_creation": serre.date_creation.strftime("%Y-%m-%d"),
-        "id_domaine": serre.id_domaine
-    }
-
+    result = [serre.to_dict() for serre in serres]
     return jsonify(result), 200
 
 
+# @token_required
+# @role_required("directeur")
+# def get_serre(current_user, id):
+#     serre = Serre.query.get_or_404(id)
+#     # Ici tu peux vérifier l'appartenance au domaine/entreprise comme avant
+
+#     return jsonify(serre.to_dict()), 200
+
+
+# @token_required
+# @role_required("directeur")
+# def update_serre(current_user, id):
+#     serre = Serre.query.get_or_404(id)
+
+#     data = request.get_json()
+
+#     serre.nom_serre = data.get('nom_serre', serre.nom_serre)
+#     serre.date_creation = data.get('date_creation', serre.date_creation)
+#     # Si on peut changer de domaine
+#     if 'id_domaine' in data:
+#         domaine = Domaine.query.get(data['id_domaine'])
+#         if not domaine:
+#             return jsonify({"message": "Domaine non trouvé"}), 404
+#         serre.id_domaine = domaine.id
+
+#     # Mettre à jour les points cor_serre
+#     cor_points = data.get('cor_points')
+#     if cor_points is not None:
+#         # Supprimer anciens points
+#         CorSerre.query.filter_by(id_serre=serre.id).delete()
+#         # Ajouter nouveaux points
+#         for point in cor_points:
+#             cor = CorSerre(
+#                 id_serre=serre.id,
+#                 point_x=point['point_x'],
+#                 point_y=point['point_y'],
+#                 ordre=point.get('ordre', 0)
+#             )
+#             db.session.add(cor)
+
+#     db.session.commit()
+
+#     return jsonify({"message": "Serre mise à jour", "serre": serre.to_dict()}), 200
+
+
+# @token_required
+# @role_required("directeur")
+# def delete_serre(current_user, id):
+#     serre = Serre.query.get_or_404(id)
+#     db.session.delete(serre)
+#     db.session.commit()
+#     return jsonify({"message": "Serre supprimée"}), 200
