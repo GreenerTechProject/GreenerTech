@@ -5,6 +5,7 @@ from app.controllers.entreprise import create_entreprise, get_entreprise, update
 from app.controllers.domaine import create_domaine, get_domaine, get_all_domaines, update_domaine, delete_domaine ,get_serres_by_domaine
 from app.controllers.bilan import create_bilan, get_bilan, get_all_bilans, update_bilan, delete_bilan
 from app.controllers.serre import create_serre, get_serre, get_all_serres, update_serre, delete_serre, get_bilans_by_serre
+from app.controllers.autorisation import create_autorisation, get_autorisation, delete_autorisation
 
 
 all_bp = Blueprint('all_bp', __name__)
@@ -48,9 +49,10 @@ all_bp.route('/bilan/<int:id>', methods=['PUT'])(update_bilan)
 all_bp.route('/bilan/<int:id>', methods=['DELETE'])(delete_bilan)
 
 
-all_bp.route('/api/autorisations', methods=['POST'])(create_autorisation)
-all_bp.route('/api/autorisations', methods=['GET'])(get_autorisations)
-all_bp.route('/api/autorisations/<int:autorisation_id>', methods=['DELETE'])(delete_autorisation)
+
+all_bp.route('/api/autorisation', methods=['POST'])(create_autorisation)
+all_bp.route('/api/autorisation', methods=['GET'])(get_autorisations)
+all_bp.route('/api/autorisation/<int:autorisation_id>', methods=['DELETE'])(delete_autorisation)
 
 
 
