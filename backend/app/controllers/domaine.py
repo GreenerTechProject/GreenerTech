@@ -5,6 +5,7 @@ from database.config import db
 from app.utils.security import token_required, role_required
 from app.models.entreprise import Entreprise
 from sqlalchemy import func
+from app.models.serre import Serre
 
 @token_required
 @role_required("directeur")
@@ -115,3 +116,19 @@ def delete_domaine(current_user, id):
     db.session.commit()
     
     return jsonify({"message": "Domaine supprimé"}), 200
+
+
+@token_required
+@role_required("directeur")
+def get_serres_by_domaine(current_user, id_domaine):
+    entreprise = Entreprise.query.filter_by(id_user=current_user.id).first()
+    if not entreprise:
+        return jsonify({"message": "Aucune entreprise associée"}), 404
+
+    domaine = Domaine.query.get_or_404(id_domaine)
+    if domaine.id_entreprise != entreprise.id:
+        return jsonify({"message": "Non autorisé"}), 403
+
+    serres = Serre.query.filter_by(id_domaine=id_domaine).all()
+    return jsonify([s.to_dict() for s in serres]), 200
+
