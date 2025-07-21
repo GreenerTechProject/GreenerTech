@@ -37,7 +37,7 @@ def token_required(f):
     return decorated
 
 # === Décorateur : Vérification de rôle ===
-def role_required(allowed_roles):
+def role_required(*allowed_roles):
     def decorator(f):
         @wraps(f)
         def decorated(current_user, *args, **kwargs):

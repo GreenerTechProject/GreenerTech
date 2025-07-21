@@ -8,7 +8,7 @@ from sqlalchemy import func
 from app.utils.security import token_required, role_required
 
 @token_required
-@role_required("directeur")
+@role_required("directeur" , "technicien_superieur")
 def create_serre(current_user):
     data = request.get_json()
 
@@ -48,7 +48,7 @@ def create_serre(current_user):
 
 
 @token_required
-@role_required("directeur")
+@role_required("directeur" , "technicien_superieur")
 def get_all_serres(current_user):
     entreprise = Entreprise.query.filter_by(id_user=current_user.id).first()
     if not entreprise:
@@ -62,7 +62,7 @@ def get_all_serres(current_user):
 
 
 @token_required
-@role_required("directeur")
+@role_required("directeur" , "technicien_superieur")
 def get_serre(current_user, id):
     serre = Serre.query.get_or_404(id)
     domaine = Domaine.query.get(serre.id_domaine)
@@ -74,7 +74,7 @@ def get_serre(current_user, id):
 
 
 @token_required
-@role_required("directeur")
+@role_required("directeur" , "technicien_superieur")
 def update_serre(current_user, id):
     serre = Serre.query.get_or_404(id)
     domaine = Domaine.query.get(serre.id_domaine)
@@ -102,7 +102,7 @@ def update_serre(current_user, id):
 
 
 @token_required
-@role_required("directeur")
+@role_required("directeur" , "technicien_superieur")
 def delete_serre(current_user, id):
     serre = Serre.query.get_or_404(id)
     domaine = Domaine.query.get(serre.id_domaine)
