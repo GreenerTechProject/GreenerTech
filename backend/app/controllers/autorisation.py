@@ -1,5 +1,5 @@
 from flask import request, jsonify
-from models.autorisation import Autorisation
+from app.models.autorisation import Autorisation
 from database.config import db
 from app.utils.security import token_required, role_required
 
