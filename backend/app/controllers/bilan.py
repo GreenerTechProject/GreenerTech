@@ -14,9 +14,9 @@ def create_bilan(current_user):
     serre = Serre.query.get_or_404(data['id_serre'])
 
     # Récupérer entreprise liée au directeur connecté
-    entreprise = Entreprise.query.filter_by(id_user=current_user.id).first()
-    if not entreprise:
-        return jsonify({"message": "Aucune entreprise associée à cet utilisateur"}), 404
+    #entreprise = Entreprise.query.filter_by(id_user=current_user.id).first()
+    #if not entreprise:
+    #    return jsonify({"message": "Aucune entreprise associée à cet utilisateur"}), 404
 
 
     # Récupérer le dernier id_group_cor existant (max)
@@ -58,21 +58,21 @@ def create_bilan(current_user):
 @token_required
 #@role_required("directeur")
 def get_all_bilans(current_user, id):
-    #serre = Serre.query.get_or_404(id)
-    entreprise = Entreprise.query.filter_by(id_user=current_user.id).first()
-    if not entreprise:
-        return jsonify({"message": "Aucune entreprise associée"}), 404
+    serre = Serre.query.get_or_404(id)
+    #entreprise = Entreprise.query.filter_by(id_user=current_user.id).first()
+    #if not entreprise:
+    #    return jsonify({"message": "Aucune entreprise associée"}), 404
 
-    bilans = Bilan.query.filter_by(id_entreprise=entreprise.id).all()
+    bilans = Serre.query.filter_by(id_serre=serre.id).all()
     return jsonify([d.to_dict() for d in bilans]), 200
 
 @token_required
 #@role_required("directeur")
 def get_bilan(current_user, id):
     bilan = Bilan.query.get_or_404(id)
-    entreprise = Entreprise.query.filter_by(id_user=current_user.id).first()
-    if not entreprise or bilan.id_entreprise != entreprise.id:
-        return jsonify({"message": "Non autorisé à accéder à ce bilan"}), 403
+    #entreprise = Entreprise.query.filter_by(id_user=current_user.id).first()
+    #if not entreprise or bilan.id_entreprise != entreprise.id:
+    #    return jsonify({"message": "Non autorisé à accéder à ce bilan"}), 403
 
     return jsonify(bilan.to_dict()), 200
 
@@ -80,9 +80,9 @@ def get_bilan(current_user, id):
 #@role_required("directeur")
 def update_bilan(current_user, id):
     bilan = Bilan.query.get_or_404(id)
-    entreprise = Entreprise.query.filter_by(id_user=current_user.id).first()
-    if not entreprise or bilan.id_entreprise != entreprise.id:
-        return jsonify({"message": "Non autorisé"}), 403
+    #entreprise = Entreprise.query.filter_by(id_user=current_user.id).first()
+    #if not entreprise or bilan.id_entreprise != entreprise.id:
+    #    return jsonify({"message": "Non autorisé"}), 403
 
     data = request.get_json()
     bilan.nom = data.get('nom', bilan.nom)
@@ -110,9 +110,9 @@ def update_bilan(current_user, id):
 #@role_required("directeur")
 def delete_bilan(current_user, id):
     bilan = Bilan.query.get_or_404(id)
-    entreprise = Entreprise.query.filter_by(id_user=current_user.id).first()
-    if not entreprise or bilan.id_entreprise != entreprise.id:
-        return jsonify({"message": "Non autorisé"}), 403
+    #entreprise = Entreprise.query.filter_by(id_user=current_user.id).first()
+    #if not entreprise or bilan.id_entreprise != entreprise.id:
+    #    return jsonify({"message": "Non autorisé"}), 403
 
     GroupCor.query.filter_by(id_group_cor=bilan.id_group_cor).delete()
     db.session.delete(bilan)
