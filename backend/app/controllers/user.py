@@ -95,3 +95,30 @@ def get_user(current_user):
         "updated_at": current_user.updated_at.isoformat()
     }
     return jsonify(user_data), 200
+
+
+@token_required
+@role_required("directeur")
+def create_technicien(current_user):
+    data = request.get_json()
+    email = data.get('email')
+    role = data.get('role')
+
+    if role not in ["technicien", "technicien_superieur"]:
+        return jsonify({"message": "Rôle invalide. Choisir 'technicien' ou 'technicien_superieur'"}), 400
+
+    if User.query.filter_by(email=email).first():
+        return jsonify({"message": "Email déjà utilisé"}), 409
+
+    new_user = User(
+        name=data.get('name'),
+        email=email,
+        password=data.get('password'),  # à chiffrer dans un vrai projet
+        role=role
+    )
+
+    db.session.add(new_user)
+    db.session.commit()
+
+    return jsonify({"message": f"{role.capitalize()} créé avec succès", "id": new_user.id}), 201
+
