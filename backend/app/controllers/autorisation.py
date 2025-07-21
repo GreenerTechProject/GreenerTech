@@ -24,7 +24,7 @@ def create_autorisation():
 
 @token_required
 @role_required("directeur", "technicien_superieur")
-def get_autorisations(id_serre):
+def get_autorisation(id_serre):
     autorisations = Autorisation.query.filter_by(id_serre=id_serre).all()
     if not autorisations:
         return jsonify({"status": "error", "message": "Aucune autorisation trouvée pour cette serre"}), 404
