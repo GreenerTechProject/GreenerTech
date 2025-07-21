@@ -30,7 +30,7 @@ Pour le Dev :
 git checkout {branch}
 git add .
 git commit -m "Comment"
-git push```
+git push
 
 git add . ; git commit -m "Update Project" ; git push
 

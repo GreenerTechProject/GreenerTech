@@ -3,8 +3,8 @@ from datetime import datetime, timedelta
 from flask import Blueprint, request, jsonify, current_app
 from app.models.user import User
 from database.config import db
-from functools import wraps
-from app.utils.security import token_required, generate_token ,role_required
+#from functools import wraps
+from app.utils.security import token_required, generate_token, role_required
 
 # === AUTH DECORATOR ===
 # def token_required(f):
@@ -55,7 +55,9 @@ def register():
     )
     db.session.add(new_user)
     db.session.commit()
-    return jsonify({"message": "User registered successfully"}), 201
+    
+    token = generate_token(new_user.id)
+    return jsonify({"message": "User registered successfully", "token": token}), 201
 
 # === DELETE USER ===
 @token_required

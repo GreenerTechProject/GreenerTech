@@ -4,7 +4,7 @@ from app.models.points_gps import GroupCor
 from database.config import db
 from app.utils.security import token_required, role_required
 from app.models.entreprise import Entreprise
-import time
+from sqlalchemy import func
 
 @token_required
 @role_required("directeur")
@@ -16,10 +16,16 @@ def create_domaine(current_user):
     if not entreprise:
         return jsonify({"message": "Aucune entreprise associée à cet utilisateur"}), 404
 
-    # Générer un id_group_cor unique (timestamp par exemple)
-    id_group_cor = int(time.time())
 
-    gps_points = data.get('gps_points', [])
+    # Récupérer le dernier id_group_cor existant (max)
+    last_id_group_cor = db.session.query(func.max(GroupCor.id_group_cor)).scalar()
+    if last_id_group_cor is None:
+        last_id_group_cor = 0  # si pas encore d'enregistrement
+
+    id_group_cor = last_id_group_cor + 1
+
+
+    gps_points = data.get('position', [])
     if not gps_points:
         return jsonify({"message": "Veuillez fournir une liste de points GPS"}), 400
 
@@ -27,8 +33,8 @@ def create_domaine(current_user):
     for point in gps_points:
         gc = GroupCor(
             id_group_cor=id_group_cor,
-            point_x=point['point_x'],
-            point_y=point['point_y'],
+            point_x=point['latitude'],
+            point_y=point['longitude'],
             ordre=point.get('ordre', 0)
         )
         db.session.add(gc)
@@ -42,7 +48,8 @@ def create_domaine(current_user):
     db.session.add(domaine)
     db.session.commit()
 
-    return jsonify({"message": "Domaine et points GPS créés", "domaine": domaine.to_dict()}), 201
+    #return jsonify({"message": "Domaine et points GPS créés", "domaine": domaine.to_dict()}), 201
+    return jsonify(domaine.to_dict()), 201
 
 
 @token_required
@@ -91,7 +98,8 @@ def update_domaine(current_user, id):
             db.session.add(new_point)
 
     db.session.commit()
-    return jsonify({"message": "Domaine mis à jour", "domaine": domaine.to_dict()}), 200
+    #return jsonify({"message": "Domaine mis à jour", "domaine": domaine.to_dict()}), 200
+    return jsonify(domaine.to_dict()), 200
 
 
 @token_required
@@ -102,6 +110,8 @@ def delete_domaine(current_user, id):
     if not entreprise or domaine.id_entreprise != entreprise.id:
         return jsonify({"message": "Non autorisé"}), 403
 
+    GroupCor.query.filter_by(id_group_cor=domaine.id_group_cor).delete()
     db.session.delete(domaine)
     db.session.commit()
+    
     return jsonify({"message": "Domaine supprimé"}), 200

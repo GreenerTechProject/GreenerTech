@@ -1,0 +1,29 @@
+from sqlalchemy import Column, Integer, String, ForeignKey
+from sqlalchemy.orm import relationship
+from database.config import db
+
+class Bilan(db.Model):
+    __tablename__ = "bilans"
+
+    id = Column(Integer, primary_key=True)
+    nom = Column(String, nullable=False)
+    id_group_cor = Column(Integer, nullable=False) 
+    id_entreprise = Column(Integer, ForeignKey("entreprises.id"), nullable=False)
+    #id_serre = Column(Integer, ForeignKey("serres.id"), nullable=False)
+
+    group_coords = relationship(
+        "GroupCor",
+        primaryjoin="Bilan.id_group_cor == foreign(GroupCor.id_group_cor)",
+        lazy="joined",
+        viewonly=True
+    )
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "nom": self.nom,
+            #"id_group_cor": self.id_group_cor,
+            "id_entreprise": self.id_entreprise,
+            #"id_serre": self.id_serre,
+            "position": [g.to_dict() for g in self.group_coords] if self.group_coords else []
+        }
