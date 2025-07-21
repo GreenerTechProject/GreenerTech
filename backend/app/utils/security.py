@@ -36,6 +36,31 @@ def token_required(f):
         return f(current_user, *args, **kwargs)
     return decorated
 
+# === Décorateur : Authentification requise ===
+def token_unrequired(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        token = None
+        if 'Authorization' in request.headers:
+            auth_header = request.headers['Authorization']
+            if auth_header.startswith("Bearer "):
+                token = auth_header.split(" ")[1]
+
+        if token:
+            try:
+                # Try to decode the token
+                data = jwt.decode(token, current_app.config['SECRET_KEY'], algorithms=["HS256"])
+                current_user = User.query.get(data['user_id'])
+                if current_user:
+                    return jsonify({"message": "Already authenticated"}), 403
+            except jwt.ExpiredSignatureError:
+                pass  # expired token is considered as not authenticated
+            except jwt.InvalidTokenError:
+                pass  # invalid token also means not authenticated
+
+        return f(*args, **kwargs)
+    return decorated
+
 # === Décorateur : Vérification de rôle ===
 def role_required(*allowed_roles):
     def decorator(f):

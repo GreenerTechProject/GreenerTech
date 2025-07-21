@@ -4,7 +4,7 @@ from flask import Blueprint, request, jsonify, current_app
 from app.models.user import User
 from database.config import db
 #from functools import wraps
-from app.utils.security import token_required, generate_token, role_required
+from app.utils.security import token_required, token_unrequired, generate_token, role_required
 
 # === AUTH DECORATOR ===
 # def token_required(f):
@@ -31,6 +31,7 @@ from app.utils.security import token_required, generate_token, role_required
 #     return decorated
 
 # === LOGIN ===
+@token_unrequired
 def login():
     data = request.get_json()
     user = User.query.filter_by(email=data['email']).first()
@@ -42,6 +43,7 @@ def login():
     return jsonify({"message": "Invalid credentials"}), 401
 
 # === REGISTER ===
+@token_unrequired
 def register():
     data = request.get_json()
     if User.query.filter_by(email=data['email']).first():
