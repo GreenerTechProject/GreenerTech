@@ -13,8 +13,8 @@ class GroupCor(db.Model):
     def to_dict(self):
         return {
             "id": self.id,
-            "id_group_cor": self.id_group_cor,
-            "point_x": self.point_x,
-            "point_y": self.point_y,
+            #"id_group_cor": self.id_group_cor,
+            "latitude": self.point_x,
+            "longitude": self.point_y,
             "ordre": self.ordre
         }

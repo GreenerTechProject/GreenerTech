@@ -7,13 +7,12 @@ class Domaine(db.Model):
 
     id = Column(Integer, primary_key=True)
     nom = Column(String, nullable=False)
-    id_group_cor = Column(Integer, ForeignKey("group_cor.id_group_cor"))
+    id_group_cor = Column(Integer, nullable=False) 
     id_entreprise = Column(Integer, ForeignKey("entreprises.id"), nullable=False)
 
-    # Add this line for relationship access to GroupCor entries
     group_coords = relationship(
         "GroupCor",
-        primaryjoin="Domaine.id_group_cor == GroupCor.id_group_cor",
+        primaryjoin="Domaine.id_group_cor == foreign(GroupCor.id_group_cor)",
         lazy="joined",
         viewonly=True
     )
@@ -22,7 +21,7 @@ class Domaine(db.Model):
         return {
             "id": self.id,
             "nom": self.nom,
-            "id_group_cor": self.id_group_cor,
+            #"id_group_cor": self.id_group_cor,
             "id_entreprise": self.id_entreprise,
-            "group_coords": [g.to_dict() for g in self.group_coords] if self.group_coords else []
+            "position": [g.to_dict() for g in self.group_coords] if self.group_coords else []
         }
