@@ -3,15 +3,15 @@ from app.models.bilan import Bilan
 from app.models.points_gps import GroupCor
 from database.config import db
 from app.utils.security import token_required, role_required
-from app.models.entreprise import Entreprise
-#from app.models.serre import Serre
+#from app.models.entreprise import Entreprise
+from app.models.serre import Serre
 from sqlalchemy import func
 
 @token_required
 #@role_required("directeur")
 def create_bilan(current_user):
     data = request.get_json()
-    #serre = Serre.query.get_or_404(data['id_serre'])
+    serre = Serre.query.get_or_404(data['id_serre'])
 
     # Récupérer entreprise liée au directeur connecté
     entreprise = Entreprise.query.filter_by(id_user=current_user.id).first()
@@ -45,8 +45,8 @@ def create_bilan(current_user):
     bilan = Bilan(
         nom=data['nom'],
         id_group_cor=id_group_cor,
-        #id_serre=serre.id,
-        id_entreprise=entreprise.id
+        id_serre=serre.id,
+        #id_entreprise=entreprise.id
     )
     db.session.add(bilan)
     db.session.commit()
