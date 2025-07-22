@@ -85,6 +85,18 @@ def get_guide_culture(current_user, id):
     return jsonify(guide.to_dict()), 200
 
 @token_required
+@role_required("technicien", "technicien_superieur", "directeur")
+def get_all_guides(current_user):
+    guides = GuideCulture.query.all()
+    if not guides:
+        return jsonify({"message": "Aucun guide de culture trouvé"}), 404
+
+    result = [guide.to_dict() for guide in guides]
+    return jsonify(result), 200
+
+
+
+@token_required
 @role_required("directeur", "technicien_superieur")
 def delete_guide(current_user, id_guide):
     guide = GuideCulture.query.get(id_guide)
