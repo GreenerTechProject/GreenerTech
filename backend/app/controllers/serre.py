@@ -134,5 +134,20 @@ def get_bilans_by_serre(current_user, id_serre):
     bilans = Bilan.query.filter_by(id_serre=id_serre).all()
     return jsonify([b.to_dict() for b in bilans]), 200
 
+# @token_required
+# @role_required("technicien", "technicien_superieur", "directeur")
+# def get_guides_by_serre(current_user, id_serre):
+#     serre = Serre.query.get(id_serre)
+#     if not serre:
+#         return jsonify({"message": "Serre introuvable"}), 404
+
+#     # Cas spécifique : technicien doit avoir accès à la serre
+#     if current_user.role == "technicien":
+#         autorisation = Autorisation.query.filter_by(id_user=current_user.id, id_serre=id_serre).first()
+#         if not autorisation or not autorisation.access_serre:
+#             return jsonify({"message": "Accès non autorisé à cette serre"}), 403
+
+#     guides = GuideCulture.query.filter_by(id_serre=id_serre).all()
+#     return jsonify([g.to_dict() for g in guides]), 200
 
 

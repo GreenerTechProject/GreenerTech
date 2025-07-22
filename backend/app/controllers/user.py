@@ -6,6 +6,9 @@ from database.config import db
 #from functools import wraps
 from app.utils.security import token_required, token_unrequired, generate_token, role_required
 
+# from werkzeug.security import generate_password_hash, check_password_hash
+
+
 # === AUTH DECORATOR ===
 # def token_required(f):
 #     @wraps(f)
@@ -112,10 +115,17 @@ def create_technicien(current_user):
     new_user = User(
         name=data.get('name'),
         email=email,
-        password=data.get('password'),  # à chiffrer dans un vrai projet
+        password=data.get('password'),  
         role=role
     )
+    # hashed_password = generate_password_hash(data.get('password'), method='pbkdf2:sha256', salt_length=16)
 
+    # new_user = User(
+    #     name=data.get('name'),
+    #     email=email,
+    #     password=hashed_password,  # mot de passe haché
+    #     role=role
+    # )
     db.session.add(new_user)
     db.session.commit()
 

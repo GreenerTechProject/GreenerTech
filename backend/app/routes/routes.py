@@ -5,6 +5,7 @@ from app.controllers.entreprise import create_entreprise, get_entreprise, update
 from app.controllers.domaine import create_domaine, get_domaine, get_all_domaines, update_domaine, delete_domaine ,get_serres_by_domaine
 from app.controllers.bilan import create_bilan, get_bilan, get_all_bilans, update_bilan, delete_bilan
 from app.controllers.serre import create_serre, get_serre, get_all_serres, update_serre, delete_serre
+from app.controllers.guide_culture import create_guide_culture , update_guide_culture, delete_guide, get_guide_culture
 
 
 all_bp = Blueprint('all_bp', __name__)
@@ -39,6 +40,7 @@ all_bp.route('/serre/<int:id>', methods=['GET'])(get_serre)
 all_bp.route('/serre', methods=['GET'])(get_all_serres)
 all_bp.route('/serre/<int:id>', methods=['PUT'])(update_serre)
 all_bp.route('/serre/<int:id>', methods=['DELETE'])(delete_serre)
+# all_bp.route("/serres/<int:id_serre>/guides", methods=["GET"])(get_guides_by_serre)
 
 
 
@@ -47,6 +49,15 @@ all_bp.route('/bilan/<int:id>', methods=['GET'])(get_bilan)
 all_bp.route('/bilan', methods=['GET'])(get_all_bilans)
 all_bp.route('/bilan/<int:id>', methods=['PUT'])(update_bilan)
 all_bp.route('/bilan/<int:id>', methods=['DELETE'])(delete_bilan)
+
+all_bp.route('/guide_culture', methods=['POST'])(create_guide_culture)
+all_bp.route('/guide_culture/<int:id>', methods=['PUT'])(update_guide_culture)
+all_bp.route('/guide_culture/<int:id>', methods=['DELETE'])(delete_guide)
+all_bp.route('/guide_culture/<int:id>', methods=['GET'])(get_guide_culture)
+# all_bp.route('/guide_culture', methods=['GET'])(get_all_guides)
+
+
+
 
 
 __all__ = ['all_bp']
