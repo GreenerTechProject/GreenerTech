@@ -98,8 +98,8 @@ def get_all_guides(current_user):
 
 @token_required
 @role_required("directeur", "technicien_superieur")
-def delete_guide(current_user, id_guide):
-    guide = GuideCulture.query.get(id_guide)
+def delete_guide(current_user, id):
+    guide = GuideCulture.query.get(id)
     if not guide:
         return jsonify({"message": "Guide non trouvé"}), 404
 
