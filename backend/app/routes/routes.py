@@ -1,15 +1,17 @@
 from flask import Blueprint
 
-from app.controllers.user import register, login, get_user, update_user, delete_user,create_technicien
+from app.controllers.user import register, login, get_user, update_user, delete_user, create_technicien
 from app.controllers.entreprise import create_entreprise, get_entreprise, update_entreprise, delete_entreprise
 from app.controllers.domaine import create_domaine, get_domaine, get_all_domaines, update_domaine, delete_domaine ,get_serres_by_domaine
-
 from app.controllers.serre import create_serre, get_serre, get_all_serres, update_serre, delete_serre, get_bilans_by_serre
 from app.controllers.bilan import create_bilan, get_bilan, get_all_bilans, update_bilan, delete_bilan
 from app.controllers.guide_culture import create_guide_culture , update_guide_culture, delete_guide, get_guide_culture
 from app.controllers.autorisation_domaine import create_autorisation_domaine, get_autorisation_domaine, delete_autorisation_domaine
 from app.controllers.autorisation_serre import create_autorisation_serre, get_autorisation_serre, delete_autorisation_serre
 from app.controllers.autorisation_bilan import create_autorisation_bilan, get_autorisation_bilan, delete_autorisation_bilan
+
+from app.controllers.mission_robot import create_mission_robot, get_mission_robot, delete_mission_robot
+from app.controllers.robot import create_robot, get_robot, get_all_robots, delete_robot
 
 
 all_bp = Blueprint('all_bp', __name__)
@@ -78,6 +80,20 @@ all_bp.route('/autorisation_serre/<int:autorisation_id>', methods=['DELETE'])(de
 all_bp.route('/autorisation_bilan', methods=['POST'])(create_autorisation_bilan)
 all_bp.route('/autorisation_bilan', methods=['GET'])(get_autorisation_bilan)
 all_bp.route('/autorisation_bilan/<int:autorisation_id>', methods=['DELETE'])(delete_autorisation_bilan)
+
+
+
+all_bp.route('/mission_robot', methods=['POST'])(create_mission_robot)
+all_bp.route('/mission_robot', methods=['GET'])(get_all_missions_robot)
+all_bp.route('/mission_robot/<int:mission_id>', methods=['GET'])(get_mission_robot)
+all_bp.route('/mission_robot/<int:mission_id>', methods=['DELETE'])(delete_mission_robot)
+
+
+
+all_bp.route('/robot', methods=['POST'])(create_robot)
+all_bp.route('/robot', methods=['GET'])(get_all_robots)
+all_bp.route('/robot/<int:robot_id>', methods=['GET'])(get_robot)
+all_bp.route('/robot/<int:robot_id>', methods=['DELETE'])(delete_robot)
 
 
 

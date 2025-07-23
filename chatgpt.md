@@ -8,7 +8,7 @@ class Entreprise {
   +id_user : string
   +status_juridique : string
   +adresse : string
-  +id_fiscale : int
+  +id_fiscale : string
   +email : string
 }
 
@@ -16,10 +16,8 @@ abstract class User {
   +id : int
   +email : string
   +password : string
-  +nom_user : string
-  +type : string
-  +id_role : int
-  +id_entreprise : int
+  +nom : string
+  +role : string
 }
 
 class Technicien
@@ -30,25 +28,16 @@ User <|-- Technicien
 User <|-- TechnicienSuperieur
 User <|-- DirecteurProduction
 
-class Autorisation {
-  +id : int
-  +id_user : int
-  +id_serre : int
-  +access_serre : boolean
-  +id_entreprise : int
-}
-
 class Domaine {
   +id : int
-  +nom_domaine : string
+  +nom : string
   +id_group_cor : int
   +id_entreprise : int
-  +id_Robot : int 
 }
 
 class Serre {
   +id : int
-  +nom_Serre : string
+  +nom : string
   +id_group_cor : int
   +date_creation : date
   +id_domaine : int
@@ -73,14 +62,19 @@ class GuideCulture {
   +id_serre : int
 }
 
+class Autorisation {
+  +id : int
+  +id_user : int
+  +id_serre : int
+  +access_serre : boolean
+  +id_entreprise : int
+}
+
 class Bilan {
   +id : int
-  +nom_bilan : string
-  +etat : string
+  +nom : string
   +id_group_cor : int
-  +id_domaine : int
-  +id_Serre  : int
-  +id_ : int
+  +id_serre : int
 }
 
 class TypeTache {
@@ -92,7 +86,40 @@ class Robot {
   +id : int
   +nom : string
   +Referance : string 
-  +id_serre : int
+}
+
+class Etat_bilan {
+  +id : int
+  +id_bilan : int
+  +nombre de tomates maldies : int
+  +nombre de tomates non maldies : int
+  +nombre de malade1 : int
+  +nombre de malade2 : int
+  +maladie : string
+  +température : float
+  +humidité : float
+  +luminosité : float
+  +co2 : float
+  +rendement : float
+  +x1, y1 : float
+  +date : date
+}
+
+class Alerte {
+  +id : int
+  +id_bilan : int
+  +niveau : int
+  +maladie : string
+  +lien_image : string
+  +x1, y1 : float
+  +date : date
+  +status : StatutAlerte 
+}
+
+enum StatutAlerte {
+  non_vue
+  vue
+  resolu
 }
 
 class Intervention {
@@ -123,46 +150,19 @@ class Notification {
 class MissionRobot {
   +id : int
   +id_serre : int
-  +couleur_temate : boolean
-  +calibre_temate : boolean
-  +anomalie_temate : boolean
-  +couleur_feulle : boolean
-  +calibre_feulle : boolean
-  +anomalie_feulle : boolean
-  +taille_tige : float
-  +resultat_couleur_serre : string
-  +resultat_calibre_serre : string
-  +resultat_malade : string
-  +pourcentage_rendement_serre : float
+  '+couleur_temate : boolean
+  '+anomalie_temate : boolean
+  '+couleur_feulle : boolean
+  '+anomalie_feulle : boolean
+  '+taille_tige : float
+  '+resultat_couleur_serre : string
+  '+resultat_calibre_serre : string
+  '+resultat_malade : string
+  '+pourcentage_rendement_serre : float
   +date_debut : date
   +rep_jr : boolean
   +rep_sem : boolean
   +date_fin : date
-}
-
-class Alerte {
-  +id : int
-  +id_bilan : int
-  +niveau : int
-  +maladie : string
-  +lien_image : string
-  +x1, y1 : float
-  +date : date
-  +status : string
-}
-
-class Etat_bilan {
-  +id : int
-  +id_bilan : int
-  +maladie : string
-  +lien_image : string
-  +température : float
-  +humidité : float
-  +luminosité : float
-  +co2 : float
-  +calibre : string
-  +x1, y1 : float
-  +date : date
 }
 
 class Rapport {
@@ -170,47 +170,43 @@ class Rapport {
   +date : date
   +description : string
   +lien_pdf : string
-  +id_Serre  : int
+  +id_serre  : int
   +id_user : int
 }
 
 '================== ASSOCIATIONS (avec flèches) ==================
 
-' Relations
-Robot "1..*"<--"1" MissionRobot : concerne <
-Entreprise "1" --> "1..*" DirecteurProduction : emploie >
+Robot "1..*"<--"1" MissionRobot : concerner <
+Entreprise "1" --> "1..*" DirecteurProduction : employer >
 Entreprise "1" *-- "0..*" Domaine
-Bilan "1" --> "0..*" Alerte : déclenche >
-Bilan "1" --> "0..*" Etat_bilan : contient >
-Serre "1" --> "0..*" Rapport : génère >
+Bilan "1" --> "0..*" Alerte : déclencher >
+Bilan "1" --> "0..*" Etat_bilan : contenir >
+Serre "1" --> "0..*" Rapport : générer >
 Serre "1" *-- "0..*" Bilan
 
-Technicien "1" --> "0..*" Autorisation : a >
-TechnicienSuperieur "1" --> "0..*" Autorisation : Valider >
-Technicien "1" --> "0..*" Intervention : effectue >
-Technicien "1" --> "0..*" Rapport : rédige >
+Technicien "1" --> "0..*" Autorisation : avoir >
+TechnicienSuperieur "1" --> "0..*" Autorisation : valider >
+Technicien "1" --> "0..*" Intervention : effectuer >
+Technicien "1" --> "0..*" Rapport : rédiger >
 
 Domaine "1" *-- "0..*" Serre
 
-Serre "1" --> "1" GuideCulture : utilise >
-Serre "1" --> "0..*" Autorisation : est autorisée >
-Serre "1" --> "0..*" Intervention : reçoit >
+Serre "1" --> "1" GuideCulture : utiliser >
+Serre "1" --> "0..*" Autorisation : être autorisée >
+Serre "1" --> "0..*" Intervention : recevoir >
 
-TypeTache "1" --> "0..*" Intervention : concerne >
-MissionRobot "0..*" <-- "1" Serre : inspectée par <
-User "1" <-- "0..*" Notification : reçoit <
+TypeTache "1" --> "0..*" Intervention : concerner >
+MissionRobot "0..*" <-- "1" Serre : être inspectée par <
+User "1" <-- "0..*" Notification : recevoir <
 
-Serre "1" --> "3..*" group_cor : est défini par >
-Domaine "1" --> "3..*" group_cor : localise >
-Bilan "1" --> "3..*" group_cor : couvre >
+Serre "1" --> "3..*" group_cor : être défini par >
+Domaine "1" --> "3..*" group_cor : localiser >
+Bilan "1" --> "3..*" group_cor : couvrir >
 
-Intervention "1" <-- "0..*" Notification : concerne <
-
-
-'Intervention --> StatutIntervention : utilise >
-
+Intervention "1" <-- "0..*" Notification : concerner <
 
 @enduml
+
 
 
 
