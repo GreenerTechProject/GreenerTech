@@ -9,6 +9,7 @@ from sqlalchemy import func
 
 @token_required
 #@role_required("directeur")
+@access_serre_required
 def create_bilan(current_user):
     data = request.get_json()
     serre = Serre.query.get_or_404(data['id_serre'])
@@ -68,6 +69,7 @@ def get_all_bilans(current_user, id):
 
 @token_required
 #@role_required("directeur")
+@access_bilan_required
 def get_bilan(current_user, id):
     bilan = Bilan.query.get_or_404(id)
     #entreprise = Entreprise.query.filter_by(id_user=current_user.id).first()
@@ -78,6 +80,7 @@ def get_bilan(current_user, id):
 
 @token_required
 #@role_required("directeur")
+@access_bilan_required
 def update_bilan(current_user, id):
     bilan = Bilan.query.get_or_404(id)
     #entreprise = Entreprise.query.filter_by(id_user=current_user.id).first()
@@ -108,6 +111,7 @@ def update_bilan(current_user, id):
 
 @token_required
 #@role_required("directeur")
+@access_bilan_required
 def delete_bilan(current_user, id):
     bilan = Bilan.query.get_or_404(id)
     #entreprise = Entreprise.query.filter_by(id_user=current_user.id).first()

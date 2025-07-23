@@ -119,7 +119,7 @@ def delete_domaine(current_user, id):
 
 
 @token_required
-@role_required("directeur")
+@role_required("directeur", "technicien_superieur")
 def get_serres_by_domaine(current_user, id_domaine):
     entreprise = Entreprise.query.filter_by(id_user=current_user.id).first()
     if not entreprise:

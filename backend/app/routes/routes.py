@@ -9,6 +9,7 @@ from app.controllers.bilan import create_bilan, get_bilan, get_all_bilans, updat
 from app.controllers.guide_culture import create_guide_culture , update_guide_culture, delete_guide, get_guide_culture
 from app.controllers.autorisation_domaine import create_autorisation_domaine, get_autorisation_domaine, delete_autorisation_domaine
 from app.controllers.autorisation_serre import create_autorisation_serre, get_autorisation_serre, delete_autorisation_serre
+from app.controllers.autorisation_bilan import create_autorisation_bilan, get_autorisation_bilan, delete_autorisation_bilan
 
 
 all_bp = Blueprint('all_bp', __name__)
@@ -71,6 +72,12 @@ all_bp.route('/autorisation_domaine/<int:autorisation_id>', methods=['DELETE'])(
 all_bp.route('/autorisation_serre', methods=['POST'])(create_autorisation_serre)
 all_bp.route('/autorisation_serre', methods=['GET'])(get_autorisation_serre)
 all_bp.route('/autorisation_serre/<int:autorisation_id>', methods=['DELETE'])(delete_autorisation_serre)
+
+
+
+all_bp.route('/autorisation_bilan', methods=['POST'])(create_autorisation_bilan)
+all_bp.route('/autorisation_bilan', methods=['GET'])(get_autorisation_bilan)
+all_bp.route('/autorisation_bilan/<int:autorisation_id>', methods=['DELETE'])(delete_autorisation_bilan)
 
 
 
