@@ -29,7 +29,7 @@ def create_etat_bilan(current_user):
 
 
 @token_required
-def get_etat_bilan_by_id(current_user, etat_bilan_id):
+def get_etat_bilan(current_user, etat_bilan_id):
     etat = Etat_bilan.query.get(etat_bilan_id)
     if not etat:
         return jsonify({"status": "error", "message": "Etat_bilan non trouvé"}), 404
@@ -37,7 +37,7 @@ def get_etat_bilan_by_id(current_user, etat_bilan_id):
 
 
 @token_required
-def get_etats_by_bilan(current_user, bilan_id):
+def get_etat_bilan(current_user, bilan_id):
     etats = Etat_bilan.query.filter_by(id_bilan=bilan_id).all()
     return jsonify([e.to_dict() for e in etats]), 200
 
