@@ -56,7 +56,8 @@ def register():
         name=data['name'],
         email=data['email'],
         password=data['password'],  # À chiffrer dans un vrai projet
-        role=data.get('role', 'user')
+        role="directeur"
+        #role=data.get('role', 'user')
     )
     db.session.add(new_user)
     db.session.commit()
