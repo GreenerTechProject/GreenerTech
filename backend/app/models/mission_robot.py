@@ -7,7 +7,7 @@ class MissionRobot(db.Model):
 
     id = Column(Integer, primary_key=True)
     id_robot = Column(Integer, ForeignKey('robots.id'), nullable=False)
-    id_serre = Column(Integer, ForeignKey('serre.id'), nullable=False)
+    id_serre = Column(Integer, ForeignKey('serres.id'), nullable=False)
     rep_jr = Column(Integer)
     rep_sem = Column(Integer)
     date_debut = Column(DateTime, default=datetime.utcnow)
