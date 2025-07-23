@@ -1,5 +1,5 @@
 from flask import request, jsonify
-from app.models.etat_bilans import Etat_bilan
+from app.models.etat_bilan import Etat_bilan
 from database.config import db
 from app.utils.security import token_required, role_required
 
