@@ -13,6 +13,7 @@ from app.controllers.autorisation_bilan import create_autorisation_bilan, get_au
 from app.controllers.mission_robot import create_mission_robot, get_mission_robot, update_mission_robot, get_all_missions_robot, delete_mission_robot
 from app.controllers.robot import create_robot, get_robot, update_robot, get_all_robots, delete_robot
 from app.controllers.etat_bilan import create_etat_bilan, get_etat_bilan, update_etat_bilan, get_etat_bilan_by_bilan, delete_etat_bilan
+from app.controllers.alerte import create_alerte, get_alerte, get_all_alerte, update_alerte, delete_alerte
 
 
 all_bp = Blueprint('all_bp', __name__)
@@ -102,10 +103,19 @@ all_bp.route('/robot/<int:robot_id>', methods=['DELETE'])(delete_robot)
 
 
 all_bp.route('/etat_bilan', methods=['POST'])(create_etat_bilan)
-all_bp.route('/etat_bilan<int:etat_bilan_id>', methods=['GET'])(get_etat_bilan)
+all_bp.route('/etat_bilan/<int:etat_bilan_id>', methods=['GET'])(get_etat_bilan)
 all_bp.route('/etat_bilan/bilan/<int:bilan_id>', methods=['GET'])(get_etat_bilan_by_bilan)
 all_bp.route('/etat_bilan<int:etat_bilan_id>', methods=['PUT'])(update_etat_bilan)
 all_bp.route('/etat_bilan<int:etat_bilan_id>', methods=['DELETE'])(delete_etat_bilan)
+
+
+
+
+all_bp.route('/alerte', methods=['POST'])(create_alerte)
+all_bp.route('/alerte>', methods=['GET'])(get_all_alertes)
+all_bp.route('/alerte/<int:alerte_id>', methods=['GET'])(get_alerte)
+all_bp.route('/alerte<int:alerte_id>', methods=['PUT'])(update_alerte)
+all_bp.route('/alerte<int:alerte_id>', methods=['DELETE'])(delete_alerte)
 
 
 
