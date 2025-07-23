@@ -62,15 +62,15 @@ all_bp.route('/guide_culture/<int:id>', methods=['GET'])(get_guide_culture)
 
 
 
-all_bp.route('/api/autorisation_domaine', methods=['POST'])(create_autorisation_domaine)
-all_bp.route('/api/autorisation_domaine', methods=['GET'])(get_autorisation_domaine)
-all_bp.route('/api/autorisation_domaine/<int:autorisation_id>', methods=['DELETE'])(delete_autorisation_domaine)
+all_bp.route('/autorisation_domaine', methods=['POST'])(create_autorisation_domaine)
+all_bp.route('/autorisation_domaine', methods=['GET'])(get_autorisation_domaine)
+all_bp.route('/autorisation_domaine/<int:autorisation_id>', methods=['DELETE'])(delete_autorisation_domaine)
 
 
 
-all_bp.route('/api/autorisation_serre', methods=['POST'])(create_autorisation_serre)
-all_bp.route('/api/autorisation_serre', methods=['GET'])(get_autorisation_serre)
-all_bp.route('/api/autorisation_serre/<int:autorisation_id>', methods=['DELETE'])(delete_autorisation_serre)
+all_bp.route('/autorisation_serre', methods=['POST'])(create_autorisation_serre)
+all_bp.route('/autorisation_serre', methods=['GET'])(get_autorisation_serre)
+all_bp.route('/autorisation_serre/<int:autorisation_id>', methods=['DELETE'])(delete_autorisation_serre)
 
 
 
