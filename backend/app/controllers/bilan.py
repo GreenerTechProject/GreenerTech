@@ -2,7 +2,7 @@ from flask import request, jsonify
 from app.models.bilan import Bilan
 from app.models.points_gps import GroupCor
 from database.config import db
-from app.utils.security import token_required, role_required
+from app.utils.security import token_required, role_required, access_serre_required, access_bilan_required
 #from app.models.entreprise import Entreprise
 from app.models.serre import Serre
 from sqlalchemy import func

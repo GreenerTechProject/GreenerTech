@@ -5,7 +5,7 @@ from app.models.points_gps import GroupCor
 from app.models.entreprise import Entreprise
 from database.config import db
 from sqlalchemy import func
-from app.utils.security import token_required, role_required
+from app.utils.security import token_required, role_required, access_domaine_required
 from app.models.bilan import Bilan
 from app.models.guide_culture import GuideCulture
 
