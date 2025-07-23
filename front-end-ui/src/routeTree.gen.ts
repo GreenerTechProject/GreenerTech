@@ -12,7 +12,9 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as TechMapRouteRouteImport } from './routes/tech-map-route'
 import { Route as RegistrationRouteRouteImport } from './routes/registration-route'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as InterventionsRouteImport } from './routes/interventions'
 import { Route as DashboardRouteImport } from './routes/dashboard'
+import { Route as AlertsRouteImport } from './routes/alerts'
 import { Route as IndexRouteImport } from './routes/index'
 
 const TechMapRouteRoute = TechMapRouteRouteImport.update({
@@ -30,9 +32,19 @@ const LoginRoute = LoginRouteImport.update({
   path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
+const InterventionsRoute = InterventionsRouteImport.update({
+  id: '/interventions',
+  path: '/interventions',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const DashboardRoute = DashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AlertsRoute = AlertsRouteImport.update({
+  id: '/alerts',
+  path: '/alerts',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -43,14 +55,18 @@ const IndexRoute = IndexRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/alerts': typeof AlertsRoute
   '/dashboard': typeof DashboardRoute
+  '/interventions': typeof InterventionsRoute
   '/login': typeof LoginRoute
   '/registration-route': typeof RegistrationRouteRoute
   '/tech-map-route': typeof TechMapRouteRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/alerts': typeof AlertsRoute
   '/dashboard': typeof DashboardRoute
+  '/interventions': typeof InterventionsRoute
   '/login': typeof LoginRoute
   '/registration-route': typeof RegistrationRouteRoute
   '/tech-map-route': typeof TechMapRouteRoute
@@ -58,7 +74,9 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/alerts': typeof AlertsRoute
   '/dashboard': typeof DashboardRoute
+  '/interventions': typeof InterventionsRoute
   '/login': typeof LoginRoute
   '/registration-route': typeof RegistrationRouteRoute
   '/tech-map-route': typeof TechMapRouteRoute
@@ -67,16 +85,27 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/alerts'
     | '/dashboard'
+    | '/interventions'
     | '/login'
     | '/registration-route'
     | '/tech-map-route'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/dashboard' | '/login' | '/registration-route' | '/tech-map-route'
+  to:
+    | '/'
+    | '/alerts'
+    | '/dashboard'
+    | '/interventions'
+    | '/login'
+    | '/registration-route'
+    | '/tech-map-route'
   id:
     | '__root__'
     | '/'
+    | '/alerts'
     | '/dashboard'
+    | '/interventions'
     | '/login'
     | '/registration-route'
     | '/tech-map-route'
@@ -84,7 +113,9 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AlertsRoute: typeof AlertsRoute
   DashboardRoute: typeof DashboardRoute
+  InterventionsRoute: typeof InterventionsRoute
   LoginRoute: typeof LoginRoute
   RegistrationRouteRoute: typeof RegistrationRouteRoute
   TechMapRouteRoute: typeof TechMapRouteRoute
@@ -113,11 +144,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LoginRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/interventions': {
+      id: '/interventions'
+      path: '/interventions'
+      fullPath: '/interventions'
+      preLoaderRoute: typeof InterventionsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/dashboard': {
       id: '/dashboard'
       path: '/dashboard'
       fullPath: '/dashboard'
       preLoaderRoute: typeof DashboardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/alerts': {
+      id: '/alerts'
+      path: '/alerts'
+      fullPath: '/alerts'
+      preLoaderRoute: typeof AlertsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -132,7 +177,9 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AlertsRoute: AlertsRoute,
   DashboardRoute: DashboardRoute,
+  InterventionsRoute: InterventionsRoute,
   LoginRoute: LoginRoute,
   RegistrationRouteRoute: RegistrationRouteRoute,
   TechMapRouteRoute: TechMapRouteRoute,

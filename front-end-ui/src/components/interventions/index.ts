@@ -1,0 +1,5 @@
+export { default as InterventionsPage } from './InterventionsPage'
+export { default as InterventionsHeader } from './InterventionsHeader'
+export { default as InterventionsSearch } from './InterventionsSearch'
+export { default as InterventionsTable } from './InterventionsTable'
+export { default as InterventionsPagination } from './InterventionsPagination'
