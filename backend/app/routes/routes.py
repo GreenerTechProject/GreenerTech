@@ -100,10 +100,10 @@ all_bp.route('/robot/<int:robot_id>', methods=['DELETE'])(delete_robot)
 
 
 all_bp.route('/etat_bilan_id', methods=['POST'])(create_etat_bilan)
-all_bp.route('/etat_bilan_id<int:etat_bilan_id>', methods=['GET'])(get_etat_bilan_id)
-all_bp.route('/etat_bilan_idbilan/<int:bilan_id>', methods=['GET'])(get_etat_bilan_id)
-all_bp.route('/etat_bilan_id<int:etat_bilan_id>', methods=['PUT'])(update_etat_bilan_id)
-all_bp.route('/etat_bilan_id<int:etat_bilan_id>', methods=['DELETE'])(delete_etat_bilan_id)
+all_bp.route('/etat_bilan_id<int:etat_bilan_id>', methods=['GET'])(get_etat_bilan)
+all_bp.route('/etat_bilan_idbilan/<int:bilan_id>', methods=['GET'])(get_etat_bilan)
+all_bp.route('/etat_bilan_id<int:etat_bilan_id>', methods=['PUT'])(update_etat_bilan)
+all_bp.route('/etat_bilan_id<int:etat_bilan_id>', methods=['DELETE'])(delete_etat_bilan)
 
 
 
