@@ -3,7 +3,7 @@ from flask import Blueprint
 from app.controllers.user import register, login, get_user, update_user, delete_user,create_technicien
 from app.controllers.entreprise import create_entreprise, get_entreprise, update_entreprise, delete_entreprise
 from app.controllers.domaine import create_domaine, get_domaine, get_all_domaines, update_domaine, delete_domaine ,get_serres_by_domaine
-from app.controllers.bilan import create_bilan, get_bilan, get_all_bilans, update_bilan, delete_bilan
+from app.controllers.bilan import create_bilan, get_bilan, get_all_bilans, update_bilan, delete_bilan,generate_bilan_qrcode
 from app.controllers.serre import create_serre, get_serre, get_all_serres, update_serre, delete_serre
 from app.controllers.guide_culture import create_guide_culture , update_guide_culture, delete_guide, get_guide_culture
 
@@ -49,6 +49,8 @@ all_bp.route('/bilan/<int:id>', methods=['GET'])(get_bilan)
 all_bp.route('/bilan', methods=['GET'])(get_all_bilans)
 all_bp.route('/bilan/<int:id>', methods=['PUT'])(update_bilan)
 all_bp.route('/bilan/<int:id>', methods=['DELETE'])(delete_bilan)
+all_bp.route('/bilan/<int:bilan_id>/qrcode', methods=['GET'])(generate_bilan_qrcode)
+
 
 all_bp.route('/guide_culture', methods=['POST'])(create_guide_culture)
 all_bp.route('/guide_culture/<int:id>', methods=['PUT'])(update_guide_culture)
