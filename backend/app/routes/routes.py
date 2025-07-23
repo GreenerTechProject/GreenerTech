@@ -10,7 +10,7 @@ from app.controllers.autorisation_domaine import create_autorisation_domaine, ge
 from app.controllers.autorisation_serre import create_autorisation_serre, get_autorisation_serre, delete_autorisation_serre
 from app.controllers.autorisation_bilan import create_autorisation_bilan, get_autorisation_bilan, delete_autorisation_bilan
 
-from app.controllers.mission_robot import create_mission_robot, get_mission_robot, delete_mission_robot
+from app.controllers.mission_robot import create_mission_robot, get_mission_robot, get_all_missions_robot, delete_mission_robot
 from app.controllers.robot import create_robot, get_robot, get_all_robots, delete_robot
 
 
