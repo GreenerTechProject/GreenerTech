@@ -130,5 +130,5 @@ def create_technicien(current_user):
     db.session.add(new_user)
     db.session.commit()
 
-    return jsonify({"message": f"{role.capitalize()} créé avec succès", "id": new_user.id}), 201
+    return jsonify(new_user), 201
 
