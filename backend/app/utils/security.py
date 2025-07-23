@@ -79,6 +79,34 @@ def role_required(*allowed_roles):
 
 
 
+from app.models.autorisation_domaine import Autorisation_domaine
+
+def access_domaine_required(f):
+    @wraps(f)
+    def decorated(current_user, *args, **kwargs):
+        # Extract domaine ID either from JSON body or URL parameters
+        data = request.get_json(silent=True) or {}
+        id_domaine = data.get('id_domaine') or kwargs.get('id_domaine')
+        
+        if not id_domaine:
+            return jsonify({"message": "ID de la domaine manquant"}), 400
+
+        # Check access authorization
+        has_access = Autorisation_domaine.query.filter_by(id_user=current_user.id, id_domaine=id_domaine).first()
+
+        if not has_access:
+            return jsonify({"message": "Accès non autorisé à cette domaine"}), 403
+
+        return f(current_user, *args, **kwargs)
+    return decorated
+
+
+
+
+
+
+
+
 from app.models.autorisation_serre import Autorisation_serre
 
 def access_serre_required(f):
@@ -107,23 +135,24 @@ def access_serre_required(f):
 
 
 
-from app.models.autorisation_domaine import Autorisation_domaine
 
-def access_domaine_required(f):
+from app.models.autorisation_bilan import Autorisation_bilan
+
+def access_bilan_required(f):
     @wraps(f)
     def decorated(current_user, *args, **kwargs):
-        # Extract domaine ID either from JSON body or URL parameters
+        # Extract bilan ID either from JSON body or URL parameters
         data = request.get_json(silent=True) or {}
-        id_domaine = data.get('id_domaine') or kwargs.get('id_domaine')
+        id_bilan = data.get('id_bilan') or kwargs.get('id_bilan')
         
-        if not id_domaine:
-            return jsonify({"message": "ID de la domaine manquant"}), 400
+        if not id_bilan:
+            return jsonify({"message": "ID de la bilan manquant"}), 400
 
         # Check access authorization
-        has_access = Autorisation_domaine.query.filter_by(id_user=current_user.id, id_domaine=id_domaine).first()
+        has_access = Autorisation_bilan.query.filter_by(id_user=current_user.id, id_bilan=id_bilan).first()
 
         if not has_access:
-            return jsonify({"message": "Accès non autorisé à cette domaine"}), 403
+            return jsonify({"message": "Accès non autorisé à cette bilan"}), 403
 
         return f(current_user, *args, **kwargs)
     return decorated
