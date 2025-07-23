@@ -1,5 +1,6 @@
 from sqlalchemy import Column, Integer, Float, String, DateTime, ForeignKey
 from database.config import db
+from datetime import datetime
 
 class Etat_bilan(db.Model):
     __tablename__ = 'etat_bilans'
