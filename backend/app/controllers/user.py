@@ -130,5 +130,5 @@ def create_technicien(current_user):
     db.session.add(new_user)
     db.session.commit()
 
-    return jsonify(new_user), 201
+    return jsonify(new_user.to_dict()), 201
 

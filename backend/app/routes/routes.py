@@ -3,12 +3,12 @@ from flask import Blueprint
 from app.controllers.user import register, login, get_user, update_user, delete_user,create_technicien
 from app.controllers.entreprise import create_entreprise, get_entreprise, update_entreprise, delete_entreprise
 from app.controllers.domaine import create_domaine, get_domaine, get_all_domaines, update_domaine, delete_domaine ,get_serres_by_domaine
-from app.controllers.bilan import create_bilan, get_bilan, get_all_bilans, update_bilan, delete_bilan
 
 from app.controllers.serre import create_serre, get_serre, get_all_serres, update_serre, delete_serre, get_bilans_by_serre
-from app.controllers.autorisation_serre import create_autorisation_serre, get_autorisation_serre, delete_autorisation_serre
-from app.controllers.autorisation_domaine import create_autorisation_domaine, get_autorisation_domaine, delete_autorisation_domaine
+from app.controllers.bilan import create_bilan, get_bilan, get_all_bilans, update_bilan, delete_bilan
 from app.controllers.guide_culture import create_guide_culture , update_guide_culture, delete_guide, get_guide_culture
+from app.controllers.autorisation_domaine import create_autorisation_domaine, get_autorisation_domaine, delete_autorisation_domaine
+from app.controllers.autorisation_serre import create_autorisation_serre, get_autorisation_serre, delete_autorisation_serre
 
 
 all_bp = Blueprint('all_bp', __name__)
@@ -62,15 +62,15 @@ all_bp.route('/guide_culture/<int:id>', methods=['GET'])(get_guide_culture)
 
 
 
-all_bp.route('/api/autorisation_serre', methods=['POST'])(create_autorisation_serre)
-all_bp.route('/api/autorisation_serre', methods=['GET'])(get_autorisation_serre)
-all_bp.route('/api/autorisation_serre/<int:autorisation_id>', methods=['DELETE'])(delete_autorisation_serre)
-
-
-
 all_bp.route('/api/autorisation_domaine', methods=['POST'])(create_autorisation_domaine)
 all_bp.route('/api/autorisation_domaine', methods=['GET'])(get_autorisation_domaine)
 all_bp.route('/api/autorisation_domaine/<int:autorisation_id>', methods=['DELETE'])(delete_autorisation_domaine)
+
+
+
+all_bp.route('/api/autorisation_serre', methods=['POST'])(create_autorisation_serre)
+all_bp.route('/api/autorisation_serre', methods=['GET'])(get_autorisation_serre)
+all_bp.route('/api/autorisation_serre/<int:autorisation_id>', methods=['DELETE'])(delete_autorisation_serre)
 
 
 
