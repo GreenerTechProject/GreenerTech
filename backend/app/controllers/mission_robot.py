@@ -10,8 +10,9 @@ def create_mission_robot(current_user):
     try:
         mission = MissionRobot(
             id_robot=data['id_robot'],
-            type_tache=data['type_tache'],
-            description=data.get('description'),
+            id_serre=data['id_serre'],
+            rep_jr=data['rep_jr'],
+            rep_sem=data['rep_sem'],
             date_debut=data.get('date_debut'),
             date_fin=data.get('date_fin')
         )

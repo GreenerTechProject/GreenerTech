@@ -10,9 +10,7 @@ def create_robot(current_user):
     try:
         robot = Robot(
             nom=data['nom'],
-            modele=data.get('modele'),
-            type_robot=data.get('type_robot'),
-            id_domaine=data['id_domaine']
+            referance=data.get('referance')
         )
         db.session.add(robot)
         db.session.commit()
@@ -46,9 +44,7 @@ def update_robot(current_user, robot_id):
     data = request.get_json()
     try:
         robot.nom = data.get('nom', robot.nom)
-        robot.modele = data.get('modele', robot.modele)
-        robot.type_robot = data.get('type_robot', robot.type_robot)
-        robot.id_domaine = data.get('id_domaine', robot.id_domaine)
+        robot.referance = data.get('referance', robot.referance)
         db.session.commit()
         return jsonify(robot.to_dict()), 200
     except Exception as e:
