@@ -14,7 +14,6 @@ def create_alerte():
             lien_image=data.get("lien_image"),
             x1=data.get("x1"),
             y1=data.get("y1"),
-            date=datetime.strptime(data["date"], "%Y-%m-%d") if "date" in data else None,
             status=data.get("status", "non résolue")
         )
         db.session.add(alerte)
@@ -49,7 +48,6 @@ def update_alerte(alert_id):
         alerte.lien_image = data.get("lien_image", alerte.lien_image)
         alerte.x1 = data.get("x1", alerte.x1)
         alerte.y1 = data.get("y1", alerte.y1)
-        alerte.date = datetime.strptime(data["date"], "%Y-%m-%d") if "date" in data else alerte.date
         alerte.status = data.get("status", alerte.status)
 
         db.session.commit()
