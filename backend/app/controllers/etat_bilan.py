@@ -37,7 +37,7 @@ def get_etat_bilan(current_user, etat_bilan_id):
 
 
 @token_required
-def get_etat_bilan(current_user, bilan_id):
+def get_etat_bilan_by_bilan(current_user, bilan_id):
     etats = Etat_bilan.query.filter_by(id_bilan=bilan_id).all()
     return jsonify([e.to_dict() for e in etats]), 200
 
