@@ -5,7 +5,7 @@ from app.utils.security import token_required, role_required
 
 @token_required
 @role_required("directeur", "technicien_superieur")
-def create_autorisation_domaine():
+def create_autorisation_domaine(current_user):
     data = request.get_json()
     try:
         autorisation_domaine = Autorisation_domaine(
@@ -23,7 +23,7 @@ def create_autorisation_domaine():
 
 @token_required
 @role_required("directeur", "technicien_superieur")
-def get_autorisation_domaine(id_domaine):
+def get_autorisation_domaine(current_user, id_domaine):
     autorisation_domaines = Autorisation_domaine.query.filter_by(id_domaine=id_domaine).all()
     if not autorisation_domaines:
         return jsonify({"status": "error", "message": "Aucune autorisation_domaine trouvée pour cette domaine"}), 404
@@ -37,7 +37,7 @@ def get_autorisation_domaine(id_domaine):
 
 @token_required
 @role_required("directeur", "technicien_superieur")
-def delete_autorisation_domaine(autorisation_domaine_id):
+def delete_autorisation_domaine(current_user, autorisation_domaine_id):
     autorisation_domaine = Autorisation_domaine.query.get(autorisation_domaine_id)
     if not autorisation_domaine:
         return jsonify({"status": "error", "message": "Autorisation_domaine non trouvée"}), 404

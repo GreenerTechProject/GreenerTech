@@ -5,7 +5,7 @@ from app.utils.security import token_required, role_required
 
 @token_required
 @role_required("directeur", "technicien_superieur")
-def create_autorisation_serre():
+def create_autorisation_serre(current_user):
     data = request.get_json()
     try:
         autorisation_serre = Autorisation_serre(
@@ -23,7 +23,7 @@ def create_autorisation_serre():
 
 @token_required
 @role_required("directeur", "technicien_superieur")
-def get_autorisation_serre(id_serre):
+def get_autorisation_serre(current_user, id_serre):
     autorisation_serres = Autorisation_serre.query.filter_by(id_serre=id_serre).all()
     if not autorisation_serres:
         return jsonify({"status": "error", "message": "Aucune autorisation_serre trouvée pour cette serre"}), 404
@@ -37,7 +37,7 @@ def get_autorisation_serre(id_serre):
 
 @token_required
 @role_required("directeur", "technicien_superieur")
-def delete_autorisation_serre(autorisation_serre_id):
+def delete_autorisation_serre(current_user, autorisation_serre_id):
     autorisation_serre = Autorisation_serre.query.get(autorisation_serre_id)
     if not autorisation_serre:
         return jsonify({"status": "error", "message": "Autorisation_serre non trouvée"}), 404
