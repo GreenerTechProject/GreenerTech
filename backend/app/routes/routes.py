@@ -12,6 +12,7 @@ from app.controllers.autorisation_bilan import create_autorisation_bilan, get_au
 
 from app.controllers.mission_robot import create_mission_robot, get_mission_robot, get_all_missions_robot, delete_mission_robot
 from app.controllers.robot import create_robot, get_robot, get_all_robots, delete_robot
+from app.controllers.etat_bilan import create_etat_bilan, get_etat_bilan, delete_etat_bilan
 
 
 all_bp = Blueprint('all_bp', __name__)
@@ -94,6 +95,15 @@ all_bp.route('/robot', methods=['POST'])(create_robot)
 all_bp.route('/robot', methods=['GET'])(get_all_robots)
 all_bp.route('/robot/<int:robot_id>', methods=['GET'])(get_robot)
 all_bp.route('/robot/<int:robot_id>', methods=['DELETE'])(delete_robot)
+
+
+
+
+all_bp.route('/etat_bilan_id', methods=['POST'])(create_etat_bilan)
+all_bp.route('/etat_bilan_id<int:etat_bilan_id>', methods=['GET'])(get_etat_bilan_id)
+all_bp.route('/etat_bilan_idbilan/<int:bilan_id>', methods=['GET'])(get_etat_bilan_id)
+all_bp.route('/etat_bilan_id<int:etat_bilan_id>', methods=['PUT'])(update_etat_bilan_id)
+all_bp.route('/etat_bilan_id<int:etat_bilan_id>', methods=['DELETE'])(delete_etat_bilan_id)
 
 
 
