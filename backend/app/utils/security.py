@@ -71,3 +71,88 @@ def role_required(*allowed_roles):
             return f(current_user, *args, **kwargs)
         return decorated
     return decorator
+
+
+
+
+
+
+
+
+from app.models.autorisation_domaine import Autorisation_domaine
+
+def access_domaine_required(f):
+    @wraps(f)
+    def decorated(current_user, *args, **kwargs):
+        # Extract domaine ID either from JSON body or URL parameters
+        data = request.get_json(silent=True) or {}
+        id_domaine = data.get('id_domaine') or kwargs.get('id_domaine')
+        
+        if not id_domaine:
+            return jsonify({"message": "ID de la domaine manquant"}), 400
+
+        # Check access authorization
+        has_access = Autorisation_domaine.query.filter_by(id_user=current_user.id, id_domaine=id_domaine).first()
+
+        if not has_access:
+            return jsonify({"message": "Accès non autorisé à cette domaine"}), 403
+
+        return f(current_user, *args, **kwargs)
+    return decorated
+
+
+
+
+
+
+
+
+from app.models.autorisation_serre import Autorisation_serre
+
+def access_serre_required(f):
+    @wraps(f)
+    def decorated(current_user, *args, **kwargs):
+        # Extract serre ID either from JSON body or URL parameters
+        data = request.get_json(silent=True) or {}
+        id_serre = data.get('id_serre') or kwargs.get('id_serre')
+        
+        if not id_serre:
+            return jsonify({"message": "ID de la serre manquant"}), 400
+
+        # Check access authorization
+        has_access = Autorisation_serre.query.filter_by(id_user=current_user.id, id_serre=id_serre).first()
+
+        if not has_access:
+            return jsonify({"message": "Accès non autorisé à cette serre"}), 403
+
+        return f(current_user, *args, **kwargs)
+    return decorated
+
+
+
+
+
+
+
+
+
+from app.models.autorisation_bilan import Autorisation_bilan
+
+def access_bilan_required(f):
+    @wraps(f)
+    def decorated(current_user, *args, **kwargs):
+        # Extract bilan ID either from JSON body or URL parameters
+        data = request.get_json(silent=True) or {}
+        id_bilan = data.get('id_bilan') or kwargs.get('id_bilan')
+        
+        if not id_bilan:
+            return jsonify({"message": "ID de la bilan manquant"}), 400
+
+        # Check access authorization
+        has_access = Autorisation_bilan.query.filter_by(id_user=current_user.id, id_bilan=id_bilan).first()
+
+        if not has_access:
+            return jsonify({"message": "Accès non autorisé à cette bilan"}), 403
+
+        return f(current_user, *args, **kwargs)
+    return decorated

@@ -2,13 +2,14 @@ from flask import request, jsonify
 from app.models.bilan import Bilan
 from app.models.points_gps import GroupCor
 from database.config import db
-from app.utils.security import token_required, role_required
+from app.utils.security import token_required, role_required, access_serre_required, access_bilan_required
 #from app.models.entreprise import Entreprise
 from app.models.serre import Serre
 from sqlalchemy import func
 
 @token_required
 #@role_required("directeur")
+@access_serre_required
 def create_bilan(current_user):
     data = request.get_json()
     serre = Serre.query.get_or_404(data['id_serre'])
@@ -68,6 +69,7 @@ def get_all_bilans(current_user, id):
 
 @token_required
 #@role_required("directeur")
+@access_bilan_required
 def get_bilan(current_user, id):
     bilan = Bilan.query.get_or_404(id)
     #entreprise = Entreprise.query.filter_by(id_user=current_user.id).first()
@@ -78,6 +80,7 @@ def get_bilan(current_user, id):
 
 @token_required
 #@role_required("directeur")
+@access_bilan_required
 def update_bilan(current_user, id):
     bilan = Bilan.query.get_or_404(id)
     #entreprise = Entreprise.query.filter_by(id_user=current_user.id).first()
@@ -108,6 +111,7 @@ def update_bilan(current_user, id):
 
 @token_required
 #@role_required("directeur")
+@access_bilan_required
 def delete_bilan(current_user, id):
     bilan = Bilan.query.get_or_404(id)
     #entreprise = Entreprise.query.filter_by(id_user=current_user.id).first()

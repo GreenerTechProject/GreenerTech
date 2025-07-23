@@ -1,5 +1,4 @@
-
-from flask import Blueprint, request, jsonify
+from flask import request, jsonify
 from app.models.guide_culture import GuideCulture
 from app.models.serre import Serre
 # from app.models.autorisation import Autorisation
@@ -9,7 +8,7 @@ from app.models.entreprise import Entreprise
 from app.models.domaine import Domaine
 
 @token_required
-@role_required("technicien", "technicien_superieur" , "directeur")
+@role_required("directeur", "technicien_superieur")
 def create_guide_culture(current_user):
     data = request.get_json()
 
@@ -39,11 +38,11 @@ def create_guide_culture(current_user):
 
     db.session.add(guide)
     db.session.commit()
-    return jsonify({"message": "Guide de culture créé", "guide": guide.to_dict()}), 201
+    return jsonify(guide.to_dict()), 201
 
 
 @token_required
-@role_required("technicien", "technicien_superieur")
+@role_required("directeur", "technicien_superieur")
 def update_guide_culture(current_user, id):
     guide = GuideCulture.query.get(id)
     if not guide:
@@ -67,10 +66,10 @@ def update_guide_culture(current_user, id):
 
     db.session.commit()
 
-    return jsonify({"message": "Guide mis à jour avec succès", "guide": guide.to_dict()}), 200
+    return jsonify(guide.to_dict()), 200
 
 @token_required
-@role_required("technicien", "technicien_superieur", "directeur")
+@role_required("directeur", "technicien_superieur")
 def get_guide_culture(current_user, id):
     guide = GuideCulture.query.get(id)
     if not guide:
@@ -85,7 +84,7 @@ def get_guide_culture(current_user, id):
     return jsonify(guide.to_dict()), 200
 
 @token_required
-@role_required("technicien", "technicien_superieur", "directeur")
+@role_required("directeur", "technicien_superieur")
 def get_all_guides(current_user):
     guides = GuideCulture.query.all()
     if not guides:
