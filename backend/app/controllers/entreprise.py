@@ -4,7 +4,7 @@ from database.config import db
 from app.utils.security import token_required, role_required
 
 @token_required
-@role_required(['directeur'])
+@role_required("directeur")
 def create_entreprise(current_user):
     data = request.get_json()
     entreprise = Entreprise(

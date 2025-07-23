@@ -6,6 +6,9 @@ from database.config import db
 #from functools import wraps
 from app.utils.security import token_required, token_unrequired, generate_token, role_required
 
+# from werkzeug.security import generate_password_hash, check_password_hash
+
+
 # === AUTH DECORATOR ===
 # def token_required(f):
 #     @wraps(f)
@@ -85,7 +88,6 @@ def update_user(current_user):
 # === GET USER ===
 
 @token_required
-@role_required(['directeur']) 
 def get_user(current_user):
     user_data = {
         "id": current_user.id,
@@ -96,3 +98,37 @@ def get_user(current_user):
         "updated_at": current_user.updated_at.isoformat()
     }
     return jsonify(user_data), 200
+
+
+@token_required
+@role_required("directeur")
+def create_technicien(current_user):
+    data = request.get_json()
+    email = data.get('email')
+    role = data.get('role')
+
+    if role not in ["technicien", "technicien_superieur"]:
+        return jsonify({"message": "Rôle invalide. Choisir 'technicien' ou 'technicien_superieur'"}), 400
+
+    if User.query.filter_by(email=email).first():
+        return jsonify({"message": "Email déjà utilisé"}), 409
+
+    new_user = User(
+        name=data.get('name'),
+        email=email,
+        password=data.get('password'),  
+        role=role
+    )
+    # hashed_password = generate_password_hash(data.get('password'), method='pbkdf2:sha256', salt_length=16)
+
+    # new_user = User(
+    #     name=data.get('name'),
+    #     email=email,
+    #     password=hashed_password,  # mot de passe haché
+    #     role=role
+    # )
+    db.session.add(new_user)
+    db.session.commit()
+
+    return jsonify({"message": f"{role.capitalize()} créé avec succès", "id": new_user.id}), 201
+
