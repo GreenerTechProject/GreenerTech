@@ -2,7 +2,7 @@ from sqlalchemy import Column, Integer, ForeignKey
 from database.config import db
 
 class Autorisation_serre(db.Model):
-    __tablename__ = 'autorisations_domaine'
+    __tablename__ = 'autorisations_serre'
 
     id = Column(Integer, primary_key=True)
     id_user = Column(Integer, ForeignKey('users.id'), nullable=False)
