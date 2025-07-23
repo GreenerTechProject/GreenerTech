@@ -10,9 +10,9 @@ from app.controllers.autorisation_domaine import create_autorisation_domaine, ge
 from app.controllers.autorisation_serre import create_autorisation_serre, get_autorisation_serre, delete_autorisation_serre
 from app.controllers.autorisation_bilan import create_autorisation_bilan, get_autorisation_bilan, delete_autorisation_bilan
 
-from app.controllers.mission_robot import create_mission_robot, get_mission_robot, get_all_missions_robot, delete_mission_robot
-from app.controllers.robot import create_robot, get_robot, get_all_robots, delete_robot
-from app.controllers.etat_bilan import create_etat_bilan, get_etat_bilan, get_etat_bilan_by_bilan, delete_etat_bilan
+from app.controllers.mission_robot import create_mission_robot, get_mission_robot, update_mission_robot, get_all_missions_robot, delete_mission_robot
+from app.controllers.robot import create_robot, get_robot, update_robot, get_all_robots, delete_robot
+from app.controllers.etat_bilan import create_etat_bilan, get_etat_bilan, update_etat_bilan, get_etat_bilan_by_bilan, delete_etat_bilan
 
 
 all_bp = Blueprint('all_bp', __name__)
@@ -86,6 +86,7 @@ all_bp.route('/autorisation_bilan/<int:autorisation_id>', methods=['DELETE'])(de
 
 all_bp.route('/mission_robot', methods=['POST'])(create_mission_robot)
 all_bp.route('/mission_robot', methods=['GET'])(get_all_missions_robot)
+all_bp.route('/mission_robot/<int:mission_id>', methods=['PUT'])(update_mission_robot)
 all_bp.route('/mission_robot/<int:mission_id>', methods=['GET'])(get_mission_robot)
 all_bp.route('/mission_robot/<int:mission_id>', methods=['DELETE'])(delete_mission_robot)
 
@@ -93,6 +94,7 @@ all_bp.route('/mission_robot/<int:mission_id>', methods=['DELETE'])(delete_missi
 
 all_bp.route('/robot', methods=['POST'])(create_robot)
 all_bp.route('/robot', methods=['GET'])(get_all_robots)
+all_bp.route('/robot/<int:robot_id>', methods=['PUT'])(update_robot)
 all_bp.route('/robot/<int:robot_id>', methods=['GET'])(get_robot)
 all_bp.route('/robot/<int:robot_id>', methods=['DELETE'])(delete_robot)
 
