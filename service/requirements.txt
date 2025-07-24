@@ -3,3 +3,4 @@ numpy
 aiortc
 av
 aiohttp
+websockets
