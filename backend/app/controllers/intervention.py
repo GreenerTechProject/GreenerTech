@@ -1,9 +1,8 @@
 # controllers/intervention.py
 from flask import request, jsonify
-from app.models.intervention import Intervention, db
-from app.utils.security import token_required, role_required
-
-
+from app.models.intervention import Intervention
+from app.utils.security import token_required , role_required
+from database.config import db
 
 @token_required
 @role_required("technicien","technicien_superieur") 
@@ -25,14 +24,14 @@ def create_intervention(current_user):
     except Exception as e:
         return jsonify({'error': str(e)}), 400
 
-# @token_required
-# @role_required("technicien","technicien_superieur")
-# # controllers/intervention.py
-# def validate_intervention(current_user,id):
-#     try:
-#         intervention = Intervention.query.get_or_404(id)
-#         intervention.valid = True
-#         db.session.commit()
-#         return jsonify({'message': 'Intervention validée'}), 200
-#     except Exception as e:
-#         return jsonify({'error': str(e)}), 400
+@token_required
+@role_required("technicien","technicien_superieur")
+# controllers/intervention.py
+def validate_intervention(current_user,id):
+    try:
+        intervention = Intervention.query.get_or_404(id)
+        intervention.valid = True
+        db.session.commit()
+        return jsonify({'message': 'Intervention validée'}), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 400
