@@ -1,4 +1,4 @@
-from flask import request, jsonify
+from flask import request, jsonify, send_file, abort
 from app.models.bilan import Bilan
 from app.models.points_gps import GroupCor
 from database.config import db
@@ -6,6 +6,9 @@ from app.utils.security import token_required, role_required, access_serre_requi
 #from app.models.entreprise import Entreprise
 from app.models.serre import Serre
 from sqlalchemy import func
+
+import qrcode
+from io import BytesIO
 
 @token_required
 #@role_required("directeur")
@@ -123,3 +126,26 @@ def delete_bilan(current_user, id):
     db.session.commit()
     
     return jsonify({"message": "Bilan supprimé"}), 200
+
+
+def generate_bilan_qrcode(bilan_id):
+    bilan = Bilan.query.get(bilan_id)
+    if not bilan:
+        return abort(404, description="Bilan non trouvé")
+
+    # Contenu du QR code (tu peux changer ici selon ton besoin)
+    qr_data = bilan.to_dict()  # ou bien f"https://greenertech.com/bilan/{bilan.id}"
+    
+    # Création du QR code
+    qr = qrcode.QRCode(box_size=10, border=4)
+    qr.add_data(qr_data)
+    qr.make(fit=True)
+
+    img = qr.make_image(fill_color="black", back_color="white")
+
+    # Convertir l'image en flux binaire
+    img_io = BytesIO()
+    img.save(img_io, 'PNG')
+    img_io.seek(0)
+
+    return send_file(img_io, mimetype='image/png')
