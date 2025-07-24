@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>WebRTC Viewer</title>
+</head>
+<body>
+  <h2>Live Video</h2>
+  <video id="video" autoplay playsinline controls muted></video>
+
+  <script>
+    async function start() {
+      const pc = new RTCPeerConnection();
+
+      // Only receive video
+      pc.addTransceiver("video", { direction: "recvonly" });
+
+      // Set the video element's source to the incoming stream
+      pc.ontrack = (event) => {
+        const video = document.getElementById("video");
+        if (video.srcObject !== event.streams[0]) {
+          video.srcObject = event.streams[0];
+        }
+      };
+
+      // Create offer
+      const offer = await pc.createOffer();
+      await pc.setLocalDescription(offer);
+
+      // Send offer to Flask backend
+      const response = await fetch("/service/video/offer", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ offer: pc.localDescription })
+      });
+
+      const answer = await response.json();
+      await pc.setRemoteDescription(new RTCSessionDescription(answer));
+    }
+
+    start().catch(console.error);
+  </script>
+</body>
+</html>
