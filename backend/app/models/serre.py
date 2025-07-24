@@ -1,0 +1,26 @@
+from sqlalchemy import Column, Integer, String, Date, ForeignKey
+from sqlalchemy.orm import relationship
+from database.config import db
+
+class Serre(db.Model):
+    __tablename__ = "serres"
+
+    id = Column(Integer, primary_key=True)
+    nom = Column(String, nullable=False)
+    id_group_cor = Column(Integer, nullable=False)
+    id_domaine = Column(Integer, ForeignKey("domaines.id"), nullable=False)
+
+    group_coords = relationship(
+        "GroupCor",
+        primaryjoin="Serre.id_group_cor == foreign(GroupCor.id_group_cor)",
+        lazy="joined",
+        viewonly=True
+    )
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "nom": self.nom,
+            "id_domaine": self.id_domaine,
+            "position": [g.to_dict() for g in self.group_coords] if self.group_coords else []
+        }

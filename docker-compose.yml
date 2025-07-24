@@ -1,0 +1,58 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: ./
+      dockerfile: ./backend.Dockerfile
+    container_name: greenertech-backend
+    ports:
+      - "5000:5000"
+    environment:
+      - FLASK_ENV=development
+      - DATABASE_URL=postgresql://postgres:postgres@db:5432/greenertech
+      - SECRET_KEY=5b837dfb2b22cf4e6bfb91c6cc768e4f
+    depends_on:
+      - db
+
+  db:
+    image: postgres:14
+    container_name: greenertech-db
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: greenertech
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "5433:5432"
+
+  frontend:
+    build:
+      context: ./
+      dockerfile: ./frontend.Dockerfile
+    container_name: greenertech-frontend
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+
+  pgadmin:
+      image: dpage/pgadmin4
+      restart: always
+      ports:
+        - "5050:80"
+      environment:
+        PGADMIN_DEFAULT_EMAIL: admin@admin.com
+        PGADMIN_DEFAULT_PASSWORD: admin123
+      depends_on:
+        - db
+      volumes:
+        - pgadmin-data:/var/lib/pgadmin
+
+  
+
+volumes:
+  pgdata:
+  pgadmin-data:
