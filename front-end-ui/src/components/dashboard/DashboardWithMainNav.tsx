@@ -1,17 +1,15 @@
 import React from 'react';
 import DashboardHeader from './DashboardHeader';
-import ToggleSideNavigation from './ToggleSideNavigation';
 import FarmOverview from './FarmOverview';
+import { AppLayout } from '../layout';
 
-const Dashboard: React.FC = () => {
+const DashboardWithMainNav: React.FC = () => {
   return (
-    <div className="bg-white w-full min-h-screen">
-      <div className="bg-white w-full max-w-[1440px] mx-auto relative">
-        {/* Dashboard Header */}
-        <DashboardHeader />
-
-        {/* Mobile/Desktop Layout */}
-        <div className="flex flex-col lg:flex-row lg:relative">
+    <AppLayout>
+      <div className="bg-white w-full min-h-screen">
+        <div className="bg-white w-full max-w-[1440px] mx-auto relative">
+          {/* Dashboard Header */}
+          <DashboardHeader />
 
           {/* Main Content */}
           <div className="w-full px-4 pt-4 lg:pl-[104px] lg:pr-[104px] lg:pt-[140px]">
@@ -45,8 +43,8 @@ const Dashboard: React.FC = () => {
           </div>
         </div>
       </div>
-    </div>
+    </AppLayout>
   );
 };
 
-export default Dashboard;
+export default DashboardWithMainNav;
