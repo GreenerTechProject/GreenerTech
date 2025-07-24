@@ -1,14 +1,14 @@
 version: '3.8'
 
 services:
-  service:
-    build:
-      context: ./
-      dockerfile: ./service.Dockerfile
-    container_name: greenertech-service
-    ports:
-      - "8080:8080"
-      - "8765:8765"
+  #service:
+  #  build:
+  #    context: ./
+  #    dockerfile: ./service.Dockerfile
+  #  container_name: greenertech-service
+  #  ports:
+  #    - "8080:8080"
+  #    - "8765:8765"
   
   backend:
     build:
