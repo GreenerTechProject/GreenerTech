@@ -5,3 +5,4 @@ flask-migrate
 python-dotenv
 psycopg2-binary
 PyJWT
+qrcode[pil]
