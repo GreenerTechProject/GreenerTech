@@ -1,11 +1,20 @@
 from flask import Blueprint
 
-from app.controllers.user import register, login, get_user, update_user, delete_user,create_technicien
+from app.controllers.user import register, login, get_user, update_user, delete_user, create_technicien
 from app.controllers.entreprise import create_entreprise, get_entreprise, update_entreprise, delete_entreprise
 from app.controllers.domaine import create_domaine, get_domaine, get_all_domaines, update_domaine, delete_domaine ,get_serres_by_domaine
-from app.controllers.bilan import create_bilan, get_bilan, get_all_bilans, update_bilan, delete_bilan,generate_bilan_qrcode
-from app.controllers.serre import create_serre, get_serre, get_all_serres, update_serre, delete_serre
+from app.controllers.bilan import create_bilan, get_bilan, get_all_bilans, update_bilan, delete_bilan, generate_bilan_qrcode
+from app.controllers.serre import create_serre, get_serre, get_all_serres, update_serre, delete_serre, get_bilans_by_serre
+
 from app.controllers.guide_culture import create_guide_culture , update_guide_culture, delete_guide, get_guide_culture
+from app.controllers.autorisation_domaine import create_autorisation_domaine, get_autorisation_domaine, delete_autorisation_domaine
+from app.controllers.autorisation_serre import create_autorisation_serre, get_autorisation_serre, delete_autorisation_serre
+from app.controllers.autorisation_bilan import create_autorisation_bilan, get_autorisation_bilan, delete_autorisation_bilan
+
+from app.controllers.mission_robot import create_mission_robot, get_mission_robot, update_mission_robot, get_all_missions_robot, delete_mission_robot
+from app.controllers.robot import create_robot, get_robot, update_robot, get_all_robots, delete_robot
+from app.controllers.etat_bilan import create_etat_bilan, get_etat_bilan, update_etat_bilan, get_etat_bilan_by_bilan, delete_etat_bilan
+from app.controllers.alerte import create_alerte, get_alerte, get_all_alertes, update_alerte, delete_alerte
 
 
 all_bp = Blueprint('all_bp', __name__)
@@ -38,6 +47,7 @@ all_bp.route('/domaine/<int:id>', methods=['DELETE'])(delete_domaine)
 all_bp.route('/serre', methods=['POST'])(create_serre)
 all_bp.route('/serre/<int:id>', methods=['GET'])(get_serre)
 all_bp.route('/serre', methods=['GET'])(get_all_serres)
+all_bp.route('/serre/<int:id_serre>/bilans', methods=['GET'])(get_bilans_by_serre)
 all_bp.route('/serre/<int:id>', methods=['PUT'])(update_serre)
 all_bp.route('/serre/<int:id>', methods=['DELETE'])(delete_serre)
 # all_bp.route("/serres/<int:id_serre>/guides", methods=["GET"])(get_guides_by_serre)
@@ -59,6 +69,56 @@ all_bp.route('/guide_culture/<int:id>', methods=['GET'])(get_guide_culture)
 # all_bp.route('/guide_culture', methods=['GET'])(get_all_guides)
 
 
+
+all_bp.route('/autorisation_domaine', methods=['POST'])(create_autorisation_domaine)
+all_bp.route('/autorisation_domaine', methods=['GET'])(get_autorisation_domaine)
+all_bp.route('/autorisation_domaine/<int:autorisation_id>', methods=['DELETE'])(delete_autorisation_domaine)
+
+
+
+all_bp.route('/autorisation_serre', methods=['POST'])(create_autorisation_serre)
+all_bp.route('/autorisation_serre', methods=['GET'])(get_autorisation_serre)
+all_bp.route('/autorisation_serre/<int:autorisation_id>', methods=['DELETE'])(delete_autorisation_serre)
+
+
+
+all_bp.route('/autorisation_bilan', methods=['POST'])(create_autorisation_bilan)
+all_bp.route('/autorisation_bilan', methods=['GET'])(get_autorisation_bilan)
+all_bp.route('/autorisation_bilan/<int:autorisation_id>', methods=['DELETE'])(delete_autorisation_bilan)
+
+
+
+all_bp.route('/mission_robot', methods=['POST'])(create_mission_robot)
+all_bp.route('/mission_robot', methods=['GET'])(get_all_missions_robot)
+all_bp.route('/mission_robot/<int:mission_id>', methods=['PUT'])(update_mission_robot)
+all_bp.route('/mission_robot/<int:mission_id>', methods=['GET'])(get_mission_robot)
+all_bp.route('/mission_robot/<int:mission_id>', methods=['DELETE'])(delete_mission_robot)
+
+
+
+all_bp.route('/robot', methods=['POST'])(create_robot)
+all_bp.route('/robot', methods=['GET'])(get_all_robots)
+all_bp.route('/robot/<int:robot_id>', methods=['PUT'])(update_robot)
+all_bp.route('/robot/<int:robot_id>', methods=['GET'])(get_robot)
+all_bp.route('/robot/<int:robot_id>', methods=['DELETE'])(delete_robot)
+
+
+
+
+all_bp.route('/etat_bilan', methods=['POST'])(create_etat_bilan)
+all_bp.route('/etat_bilan/<int:etat_bilan_id>', methods=['GET'])(get_etat_bilan)
+all_bp.route('/etat_bilan/bilan/<int:bilan_id>', methods=['GET'])(get_etat_bilan_by_bilan)
+all_bp.route('/etat_bilan<int:etat_bilan_id>', methods=['PUT'])(update_etat_bilan)
+all_bp.route('/etat_bilan<int:etat_bilan_id>', methods=['DELETE'])(delete_etat_bilan)
+
+
+
+
+all_bp.route('/alerte', methods=['POST'])(create_alerte)
+all_bp.route('/alerte>', methods=['GET'])(get_all_alertes)
+all_bp.route('/alerte/<int:alerte_id>', methods=['GET'])(get_alerte)
+all_bp.route('/alerte<int:alerte_id>', methods=['PUT'])(update_alerte)
+all_bp.route('/alerte<int:alerte_id>', methods=['DELETE'])(delete_alerte)
 
 
 
