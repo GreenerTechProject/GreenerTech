@@ -6,3 +6,9 @@ python-dotenv
 psycopg2-binary
 PyJWT
 qrcode[pil]
+flask-socketio
+eventlet
+opencv-python
+numpy
+aiortc
+av

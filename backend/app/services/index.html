@@ -1,4 +1,3 @@
-<!-- index.html -->
 <!DOCTYPE html>
 <html>
 <head>
@@ -11,15 +10,23 @@
   <script>
     async function start() {
       const pc = new RTCPeerConnection();
+
+      // Only receive video
       pc.addTransceiver("video", { direction: "recvonly" });
 
+      // Set the video element's source to the incoming stream
       pc.ontrack = (event) => {
-        document.getElementById("video").srcObject = event.streams[0];
+        const video = document.getElementById("video");
+        if (video.srcObject !== event.streams[0]) {
+          video.srcObject = event.streams[0];
+        }
       };
 
+      // Create offer
       const offer = await pc.createOffer();
       await pc.setLocalDescription(offer);
 
+      // Send offer to Flask backend
       const response = await fetch("/service/video/offer", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -30,7 +37,7 @@
       await pc.setRemoteDescription(new RTCSessionDescription(answer));
     }
 
-    start();
+    start().catch(console.error);
   </script>
 </body>
 </html>
