@@ -2,7 +2,7 @@ FROM python:3.10-slim
 
 WORKDIR /app
 
-COPY backend/requirements.txt .
+COPY service/requirements.txt .
 
 RUN pip install --no-cache-dir --progress-bar=off -r requirements.txt
 
