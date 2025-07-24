@@ -17,3 +17,897 @@ code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, "Courier New",
     monospace;
 }
+
+/* Sidebar Navigation Styles - Updated to match exact design */
+.sidebar-container {
+  position: absolute;
+  left: 0px;
+  top: 1px;
+  width: 313px;
+  height: 963px;
+  border-radius: 0px 44px 44px 0px;
+  background: #FFF;
+}
+
+.sidebar-shadow {
+  position: absolute;
+  left: 0px;
+  top: -1px;
+  width: 313px;
+  height: 964px;
+  flex-shrink: 0;
+  background: #FFF;
+  box-shadow: 34px 0px 60px 0px rgba(0, 0, 0, 0.08);
+}
+
+.navigation-content {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+/* Navigation Button Base Styles */
+.nav-button {
+  display: flex;
+  width: 334px;
+  height: 56px;
+  align-items: center;
+  flex-shrink: 0;
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  position: absolute;
+}
+
+.nav-button:hover {
+  background-color: rgba(241, 245, 249, 0.5);
+}
+
+.nav-button:focus {
+  outline: none;
+  background-color: rgba(241, 245, 249, 0.8);
+}
+
+/* Specific Navigation Button Positioning */
+.nav-button-map {
+  left: 0px;
+  top: 41px;
+  padding: 17px 214px 17px 82px;
+}
+
+.nav-button-surveillance {
+  left: 0px;
+  top: 101px;
+  padding: 19px 158px 18px 82px;
+}
+
+.nav-button-alertes {
+  left: 0px;
+  top: 160px;
+  padding: 19px 196px 18px 82px;
+}
+
+.nav-button-interventions {
+  left: 0px;
+  top: 221px;
+  padding: 16px 151px 16px 34px;
+  gap: 24px;
+}
+
+.nav-button-rapports {
+  left: 0px;
+  top: 281px;
+  padding: 16px 173px 16px 34px;
+  gap: 24px;
+}
+
+/* Navigation Icon Styles */
+.nav-icon {
+  display: flex;
+  width: 24px;
+  height: 24px;
+  justify-content: center;
+  align-items: center;
+  flex-shrink: 0;
+  position: absolute;
+  left: 34px;
+  top: 16px;
+}
+
+.map-icon {
+  width: 27px;
+  height: 24px;
+}
+
+/* Navigation Text Styles */
+.nav-text {
+  color: #0F0F0F;
+  font-family: Inter, -apple-system, Roboto, Helvetica, sans-serif;
+  font-size: 16px;
+  font-style: normal;
+  font-weight: 400;
+  line-height: normal;
+  position: absolute;
+  left: 82px;
+  top: 19px;
+}
+
+.nav-text-map {
+  font-size: 18px;
+  top: 17px;
+  width: 38px;
+  height: 22px;
+}
+
+.nav-text-rapports {
+  font-size: 18px;
+  top: 17px;
+  width: 79px;
+  height: 22px;
+}
+
+/* Navigation Divider */
+.nav-divider {
+  position: absolute;
+  left: 0px;
+  top: 225px;
+  width: 313px;
+  height: 0px;
+  background: #E2E4E5;
+  border-top: 1px solid #E2E4E5;
+}
+
+/* User Profile Styles */
+.user-profile {
+  position: absolute;
+  left: 34px;
+  top: 750px;
+  width: 245px;
+  height: 88px;
+}
+
+.user-avatar-wrapper {
+  position: absolute;
+  left: 0px;
+  top: 0px;
+  width: 68px;
+  height: 68px;
+  flex-shrink: 0;
+  overflow: hidden;
+  border-radius: 50%;
+}
+
+.user-avatar-img {
+  width: 76px;
+  height: 93px;
+  flex-shrink: 0;
+  position: absolute;
+  left: -1px;
+  top: -5px;
+  object-fit: cover;
+}
+
+.user-details {
+  position: absolute;
+  left: 0px;
+  top: 88px;
+}
+
+.user-name {
+  color: #0F0F0F;
+  font-family: Inter, -apple-system, Roboto, Helvetica, sans-serif;
+  font-size: 16px;
+  font-style: normal;
+  font-weight: 700;
+  line-height: 16px;
+  width: 128px;
+  height: 16px;
+  margin-bottom: 12px;
+}
+
+.user-role {
+  color: #6C7072;
+  font-family: Inter, -apple-system, Roboto, Helvetica, sans-serif;
+  font-size: 16px;
+  font-style: normal;
+  font-weight: 400;
+  line-height: 16px;
+  width: 94px;
+  height: 16px;
+}
+
+/* Logout Container Styles */
+.logout-container {
+  position: absolute;
+  left: 31px;
+  top: 894px;
+  width: 86px;
+  height: 25px;
+}
+
+.logout-btn {
+  display: flex;
+  align-items: center;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.logout-btn:hover {
+  opacity: 0.8;
+}
+
+.logout-btn:focus {
+  outline: none;
+  opacity: 0.6;
+}
+
+.logout-btn svg {
+  width: 25px;
+  height: 25px;
+  flex-shrink: 0;
+  margin-right: 3px;
+}
+
+.logout-label {
+  color: #0F0F0F;
+  font-family: Inter, -apple-system, Roboto, Helvetica, sans-serif;
+  font-size: 16px;
+  font-style: normal;
+  font-weight: 400;
+  line-height: 16px;
+}
+
+/* Toggle Side Navigation Styles */
+.hamburger-menu-button {
+  position: fixed;
+  top: 20px;
+  left: 20px;
+  z-index: 1000;
+  width: 48px;
+  height: 48px;
+  background: #FFF;
+  border: none;
+  border-radius: 8px;
+  box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+}
+
+.hamburger-menu-button:hover {
+  box-shadow: 0px 6px 12px rgba(0, 0, 0, 0.15);
+  transform: translateY(-2px);
+}
+
+.hamburger-menu-button:focus {
+  outline: none;
+  box-shadow: 0px 6px 12px rgba(0, 0, 0, 0.15), 0 0 0 3px rgba(66, 153, 225, 0.5);
+}
+
+.sidebar-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 998;
+  opacity: 0;
+  animation: fadeIn 0.3s ease forwards;
+}
+
+@keyframes fadeIn {
+  to {
+    opacity: 1;
+  }
+}
+
+.toggle-side-navigation {
+  position: fixed;
+  left: 0;
+  top: 1px;
+  width: 313px;
+  height: 963px;
+  border-radius: 0px 44px 44px 0px;
+  background: #FFF;
+  z-index: 999;
+  transform: translateX(-100%);
+  transition: transform 0.3s ease;
+}
+
+.toggle-side-navigation.sidebar-open {
+  transform: translateX(0);
+}
+
+.toggle-side-navigation.sidebar-closed {
+  transform: translateX(-100%);
+}
+
+.sidebar-background {
+  position: absolute;
+  left: 0px;
+  top: -1px;
+  width: 313px;
+  height: 964px;
+  flex-shrink: 0;
+  background: #FFF;
+  box-shadow: 34px 0px 60px 0px rgba(0, 0, 0, 0.08);
+  border-radius: 0px 44px 44px 0px;
+}
+
+.sidebar-content {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+/* Navigation Button Styles */
+.nav-button {
+  display: flex;
+  width: 334px;
+  height: 56px;
+  align-items: center;
+  flex-shrink: 0;
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  position: absolute;
+}
+
+.nav-button:hover {
+  background-color: rgba(241, 245, 249, 0.5);
+}
+
+.nav-button:focus {
+  outline: none;
+  background-color: rgba(241, 245, 249, 0.8);
+}
+
+.nav-button-map {
+  left: 0px;
+  top: 41px;
+  padding: 17px 214px 17px 82px;
+}
+
+.nav-button-surveillance {
+  left: 0px;
+  top: 101px;
+  padding: 19px 158px 18px 82px;
+}
+
+.nav-button-alertes {
+  left: 0px;
+  top: 160px;
+  padding: 19px 196px 18px 82px;
+}
+
+.nav-button-interventions {
+  left: 0px;
+  top: 221px;
+  padding: 16px 151px 16px 34px;
+  gap: 24px;
+}
+
+.nav-button-rapports {
+  left: 0px;
+  top: 281px;
+  padding: 16px 173px 16px 34px;
+  gap: 24px;
+}
+
+/* Navigation Icon Styles */
+.nav-icon {
+  display: flex;
+  width: 24px;
+  height: 24px;
+  justify-content: center;
+  align-items: center;
+  flex-shrink: 0;
+  position: absolute;
+  left: 34px;
+  top: 16px;
+}
+
+.map-icon {
+  width: 27px;
+  height: 24px;
+}
+
+/* Navigation Text Styles */
+.nav-text {
+  color: #0F0F0F;
+  font-family: Inter, -apple-system, Roboto, Helvetica, sans-serif;
+  font-size: 16px;
+  font-style: normal;
+  font-weight: 400;
+  line-height: normal;
+  position: absolute;
+  left: 82px;
+  top: 19px;
+}
+
+.nav-text-map {
+  font-size: 18px;
+  top: 17px;
+  width: 38px;
+  height: 22px;
+}
+
+.nav-text-rapports {
+  font-size: 18px;
+  top: 17px;
+  width: 79px;
+  height: 22px;
+}
+
+/* Navigation Divider */
+.nav-divider {
+  position: absolute;
+  left: 0px;
+  top: 225px;
+  width: 313px;
+  height: 0px;
+  background: #E2E4E5;
+  border-top: 1px solid #E2E4E5;
+}
+
+/* User Profile Styles */
+.user-profile {
+  position: absolute;
+  left: 34px;
+  top: 750px;
+  width: 245px;
+  height: 88px;
+}
+
+.user-avatar-wrapper {
+  position: absolute;
+  left: 0px;
+  top: 0px;
+  width: 68px;
+  height: 68px;
+  flex-shrink: 0;
+  overflow: hidden;
+  border-radius: 50%;
+}
+
+.user-avatar-img {
+  width: 76px;
+  height: 93px;
+  flex-shrink: 0;
+  position: absolute;
+  left: -1px;
+  top: -5px;
+  object-fit: cover;
+}
+
+.user-details {
+  position: absolute;
+  left: 0px;
+  top: 88px;
+}
+
+.user-name {
+  color: #0F0F0F;
+  font-family: Inter, -apple-system, Roboto, Helvetica, sans-serif;
+  font-size: 16px;
+  font-style: normal;
+  font-weight: 700;
+  line-height: 16px;
+  width: 128px;
+  height: 16px;
+  margin-bottom: 12px;
+}
+
+.user-role {
+  color: #6C7072;
+  font-family: Inter, -apple-system, Roboto, Helvetica, sans-serif;
+  font-size: 16px;
+  font-style: normal;
+  font-weight: 400;
+  line-height: 16px;
+  width: 94px;
+  height: 16px;
+}
+
+/* Logout Container Styles */
+.logout-container {
+  position: absolute;
+  left: 31px;
+  top: 894px;
+  width: 86px;
+  height: 25px;
+}
+
+.logout-btn {
+  display: flex;
+  align-items: center;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.logout-btn:hover {
+  opacity: 0.8;
+}
+
+.logout-btn:focus {
+  outline: none;
+  opacity: 0.6;
+}
+
+.logout-btn svg {
+  width: 25px;
+  height: 25px;
+  flex-shrink: 0;
+  margin-right: 3px;
+}
+
+.logout-label {
+  color: #0F0F0F;
+  font-family: Inter, -apple-system, Roboto, Helvetica, sans-serif;
+  font-size: 16px;
+  font-style: normal;
+  font-weight: 400;
+  line-height: 16px;
+}
+
+/* Mobile responsive adjustments */
+@media (max-width: 768px) {
+  .toggle-side-navigation {
+    width: 280px;
+    height: 100vh;
+    top: 0;
+  }
+
+  .sidebar-background {
+    width: 280px;
+    height: 100vh;
+    top: 0;
+  }
+
+  .nav-button {
+    width: 280px;
+  }
+
+  .nav-divider {
+    width: 280px;
+  }
+}
+
+/* Main Navigation Component Styles - Matching exact design */
+.main-navigation {
+  position: fixed;
+  left: 0;
+  top: 1px;
+  width: 313px;
+  height: 963px;
+  border-radius: 0px 44px 44px 0px;
+  background: #FFF;
+  z-index: 1000;
+}
+
+.navigation-background {
+  position: absolute;
+  left: 0px;
+  top: -1px;
+  width: 313px;
+  height: 964px;
+  flex-shrink: 0;
+  background: #FFF;
+  box-shadow: 34px 0px 60px 0px rgba(0, 0, 0, 0.08);
+  border-radius: 0px 44px 44px 0px;
+}
+
+.navigation-content {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+/* Navigation Item Styles */
+.nav-item {
+  display: flex;
+  width: 334px;
+  height: 56px;
+  align-items: center;
+  flex-shrink: 0;
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  position: absolute;
+}
+
+.nav-item:hover {
+  background-color: rgba(241, 245, 249, 0.5);
+}
+
+.nav-item:focus {
+  outline: none;
+  background-color: rgba(241, 245, 249, 0.8);
+}
+
+/* Specific Navigation Item Positioning */
+.nav-item-map {
+  left: 0px;
+  top: 41px;
+  padding: 17px 214px 17px 82px;
+}
+
+.nav-item-surveillance {
+  left: 0px;
+  top: 101px;
+  padding: 19px 158px 18px 82px;
+}
+
+.nav-item-alertes {
+  left: 0px;
+  top: 160px;
+  padding: 19px 196px 18px 82px;
+}
+
+.nav-item-interventions {
+  left: 0px;
+  top: 221px;
+  padding: 16px 151px 16px 34px;
+  gap: 24px;
+}
+
+.nav-item-rapports {
+  left: 0px;
+  top: 281px;
+  padding: 16px 173px 16px 34px;
+  gap: 24px;
+}
+
+/* Navigation Icon Container Styles */
+.nav-icon-container {
+  display: flex;
+  width: 24px;
+  height: 24px;
+  justify-content: center;
+  align-items: center;
+  flex-shrink: 0;
+  position: absolute;
+  left: 34px;
+  top: 16px;
+}
+
+.nav-icon-map {
+  width: 27px;
+  height: 24px;
+}
+
+/* Navigation Label Styles */
+.nav-label {
+  color: #0F0F0F;
+  font-family: Inter, -apple-system, Roboto, Helvetica, sans-serif;
+  font-size: 16px;
+  font-style: normal;
+  font-weight: 400;
+  line-height: normal;
+  position: absolute;
+  left: 82px;
+  top: 19px;
+}
+
+.nav-label-map {
+  font-size: 18px;
+  top: 17px;
+  width: 38px;
+  height: 22px;
+}
+
+.nav-label-rapports {
+  font-size: 18px;
+  top: 17px;
+  width: 79px;
+  height: 22px;
+}
+
+/* Navigation Separator */
+.nav-separator {
+  position: absolute;
+  left: 0px;
+  top: 225px;
+  width: 313px;
+  height: 0px;
+  background: #E2E4E5;
+  border-top: 1px solid #E2E4E5;
+}
+
+/* User Profile Section Styles */
+.user-profile-section {
+  position: absolute;
+  left: 34px;
+  top: 750px;
+  width: 245px;
+  height: 132px;
+}
+
+.user-avatar-container {
+  position: absolute;
+  left: 0px;
+  top: 0px;
+  width: 68px;
+  height: 68px;
+  flex-shrink: 0;
+  overflow: hidden;
+  border-radius: 50%;
+}
+
+.user-avatar {
+  width: 76px;
+  height: 93px;
+  flex-shrink: 0;
+  position: absolute;
+  left: -1px;
+  top: -5px;
+  object-fit: cover;
+}
+
+.user-info {
+  position: absolute;
+  left: 0px;
+  top: 88px;
+}
+
+.user-name {
+  color: #0F0F0F;
+  font-family: Inter, -apple-system, Roboto, Helvetica, sans-serif;
+  font-size: 16px;
+  font-style: normal;
+  font-weight: 700;
+  line-height: 16px;
+  width: 128px;
+  height: 16px;
+  margin-bottom: 12px;
+}
+
+.user-role {
+  color: #6C7072;
+  font-family: Inter, -apple-system, Roboto, Helvetica, sans-serif;
+  font-size: 16px;
+  font-style: normal;
+  font-weight: 400;
+  line-height: 16px;
+  width: 94px;
+  height: 16px;
+}
+
+/* Logout Section Styles */
+.logout-section {
+  position: absolute;
+  left: 31px;
+  top: 894px;
+  width: 86px;
+  height: 25px;
+}
+
+.logout-button {
+  display: flex;
+  align-items: center;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.logout-button:hover {
+  opacity: 0.8;
+}
+
+.logout-button:focus {
+  outline: none;
+  opacity: 0.6;
+}
+
+.logout-button svg {
+  width: 25px;
+  height: 25px;
+  flex-shrink: 0;
+  margin-right: 3px;
+}
+
+.logout-text {
+  color: #0F0F0F;
+  font-family: Inter, -apple-system, Roboto, Helvetica, sans-serif;
+  font-size: 16px;
+  font-style: normal;
+  font-weight: 400;
+  line-height: 16px;
+}
+
+/* Full-page layout utility */
+.main-layout {
+  min-height: 100vh;
+  display: flex;
+}
+
+.main-content {
+  margin-left: 313px;
+  flex: 1;
+  min-height: 100vh;
+}
+
+/* Responsive adjustments for main navigation */
+@media (max-width: 1024px) {
+  .main-navigation {
+    width: 280px;
+  }
+
+  .navigation-background {
+    width: 280px;
+  }
+
+  .nav-separator {
+    width: 280px;
+  }
+
+  .main-content {
+    margin-left: 280px;
+  }
+}
+
+@media (max-width: 768px) {
+  .main-navigation {
+    transform: translateX(-100%);
+    transition: transform 0.3s ease;
+  }
+
+  .main-navigation.mobile-open {
+    transform: translateX(0);
+  }
+
+  .main-content {
+    margin-left: 0;
+  }
+}
+
+/* Floating Navigation Styles */
+@keyframes slide-in {
+  from {
+    opacity: 0;
+    transform: translateX(-100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.animate-slide-in {
+  animation: slide-in 0.3s ease-out;
+}
+
+.animate-fade-in {
+  animation: fade-in 0.3s ease-out;
+}
+
+/* Floating navigation backdrop */
+.floating-nav-backdrop {
+  animation: fade-in 0.3s ease-out;
+}
