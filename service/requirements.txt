@@ -2,3 +2,4 @@ opencv-python-headless
 numpy
 aiortc
 av
+aiohttp
