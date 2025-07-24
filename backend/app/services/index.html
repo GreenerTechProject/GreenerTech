@@ -20,7 +20,7 @@
       const offer = await pc.createOffer();
       await pc.setLocalDescription(offer);
 
-      const response = await fetch("/offer", {
+      const response = await fetch("/service/video/offer", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ offer: pc.localDescription })
