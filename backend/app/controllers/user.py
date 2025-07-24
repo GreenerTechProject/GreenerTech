@@ -80,6 +80,8 @@ def update_user(current_user):
     current_user.email = data.get('email', current_user.email)
     current_user.password = data.get('password', current_user.password)
     current_user.role = data.get('role', current_user.role)
+    current_user.id_assigned=data.get('role', current_user.id_assigned)
+
 
     db.session.commit()
     return jsonify({"message": "User updated successfully"}), 200
@@ -94,7 +96,8 @@ def get_user(current_user):
         "email": current_user.email,
         "role": current_user.role,
         "created_at": current_user.created_at.isoformat(),
-        "updated_at": current_user.updated_at.isoformat()
+        "updated_at": current_user.updated_at.isoformat(),
+        "id_assigned":current_user.id_assigned
     }
     return jsonify(user_data), 200
 
@@ -105,6 +108,7 @@ def create_technicien(current_user):
     data = request.get_json()
     email = data.get('email')
     role = data.get('role')
+    id_assigned=data.get('id_assigned')
 
     if role not in ["technicien", "technicien_superieur"]:
         return jsonify({"message": "Rôle invalide. Choisir 'technicien' ou 'technicien_superieur'"}), 400
@@ -116,7 +120,8 @@ def create_technicien(current_user):
         name=data.get('name'),
         email=email,
         password=data.get('password'),  
-        role=role
+        role=role,
+        id_assigned=id_assigned
     )
     # hashed_password = generate_password_hash(data.get('password'), method='pbkdf2:sha256', salt_length=16)
 
