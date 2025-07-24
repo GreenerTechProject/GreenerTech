@@ -66,7 +66,7 @@ async def start_all():
     await site.start()
     print("HTTP server running at ")
 
-    ws_server = websockets.serve(websocket_handler, "greenertech.mywire.org", 8765)
+    ws_server = websockets.serve(websocket_handler, "0.0.0.0", 8765)
     await ws_server
     print("WebSocket server running at ")
 
