@@ -38,8 +38,8 @@ class RelayStreamTrack(VideoStreamTrack):
             raise Exception("No video stream and no fallback image found!")
         if self.fallback_frame is None:
             print(f"❌ Failed to load fallback image from: {fallback_path}")
-        else:
-            print(f"✅ Fallback image loaded. Shape: {self.fallback_frame.shape}")
+        #else:
+        #    print(f"✅ Fallback image loaded. Shape: {self.fallback_frame.shape}")
 
 
         #while latest_frame is None:
