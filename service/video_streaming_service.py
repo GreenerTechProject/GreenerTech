@@ -7,7 +7,7 @@ from aiohttp import web
 from aiortc import RTCPeerConnection, VideoStreamTrack, RTCSessionDescription
 from av import VideoFrame
 import websockets
-
+from ia_abdellah.detectobjects import detect_frame
 from cv2 import QRCodeDetector
 
 qr_detector = QRCodeDetector()  # Initialize once
@@ -38,12 +38,16 @@ class RelayStreamTrack(VideoStreamTrack):
             raise Exception("No video stream and no fallback image found!")
         if self.fallback_frame is None:
             print(f"❌ Failed to load fallback image from: {fallback_path}")
-        #else:
-        #    print(f"✅ Fallback image loaded. Shape: {self.fallback_frame.shape}")
+        else:
+            #frame = detect_frame(latest_frame)
+            print(f"✅ Fallback image loaded. Shape: {self.fallback_frame.shape}")
+            frame = detect_frame(latest_frame)
+
 
 
         #while latest_frame is None:
         #    await asyncio.sleep(0.01)
+        #frame = detect_frame(latest_frame)
         frame = cv2.cvtColor(frame_to_use, cv2.COLOR_BGR2RGB)
         av_frame = VideoFrame.from_ndarray(frame, format="rgb24")
         av_frame.pts = pts
@@ -74,7 +78,7 @@ async def websocket_handler(websocket):
                     cv2.putText(frame, text, (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
 
         latest_frame = frame  # Set the processed frame
-        
+
 
 async def index(request):
     return web.Response(content_type="text/html", text=open("index.html").read())
