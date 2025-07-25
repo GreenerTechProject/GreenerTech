@@ -1,6 +1,7 @@
 # models/user.py
 from database.config import db
 from datetime import datetime
+from sqlalchemy import ForeignKey
 
 class User(db.Model):
     __tablename__ = 'users'
@@ -12,6 +13,16 @@ class User(db.Model):
     role = db.Column(db.String(50), nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    id_assigned = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
 
-    def __repr__(self):
-        return f"<User {self.email}>"
+
+    def to_dict(self) :
+        return {
+            'id': self.id,
+            'name': self.name,
+            'email': self.email,
+            'role': self.role,
+            'created_at': self.created_at.isoformat(),
+            'updated_at': self.updated_at.isoformat(),
+            'id_assigned': self.id_assigned
+        }

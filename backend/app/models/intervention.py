@@ -1,5 +1,5 @@
 # models/intervention.py
-from app import db
+from database.config import db
 from datetime import date
 from enum import Enum
 from sqlalchemy import Column, Integer, String, Date, Float, ForeignKey, Boolean, Enum as SQLAlchemyEnum
@@ -11,12 +11,12 @@ class StatutInterventionEnum(str, Enum):
 class Intervention(db.Model):
     id = Column(Integer, primary_key=True)
     description = Column(String(255), nullable=False)
-    status = Column(Enum(StatutInterventionEnum), default=StatutInterventionEnum.ENCOURS)
+    status = Column(SQLAlchemyEnum(StatutInterventionEnum), default=StatutInterventionEnum.ENCOURS, nullable=False)
     date_debut = Column(Date, default=date.today)
     date_fin = Column(Date, nullable=True)
     total_charges = Column(Float, default=0.0)
-    id_user = Column(Integer, ForeignKey('user.id'), nullable=False)
-    id_serre = Column(Integer, ForeignKey('serre.id'), nullable=False)
+    id_user = Column(Integer, ForeignKey('users.id'), nullable=False)
+    id_serre = Column(Integer, ForeignKey('serres.id'), nullable=False)
     id_type_tache = Column(Integer, ForeignKey('type_tache.id'), nullable=False)
     valid = Column(Boolean, default=False)  
 
