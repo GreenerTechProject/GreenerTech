@@ -48,11 +48,8 @@ class RelayStreamTrack(VideoStreamTrack):
         #while latest_frame is None:
         #    await asyncio.sleep(0.01)
         #frame = detect_frame(latest_frame)
-<<<<<<< HEAD
-        frame = cv2.cvtColor(latest_frame, cv2.COLOR_BGR2RGB)
-=======
         frame = cv2.cvtColor(frame_to_use, cv2.COLOR_BGR2RGB)
->>>>>>> 354055cfe919c1fcfe580e92058b55d8bfd851f4
+
         av_frame = VideoFrame.from_ndarray(frame, format="rgb24")
         av_frame.pts = pts
         av_frame.time_base = time_base
