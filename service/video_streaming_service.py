@@ -10,10 +10,17 @@ import websockets
 
 latest_frame = None  # shared between WebSocket and WebRTC
 
+import os
+
 class RelayStreamTrack(VideoStreamTrack):
     def __init__(self):
         super().__init__()
-        self.fallback_frame = cv2.imread("no_signal.jpg")  # Load fallback image once
+        image_path = os.path.join(os.path.dirname(__file__), "no_signal.jpg")
+        self.fallback_frame = cv2.imread(image_path)  # Use absolute path
+
+        if self.fallback_frame is None:
+            print(f"⚠️ Failed to load fallback image from: {image_path}")
+
 
     async def recv(self):
         global latest_frame
@@ -21,8 +28,8 @@ class RelayStreamTrack(VideoStreamTrack):
         frame_to_use = latest_frame if latest_frame is not None else self.fallback_frame
 
         # Ensure the fallback frame is valid
-        if latest_frame is None:
-            print("⚠️ Using fallback image: no live stream detected.")
+        #if latest_frame is None:
+        #    print("⚠️ Using fallback image: no live stream detected.")
         if frame_to_use is None:
             raise Exception("No video stream and no fallback image found!")
 
