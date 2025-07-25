@@ -7,7 +7,7 @@ from aiohttp import web
 from aiortc import RTCPeerConnection, VideoStreamTrack, RTCSessionDescription
 from av import VideoFrame
 import websockets
-from ia_abdellah.detectobjects import detect_frame
+#from ia.detectobjects import detect_frame
 from cv2 import QRCodeDetector
 
 qr_detector = QRCodeDetector()  # Initialize once
@@ -41,7 +41,7 @@ class RelayStreamTrack(VideoStreamTrack):
         else:
             #frame = detect_frame(latest_frame)
             print(f"✅ Fallback image loaded. Shape: {self.fallback_frame.shape}")
-            frame = detect_frame(latest_frame)
+            #frame = detect_frame(latest_frame)
 
 
 
