@@ -58,15 +58,15 @@ async def offer(request):
 # Start both HTTP server and WebSocket server
 async def start_all():
     app = web.Application()
-    app.router.add_get("/", index)
-    app.router.add_post("/offer", offer)
+    app.router.add_get("/service/video/", index)
+    app.router.add_post("/service/video/offer", offer)
     runner = web.AppRunner(app)
     await runner.setup()
     site = web.TCPSite(runner, port=8080)
     await site.start()
     print("HTTP server running at ")
 
-    ws_server = websockets.serve(websocket_handler, "192.168.9.34", 8765)
+    ws_server = websockets.serve(websocket_handler, "0.0.0.0", 8765)
     await ws_server
     print("WebSocket server running at ")
 
