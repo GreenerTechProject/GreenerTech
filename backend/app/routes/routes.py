@@ -9,6 +9,8 @@ from app.controllers.guide_culture import create_guide_culture , update_guide_cu
 from app.controllers.intervention import create_intervention
 from app.controllers.type_tache import create_type_tache
 
+from app.controllers.notification import get_notifications_by_user,get_all_notifications
+
 
 all_bp = Blueprint('all_bp', __name__)
 all_bp.route('/register', methods=['POST'])(register)
@@ -63,6 +65,10 @@ all_bp.route('/guide_culture/<int:id>', methods=['GET'])(get_guide_culture)
 all_bp.route('/typetache' , methods=['POST'])(create_type_tache)  
 
 all_bp.route('/intervention', methods=['POST'])(create_intervention)
+
+all_bp.route('/notifications/<int:id_user>', methods=['GET'])(get_notifications_by_user)
+all_bp.route('/notifications', methods=['GET'])(get_all_notifications)
+
 
 
 

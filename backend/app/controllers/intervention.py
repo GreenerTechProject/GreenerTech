@@ -3,9 +3,10 @@ from flask import request, jsonify
 from app.models.intervention import Intervention
 from app.utils.security import token_required , role_required
 from database.config import db
+from app.models.user import User
 
 # controllers/intervention.py
-# from app.utils.notifications import envoyer_notification
+from app.utils.notifications import envoyer_notification
 
 
 @token_required
@@ -14,7 +15,7 @@ def create_intervention(current_user):
     try:
         new_interv = Intervention(
             description=data['description'],
-            id_user=data['id_user'],
+            id_user=current_user.id,
             id_serre=data['id_serre'],
             id_type_tache=data['id_type_tache'],
             total_charges=data.get('total_charges', 0.0),
@@ -22,17 +23,16 @@ def create_intervention(current_user):
             date_fin=data.get('date_fin'),
         )
         db.session.add(new_interv)
-        db.session.flush()
+        db.session.flush() 
 
-        # tech_sup = User.query.filter_by(role='technicien_superieur', id=current_user.id_assigned).first()
+        tech_sup = User.query.filter_by(role='technicien_superieur', id=current_user.id_assigned).first()
 
-        # if tech_sup:
-        #     envoyer_notification(
-        #         description=f"Nouvelle intervention à valider : {new_interv.description}",
-        #         id_user=tech_sup.id,
-        #         id_intervention=new_interv.id
-        #     )
-
+        if tech_sup:
+            envoyer_notification(
+                description=f"Nouvelle intervention à valider : {new_interv.description}",
+                id_user=tech_sup.id,
+                id_intervention=new_interv.id
+            )
         db.session.commit()
         return jsonify({'message': 'Intervention créée et notification envoyée'}), 201
     except Exception as e:
@@ -40,12 +40,17 @@ def create_intervention(current_user):
         return jsonify({'error': str(e)}), 400
 
 @token_required
-@role_required("technicien","technicien_superieur")
-# controllers/intervention.py
+@role_required("technicien_superieur")
 def validate_intervention(current_user,id):
     try:
         intervention = Intervention.query.get_or_404(id)
         intervention.valid = True
+        # Notifier le technicien (créateur de l'intervention)
+        envoyer_notification(
+            description=f"Votre intervention '{intervention.description}' a été validée.",
+            id_user=intervention.id_user,
+            id_intervention=intervention.id
+        )
         db.session.commit()
         return jsonify({'message': 'Intervention validée'}), 200
     except Exception as e:
