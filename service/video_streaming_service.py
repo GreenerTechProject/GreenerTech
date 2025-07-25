@@ -8,6 +8,10 @@ from aiortc import RTCPeerConnection, VideoStreamTrack, RTCSessionDescription
 from av import VideoFrame
 import websockets
 
+from cv2 import QRCodeDetector
+
+qr_detector = QRCodeDetector()  # Initialize once
+
 latest_frame = None  # shared between WebSocket and WebRTC
 
 import os
@@ -52,7 +56,25 @@ async def websocket_handler(websocket):
         data = base64.b64decode(message)
         npdata = np.frombuffer(data, dtype=np.uint8)
         frame = cv2.imdecode(npdata, 1)
-        latest_frame = frame
+
+        # 🧠 QR Code Detection
+        retval, decoded_info, points, _ = qr_detector.detectAndDecodeMulti(frame)
+        if retval and points is not None:
+            for i in range(len(decoded_info)):
+                pts = points[i].astype(int)
+                for j in range(4):
+                    pt1 = tuple(pts[j])
+                    pt2 = tuple(pts[(j + 1) % 4])
+                    cv2.line(frame, pt1, pt2, (0, 255, 0), 2)
+
+                # Draw decoded text above the QR code
+                text = decoded_info[i]
+                if text:
+                    x, y = pts[0]
+                    cv2.putText(frame, text, (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+
+        latest_frame = frame  # Set the processed frame
+        
 
 async def index(request):
     return web.Response(content_type="text/html", text=open("index.html").read())
