@@ -33,18 +33,6 @@ from app.utils.security import token_required, token_unrequired, generate_token,
 #         return f(current_user, *args, **kwargs)
 #     return decorated
 
-# === LOGIN ===
-@token_unrequired
-def login():
-    data = request.get_json()
-    user = User.query.filter_by(email=data['email']).first()
-
-    if user and user.password == data['password']:
-        token = generate_token(user.id)
-        return jsonify({"token": token}), 200
-
-    return jsonify({"message": "Invalid credentials"}), 401
-
 # === REGISTER ===
 @token_unrequired
 def register():
@@ -56,13 +44,26 @@ def register():
         name=data['name'],
         email=data['email'],
         password=data['password'],  # À chiffrer dans un vrai projet
-        role=data.get('role', 'user')
+        role="directeur"
+        #role=data.get('role', 'user')
     )
     db.session.add(new_user)
     db.session.commit()
     
     token = generate_token(new_user.id)
     return jsonify({"message": "User registered successfully", "token": token}), 201
+
+# === LOGIN ===
+@token_unrequired
+def login():
+    data = request.get_json()
+    user = User.query.filter_by(email=data['email']).first()
+
+    if user and user.password == data['password']:
+        token = generate_token(user.id)
+        return jsonify({"token": token}), 200
+
+    return jsonify({"message": "Invalid credentials"}), 401
 
 # === DELETE USER ===
 @token_required
@@ -134,5 +135,6 @@ def create_technicien(current_user):
     db.session.add(new_user)
     db.session.commit()
 
+    #return jsonify(new_user.to_dict()), 201
     return jsonify({"message": f"{role.capitalize()} créé avec succès", "id": new_user.id}), 201
 

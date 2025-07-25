@@ -1,0 +1,74 @@
+import { describe, it, expect, vi } from 'vitest';
+import axios from 'axios';
+import BillonService from './BillonService';
+
+vi.mock('axios');
+
+describe('BillonService', () => {
+  it('should fetch billon positions successfully', async () => {
+    const mockPositions = [
+      {
+        billon_id: 1,
+        billon_name: 'Billon A',
+        points: [
+          { lat: 30.410509, lng: -9.555253, order_point: 1 },
+          { lat: 30.4108, lng: -9.5548, order_point: 2 },
+          { lat: 30.4103, lng: -9.5545, order_point: 3 },
+          { lat: 30.4099, lng: -9.5551, order_point: 4 },
+        ],
+      },
+      {
+        billon_id: 2,
+        billon_name: 'Billon B',
+        points: [
+          { lat: 30.40982, lng: -9.5557, order_point: 1 },
+          { lat: 30.41012, lng: -9.55523, order_point: 2 },
+          { lat: 30.40995, lng: -9.55485, order_point: 3 },
+          { lat: 30.40965, lng: -9.55532, order_point: 4 },
+        ],
+      },
+    ];
+
+    vi.mocked(axios.get).mockResolvedValue({ data: mockPositions });
+
+    const service = new BillonService();
+    const positions = await service.getAllBillons();
+
+    expect(positions).toEqual(mockPositions);
+    expect(axios.get).toHaveBeenCalledWith('http://localhost:8080/api/billon/list');
+  });
+
+  it('should save billon position successfully', async () => {
+    const mockPosition = { lat: 34.0522, lng: -118.2437 };
+    vi.mocked(axios.post).mockResolvedValue({ data: { success: true } });
+
+    const service = new BillonService();
+    const response = await service.saveBillon(mockPosition);
+
+    expect(response).toEqual({ success: true });
+    expect(axios.post).toHaveBeenCalledWith('http://localhost:8080/api/billon/save', mockPosition);
+  });
+
+  it('should delete billon on maps', async () => {
+    const mockBillon = {
+      points: [
+        { lat: 30.40982, lng: -9.5557, order_point: 1 },
+        { lat: 30.41012, lng: -9.55523, order_point: 2 },
+        { lat: 30.40995, lng: -9.55485, order_point: 3 },
+        { lat: 30.40965, lng: -9.55532, order_point: 4 },
+      ],
+      info: {
+        billon_id: 4,
+        billon_name: 'Billon 4',
+      },
+    };
+
+    vi.mocked(axios.delete).mockResolvedValue({ data: { success: true } });
+
+    const service = new BillonService();
+    const response = await service.deleteBillon(mockBillon);
+
+    expect(response).toEqual({ success: true });
+    expect(axios.delete).toHaveBeenCalledWith('http://localhost:8080/api/billon/delete', mockBillon);
+  });
+});
