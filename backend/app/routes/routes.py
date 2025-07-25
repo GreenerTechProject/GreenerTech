@@ -8,7 +8,7 @@ from app.controllers.serre import create_serre, get_serre, get_all_serres, updat
 
 from app.controllers.guide_culture import create_guide_culture , update_guide_culture, delete_guide, get_guide_culture
 
-from app.controllers.intervention import create_intervention , validate_intervention
+from app.controllers.intervention import create_intervention , validate_intervention , get_all_interention
 from app.controllers.type_tache import create_type_tache
 
 from app.controllers.notification import get_notifications_by_user,get_all_notifications , mark_notification_as_seen
@@ -79,6 +79,7 @@ all_bp.route('/typetache' , methods=['POST'])(create_type_tache)
 all_bp.route('/intervention', methods=['POST'])(create_intervention)
 
 all_bp.route('/intervention/<int:id>', methods=['PATCH'])(validate_intervention)
+all_bp.route('/intervention', methods=['GET'])(get_all_interention)
 
 
 all_bp.route('/autorisation_domaine', methods=['POST'])(create_autorisation_domaine)

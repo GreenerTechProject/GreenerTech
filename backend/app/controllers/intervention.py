@@ -58,7 +58,7 @@ def validate_intervention(current_user,id):
     
 @token_required
 @role_required("technicien_superieur")
-def get_all_interention ():
+def get_all_interention (current_user):
     try:
         interventions = Intervention.query.all()
         return jsonify([intervention.to_dict() for intervention in interventions]), 200
