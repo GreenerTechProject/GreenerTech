@@ -55,3 +55,12 @@ def validate_intervention(current_user,id):
         return jsonify({'message': 'Intervention validée'}), 200
     except Exception as e:
         return jsonify({'error': str(e)}), 400
+    
+@token_required
+@role_required("technicien_superieur")
+def get_all_interention ():
+    try:
+        interventions = Intervention.query.all()
+        return jsonify([intervention.to_dict() for intervention in interventions]), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 400
