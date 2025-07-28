@@ -7,13 +7,19 @@ from .routes.routes import *
 # from .routes.data import data_bp
 # from .routes.robot import robot_bp
 from database.config import init_db
+from .extensions import mail
+from app.config import Config
+
 
 def create_app():
     app = Flask(__name__)
     load_dotenv()
     CORS(app)
     app.config['SECRET_KEY'] = os.getenv("SECRET_KEY")
-    
+
+    app.config.from_object(Config)
+
+    mail.init_app(app)
     # Initialiser la base de données
     init_db(app)
 
