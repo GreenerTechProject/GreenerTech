@@ -7,7 +7,7 @@ import base64
 async def send_video():
     uri = "ws://greenertech.mywire.org:8765"
     #uri = "ws://192.168.10.237:8765"
-    cap = cv2.VideoCapture(1)  # or 1 for external cam
+    cap = cv2.VideoCapture(0)  # or 1 for external cam
 
     async with websockets.connect(uri) as websocket:
         while True:

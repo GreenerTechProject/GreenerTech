@@ -6,3 +6,6 @@ python-dotenv
 psycopg2-binary
 PyJWT
 qrcode[pil]
+
+Flask-Mail 
+itsdangerous
