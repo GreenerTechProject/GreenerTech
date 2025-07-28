@@ -4,7 +4,7 @@ WORKDIR /app
 
 COPY service/requirements.txt .
 
-RUN apt-get install -y curl unzip && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y curl unzip && rm -rf /var/lib/apt/lists/*
 
 RUN pip install --no-cache-dir --progress-bar=off -r requirements.txt
 
