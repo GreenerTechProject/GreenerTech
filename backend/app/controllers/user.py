@@ -4,6 +4,9 @@ from flask import Blueprint, request, jsonify, current_app
 from app.models.user import User
 from database.config import db
 from app.utils.security import token_required, token_unrequired, generate_token, role_required
+from app.utils.send_email import send_verification_email
+import os
+
 
 # from werkzeug.security import generate_password_hash, check_password_hash
 
@@ -131,6 +134,37 @@ def check_email():
         return jsonify({"exists": False}), 200
 
 
+def verify_email():
+    token = request.args.get('token')
+
+    if not token:
+        return jsonify({"error": "Token manquant"}), 400
+
+    try:
+        payload = jwt.decode(token, current_app.config['SECRET_KEY'], algorithms=['HS256'])
+        user_id = payload.get('user_id')
+
+        if not user_id:
+            return jsonify({"error": "Token invalide (pas d'identifiant)"}), 400
+
+        user = User.query.get(user_id)
+
+        if not user:
+            return jsonify({"error": "Utilisateur non trouvé"}), 404
+
+        if user.email_valide:
+            return jsonify({"message": "Email déjà vérifié."}), 200
+
+        user.email_valide = True
+        user.verification_token = None
+        db.session.commit()
+
+        return jsonify({"message": "Email vérifié avec succès. En attente de validation du directeur."}), 200
+
+    except jwt.ExpiredSignatureError:
+        return jsonify({"error": "Le token a expiré."}), 400
+    except jwt.InvalidTokenError:
+        return jsonify({"error": "Token invalide."}), 400
 
 def register_technicien():
     data = request.get_json()
@@ -149,7 +183,6 @@ def register_technicien():
 
 
     existing_user = User.query.filter_by(email=email).first()
-
     if existing_user:
         if existing_user.email_valide:
             return jsonify({"error": "Compte déjà existe "}), 400
@@ -158,30 +191,47 @@ def register_technicien():
         existing_user.name = name
         existing_user.password = password
         existing_user.email_valide = True
+        existing_user.email_valide = False
         if birthday:
             try:
                 existing_user.birthday = datetime.strptime(birthday, '%Y-%m-%d')
             except ValueError:
                 return jsonify({"error": "Format de date invalide (attendu : YYYY-MM-DD)"}), 400
-
+            
+        existing_user.verification_token = generate_token(existing_user.id)
+        send_verification_email(existing_user)
         db.session.commit()
         return jsonify({"message": "Compte technicien complété. En attente de validation du directeur."}), 200
 
     # Création d’un nouveau compte technicien
+
     new_user = User(
         email=email,
         name=name,
         role=role,
         password=password,
         birthday=datetime.strptime(birthday, '%Y-%m-%d') if birthday else None,
-        is_valide=False,       # directeur doit valider
-        email_valide=True      # email renseigné
+        is_valide=False,
+        email_valide=False,
     )
 
+    new_user.verification_token = generate_token(new_user.id)
     db.session.add(new_user)
     db.session.commit()
-    return jsonify({"message": "Compte créé. En attente de validation par le directeur."}), 201
+    send_verification_email(new_user)
+    
+    return jsonify({"message": "Compte créé. En attente de validation par le directeur (Veuillez vérifier votre email pour activer votre compte.)."}), 201
 
+
+# def verify_email(token):
+#     user = User.query.filter_by(verification_token=token).first()
+#     if not user:
+#         return jsonify({"error": "Token invalide ou expiré."}), 400
+
+#     user.email_valide = True
+#     user.verification_token = None
+#     db.session.commit()
+#     return jsonify({"message": "Email vérifié avec succès. En attente de validation du directeur."}), 200
 
 
 # @token_required

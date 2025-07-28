@@ -20,6 +20,8 @@ class User(db.Model):
 
     is_valide = db.Column(db.Boolean, default=False)      # Validé par directeur
     email_valide = db.Column(db.Boolean, default=False)   # Technicien a complété
+    verification_token = db.Column(db.String(255), nullable=True)  # Token pour vérification email
+    
 
     def to_dict(self):
         return {
