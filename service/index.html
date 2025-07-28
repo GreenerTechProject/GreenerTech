@@ -1,20 +1,79 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>WebRTC Viewer</title>
+  <title>WebRTC Viewer with QR Code Data</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+      display: flex;
+      flex-direction: row;
+      gap: 20px;
+      height: 550px;
+      align-items: flex-start;
+    }
+    #video-container, #qr-container, #control-container {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+    #video {
+      height: 500px;
+      border: 1px solid black;
+      background: black;
+      object-fit: contain;
+    }
+    #qr-container h3, #control-container h3 {
+      margin-top: 0;
+    }
+    #qrList {
+      font-family: monospace;
+      margin-top: 10px;
+      background: #f0f0f0;
+      padding: 10px;
+      border-radius: 5px;
+      list-style-type: none;
+      height: 460px;
+      overflow-y: auto;
+      box-shadow: inset 0 0 5px #ccc;
+    }
+    #qrList li {
+      padding: 4px 0;
+      border-bottom: 1px solid #ddd;
+    }
+    #control-container button {
+      margin: 5px 0;
+      padding: 10px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+  </style>
 </head>
 <body>
-  <h2>Live Video</h2>
-  <video id="video" style=" height: 500px; " autoplay playsinline controls muted></video>
+  <div id="video-container">
+    <h2>Live Video</h2>
+    <video id="video" autoplay playsinline controls muted></video>
+  </div>
+
+  <div id="qr-container">
+    <h3>Detected QR Codes:</h3>
+    <ul id="qrList"></ul>
+  </div>
+
+  <div id="control-container">
+    <h3>Controls</h3>
+    <button data-mode="top">Top</button>
+    <button data-mode="down">Down</button>
+    <button data-mode="normal">Normal</button>
+    <button data-mode="right">Right</button>
+    <button data-mode="left">Left</button>
+  </div>
 
   <script>
-    async function start() {
+    // WebRTC connection 
+    async function startWebRTC() {
       const pc = new RTCPeerConnection();
-
-      // Only receive video
       pc.addTransceiver("video", { direction: "recvonly" });
-
-      // Set the video element's source to the incoming stream
       pc.ontrack = (event) => {
         const video = document.getElementById("video");
         if (video.srcObject !== event.streams[0]) {
@@ -22,12 +81,10 @@
         }
       };
 
-      // Create offer
       const offer = await pc.createOffer();
       await pc.setLocalDescription(offer);
 
-      // Send offer to Flask backend
-      const response = await fetch("/service/video/offer", {
+      const response = await fetch("/service/video_stream_service", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ offer: pc.localDescription })
@@ -37,7 +94,74 @@
       await pc.setRemoteDescription(new RTCSessionDescription(answer));
     }
 
-    start().catch(console.error);
+    startWebRTC().catch(console.error);
+
+    // WebSocket QR
+    const ws = new WebSocket("ws://localhost:8080/service/qr_data");
+
+    ws.onopen = () => {
+      console.log("WebSocket connected");
+    };
+
+    ws.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        const qrList = document.getElementById("qrList");
+        qrList.innerHTML = "";
+        if (data.qr_codes && data.qr_codes.length > 0) {
+          data.qr_codes.forEach(code => {
+            const li = document.createElement("li");
+            li.textContent = code;
+            qrList.appendChild(li);
+          });
+        }
+      } catch (e) {
+        console.error("Failed to parse WebSocket message:", e);
+      }
+    };
+
+    ws.onclose = () => {
+      console.log("WebSocket disconnected");
+    };
+
+    ws.onerror = (err) => {
+      console.error("WebSocket error:", err);
+    };
+
+    // controle
+    const buttons = document.querySelectorAll("#control-container button");
+    buttons.forEach(btn => {
+      btn.addEventListener("click", () => {
+        const mode = btn.getAttribute("data-mode");
+        console.log("Sending mode:", mode);
+		
+        if (ws.readyState === WebSocket.OPEN) {
+          ws.send(JSON.stringify({ control_mode: mode }));
+        } else {
+          console.warn("WebSocket not open to send control mode");
+        }
+      });
+    });
+	
+	
+	const controlWs = new WebSocket("ws://localhost:8080/service/control");
+
+	controlWs.onopen = () => console.log("Control WS connected");
+	controlWs.onerror = (err) => console.error("Control WS error:", err);
+	controlWs.onclose = () => console.log("Control WS disconnected");
+
+	// send contrle controlWs
+	buttons.forEach(btn => {
+	  btn.addEventListener("click", () => {
+		const mode = btn.getAttribute("data-mode");
+		console.log("Sending mode:", mode);
+		if (controlWs.readyState === WebSocket.OPEN) {
+		  controlWs.send(JSON.stringify({ control_mode: mode }));
+		} else {
+		  console.warn("Control WebSocket not open");
+		}
+	  });
+	});
   </script>
 </body>
 </html>

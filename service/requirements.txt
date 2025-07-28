@@ -4,3 +4,4 @@ aiortc
 av
 aiohttp
 websockets
+ultralytics

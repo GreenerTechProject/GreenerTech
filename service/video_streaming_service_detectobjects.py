@@ -4,6 +4,7 @@ import numpy as np
 from aiohttp import web, WSMsgType
 from aiortc import RTCPeerConnection, VideoStreamTrack, RTCSessionDescription
 from av import VideoFrame
+from ia.detectobjects import detect_frame
 from cv2 import QRCodeDetector
 import json
 import os
@@ -32,7 +33,8 @@ class RelayStreamTrack(VideoStreamTrack):
         global latest_frame
         pts, time_base = await self.next_timestamp()
 
-        frame_to_use = latest_frame if latest_frame is not None else self.fallback_frame
+        #frame_to_use = latest_frame if latest_frame is not None else self.fallback_frame
+        frame_to_use = detect_frame(latest_frame) if latest_frame is not None else self.fallback_frame
         if frame_to_use is None:
             raise Exception("No video stream and no fallback image found!")
 
