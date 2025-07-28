@@ -26,9 +26,13 @@ def register():
     )
     db.session.add(new_user)
     db.session.commit()
-    
-    token = generate_token(new_user.id)
-    return jsonify({"message": "User registered successfully", "token": token}), 201
+    new_user.verification_token = generate_token(new_user.id)
+    db.session.commit()
+    # Envoi de l'email de vérification
+    send_verification_email(new_user)
+    return jsonify({"message": "User registered successfully. Please check your email to verify your account."}), 201
+
+
 
 # === LOGIN ===
 @token_unrequired
@@ -36,7 +40,10 @@ def login():
     data = request.get_json()
     user = User.query.filter_by(email=data['email']).first()
 
+
     if user and user.password == data['password']:
+        if not user.email_valide:
+            return jsonify({"message": "Email not verified. Please check your email."}), 403
         token = generate_token(user.id)
         return jsonify({"token": token}), 200
 
@@ -109,29 +116,29 @@ def create_technicien(current_user):
 
     return jsonify({"message": "Technicien préinscrit. En attente de complétion de compte."}), 201
 
-# === CHECK EMAIL ===
-@token_unrequired
-def check_email():
-    email = request.args.get('email')
+# # === CHECK EMAIL ===
+# @token_unrequired
+# def check_email():
+#     email = request.args.get('email')
 
-    if not email:
-        return jsonify({"error": "Email requis"}), 400
+#     if not email:
+#         return jsonify({"error": "Email requis"}), 400
 
-    user = User.query.filter_by(email=email).first()
+#     user = User.query.filter_by(email=email).first()
 
-    if user:
-        return jsonify({
-            "exists": True,
-            "user": {
-                "email": user.email,
-                "role": user.role,
-                "id": user.id,
-                "id_assigned": user.id_assigned,
-                "birthday": user.birthday.strftime('%Y-%m-%d') if user.birthday else None
-            }
-        }), 200
-    else:
-        return jsonify({"exists": False}), 200
+#     if user:
+#         return jsonify({
+#             "exists": True,
+#             "user": {
+#                 "email": user.email,
+#                 "role": user.role,
+#                 "id": user.id,
+#                 "id_assigned": user.id_assigned,
+#                 "birthday": user.birthday.strftime('%Y-%m-%d') if user.birthday else None
+#             }
+#         }), 200
+#     else:
+#         return jsonify({"exists": False}), 200
 
 
 def verify_email():
@@ -159,7 +166,7 @@ def verify_email():
         user.verification_token = None
         db.session.commit()
 
-        return jsonify({"message": "Email vérifié avec succès. En attente de validation du directeur."}), 200
+        return jsonify({"message": "Email vérifié avec succès."}), 200
 
     except jwt.ExpiredSignatureError:
         return jsonify({"error": "Le token a expiré."}), 400
@@ -220,7 +227,7 @@ def register_technicien():
     db.session.commit()
     send_verification_email(new_user)
     
-    return jsonify({"message": "Compte créé. En attente de validation par le directeur (Veuillez vérifier votre email pour activer votre compte.)."}), 201
+    return jsonify({"message": "Compte créé , Veuillez vérifier votre email pour activer votre compte.)."}), 201
 
 
 # def verify_email(token):
