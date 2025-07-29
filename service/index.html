@@ -97,7 +97,7 @@
     startWebRTC().catch(console.error);
 
     // WebSocket QR
-    const ws = new WebSocket("ws://localhost:8080/service/qr_data");
+    const ws = new WebSocket(`ws://${window.location.protocol === "https:" ? "wss" : "ws"}://${window.location.hostname}:8080/service/qr_data`);
 
     ws.onopen = () => {
       console.log("WebSocket connected");
@@ -144,7 +144,7 @@
     });
 	
 	
-	const controlWs = new WebSocket("ws://localhost:8080/service/control");
+	const controlWs = new WebSocket(`ws://${window.location.protocol === "https:" ? "wss" : "ws"}://${window.location.hostname}:8080/service/control`);
 
 	controlWs.onopen = () => console.log("Control WS connected");
 	controlWs.onerror = (err) => console.error("Control WS error:", err);

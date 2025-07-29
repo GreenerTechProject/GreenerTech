@@ -3,8 +3,8 @@ import asyncio
 import websockets
 import json
 
-video_uri = "ws://localhost:8080/service/video_stream_handler"
-control_uri = "ws://localhost:8080/service/control"
+video_uri = "ws://greenertech.mywire.org:8080/service/video_stream_handler"
+control_uri = "ws://greenertech.mywire.org:8080/service/control"
 
 async def send_video():
     cap = cv2.VideoCapture(1)
