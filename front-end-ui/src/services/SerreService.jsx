@@ -1,38 +1,81 @@
-import React from 'react';
-import axios from 'axios';
-// Here we need to work with api Interceptors to handle the API URL dynamically
-const LOCAL_API_URL = process.env.REACT_APP_LOCAL_API ;
-export class SerreService {
+import api from '../axios/api'
 
-    async saveSerre(serre) {
-        try {
-            const response = await axios.post(`${this.baseUrl}/serre/save`, serre)
-            return response.data;
-        } catch (error) {
-            console.error('Error saving billon position:', error);
-            throw error;
-        }
-    }
+export const createSerre = async (serreData) => {
+  try {
+    const response = await api.post('/serre', serreData);
+    return response.data;
+  } catch (error) {
+    handleAxiosError(error);
+  }
+};
 
-    async getAllSerre() {
-         try {
-            const response = await axios.get(`${LOCAL_API_URL}/serre/list`);
-              return response.data;
-        } catch (error) {
-            console.error('Error fetching billon positions:', error);
-            throw error;
-        }
-    }
+// Get all serres
+export const getAllSerres = async () => {
+  try {
+    const response = await api.get('/serre');
+    return response.data;
+  } catch (error) {
+    handleAxiosError(error);
+  }
+};
 
-    async deleteSerre(serreId) {
-        try {
-            const response = await axios.delete(`${LOCAL_API_URL}/serre/delete/${serreId}`);
-            return response.data;
+// Get a single serre by ID
+export const getSerreById = async (id) => {
+  try {
+    const response = await api.get(`/serre/${id}`);
+    return response.data;
+  } catch (error) {
+    handleAxiosError(error);
+  }
+};
 
-        }catch (error) {
-            console.error('Error deleting serre:', error);
-            throw error;
-        }
-    }
-    
-}
+// Update a serre by ID
+export const updateSerre = async (id, updatedData) => {
+  try {
+    const response = await api.put(`/serre/${id}`, updatedData);
+    return response.data;
+  } catch (error) {
+    handleAxiosError(error);
+  }
+};
+
+// Delete a serre by ID
+export const deleteSerre = async (id) => {
+  try {
+    const response = await api.delete(`/serre/${id}`);
+    return response.data;
+  } catch (error) {
+    handleAxiosError(error);
+  }
+};
+
+// Get bilans for a specific serre
+export const getBilansBySerre = async (idSerre) => {
+  try {
+    const response = await api.get(`/serre/${idSerre}/bilans`);
+    return response.data;
+  } catch (error) {
+    handleAxiosError(error);
+  }
+};
+
+// Get guides for a specific serre
+export const getGuidesBySerre = async (idSerre) => {
+  try {
+    const response = await api.get(`/serre/${idSerre}/guides`);
+    return response.data;
+  } catch (error) {
+    handleAxiosError(error);
+  }
+};
+
+// General error handler
+const handleAxiosError = (error) => {
+  if (error.response) {
+    throw new Error(error.response.data.message || 'Erreur serveur');
+  } else if (error.request) {
+    throw new Error('Aucune réponse du serveur');
+  } else {
+    throw new Error('Erreur : ' + error.message);
+  }
+};

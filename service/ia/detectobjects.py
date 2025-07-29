@@ -9,7 +9,7 @@ def detect_frame(bgr_frame):
     results = model.predict(
         source=bgr_frame,
         imgsz=640,
-        conf=0.5,
+        conf=0.8,
         device=device
     )
     return results[0].plot() 
