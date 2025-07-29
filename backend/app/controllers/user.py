@@ -108,7 +108,7 @@ def create_technicien(current_user):
         role=role,
         birthday=data.get('birthday'),
         id_assigned=current_user.id,
-        is_valide=False,
+        derector_valide=False,
         email_valide=False
     )
     db.session.add(new_user)
@@ -191,13 +191,13 @@ def register_technicien():
 
     existing_user = User.query.filter_by(email=email).first()
     if existing_user:
-        if existing_user.email_valide:
+        # Si l'utilisateur existe déjà et le compte com
+        if existing_user.email_valide :
             return jsonify({"error": "Compte déjà existe "}), 400
 
         # Mise à jour du compte partiellement créé par le directeur
         existing_user.name = name
         existing_user.password = password
-        existing_user.email_valide = True
         existing_user.email_valide = False
         if birthday:
             try:
@@ -218,7 +218,7 @@ def register_technicien():
         role=role,
         password=password,
         birthday=datetime.strptime(birthday, '%Y-%m-%d') if birthday else None,
-        is_valide=False,
+        derector_valide=False,
         email_valide=False,
     )
 

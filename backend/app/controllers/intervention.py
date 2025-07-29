@@ -25,14 +25,23 @@ def create_intervention(current_user):
         db.session.add(new_interv)
         db.session.flush() 
 
-        tech_sup = User.query.filter_by(role='technicien_superieur', id=current_user.id_assigned).first()
+        if current_user.role=='technicien' :
+            tech_sup = User.query.filter_by(role='technicien_superieur', id=current_user.id_assigned).first()
+            if tech_sup:
+                envoyer_notification(
+                    description=f"Nouvelle intervention à valider : {new_interv.description}",
+                    id_user=tech_sup.id,
+                    id_intervention=new_interv.id
+                )
+        
+        # tech_sup = User.query.filter_by(role='technicien_superieur', id=current_user.id_assigned).first()
 
-        if tech_sup:
-            envoyer_notification(
-                description=f"Nouvelle intervention à valider : {new_interv.description}",
-                id_user=tech_sup.id,
-                id_intervention=new_interv.id
-            )
+        # if tech_sup:
+        #     envoyer_notification(
+        #         description=f"Nouvelle intervention à valider : {new_interv.description}",
+        #         id_user=tech_sup.id,
+        #         id_intervention=new_interv.id
+        #     )
         db.session.commit()
         return jsonify({'message': 'Intervention créée et notification envoyée'}), 201
     except Exception as e:
@@ -40,7 +49,7 @@ def create_intervention(current_user):
         return jsonify({'error': str(e)}), 400
 
 @token_required
-@role_required("technicien_superieur")
+@role_required("directeur", "technicien_superieur")
 def validate_intervention(current_user,id):
     try:
         intervention = Intervention.query.get_or_404(id)
@@ -57,10 +66,28 @@ def validate_intervention(current_user,id):
         return jsonify({'error': str(e)}), 400
     
 @token_required
-@role_required("technicien_superieur")
+@role_required("directeur", "technicien_superieur")
 def get_all_interention (current_user):
     try:
-        interventions = Intervention.query.all()
-        return jsonify([intervention.to_dict() for intervention in interventions]), 200
+        # recuperer les interfentions de l'utilisateur courant
+        if current_user.role == 'technicien':
+            interventions = Intervention.query.filter_by(id_user=current_user.id).all()
+            return jsonify([intervention.to_dict() for intervention in interventions]), 200
+        
+        elif current_user.role == 'technicien_superieur':
+            interventions = Intervention.query.all()
+            return jsonify([intervention.to_dict() for intervention in interventions]), 200
+
+
     except Exception as e:
         return jsonify({'error': str(e)}), 400
+    
+@token_required
+def get_intervention(current_user, id):
+    try:
+        intervention = Intervention.query.get_or_404(id)
+        return jsonify(intervention.to_dict()), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 400
+    
+

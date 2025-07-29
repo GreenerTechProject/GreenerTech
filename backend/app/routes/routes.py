@@ -8,8 +8,8 @@ from app.controllers.serre import create_serre, get_serre, get_all_serres, updat
 
 from app.controllers.guide_culture import create_guide_culture , update_guide_culture, delete_guide, get_guide_culture
 
-from app.controllers.intervention import create_intervention , validate_intervention , get_all_interention
-from app.controllers.type_tache import create_type_tache
+from app.controllers.intervention import create_intervention, validate_intervention, get_all_interention, get_intervention
+from app.controllers.type_tache import create_type_tache , get_type_tache, get_all_type_taches
 
 from app.controllers.notification import get_notifications_by_user,get_all_notifications , mark_notification_as_seen
 from app.controllers.autorisation_domaine import create_autorisation_domaine, get_autorisation_domaine, delete_autorisation_domaine
@@ -29,12 +29,12 @@ all_bp.route('/login', methods=['POST'])(login)
 all_bp.route('/user', methods=['GET'])(get_user)
 all_bp.route('/user', methods=['PUT'])(update_user)
 all_bp.route('/user', methods=['DELETE'])(delete_user)
-all_bp.route('/technicien/register', methods=['POST'])(register_technicien)
 # all_bp.route('/technicien/check_email', methods=['POST'])(check_email)
 all_bp.route('/verify_email', methods=['GET'])(verify_email)
 
 
 all_bp.route('/technicien', methods=['POST'])(create_technicien)
+all_bp.route('/technicien/register', methods=['POST'])(register_technicien)
 
 
 
@@ -76,14 +76,17 @@ all_bp.route('/guide_culture', methods=['POST'])(create_guide_culture)
 all_bp.route('/guide_culture/<int:id>', methods=['PUT'])(update_guide_culture)
 all_bp.route('/guide_culture/<int:id>', methods=['DELETE'])(delete_guide)
 all_bp.route('/guide_culture/<int:id>', methods=['GET'])(get_guide_culture)
-# all_bp.route('/guide_culture', methods=['GET'])(get_all_guides)
+# all_bp.route('/guide_culture', methods=['GET'])(get_all_guides)g
 
-all_bp.route('/typetache' , methods=['POST'])(create_type_tache)  
+all_bp.route('/types-tache' , methods=['POST'])(create_type_tache)  
+all_bp.route('/types-tache/<int:id>', methods=['GET'])(get_type_tache)
+all_bp.route('/types-tache', methods=['GET'])(get_all_type_taches)
 
 all_bp.route('/intervention', methods=['POST'])(create_intervention)
 
-all_bp.route('/intervention/<int:id>', methods=['PATCH'])(validate_intervention)
+all_bp.route('/intervention/<int:id>', methods=['PUT'])(validate_intervention)
 all_bp.route('/intervention', methods=['GET'])(get_all_interention)
+all_bp.route('/intervention/<int:id>', methods=['GET'])(get_intervention)
 
 
 all_bp.route('/autorisation_domaine', methods=['POST'])(create_autorisation_domaine)
@@ -139,6 +142,6 @@ all_bp.route('/alerte<int:alerte_id>', methods=['DELETE'])(delete_alerte)
 
 all_bp.route('/notifications/<int:id_user>', methods=['GET'])(get_notifications_by_user)
 all_bp.route('/notifications', methods=['GET'])(get_all_notifications)
-all_bp.route('/notifications/vue/<int:id>', methods=['PATCH'])(mark_notification_as_seen)
+all_bp.route('/notifications/vue/<int:id>', methods=['PUT'])(mark_notification_as_seen)
 
 __all__ = ['all_bp']
