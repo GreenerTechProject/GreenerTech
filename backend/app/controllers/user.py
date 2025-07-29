@@ -108,7 +108,7 @@ def create_technicien(current_user):
         role=role,
         birthday=data.get('birthday'),
         id_assigned=current_user.id,
-        is_valide=False,
+        derector_valide=False,
         email_valide=False
     )
     db.session.add(new_user)
@@ -218,7 +218,7 @@ def register_technicien():
         role=role,
         password=password,
         birthday=datetime.strptime(birthday, '%Y-%m-%d') if birthday else None,
-        is_valide=False,
+        derector_valide=False,
         email_valide=False,
     )
 

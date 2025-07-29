@@ -35,6 +35,6 @@ class User(db.Model):
             'created_at': self.created_at.isoformat(),
             'updated_at': self.updated_at.isoformat(),
             'id_assigned': self.id_assigned,
-            'is_valide': self.is_valide,
+            'derector_valide': self.derector_valide,
             'email_valide': self.email_valide,
         }
