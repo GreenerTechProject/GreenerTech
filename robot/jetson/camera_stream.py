@@ -51,10 +51,28 @@ async def receive_controls():
             await asyncio.sleep(2)
 
 
+import random
+
+async def simulate_sensor_data():
+    uri = "ws://greenertech.mywire.org:8080/service/sensor_data"
+    async with websockets.connect(uri) as ws:
+        while True:
+            data = {
+                "temperature": round(random.uniform(20, 30), 2),
+                "humidity": round(random.uniform(50, 80), 2),
+                "co2": round(random.uniform(300, 800), 2)
+            }
+            await ws.send(json.dumps(data))
+            print(f"📤 Données envoyées : {data}")
+            await asyncio.sleep(2)
+
+asyncio.run(simulate_sensor_data())
+
 async def main():
     await asyncio.gather(
         send_video(),
-        receive_controls()
+        receive_controls(),
+        simulate_sensor_data()()
     )
 
 if __name__ == "__main__":
