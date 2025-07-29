@@ -15,14 +15,25 @@ def create_type_tache (current_user):
         return jsonify({'message': 'Type de tâche créé avec succès'}), 201
     except Exception as e:
         return jsonify({'error': str(e)}), 400
+
     
-# @token_required
-# def get_all_type_taches():
-#     try:
-#         type_taches = TypeTache.query.all()
-#         return jsonify([{'id': tt.id, 'nom': tt.nom} for tt in type_taches]), 200
-#     except Exception as e:
-#         return jsonify({'error': str(e)}), 400
+@token_required   
+def get_type_tache(current_user, id):
+    try:
+        type_tache = TypeTache.query.get_or_404(id)
+        return jsonify({'id': type_tache.id, 'nom': type_tache.nom}), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 400
+    
+
+    
+@token_required
+def get_all_type_taches(current_user):
+    try:
+        type_taches = TypeTache.query.all()
+        return jsonify([{'id': tt.id, 'nom': tt.nom} for tt in type_taches]), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 400
     
 # @token_required
 # def get_type_tache(id):

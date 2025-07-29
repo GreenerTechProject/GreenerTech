@@ -19,6 +19,8 @@ class Intervention(db.Model):
     id_serre = Column(Integer, ForeignKey('serres.id'), nullable=False)
     id_type_tache = Column(Integer, ForeignKey('type_tache.id'), nullable=False)
     valid = Column(Boolean, default=False)  
+    # is_assigned_techsup = Column(Boolean, default=False)  # Indique si une intervention est assignée à un technicien support
+    # priorite = Column(Integer, default=0)  # Priorité de l'intervention, 0 par défaut
 
 
     def to_dict(self):
