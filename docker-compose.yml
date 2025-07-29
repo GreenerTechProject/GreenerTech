@@ -8,7 +8,6 @@ services:
     container_name: greenertech-service
     ports:
       - "8080:8080"
-      - "8765:8765"
   
   backend:
     build:
