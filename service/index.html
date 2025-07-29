@@ -68,6 +68,10 @@
     <button data-mode="right">Right</button>
     <button data-mode="left">Left</button>
   </div>
+    <h2>🌿 Données Capteurs (WebSocket)</h2>
+    <div id="sensor-data">
+        En attente des données capteurs...
+    </div>
 
   <script>
     // WebRTC connection 
@@ -97,7 +101,8 @@
     startWebRTC().catch(console.error);
 
     // WebSocket QR
-    const ws = new WebSocket("ws://localhost:8080/service/qr_data");
+    const ws = new WebSocket(`${window.location.protocol === "https:" ? "wss" : "ws"}://${window.location.hostname}:8080/service/qr_data`);
+
 
     ws.onopen = () => {
       console.log("WebSocket connected");
@@ -144,7 +149,7 @@
     });
 	
 	
-	const controlWs = new WebSocket("ws://localhost:8080/service/control");
+	const controlWs = new WebSocket(`${window.location.protocol === "https:" ? "wss" : "ws"}://${window.location.hostname}:8080/service/control`);
 
 	controlWs.onopen = () => console.log("Control WS connected");
 	controlWs.onerror = (err) => console.error("Control WS error:", err);
@@ -162,6 +167,23 @@
 		}
 	  });
 	});
+	
+	
+	
+        const ws2 = new WebSocket(`${window.location.protocol === "https:" ? "wss" : "ws"}://${window.location.hostname}:8080/service/sensor_data`);
+
+        ws2.onmessage = (event) => {
+            const data = JSON.parse(event.data);
+            document.getElementById("sensor-data").innerHTML = `
+                🌡 Température : ${data.temperature} °C<br>
+                💧 Humidité : ${data.humidity} %<br>
+                🟢 CO₂ : ${data.co2} ppm
+            `;
+        };
+
+        ws2.onerror = (e) => {
+            document.getElementById("sensor-data").innerText = "Erreur de connexion WebSocket.";
+        };
   </script>
 </body>
 </html>
