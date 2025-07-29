@@ -66,13 +66,12 @@ async def simulate_sensor_data():
             print(f"📤 Données envoyées : {data}")
             await asyncio.sleep(2)
 
-asyncio.run(simulate_sensor_data())
 
 async def main():
     await asyncio.gather(
         send_video(),
         receive_controls(),
-        simulate_sensor_data()()
+        simulate_sensor_data()
     )
 
 if __name__ == "__main__":

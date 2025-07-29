@@ -170,9 +170,9 @@
 	
 	
 	
-        const ws = new WebSocket(`${window.location.protocol === "https:" ? "wss" : "ws"}://${window.location.hostname}:8080/service/sensor_data`);
+        const ws2 = new WebSocket(`${window.location.protocol === "https:" ? "wss" : "ws"}://${window.location.hostname}:8080/service/sensor_data`);
 
-        ws.onmessage = (event) => {
+        ws2.onmessage = (event) => {
             const data = JSON.parse(event.data);
             document.getElementById("sensor-data").innerHTML = `
                 🌡 Température : ${data.temperature} °C<br>
@@ -181,7 +181,7 @@
             `;
         };
 
-        ws.onerror = (e) => {
+        ws2.onerror = (e) => {
             document.getElementById("sensor-data").innerText = "Erreur de connexion WebSocket.";
         };
   </script>
