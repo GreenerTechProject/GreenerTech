@@ -18,9 +18,12 @@ class User(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
-    is_valide = db.Column(db.Boolean, default=False)      # Validé par directeur
+    derector_valide = db.Column(db.Boolean, default=False)      # Validé par directeur
     email_valide = db.Column(db.Boolean, default=False)   # Technicien a complété
     verification_token = db.Column(db.String(255), nullable=True)  # Token pour vérification email
+
+    # id_entreprise = db.Column(db.Integer, db.ForeignKey('entreprises.id'), nullable=True)  # directeur
+
     
 
     def to_dict(self):
