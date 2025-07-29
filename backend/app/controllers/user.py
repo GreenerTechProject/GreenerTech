@@ -5,8 +5,7 @@ from app.models.user import User
 from database.config import db
 #from functools import wraps
 from app.utils.security import token_required, token_unrequired, generate_token, role_required
-
-# from werkzeug.security import generate_password_hash, check_password_hash
+from werkzeug.security import generate_password_hash, check_password_hash
 
 
 # === AUTH DECORATOR ===
@@ -37,31 +36,42 @@ from app.utils.security import token_required, token_unrequired, generate_token,
 @token_unrequired
 def register():
     data = request.get_json()
+    print("DATA:", data)
+
     if User.query.filter_by(email=data['email']).first():
         return jsonify({"message": "Email already registered"}), 409
 
     new_user = User(
         name=data['name'],
         email=data['email'],
-        password=data['password'],  # À chiffrer dans un vrai projet
+        password=generate_password_hash(data['password']),
         role="directeur"
-        #role=data.get('role', 'user')
     )
     db.session.add(new_user)
     db.session.commit()
     
     token = generate_token(new_user.id)
-    return jsonify({"message": "User registered successfully", "token": token}), 201
+    return jsonify({
+        "message": "User registered successfully",
+        "token": token,
+        "userId": new_user.id  
+    }), 201
 
 # === LOGIN ===
+
 @token_unrequired
 def login():
     data = request.get_json()
     user = User.query.filter_by(email=data['email']).first()
 
-    if user and user.password == data['password']:
+    if user and check_password_hash(user.password, data['password']):
         token = generate_token(user.id)
-        return jsonify({"token": token}), 200
+        print("=== User Role:", user.role)
+
+        return jsonify({
+            "token": token,
+            "role": "directeur"
+        }), 200
 
     return jsonify({"message": "Invalid credentials"}), 401
 
