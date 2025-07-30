@@ -35,7 +35,7 @@ describe('BillonService', () => {
     const positions = await service.getAllBillons();
 
     expect(positions).toEqual(mockPositions);
-    expect(axios.get).toHaveBeenCalledWith(`http://${window.location.hostname}:8080/api/bilan/list`);
+    expect(axios.get).toHaveBeenCalledWith('http://localhost:8080/api/bilan/list');
   });
 
   it('should save bilan position successfully', async () => {
@@ -46,7 +46,7 @@ describe('BillonService', () => {
     const response = await service.saveBillon(mockPosition);
 
     expect(response).toEqual({ success: true });
-    expect(axios.post).toHaveBeenCalledWith(`http://${window.location.hostname}:8080/api/bilan/save`, mockPosition);
+    expect(axios.post).toHaveBeenCalledWith('http://localhost:8080/api/bilan/save', mockPosition);
   });
 
   it('should delete bilan on maps', async () => {
@@ -69,6 +69,6 @@ describe('BillonService', () => {
     const response = await service.deleteBillon(mockBillon);
 
     expect(response).toEqual({ success: true });
-    expect(axios.delete).toHaveBeenCalledWith(`http://${window.location.hostname}:8080/api/bilan/delete`, mockBillon);
+    expect(axios.delete).toHaveBeenCalledWith('http://localhost:8080/api/bilan/delete', mockBillon);
   });
 });

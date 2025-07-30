@@ -151,14 +151,18 @@ const DirectorMapComponent = () => {
             const newPolygon = $overlayEvent.overlay.getPath()
                 .getArray()
                 .map(latLng => ({ lat: latLng.lat(), lng: latLng.lng() }))
+            // start and end point should be same for valid geojson
             const startPoint = newPolygon[0];
             newPolygon.push(startPoint);
             newPolygon.creation_date = new Date();
             console.log(newPolygon);
+            // show form 
             setPolygonMeta(newPolygon);
             setActivePolygon(newPolygon);
+            // save polygone
 
             $overlayEvent.overlay?.setMap(null);
+            // Add the new polygon to the state
             setPolygons([...polygons, newPolygon]);
         }
         // if ($overlayEvent.type === window.google.maps.drawing.OverlayType.RECTANGLE) {

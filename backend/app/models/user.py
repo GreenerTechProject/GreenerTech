@@ -7,17 +7,15 @@ class User(db.Model):
     __tablename__ = 'users'
 
     id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=True)      # autorise NULL au début
     email = db.Column(db.String(120), unique=True, nullable=False)
     password = db.Column(db.String(255), nullable=True)  # autorise NULL au début
-    name = db.Column(db.String(100), nullable=True)      # autorise NULL au début
     role = db.Column(db.String(50), nullable=False)      # 'technicien', 'directeur', etc.
-    
     birthday = db.Column(db.Date, nullable=True)
-    id_assigned = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)  # directeur
-
+    id_assigned = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)  
+    is_connected = db.Column(db.Boolean, nullable=False, default=False) #pour verifier la premier authentificatio
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-
     derector_valide = db.Column(db.Boolean, default=False)      # Validé par directeur
     email_valide = db.Column(db.Boolean, default=False)   # Technicien a complété
     verification_token = db.Column(db.String(255), nullable=True)  # Token pour vérification email
@@ -31,10 +29,14 @@ class User(db.Model):
             'id': self.id,
             'name': self.name,
             'email': self.email,
+            'password': self.password,
             'role': self.role,
-            'created_at': self.created_at.isoformat(),
-            'updated_at': self.updated_at.isoformat(),
+            'birthday': self.birthday.isoformat() if self.birthday else None,
             'id_assigned': self.id_assigned,
+            'is_connected': self.is_connected,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'updated_at': self.updated_at.isoformat() if self.updated_at else None,
             'derector_valide': self.derector_valide,
             'email_valide': self.email_valide,
+            'verification_token': self.verification_token
         }
