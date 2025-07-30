@@ -4,8 +4,9 @@ import numpy as np
 from aiohttp import web, WSMsgType
 from aiortc import RTCPeerConnection, VideoStreamTrack, RTCSessionDescription
 from av import VideoFrame
-from ia.detectobjects import detect_frame
 from cv2 import QRCodeDetector
+from detectobjects import detect_frame
+#from classificationmaladies import predict_frame
 import json
 import os
 import time
@@ -16,8 +17,6 @@ qr_detector = QRCodeDetector()
 latest_frame = None
 latest_qr_results = []
 connected_qr_clients = set()
-last_frame_time = 0
-control_clients = set()
 last_frame_time = 0
 
 class RelayStreamTrack(VideoStreamTrack):
@@ -33,8 +32,11 @@ class RelayStreamTrack(VideoStreamTrack):
         global latest_frame
         pts, time_base = await self.next_timestamp()
 
-        #frame_to_use = latest_frame if latest_frame is not None else self.fallback_frame
+        frame_to_use = latest_frame if latest_frame is not None else self.fallback_frame
         frame_to_use = detect_frame(latest_frame) if latest_frame is not None else self.fallback_frame
+        #detected_frame, Billan_dicts = predict_frame(latest_frame) if latest_frame is not None else self.fallback_frame, 0
+        #print (Billan_dicts)
+        #frame_to_use = detected_frame
         if frame_to_use is None:
             raise Exception("No video stream and no fallback image found!")
 
@@ -137,48 +139,3 @@ async def monitor_video_timeout():
         if time.time() - last_frame_time > 3:
             latest_frame = None
         await asyncio.sleep(1)
-
-
-
-async def control_handler(request):
-    ws = web.WebSocketResponse()
-    await ws.prepare(request)
-
-    control_clients.add(ws)
-    try:
-        async for msg in ws:
-            if msg.type == WSMsgType.TEXT:
-                data = json.loads(msg.data)
-                if "control_mode" in data:
-                    mode = data["control_mode"]
-                    #print(f"Control mode received: {mode}")
-
-                    for client in control_clients:
-                        if client is not ws and not client.closed:
-                            await client.send_str(json.dumps({"control_mode": mode}))
-            elif msg.type == WSMsgType.ERROR:
-                print('ws connection closed with exception %s' % ws.exception())
-    finally:
-        control_clients.discard(ws)
-    return ws
-
-
-
-async def start_all():
-    app = web.Application()
-    app.router.add_get("/video/", index)
-    app.router.add_post("/service/video_stream_service", offer)
-    app.router.add_get("/service/video_stream_handler", video_stream_handler)
-    app.router.add_get("/service/qr_data", qr_data_handler)
-    app.router.add_get("/service/control", control_handler)
-
-    runner = web.AppRunner(app)
-    await runner.setup()
-    site = web.TCPSite(runner, "0.0.0.0", 8080)
-    await site.start()
-    print("✅ HTTP + WebSocket server running at http://0.0.0.0:8080")
-
-    asyncio.create_task(monitor_video_timeout())
-    await asyncio.Future()
-
-asyncio.run(start_all())
