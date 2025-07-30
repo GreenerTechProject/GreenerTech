@@ -27,7 +27,7 @@ export default function EntrepriseStep({ setStep, setEntrepriseId, onSkip }) {
     }
 
     try {
-      const response = await fetch("/api/entreprise", {
+      const response = await fetch(`${window.location.protocol}//${window.location.hostname}/api/entreprise`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
