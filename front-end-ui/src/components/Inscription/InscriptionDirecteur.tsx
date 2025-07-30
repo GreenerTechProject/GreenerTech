@@ -75,7 +75,7 @@ export default function InscriptionDirecteur() {
       password: formData.password
     };
 
-    const response = await axios.post('http://localhost:5000/api/register', directorData, {
+    const response = await axios.post(`${window.location.protocol}//${window.location.hostname}:5000/api/register`, directorData, {
       headers: {
         'Content-Type': 'application/json'
       }
@@ -114,7 +114,7 @@ export default function InscriptionDirecteur() {
       email: formData.company.company_email
     };
 
-    await axios.post('http://localhost:5000/api/entreprise', companyData, {
+    await axios.post(`${window.location.protocol}//${window.location.hostname}:5000/api/entreprise`, companyData, {
     headers: {
       'Content-Type': 'application/json',
     }

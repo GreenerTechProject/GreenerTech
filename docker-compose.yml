@@ -4,7 +4,7 @@ services:
   service:
     build:
       context: ./
-      dockerfile: ./service.Dockerfile
+      dockerfile: ./services.Dockerfile
     container_name: greenertech-service
     ports:
       - "8080:8080"

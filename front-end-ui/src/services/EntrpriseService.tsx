@@ -1,7 +1,7 @@
 import axios from 'axios';
 import api from '../axios/api';
 
-const BASE_URL = 'http://localhost:5000/api'; 
+const BASE_URL = `${window.location.protocol}//${window.location.hostname}:5000/api`; 
 
 class EntrepriseService {
   static async createEntreprise(data) {

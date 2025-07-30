@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const BASE_URL = "http://localhost:5000/alerte"; // Update if your Flask server has a different base
+const BASE_URL = `${window.location.protocol}//${window.location.hostname}:5000/alerte`; // Update if your Flask server has a different base
 
 // Create a new alert
 export async function createAlerte(data) {
