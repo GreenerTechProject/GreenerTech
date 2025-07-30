@@ -14,4 +14,4 @@ COPY services .
 
 EXPOSE 8080
 
-CMD ["python3", "video_streaming_service.py"]
+CMD ["python3", "services.py"]
