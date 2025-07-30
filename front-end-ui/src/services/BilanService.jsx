@@ -3,7 +3,7 @@ import axios from 'axios';
 
 class BilanService {
     constructor() {
-        this.baseUrl = 'http://localhost:8080/api/bilan';
+        this.baseUrl = `${window.location.protocol}//${window.location.hostname}:8080/api/bilan`;
     }
 
     //Exporting all bilans

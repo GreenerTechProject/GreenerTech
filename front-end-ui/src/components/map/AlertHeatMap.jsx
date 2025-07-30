@@ -27,7 +27,7 @@ const AlertHeatMap = () => {
   useEffect(() => {
     const loadData = async () => {
       try {
-        const response = await axios.get('http://localhost:5000/alerte');
+        const response = await axios.get(`${window.location.protocol}//${window.location.hostname}:5000/alerte`);
         const alertData = response.data;
 
         const dataToUse = (!alertData || alertData.length === 0)
