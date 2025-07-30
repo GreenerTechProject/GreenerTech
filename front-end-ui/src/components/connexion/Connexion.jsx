@@ -13,7 +13,7 @@ export default function Connexion() {
   setLoading(true);
 
   try {
-    const response = await axios.post('http://127.0.0.1:5000/api/login', {
+    const response = await axios.post(`${window.location.protocol}//${window.location.hostname}:5000/api/login`, {
       email,
       password: motDePasse,
     },
