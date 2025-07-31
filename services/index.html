@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>WebRTC Viewer with QR Code Data</title>
+  <title>WebRTC Viewer with QR Code Data and Missions</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -12,7 +12,7 @@
       height: 550px;
       align-items: flex-start;
     }
-    #video-container, #qr-container, #control-container {
+    #video-container, #qr-container, #control-container, #missions-container {
       flex: 1;
       display: flex;
       flex-direction: column;
@@ -23,21 +23,21 @@
       background: black;
       object-fit: contain;
     }
-    #qr-container h3, #control-container h3 {
+    #qr-container h3, #control-container h3, #missions-container h3 {
       margin-top: 0;
     }
-    #qrList {
+    #qrList, #missionsList {
       font-family: monospace;
       margin-top: 10px;
       background: #f0f0f0;
       padding: 10px;
       border-radius: 5px;
       list-style-type: none;
-      height: 460px;
+      height: 200px;
       overflow-y: auto;
       box-shadow: inset 0 0 5px #ccc;
     }
-    #qrList li {
+    #qrList li, #missionsList li {
       padding: 4px 0;
       border-bottom: 1px solid #ddd;
     }
@@ -46,6 +46,10 @@
       padding: 10px;
       font-size: 16px;
       cursor: pointer;
+    }
+    #sensor-data {
+      margin-top: 10px;
+      font-size: 14px;
     }
   </style>
 </head>
@@ -67,14 +71,18 @@
     <button data-mode="normal">Normal</button>
     <button data-mode="right">Right</button>
     <button data-mode="left">Left</button>
+
+    <h2>🌿 Sensor Data (WebSocket)</h2>
+    <div id="sensor-data">Waiting for sensor data...</div>
   </div>
-    <h2>🌿 Données Capteurs (WebSocket)</h2>
-    <div id="sensor-data">
-        En attente des données capteurs...
-    </div>
+
+  <div id="missions-container">
+    <h3>Realtime Missions</h3>
+    <ul id="missionsList"></ul>
+  </div>
 
   <script>
-    // WebRTC connection 
+    // Setup WebRTC connection to receive live video stream
     async function startWebRTC() {
       const pc = new RTCPeerConnection();
       pc.addTransceiver("video", { direction: "recvonly" });
@@ -100,12 +108,11 @@
 
     startWebRTC().catch(console.error);
 
-    // WebSocket QR
+    // WebSocket connection for receiving detected QR codes
     const ws = new WebSocket(`${window.location.protocol === "https:" ? "wss" : "ws"}://${window.location.hostname}:8080/service/qr_data`);
 
-
     ws.onopen = () => {
-      console.log("WebSocket connected");
+      console.log("QR WebSocket connected");
     };
 
     ws.onmessage = (event) => {
@@ -121,69 +128,100 @@
           });
         }
       } catch (e) {
-        console.error("Failed to parse WebSocket message:", e);
+        console.error("Failed to parse QR WebSocket message:", e);
       }
     };
 
     ws.onclose = () => {
-      console.log("WebSocket disconnected");
+      console.log("QR WebSocket disconnected");
     };
 
     ws.onerror = (err) => {
-      console.error("WebSocket error:", err);
+      console.error("QR WebSocket error:", err);
     };
 
-    // controle
+    // WebSocket connection for sending and receiving control commands
+    const controlWs = new WebSocket(`${window.location.protocol === "https:" ? "wss" : "ws"}://${window.location.hostname}:8080/service/control`);
+
+    controlWs.onopen = () => console.log("Control WebSocket connected");
+    controlWs.onerror = (err) => console.error("Control WebSocket error:", err);
+    controlWs.onclose = () => console.log("Control WebSocket disconnected");
+
     const buttons = document.querySelectorAll("#control-container button");
     buttons.forEach(btn => {
       btn.addEventListener("click", () => {
         const mode = btn.getAttribute("data-mode");
-        console.log("Sending mode:", mode);
-		
-        if (ws.readyState === WebSocket.OPEN) {
-          ws.send(JSON.stringify({ control_mode: mode }));
+        console.log("Sending control mode:", mode);
+        if (controlWs.readyState === WebSocket.OPEN) {
+          controlWs.send(JSON.stringify({ control_mode: mode }));
         } else {
-          console.warn("WebSocket not open to send control mode");
+          console.warn("Control WebSocket is not open");
         }
       });
     });
-	
-	
-	const controlWs = new WebSocket(`${window.location.protocol === "https:" ? "wss" : "ws"}://${window.location.hostname}:8080/service/control`);
 
-	controlWs.onopen = () => console.log("Control WS connected");
-	controlWs.onerror = (err) => console.error("Control WS error:", err);
-	controlWs.onclose = () => console.log("Control WS disconnected");
+    // WebSocket connection for receiving sensor data
+    const sensorWs = new WebSocket(`${window.location.protocol === "https:" ? "wss" : "ws"}://${window.location.hostname}:8080/service/sensor_data`);
 
-	// send contrle controlWs
-	buttons.forEach(btn => {
-	  btn.addEventListener("click", () => {
-		const mode = btn.getAttribute("data-mode");
-		console.log("Sending mode:", mode);
-		if (controlWs.readyState === WebSocket.OPEN) {
-		  controlWs.send(JSON.stringify({ control_mode: mode }));
-		} else {
-		  console.warn("Control WebSocket not open");
-		}
-	  });
-	});
-	
-	
-	
-        const ws2 = new WebSocket(`${window.location.protocol === "https:" ? "wss" : "ws"}://${window.location.hostname}:8080/service/sensor_data`);
+    sensorWs.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+      document.getElementById("sensor-data").innerHTML = `
+          🌡 Temperature: ${data.temperature} °C<br>
+          💧 Humidity: ${data.humidity} %<br>
+          🟢 CO₂: ${data.co2} ppm
+      `;
+    };
 
-        ws2.onmessage = (event) => {
-            const data = JSON.parse(event.data);
-            document.getElementById("sensor-data").innerHTML = `
-                🌡 Température : ${data.temperature} °C<br>
-                💧 Humidité : ${data.humidity} %<br>
-                🟢 CO₂ : ${data.co2} ppm
-            `;
-        };
+    sensorWs.onerror = (e) => {
+      document.getElementById("sensor-data").innerText = "WebSocket connection error.";
+    };
 
-        ws2.onerror = (e) => {
-            document.getElementById("sensor-data").innerText = "Erreur de connexion WebSocket.";
-        };
+    // WebSocket connection for realtime missions updates
+    // Replace 'robot_reference_example' with the actual robot reference
+    const missionsWs = new WebSocket(`${window.location.protocol === "https:" ? "wss" : "ws"}://${window.location.hostname}:8080/service/missions?reference=robot_reference_example`);
+
+    missionsWs.onopen = () => console.log("Missions WebSocket connected");
+    missionsWs.onerror = (err) => console.error("Missions WebSocket error:", err);
+    missionsWs.onclose = () => console.log("Missions WebSocket disconnected");
+
+    missionsWs.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        const missionsList = document.getElementById("missionsList");
+
+        // Handle different event types for missions
+        if (data.event === "created" || data.event === "updated") {
+          // Add or update mission in the list
+          const mission = data.mission;
+          let li = document.querySelector(`#missionsList li[data-id='${mission.id}']`);
+          if (!li) {
+            li = document.createElement("li");
+            li.setAttribute("data-id", mission.id);
+            missionsList.appendChild(li);
+          }
+          li.textContent = `Mission #${mission.id} - Serre: ${mission.id_serre}, Robot: ${mission.id_robot}, Start: ${mission.date_debut}, End: ${mission.date_fin}`;
+        } else if (data.event === "deleted") {
+          // Remove mission from the list
+          const id = data.mission_id;
+          const li = document.querySelector(`#missionsList li[data-id='${id}']`);
+          if (li) li.remove();
+        } else if (data.mission) {
+          // On initial connection, show single mission if present
+          missionsList.innerHTML = "";
+          const mission = data.mission;
+          const li = document.createElement("li");
+          li.textContent = `Mission #${mission.id} - Serre: ${mission.id_serre}, Robot: ${mission.id_robot}, Start: ${mission.date_debut}, End: ${mission.date_fin}`;
+          li.setAttribute("data-id", mission.id);
+          missionsList.appendChild(li);
+        } else {
+          // No missions available
+          missionsList.innerHTML = "<li>No missions at this time.</li>";
+        }
+
+      } catch (e) {
+        console.error("Failed to parse missions WebSocket message:", e);
+      }
+    };
   </script>
 </body>
 </html>

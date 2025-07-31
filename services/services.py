@@ -3,7 +3,7 @@ from aiohttp import web, WSMsgType
 from video_streaming_service_ai import index, offer, video_stream_handler, qr_data_handler, monitor_video_timeout
 from robotcontrole_service import control_handler
 from sensors_realtime_service import sensor_data_handler
-from mission_data_handler import mission_data_handler, init_db_pool, notify_listener
+from mission_data_handler import mission_data_handler
 
 async def start_all():
     app = web.Application()
@@ -14,14 +14,6 @@ async def start_all():
     app.router.add_get("/service/control", control_handler)
     app.router.add_get("/service/sensor_data", sensor_data_handler)
     app.router.add_get("/service/missions", mission_data_handler)
-    
-
-    # قاعدة البيانات
-    pool = await init_db_pool()
-    app["pool"] = pool
-
-    # بدء بث المهام في الخلفية
-    asyncio.create_task(notify_listener(pool))
 
 
     runner = web.AppRunner(app)
