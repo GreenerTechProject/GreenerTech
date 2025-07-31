@@ -126,7 +126,7 @@ async def main():
         receive_controls(),
         simulate_sensor_data(),
         listen_missions(robot_ref) )
-    )
+    
 
 if __name__ == "__main__":
     asyncio.run(main())
