@@ -37,16 +37,17 @@ async def mission_data_handler(request):
 async def notify_listener(pool):
     while True:
         async with pool.acquire() as conn:
+            # AND executed IS FALSE
             rows = await conn.fetch("""
-                SELECT * FROM mission 
-                WHERE date_debut <= NOW() AND executed IS FALSE
+                SELECT * FROM missions
+                WHERE date_debut <= NOW()
             """)
             for row in rows:
                 ref = row["reference"]
                 if ref in mission_clients:
                     try:
                         await mission_clients[ref].send_str(json.dumps({"mission": dict(row)}))
-                        await conn.execute("UPDATE mission SET executed = TRUE WHERE id = $1", row["id"])
+                        #await conn.execute("UPDATE mission SET executed = TRUE WHERE id = $1", row["id"])
                         print(f"📤 Mission sent to {ref}")
                     except Exception as e:
                         print(f"❌ Failed to send mission to {ref}: {e}")
