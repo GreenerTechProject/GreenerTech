@@ -96,13 +96,17 @@ async def qr_data_handler(request):
 
     connected_qr_clients.add(ws)
     try:
+        previous_qr = None
         while not ws.closed:
-            if latest_qr_results:
+            if latest_qr_results != previous_qr:
                 try:
                     await ws.send_str(json.dumps({"qr_codes": latest_qr_results}))
+                    previous_qr = latest_qr_results.copy()
                 except Exception as e:
                     print(f"❌ Failed to send QR data: {e}")
             await asyncio.sleep(0.8)
+
+
     finally:
         connected_qr_clients.discard(ws)
 
