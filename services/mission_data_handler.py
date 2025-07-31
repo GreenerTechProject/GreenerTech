@@ -3,7 +3,7 @@ import os
 from datetime import datetime
 
 
-DB_URL = "postgresql://postgres:postgres@db:5432/greenertech"
+DB_URL = "postgresql://postgres:postgres@localhost:5432/greenertech"
 
 
 mission_clients = set()
