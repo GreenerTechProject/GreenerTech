@@ -102,7 +102,7 @@ def get_or_create_robot_reference():
     
     
 async def listen_missions(robot_reference):
-    uri = f"ws://"+host+":8080/service/mission_data?reference={robot_reference}"
+    uri = f"ws://"+host+":8080/service/missions?reference={robot_reference}"
     async with websockets.connect(uri) as websocket:
         print(f"Connected to mission websocket for robot '{robot_reference}'")
         while True:

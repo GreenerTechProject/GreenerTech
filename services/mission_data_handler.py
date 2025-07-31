@@ -3,7 +3,7 @@ import os
 from datetime import datetime
 
 
-DB_URL = os.getenv("DATABASE_URL")
+DB_URL = "postgresql://postgres:postgres@db:5432/greenertech"
 
 
 mission_clients = set()
@@ -12,6 +12,10 @@ async def mission_data_handler(request):
     ws = web.WebSocketResponse()
     await ws.prepare(request)
     robot_reference = request.query.get("reference", "")
+    print(f"🔎 Incoming mission request from robot: '{robot_reference}'")
+
+    if not DB_URL:
+        print("❌ DATABASE_URL not set in environment!")
 
     mission_clients.add(ws)
     print("📘 Mission WebSocket client connected")
