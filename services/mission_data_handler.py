@@ -5,7 +5,7 @@ import asyncio
 from aiohttp import web, WSMsgType
 
 
-DB_URL = "postgresql://postgres:postgres@localhost:5432/greenertech"
+DB_URL = "postgresql://postgres:postgres@localhost:5433/greenertech"
 
 
 mission_clients = set()
