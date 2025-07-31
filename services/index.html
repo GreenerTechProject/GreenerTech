@@ -122,8 +122,8 @@
     <h3>Create New Mission</h3>
   
    <form id="missionForm">
-    <label for="id_robot">Robot Reference:</label>
-    <input type="text" id="id_robot" name="id_robot" required />
+    <label for="referance">Robot Reference:</label>
+    <input type="text" id="referance" name="referance" required />
 
     <label for="id_serre">Greenhouse ID (id_serre):</label>
     <input type="number" id="id_serre" name="id_serre" required />
@@ -283,7 +283,7 @@
 
       const missionData = {
         action: "create",
-        reference: document.getElementById("id_robot").value,
+        reference: document.getElementById("referance").value,
         id_serre: Number(document.getElementById("id_serre").value),
         date_debut: document.getElementById("date_debut").value,
         date_fin: document.getElementById("date_fin").value,
