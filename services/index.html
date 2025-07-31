@@ -249,7 +249,7 @@
 
 	
     const missionWs = new WebSocket(
-      `${location.protocol === "https:" ? "wss" : "ws"}://${location.hostname}:8080/service/mission`
+      `${location.protocol === "https:" ? "wss" : "ws"}://${location.hostname}:8080/service/missions`
     );
 
     missionWs.onopen = () => {
