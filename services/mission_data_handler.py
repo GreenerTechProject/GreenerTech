@@ -39,7 +39,7 @@ async def notify_listener(pool):
         async with pool.acquire() as conn:
             # AND executed IS FALSE
             rows = await conn.fetch("""
-                SELECT * FROM missions
+                SELECT * FROM missions_robot
                 WHERE date_debut <= NOW()
             """)
             for row in rows:
