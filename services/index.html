@@ -120,35 +120,30 @@
   <!-- Mission Creation Form -->
   <div id="mission-form-container">
     <h3>Create New Mission</h3>
-    <form id="missionForm">
-      <label>
-        Serre ID:
-        <input type="number" id="id_serre" name="id_serre" required />
-      </label>
-      <label>
-        Robot ID:
-        <input type="number" id="id_robot" name="id_robot" required />
-      </label>
-      <label>
-        Start Date:
-        <input type="date" id="date_debut" name="date_debut" required />
-      </label>
-      <label>
-        End Date:
-        <input type="date" id="date_fin" name="date_fin" required />
-      </label>
-      <label>
-        Daily Repetition (0 or 1):
-        <input type="number" id="rep_jr" name="rep_jr" min="0" max="1" required />
-      </label>
-      <label>
-        Weekly Repetition (0 or 1):
-        <input type="number" id="rep_sem" name="rep_sem" min="0" max="1" required />
-      </label>
-      <button type="submit">Create Mission</button>
-    </form>
-    <div id="missionResponse"></div>
-  </div>
+  
+   <form id="missionForm">
+    <label for="id_robot">Robot Reference:</label>
+    <input type="text" id="id_robot" name="id_robot" required />
+
+    <label for="id_serre">Greenhouse ID (id_serre):</label>
+    <input type="number" id="id_serre" name="id_serre" required />
+
+    <label for="date_debut">Start Date (date_debut):</label>
+    <input type="date" id="date_debut" name="date_debut" required />
+
+    <label for="date_fin">End Date (date_fin):</label>
+    <input type="date" id="date_fin" name="date_fin" required />
+
+    <label for="rep_jr">Repeat Daily (rep_jr):</label>
+    <input type="number" id="rep_jr" name="rep_jr" value="0" />
+
+    <label for="rep_sem">Repeat Weekly (rep_sem):</label>
+    <input type="number" id="rep_sem" name="rep_sem" value="0" />
+
+    <button type="submit">Create Mission</button>
+  </form>
+
+  <div id="missionResponse" class="response"></div>
 
   <!-- Sensor Data Container -->
   <div id="sensor-data-container">
@@ -252,44 +247,56 @@
       document.getElementById("sensor-data").innerText = "WebSocket connection error.";
     };
 
-    // Mission creation form submission handler
-    document.getElementById("missionForm").addEventListener("submit", async (e) => {
-      e.preventDefault();  // Prevent page reload
+	
+    const missionWs = new WebSocket(
+      `${location.protocol === "https:" ? "wss" : "ws"}://${location.hostname}:8080/service/mission`
+    );
 
-      // Gather mission data from the form
+    missionWs.onopen = () => {
+      console.log("✅ Mission WebSocket connected");
+    };
+
+    missionWs.onerror = (e) => {
+      console.error("❌ Mission WebSocket error", e);
+    };
+
+    missionWs.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        const responseElem = document.getElementById("missionResponse");
+
+        if (data.success) {
+          responseElem.style.color = "green";
+          responseElem.textContent = `✅ ${data.success}: ID ${data.mission.id}`;
+          document.getElementById("missionForm").reset();
+        } else if (data.error) {
+          responseElem.style.color = "red";
+          responseElem.textContent = `❌ ${data.error}`;
+        }
+      } catch (err) {
+        console.error("❌ Failed to parse mission response", err);
+      }
+    };
+
+    document.getElementById("missionForm").addEventListener("submit", (e) => {
+      e.preventDefault();
+
       const missionData = {
+        action: "create",
+        reference: document.getElementById("id_robot").value,
         id_serre: Number(document.getElementById("id_serre").value),
-        id_robot: Number(document.getElementById("id_robot").value),
         date_debut: document.getElementById("date_debut").value,
         date_fin: document.getElementById("date_fin").value,
         rep_jr: Number(document.getElementById("rep_jr").value),
         rep_sem: Number(document.getElementById("rep_sem").value),
       };
 
-      try {
-        const response = await fetch("/api/missions", {   // Adjust URL if different
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(missionData),
-        });
-
-        if (!response.ok) {
-          const err = await response.text();
-          throw new Error(err || "Failed to create mission");
-        }
-
-        const result = await response.json();
-        const missionResponse = document.getElementById("missionResponse");
-        missionResponse.style.color = "green";
-        missionResponse.textContent = "Mission created successfully! ID: " + result.id;
-
-        // Reset form on success
-        e.target.reset();
-
-      } catch (error) {
-        const missionResponse = document.getElementById("missionResponse");
-        missionResponse.style.color = "red";
-        missionResponse.textContent = "Error: " + error.message;
+      if (missionWs.readyState === WebSocket.OPEN) {
+        missionWs.send(JSON.stringify(missionData));
+      } else {
+        const responseElem = document.getElementById("missionResponse");
+        responseElem.style.color = "red";
+        responseElem.textContent = "WebSocket not connected.";
       }
     });
   </script>

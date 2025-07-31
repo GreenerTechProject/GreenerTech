@@ -77,34 +77,34 @@ import requests
 
 REFERENCE_FILE = "robot_ref.txt"
 
-def send_reference_to_api(reference):
-    data = {"nom": "R1", "reference": reference}
+def send_referance_to_api(referance):
+    data = {"nom": "R1", "referance": referance}
     try:
         response = requests.post("http://"+host+":5000/api/robot", json=data)
         response.raise_for_status()
         print(f"Reference sent successfully: {response.status_code}")
     except requests.RequestException as e:
-        print(f"Failed to send reference: {e}")
+        print(f"Failed to send referance: {e}")
 
-def get_or_create_robot_reference():
+def get_or_create_robot_referance():
     if os.path.exists(REFERENCE_FILE):
         with open(REFERENCE_FILE, "r") as f:
             ref = f.read().strip()
             if ref:
                 return ref
 
-    # Generate new reference if not found
+    # Generate new referance if not found
     new_ref = str(uuid.uuid4())
+    send_referance_to_api(new_ref)
     with open(REFERENCE_FILE, "w") as f:
         f.write(new_ref)
-    send_reference_to_api(new_ref)
     return new_ref
     
     
-#async def listen_missions(robot_reference):
-#    uri = f"ws://"+host+":8080/service/missions?reference={robot_reference}"
+#async def listen_missions(robot_referance):
+#    uri = f"ws://"+host+":8080/service/missions?referance={robot_referance}"
 #    async with websockets.connect(uri) as websocket:
-#        print(f"Connected to mission websocket for robot '{robot_reference}'")
+#        print(f"Connected to mission websocket for robot '{robot_referance}'")
 #        while True:
 #            msg = await websocket.recv()
 #            data = json.loads(msg)
@@ -118,13 +118,13 @@ def get_or_create_robot_reference():
 
 
 
-async def listen_missions(robot_reference):
+async def listen_missions(robot_referance):
     while True:
         try:
             print("Tentative de connexion au serveur mission...")
-            control_uri = "ws://"+host+":8080/service/missions?reference="+robot_reference
+            control_uri = "ws://"+host+":8080/service/missions?referance="+robot_referance
             async with websockets.connect(control_uri) as websocket:
-                print(f"Connected to mission websocket for robot '{robot_reference}'")
+                print(f"Connected to mission websocket for robot '{robot_referance}'")
                 async for msg in websocket:
 
                     data = json.loads(msg)
@@ -144,7 +144,7 @@ async def listen_missions(robot_reference):
 
 async def main():
     #robot_ref = "robot_123"
-    robot_ref = get_or_create_robot_reference()
+    robot_ref = get_or_create_robot_referance()
     await asyncio.gather(
         send_video(),
         receive_controls(),
