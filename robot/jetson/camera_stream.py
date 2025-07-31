@@ -101,13 +101,30 @@ def get_or_create_robot_reference():
     return new_ref
     
     
+#async def listen_missions(robot_reference):
+#    uri = f"ws://"+host+":8080/service/missions?reference={robot_reference}"
+#    async with websockets.connect(uri) as websocket:
+#        print(f"Connected to mission websocket for robot '{robot_reference}'")
+#        while True:
+#            msg = await websocket.recv()
+#            data = json.loads(msg)
+#            mission = data.get("mission")
+#            if mission:
+#                print("Received mission:", mission)
+#                # Here you can add code to handle the mission (e.g., start tasks)
+#            else:
+#                print("No mission at this time.")
+#            await asyncio.sleep(1)  # adjust sleep if needed
+
+
+
 async def listen_missions(robot_reference):
     while True:
         try:
-            print("Tentative de connexion au serveur contrôle...")
+            print("Tentative de connexion au serveur mission...")
             control_uri = "ws://"+host+":8080/service/missions?reference="+robot_reference
             async with websockets.connect(control_uri) as websocket:
-            print(f"Connected to mission websocket for robot '{robot_reference}'")
+                print(f"Connected to mission websocket for robot '{robot_reference}'")
                 async for msg in websocket:
 
                     data = json.loads(msg)
@@ -117,7 +134,6 @@ async def listen_missions(robot_reference):
                         # Here you can add code to handle the mission (e.g., start tasks)
                     else:
                         print("No mission at this time.")
-                    await asyncio.sleep(1)  # adjust sleep if needed
         except (websockets.exceptions.ConnectionClosedError, ConnectionRefusedError) as e:
             print(f"❌ Connexion mission échouée ou perdue : {e}. Nouvelle tentative dans 2 secondes...")
             await asyncio.sleep(2)
