@@ -8,6 +8,11 @@ services:
     container_name: greenertech-service
     ports:
       - "8080:8080"
+    environment:
+      - DATABASE_URL=postgresql://postgres:postgres@db:5432/greenertech
+      - SECRET_KEY=5b837dfb2b22cf4e6bfb91c6cc768e4f
+    depends_on:
+      - db
   
   backend:
     build:

@@ -5,3 +5,4 @@ av
 aiohttp
 websockets
 ultralytics
+psycopg2-binary

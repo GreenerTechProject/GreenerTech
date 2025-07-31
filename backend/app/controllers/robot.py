@@ -3,8 +3,8 @@ from app.models.robot import Robot
 from database.config import db
 from app.utils.security import token_required, role_required
 
-@token_required
-@role_required("directeur", "technicien_superieur")
+#@token_required
+#@role_required("directeur", "technicien_superieur")
 def create_robot(current_user):
     data = request.get_json()
     try:
