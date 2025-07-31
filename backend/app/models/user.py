@@ -12,6 +12,8 @@ class User(db.Model):
     password = db.Column(db.String(255), nullable=True)  # autorise NULL au début
     role = db.Column(db.String(50), nullable=False)      # 'technicien', 'directeur', etc.
     birthday = db.Column(db.Date, nullable=True)
+    telephone = db.Column(db.String(20), nullable=True)
+    cin = db.Column(db.String(50), nullable=True)
     id_assigned = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)  
     is_connected = db.Column(db.Boolean, nullable=False, default=False) #pour verifier la premier authentificatio
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
@@ -32,6 +34,8 @@ class User(db.Model):
             'password': self.password,
             'role': self.role,
             'birthday': self.birthday.isoformat() if self.birthday else None,
+            'telephone': self.telephone,
+            'cin': self.cin,
             'id_assigned': self.id_assigned,
             'is_connected': self.is_connected,
             'created_at': self.created_at.isoformat() if self.created_at else None,
