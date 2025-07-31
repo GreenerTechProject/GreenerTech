@@ -13,6 +13,7 @@ async def start_all():
     app.router.add_get("/service/qr_data", qr_data_handler)
     app.router.add_get("/service/control", control_handler)
     app.router.add_get("/service/sensor_data", sensor_data_handler)
+    await init_db_pool()
     app.router.add_get("/service/missions", mission_data_handler)
 
 
