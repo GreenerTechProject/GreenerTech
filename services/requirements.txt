@@ -1,8 +1,6 @@
-opencv-python-headless
 numpy
 aiortc
 av
 aiohttp
 websockets
-ultralytics
 psycopg2-binary
