@@ -36,18 +36,18 @@ async def mission_data_handler(request):
                     conn = await asyncpg.connect(DB_URL)
 
                     if action == "create":
-                        reference = data.get("reference")
+                        referance = data.get("referance")
                         id_serre = data.get("id_serre")
                         date_debut = data.get("date_debut")
                         date_fin = data.get("date_fin")
                         rep_jr = data.get("rep_jr", 0)
                         rep_sem = data.get("rep_sem", 0)
 
-                        if not (reference and id_serre and date_debut and date_fin):
+                        if not (referance and id_serre and date_debut and date_fin):
                             await ws.send_str(json.dumps({"error": "Missing fields"}))
                             continue
 
-                        robot = await conn.fetchrow("SELECT id FROM robot WHERE reference = $1", reference)
+                        robot = await conn.fetchrow("SELECT id FROM robot WHERE referance = $1", referance)
                         if not robot:
                             await ws.send_str(json.dumps({"error": "Robot not found"}))
                             continue
