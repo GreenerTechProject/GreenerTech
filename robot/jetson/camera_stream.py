@@ -78,7 +78,7 @@ import requests
 REFERENCE_FILE = "robot_ref.txt"
 
 def send_reference_to_api(reference):
-    data = {"reference": reference}
+    data = {"nom": "R1", "reference": reference}
     try:
         response = requests.post("http://"+host+":5000/api/robot", json=data)
         response.raise_for_status()
