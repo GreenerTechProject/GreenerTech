@@ -5,6 +5,7 @@ from app.models.user import User
 from database.config import db
 from app.utils.security import token_required, token_unrequired, generate_token, role_required
 from app.utils.send_email import send_verification_email
+from werkzeug.security import generate_password_hash, check_password_hash
 import os
 
 
@@ -20,7 +21,7 @@ def register():
     new_user = User(
         name=data['name'],
         email=data['email'],
-        password=data['password'], 
+        password=generate_password_hash(data['password']),
         role="directeur"
         #role=data.get('role', 'user')
     )
@@ -28,9 +29,14 @@ def register():
     db.session.commit()
     new_user.verification_token = generate_token(new_user.id)
     db.session.commit()
+    token = generate_token(new_user.id)
+
     # Envoi de l'email de vérification
     send_verification_email(new_user)
-    return jsonify({"message": "User registered successfully. Please check your email to verify your account."}), 201
+    return jsonify({
+        "message": "User registered successfully. Please check your email to verify your account.",
+        "userId": new_user.id  
+    }), 201
 
 
 
@@ -40,12 +46,14 @@ def login():
     data = request.get_json()
     user = User.query.filter_by(email=data['email']).first()
 
-
-    if user and user.password == data['password']:
+    if user and check_password_hash(user.password, data['password']):
         if not user.email_valide:
             return jsonify({"message": "Email not verified. Please check your email."}), 403
         token = generate_token(user.id)
-        return jsonify({"token": token}), 200
+        return jsonify({
+            "token": token, 
+            "role": "directeur"
+        }), 200
 
     return jsonify({"message": "Invalid credentials"}), 401
 
@@ -76,17 +84,20 @@ def update_user(current_user):
 # === GET USER ===
 @token_required
 def get_user(current_user):
-    user_data = {
-        "id": current_user.id,
-        "name": current_user.name,
-        "email": current_user.email,
-        "role": current_user.role,
-        "created_at": current_user.created_at.isoformat(),
-        "updated_at": current_user.updated_at.isoformat(),
-        "id_assigned":current_user.id_assigned
+    user_data={
+        "id":current_user.id,
+        "name":current_user.name,
+        "email":current_user.email,
+        "role":current_user.role,
+        "birthday":current_user.birthday.isoformat() if current_user.birthday else None,
+        "created_at":current_user.created_at.isoformat() if current_user.created_at else None,
+        "updated_at":current_user.updated_at.isoformat() if current_user.updated_at else None,
+        "id_assigned":current_user.id_assigned,
+        "is_connected":current_user.is_connected,
+        "derector_valide":current_user.derector_valide,
+        "email_valide":current_user.email_valide
     }
-    return jsonify(user_data), 200
-
+    return jsonify(user_data),200
 
 # # creat fonction pour recuperer tous les techniciens et techniciens superieur (GET)
 # @token_required

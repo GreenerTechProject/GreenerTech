@@ -1,10 +1,7 @@
 import React, { useState } from 'react';
-import { FloatingNavigation } from '../navigation';
-import { useFloatingNavigation } from '../navigation/useFloatingNavigation';
 
 const DashboardHeader: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
-  const { isFloatingNavVisible, toggleFloatingNav, closeFloatingNav } = useFloatingNavigation();
 
   const handleVideoCall = () => {
     console.log('Video call button clicked');
@@ -28,52 +25,13 @@ const DashboardHeader: React.FC = () => {
   };
 
   return (
-    <>
-      <header className="w-full h-[75px] bg-white border-b border-[#E5E7EB] shadow-[0px_1px_2px_0px_rgba(0,0,0,0.05)] relative">
-        <div className="flex items-center justify-between h-full px-4 lg:px-20">
-          {/* Left Section - Menu and Logo */}
-          <div className="flex items-center gap-4">
-            {/* Menu Button */}
-            <button
-              onClick={toggleFloatingNav}
-              className="w-8 h-8 md:w-10 md:h-10 flex items-center justify-center hover:bg-gray-100 rounded-lg transition-colors"
-              aria-label="Toggle navigation menu"
-            >
-              <svg
-                className="w-8 h-8 md:w-10 md:h-10"
-                width="48"
-                height="48"
-                viewBox="0 0 48 48"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <g filter="url(#filter0_d_dashboard)">
-                  <rect x="44" y="2" width="40" height="40" rx="10" transform="rotate(90 44 2)" fill="white"/>
-                </g>
-                <circle cx="24" cy="15" r="2" fill="black"/>
-                <circle cx="24" cy="22" r="2" fill="black"/>
-                <circle cx="24" cy="29" r="2" fill="black"/>
-                <defs>
-                  <filter id="filter0_d_dashboard" x="0" y="0" width="48" height="48" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
-                    <feFlood flood-opacity="0" result="BackgroundImageFix"/>
-                    <feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha"/>
-                    <feOffset dy="2"/>
-                    <feGaussianBlur stdDeviation="2"/>
-                    <feComposite in2="hardAlpha" operator="out"/>
-                    <feColorMatrix type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.25 0"/>
-                    <feBlend mode="normal" in2="BackgroundImageFix" result="effect1_dropShadow_dashboard"/>
-                    <feBlend mode="normal" in="SourceGraphic" in2="effect1_dropShadow_dashboard" result="shape"/>
-                  </filter>
-                </defs>
-              </svg>
-            </button>
-
-            <img
-              src="https://api.builder.io/api/v1/image/assets/TEMP/f204ee653615a1fcca6f4f94466f318f9ba86115?width=304"
-              alt="Asset 6-100 1"
-              className="w-24 h-auto lg:w-[152px] lg:h-[57px]"
-            />
-          </div>
+    <header className="w-full h-[75px] bg-white border-b border-[#E5E7EB] shadow-[0px_1px_2px_0px_rgba(0,0,0,0.05)] relative">
+      <div className="flex items-center justify-between h-full px-4 lg:px-20">
+        <img
+          src="https://api.builder.io/api/v1/image/assets/TEMP/f204ee653615a1fcca6f4f94466f318f9ba86115?width=304"
+          alt="Asset 6-100 1"
+          className="w-24 h-auto lg:w-[152px] lg:h-[57px]"
+        />
 
         <div className="hidden lg:flex items-center gap-4">
           <button
@@ -167,13 +125,6 @@ const DashboardHeader: React.FC = () => {
         </div>
       </div>
     </header>
-
-    {/* Floating Navigation */}
-    <FloatingNavigation
-      isVisible={isFloatingNavVisible}
-      onClose={closeFloatingNav}
-    />
-  </>
   );
 };
 

@@ -1,6 +1,6 @@
 import api from '../axios/api'
 
-const BASE_URL = `http://${window.location.hostname}:5000/api`; 
+const BASE_URL = `${window.location.protocol}//${window.location.hostname}:5000/api`; 
 
 class GuideCultureService {
   static async createGuideCulture(data) {

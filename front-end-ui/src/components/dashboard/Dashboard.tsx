@@ -1,6 +1,6 @@
 import React from 'react';
 import DashboardHeader from './DashboardHeader';
-import ToggleSideNavigation from './ToggleSideNavigation';
+import SideNavigation from './SideNavigation';
 import FarmOverview from './FarmOverview';
 
 const Dashboard: React.FC = () => {
@@ -12,6 +12,10 @@ const Dashboard: React.FC = () => {
 
         {/* Mobile/Desktop Layout */}
         <div className="flex flex-col lg:flex-row lg:relative">
+          {/* Side Navigation */}
+          <div className="lg:absolute lg:left-[34px] lg:top-[91px]">
+            <SideNavigation />
+          </div>
 
           {/* Main Content */}
           <div className="w-full px-4 pt-4 lg:pl-[104px] lg:pr-[104px] lg:pt-[140px]">

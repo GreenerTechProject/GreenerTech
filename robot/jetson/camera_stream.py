@@ -3,8 +3,8 @@ import asyncio
 import websockets
 import json
 
-video_uri = "ws://greenertech.mywire.org:8080/service/video_stream_handler"
-control_uri = "ws://greenertech.mywire.org:8080/service/control"
+host = "greenertech.mywire.org"
+
 
 async def send_video():
     cap = cv2.VideoCapture(1)
@@ -12,6 +12,7 @@ async def send_video():
     while True:
         try:
             print("Tentative de connexion au serveur vidéo...")
+            video_uri = "ws://"+host+":8080/service/video_stream_handler"
             async with websockets.connect(video_uri) as websocket:
                 print("Connecté au serveur vidéo avec succès")
                 while True:
@@ -36,6 +37,7 @@ async def receive_controls():
     while True:
         try:
             print("Tentative de connexion au serveur contrôle...")
+            control_uri = "ws://"+host+":8080/service/control"
             async with websockets.connect(control_uri) as websocket:
                 print("Connecté au serveur contrôle avec succès")
                 async for message in websocket:
@@ -54,7 +56,7 @@ async def receive_controls():
 import random
 
 async def simulate_sensor_data():
-    uri = "ws://greenertech.mywire.org:8080/service/sensor_data"
+    uri = "ws://"+host+":8080/service/sensor_data"
     async with websockets.connect(uri) as ws:
         while True:
             data = {
@@ -67,12 +69,88 @@ async def simulate_sensor_data():
             await asyncio.sleep(2)
 
 
+
+import uuid
+import os
+import requests
+
+
+REFERENCE_FILE = "robot_ref.txt"
+
+def send_referance_to_api(referance):
+    data = {"nom": "R1", "referance": referance}
+    try:
+        response = requests.post("http://"+host+":5000/api/robot", json=data)
+        response.raise_for_status()
+        print(f"Reference sent successfully: {response.status_code}")
+    except requests.RequestException as e:
+        print(f"Failed to send referance: {e}")
+
+def get_or_create_robot_referance():
+    if os.path.exists(REFERENCE_FILE):
+        with open(REFERENCE_FILE, "r") as f:
+            ref = f.read().strip()
+            if ref:
+                return ref
+
+    # Generate new referance if not found
+    new_ref = str(uuid.uuid4())
+    send_referance_to_api(new_ref)
+    with open(REFERENCE_FILE, "w") as f:
+        f.write(new_ref)
+    return new_ref
+    
+    
+#async def listen_missions(robot_referance):
+#    uri = f"ws://"+host+":8080/service/missions?referance={robot_referance}"
+#    async with websockets.connect(uri) as websocket:
+#        print(f"Connected to mission websocket for robot '{robot_referance}'")
+#        while True:
+#            msg = await websocket.recv()
+#            data = json.loads(msg)
+#            mission = data.get("mission")
+#            if mission:
+#                print("Received mission:", mission)
+#                # Here you can add code to handle the mission (e.g., start tasks)
+#            else:
+#                print("No mission at this time.")
+#            await asyncio.sleep(1)  # adjust sleep if needed
+
+
+
+async def listen_missions(robot_referance):
+    while True:
+        try:
+            print("Tentative de connexion au serveur mission...")
+            control_uri = "ws://"+host+":8080/service/missions?referance="+robot_referance
+            async with websockets.connect(control_uri) as websocket:
+                print(f"Connected to mission websocket for robot '{robot_referance}'")
+                async for msg in websocket:
+
+                    data = json.loads(msg)
+                    mission = data.get("mission")
+                    if mission:
+                        print("Received mission:", mission)
+                        # Here you can add code to handle the mission (e.g., start tasks)
+                    else:
+                        print("No mission at this time.")
+        except (websockets.exceptions.ConnectionClosedError, ConnectionRefusedError) as e:
+            print(f"❌ Connexion mission échouée ou perdue : {e}. Nouvelle tentative dans 2 secondes...")
+            await asyncio.sleep(2)
+        except Exception as e:
+            print(f"❌ Erreur mission inattendue : {e}. Nouvelle tentative dans 2 secondes...")
+            await asyncio.sleep(2)
+
+
 async def main():
+    #robot_ref = "robot_123"
+    robot_ref = get_or_create_robot_referance()
     await asyncio.gather(
         send_video(),
         receive_controls(),
-        simulate_sensor_data()
-    )
+        simulate_sensor_data(),
+        listen_missions(robot_ref) )
+    
 
 if __name__ == "__main__":
     asyncio.run(main())

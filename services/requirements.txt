@@ -1,0 +1,8 @@
+opencv-python-headless
+numpy
+aiortc
+av
+aiohttp
+websockets
+psycopg2-binary
+asyncpg
