@@ -2,10 +2,13 @@ from flask_mail import Message
 from app.extensions import mail  # ✅ BON chemin
 from flask import current_app
 from app.utils.security import generate_token
+import os
+
 
 def send_verification_email(user):
     token = user.verification_token
-    verify_url = f"http://localhost:3000/verify-email/{token}"  # ou ton vrai frontend
+    frontend_url = os.getenv("FRONTEND_URL", "http://localhost:3000")
+    verify_url = f"http://{frontend_url}/verify-email/{token}"  # ou ton vrai frontend
 
     subject = "Vérification de votre adresse e-mail"
     body = f"""
