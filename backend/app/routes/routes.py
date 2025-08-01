@@ -146,7 +146,7 @@ all_bp.route('/notifications', methods=['GET'])(get_all_notifications)
 all_bp.route('/notifications/vue/<int:id>', methods=['PUT'])(mark_notification_as_seen)
 
 
-all_bp.route('/rapport/generer', methods=['POST'])(generer_rapport)
+all_bp.route('/rapport', methods=['POST'])(generer_rapport)
 
 
 
