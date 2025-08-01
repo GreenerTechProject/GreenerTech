@@ -7,6 +7,14 @@ DB_URL = "postgresql://postgres:postgres@localhost:5433/greenertech"
 
 mission_clients = set()
 
+def serialize_mission(mission):
+    """Convert asyncpg.Record to dict with datetime fields serialized to ISO format."""
+    return {
+        key: (value.isoformat() if isinstance(value, datetime) else value)
+        for key, value in dict(mission).items()
+    }
+
+
 async def broadcast_mission_update(data):
     disconnected = []
     for ws in mission_clients:
@@ -61,16 +69,16 @@ async def mission_data_handler(request):
                             RETURNING *
                         """, id_serre, id_robot, date_debut, date_fin, rep_jr, rep_sem)
 
-                        await broadcast_mission_update({"event": "created", "mission": dict(result)})
+                        await broadcast_mission_update({"event": "created", "mission": serialize_mission(result)})
 
-                        await ws.send_str(json.dumps({"success": "Mission created", "mission": dict(result)}))
+                        await ws.send_str(json.dumps({"success": "Mission created", "mission": serialize_mission(result)}))
 
                     elif action == "read":
                         id_mission = data.get("id")
                         if id_mission:
                             mission = await conn.fetchrow("SELECT * FROM missions_robot WHERE id = $1", id_mission)
                             if mission:
-                                await ws.send_str(json.dumps(dict(mission)))
+                                await ws.send_str(json.dumps(serialize_mission(mission)))
                             else:
                                 await ws.send_str(json.dumps({"error": "Mission not found"}))
                         else:
@@ -96,9 +104,9 @@ async def mission_data_handler(request):
 
                         updated_mission = await conn.fetchrow("SELECT * FROM missions_robot WHERE id = $1", id_mission)
 
-                        await broadcast_mission_update({"event": "updated", "mission": dict(updated_mission)})
+                        await broadcast_mission_update({"event": "updated", "mission": serialize_mission(updated_mission)})
 
-                        await ws.send_str(json.dumps({"success": "Mission updated", "mission": dict(updated_mission)}))
+                        await ws.send_str(json.dumps({"success": "Mission updated", "mission": serialize_mission(updated_mission)}))
 
                     elif action == "delete":
                         id_mission = data.get("id")
