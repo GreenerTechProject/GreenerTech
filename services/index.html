@@ -121,27 +121,28 @@
   <div id="mission-form-container">
     <h3>Create New Mission</h3>
   
-   <form id="missionForm">
-    <label for="referance">Robot Reference:</label>
-    <input type="text" id="referance" name="referance" required />
+<form id="missionForm">
+  <label for="referance">Robot Reference:</label>
+  <input type="text" id="referance" name="referance" required />
 
-    <label for="id_serre">Greenhouse ID (id_serre):</label>
-    <input type="number" id="id_serre" name="id_serre" required />
+  <label for="id_serre">Greenhouse ID (id_serre):</label>
+  <input type="number" id="id_serre" name="id_serre" required />
 
-    <label for="date_debut">Start Date (date_debut):</label>
-    <input type="date" id="date_debut" name="date_debut" required />
+  <label for="date_debut">Start Date & Time (date_debut):</label>
+  <input type="datetime-local" id="date_debut" name="date_debut" required />
 
-    <label for="date_fin">End Date (date_fin):</label>
-    <input type="date" id="date_fin" name="date_fin" required />
+  <label for="date_fin">End Date & Time (date_fin):</label>
+  <input type="datetime-local" id="date_fin" name="date_fin" required />
 
-    <label for="rep_jr">Repeat Daily (rep_jr):</label>
-    <input type="number" id="rep_jr" name="rep_jr" value="0" />
+  <label for="rep_jr">Repeat Daily (rep_jr):</label>
+  <input type="number" id="rep_jr" name="rep_jr" value="0" />
 
-    <label for="rep_sem">Repeat Weekly (rep_sem):</label>
-    <input type="number" id="rep_sem" name="rep_sem" value="0" />
+  <label for="rep_sem">Repeat Weekly (rep_sem):</label>
+  <input type="number" id="rep_sem" name="rep_sem" value="0" />
 
-    <button type="submit">Create Mission</button>
-  </form>
+  <button type="submit">Create Mission</button>
+</form>
+
 
   <div id="missionResponse" class="response"></div>
 
