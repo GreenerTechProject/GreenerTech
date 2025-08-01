@@ -47,7 +47,7 @@ async def mission_data_handler(request):
                             await ws.send_str(json.dumps({"error": "Missing fields"}))
                             continue
 
-                        robot = await conn.fetchrow("SELECT id FROM robot WHERE referance = $1", referance)
+                        robot = await conn.fetchrow("SELECT id FROM robots WHERE referance = $1", referance)
                         if not robot:
                             await ws.send_str(json.dumps({"error": "Robot not found"}))
                             continue
@@ -55,7 +55,7 @@ async def mission_data_handler(request):
                         id_robot = robot['id']
 
                         result = await conn.fetchrow("""
-                            INSERT INTO mission (id_serre, id_robot, date_debut, date_fin, rep_jr, rep_sem)
+                            INSERT INTO missions_robot (id_serre, id_robot, date_debut, date_fin, rep_jr, rep_sem)
                             VALUES ($1, $2, $3, $4, $5, $6)
                             RETURNING *
                         """, id_serre, id_robot, date_debut, date_fin, rep_jr, rep_sem)
@@ -67,13 +67,13 @@ async def mission_data_handler(request):
                     elif action == "read":
                         id_mission = data.get("id")
                         if id_mission:
-                            mission = await conn.fetchrow("SELECT * FROM mission WHERE id = $1", id_mission)
+                            mission = await conn.fetchrow("SELECT * FROM missions_robot WHERE id = $1", id_mission)
                             if mission:
                                 await ws.send_str(json.dumps(dict(mission)))
                             else:
                                 await ws.send_str(json.dumps({"error": "Mission not found"}))
                         else:
-                            missions = await conn.fetch("SELECT * FROM mission")
+                            missions = await conn.fetch("SELECT * FROM missions_robot")
                             await ws.send_str(json.dumps([dict(m) for m in missions]))
 
                     elif action == "update":
@@ -89,11 +89,11 @@ async def mission_data_handler(request):
                         values = list(updates.values())
 
                         await conn.execute(f"""
-                            UPDATE mission SET {set_clause}
+                            UPDATE missions_robot SET {set_clause}
                             WHERE id = $1
                         """, id_mission, *values)
 
-                        updated_mission = await conn.fetchrow("SELECT * FROM mission WHERE id = $1", id_mission)
+                        updated_mission = await conn.fetchrow("SELECT * FROM missions_robot WHERE id = $1", id_mission)
 
                         await broadcast_mission_update({"event": "updated", "mission": dict(updated_mission)})
 
@@ -105,7 +105,7 @@ async def mission_data_handler(request):
                             await ws.send_str(json.dumps({"error": "Missing mission ID"}))
                             continue
 
-                        await conn.execute("DELETE FROM mission WHERE id = $1", id_mission)
+                        await conn.execute("DELETE FROM missions_robot WHERE id = $1", id_mission)
 
                         await broadcast_mission_update({"event": "deleted", "mission_id": id_mission})
 
