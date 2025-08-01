@@ -5,7 +5,7 @@ from aiohttp import web, WSMsgType
 from aiortc import RTCPeerConnection, VideoStreamTrack, RTCSessionDescription
 from av import VideoFrame
 from cv2 import QRCodeDetector
-from ia.detectobjects import detect_frame
+#from ia.detectobjects import detect_frame
 import json
 import os
 import time
@@ -33,8 +33,8 @@ class RelayStreamTrack(VideoStreamTrack):
         global latest_frame
         pts, time_base = await self.next_timestamp()
 
-        #frame_to_use = latest_frame if latest_frame is not None else self.fallback_frame
-        frame_to_use = detect_frame(latest_frame) if latest_frame is not None else self.fallback_frame
+        frame_to_use = latest_frame if latest_frame is not None else self.fallback_frame
+        #frame_to_use = detect_frame(latest_frame) if latest_frame is not None else self.fallback_frame
         if frame_to_use is None:
             raise Exception("No video stream and no fallback image found!")
 
@@ -94,10 +94,12 @@ async def qr_data_handler(request):
 
     connected_qr_clients.add(ws)
     try:
+        previous_qr = None
         while not ws.closed:
-            if latest_qr_results:
+            if latest_qr_results != previous_qr:
                 try:
                     await ws.send_str(json.dumps({"qr_codes": latest_qr_results}))
+                    previous_qr = latest_qr_results.copy()
                 except Exception as e:
                     print(f"❌ Failed to send QR data: {e}")
             await asyncio.sleep(0.8)
@@ -192,6 +194,62 @@ async def sensor_data_handler(request):
         print("🔌 Client déconnecté")
     return ws
 
+import asyncpg
+import os
+from datetime import datetime
+import asyncio
+from aiohttp import web, WSMsgType
+
+
+DB_URL = "postgresql://postgres:postgres@localhost:5433/greenertech"
+
+
+mission_clients = set()
+
+async def mission_data_handler(request):
+    ws = web.WebSocketResponse()
+    await ws.prepare(request)
+    robot_reference = request.query.get("reference", "")
+    print("🔎 Incoming mission request from robot: "+robot_reference)
+
+
+    mission_clients.add(ws)
+    print("📘 Mission WebSocket client connected")
+
+    try:
+        while not ws.closed:
+            try:
+                now = datetime.utcnow()
+                conn = await asyncpg.connect(DB_URL)
+                rows = await conn.fetch("""
+                    SELECT * FROM mission 
+                    WHERE reference = $1 
+                      AND EXTRACT(YEAR FROM date_debut) = $2
+                      AND EXTRACT(MONTH FROM date_debut) = $3
+                      AND EXTRACT(DAY FROM date_debut) = $4
+                      AND EXTRACT(HOUR FROM date_debut) = $5
+                      AND EXTRACT(MINUTE FROM date_debut) = $6
+                      AND EXTRACT(SECOND FROM created_at) = $7
+                    ORDER BY id DESC 
+                    LIMIT 1
+                    """,
+                    robot_reference,
+                    now.year, now.month, now.day, now.hour, now.minute, now.second
+                )
+                await conn.close()
+
+                mission = dict(rows[0]) if rows else None
+                await ws.send_str(json.dumps({"mission": mission}))
+            except Exception as e:
+                print(f"❌ Error fetching missions: {e}")
+            await asyncio.sleep(1)  # adjust polling interval
+    finally:
+        mission_clients.discard(ws)
+        print("📕 Mission WebSocket client disconnected")
+
+    return ws
+
+
 async def start_all():
     app = web.Application()
     app.router.add_get("/video/", index)
@@ -200,6 +258,7 @@ async def start_all():
     app.router.add_get("/service/qr_data", qr_data_handler)
     app.router.add_get("/service/control", control_handler)
     app.router.add_get("/service/sensor_data", sensor_data_handler)
+    app.router.add_get("/service/missions", mission_data_handler)
 
 
     runner = web.AppRunner(app)

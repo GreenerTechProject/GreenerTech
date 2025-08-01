@@ -3,9 +3,9 @@ from app.models.robot import Robot
 from database.config import db
 from app.utils.security import token_required, role_required
 
-@token_required
-@role_required("directeur", "technicien_superieur")
-def create_robot(current_user):
+#@token_required
+#@role_required("directeur", "technicien_superieur")
+def create_robot():
     data = request.get_json()
     try:
         robot = Robot(
