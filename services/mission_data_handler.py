@@ -66,7 +66,14 @@ async def mission_data_handler(request):
                 await conn.close()
 
                 mission = dict(rows[0]) if rows else None
+                # Convert all datetime fields to ISO format strings
+                if mission:
+                    for k, v in mission.items():
+                        if isinstance(v, datetime):
+                            mission[k] = v.isoformat()
+
                 await ws.send_str(json.dumps({"mission": mission}))
+
             except Exception as e:
                 print(f"❌ Error fetching missions: {e}")
             await asyncio.sleep(5)  # adjust polling interval
