@@ -38,8 +38,8 @@ async def mission_data_handler(request):
                     if action == "create":
                         referance = data.get("referance")
                         id_serre = data.get("id_serre")
-                        date_debut = data.get("date_debut")
-                        date_fin = data.get("date_fin")
+                        date_debut = datetime.fromisoformat(data.get("date_debut"))
+                        date_fin = datetime.fromisoformat(data.get("date_fin"))
                         rep_jr = data.get("rep_jr", 0)
                         rep_sem = data.get("rep_sem", 0)
 
