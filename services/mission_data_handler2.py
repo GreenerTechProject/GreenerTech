@@ -47,7 +47,7 @@ async def mission_data_handler(request):
                             await ws.send_str(json.dumps({"error": "Missing fields"}))
                             continue
 
-                        robot = await conn.fetchrow("SELECT id FROM robot WHERE referance = $1", referance)
+                        robot = await conn.fetchrow("SELECT id FROM robots WHERE referance = $1", referance)
                         if not robot:
                             await ws.send_str(json.dumps({"error": "Robot not found"}))
                             continue
