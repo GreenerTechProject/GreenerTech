@@ -21,7 +21,7 @@ from app.controllers.robot import create_robot, get_robot, update_robot, get_all
 from app.controllers.etat_bilan import create_etat_bilan, get_etat_bilan, update_etat_bilan, get_etat_bilan_by_bilan, delete_etat_bilan
 from app.controllers.alerte import create_alerte, get_alerte, get_all_alertes, update_alerte, delete_alerte
 
-from app.controllers.rapport import generer_rapport
+from app.controllers.rapport import create_rapport
 
 all_bp = Blueprint('all_bp', __name__)
 all_bp.route('/register', methods=['POST'])(register)
@@ -141,12 +141,14 @@ all_bp.route('/alerte<int:alerte_id>', methods=['PUT'])(update_alerte)
 all_bp.route('/alerte<int:alerte_id>', methods=['DELETE'])(delete_alerte)
 
 
+
 all_bp.route('/notifications/<int:id_user>', methods=['GET'])(get_notifications_by_user)
 all_bp.route('/notifications', methods=['GET'])(get_all_notifications)
 all_bp.route('/notifications/vue/<int:id>', methods=['PUT'])(mark_notification_as_seen)
 
 
-all_bp.route('/rapport', methods=['POST'])(generer_rapport)
+
+all_bp.route('/rapport', methods=['POST'])(create_rapport)
 
 
 
