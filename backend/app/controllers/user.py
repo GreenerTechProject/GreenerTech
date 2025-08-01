@@ -99,6 +99,26 @@ def get_user(current_user):
     }
     return jsonify(user_data),200
 
+# # creat fonction pour recuperer tous les techniciens et techniciens superieur (GET)
+# @token_required
+# @role_required('directeur')
+# def get_all_technicians():
+#     techniciens = User.query.filter(User.role.in_(["technicien", "technicien_superieur"])).all()
+#     techniciens_data = [
+#         {
+#             "id": tech.id,
+#             "name": tech.name,
+#             "email": tech.email,
+#             "role": tech.role,
+#             "birthday": tech.birthday.strftime('%Y-%m-%d') if tech.birthday else None,
+#             "id_assigned": tech.id_assigned,
+#             "derector_valide": tech.derector_valide,
+#             "email_valide": tech.email_valide
+#         } for tech in techniciens
+#     ]
+#     return jsonify(techniciens_data), 200
+
+
 #creation d'un technicien par le directeur
 # # === CREATE TECHNICIEN ===
 @token_required
@@ -240,6 +260,29 @@ def register_technicien():
     
     return jsonify({"message": "Compte créé , Veuillez vérifier votre email pour activer votre compte.)."}), 201
 
+
+# valider  le compte du technicien par le directeur
+@token_required
+@role_required('directeur')
+def validate_technicien(current_user):
+    data = request.get_json()
+    user_id = data.get('user_id')
+
+    if not user_id:
+        return jsonify({"error": "ID utilisateur requis"}), 400
+
+    user = User.query.get(user_id)
+
+    if not user:
+        return jsonify({"error": "Utilisateur non trouvé"}), 404
+
+    if user.derector_valide:
+        return jsonify({"message": "Compte déjà validé par le directeur."}), 200
+
+    user.derector_valide = True
+    db.session.commit()
+
+    return jsonify({"message": "Compte technicien validé avec succès."}), 200
 
 # def verify_email(token):
 #     user = User.query.filter_by(verification_token=token).first()
