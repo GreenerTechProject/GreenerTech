@@ -49,12 +49,11 @@ async def mission_data_handler(request):
                       AND EXTRACT(DAY FROM date_debut) = $4
                       AND EXTRACT(HOUR FROM date_debut) = $5
                       AND EXTRACT(MINUTE FROM date_debut) = $6
-                      AND EXTRACT(SECOND FROM created_at) = $7
                     ORDER BY id DESC 
                     LIMIT 1
                     """,
                     robot_referance,
-                    now.year, now.month, now.day, now.hour, now.minute, now.second
+                    now.year, now.month, now.day, now.hour, now.minute
                 )
                 await conn.close()
 
