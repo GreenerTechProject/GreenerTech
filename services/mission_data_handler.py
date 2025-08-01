@@ -24,6 +24,7 @@ async def mission_data_handler(request):
         while not ws.closed:
             try:
             
+                now = datetime.utcnow()
                 print("""
                     SELECT * FROM missions_robot 
                     WHERE referance = $1 
@@ -39,7 +40,6 @@ async def mission_data_handler(request):
                     robot_referance,
                     now.year, now.month, now.day, now.hour, now.minute, now.second
                 )
-                now = datetime.utcnow()
                 conn = await asyncpg.connect(DB_URL)
                 rows = await conn.fetch("""
                     SELECT * FROM missions_robot 
