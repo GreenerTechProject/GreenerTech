@@ -26,7 +26,22 @@ async def mission_data_handler(request):
                 now = datetime.utcnow()
                 conn = await asyncpg.connect(DB_URL)
                 rows = await conn.fetch("""
-                    SELECT * FROM mission 
+                    SELECT * FROM missions_robot 
+                    WHERE reference = $1 
+                      AND EXTRACT(YEAR FROM date_debut) = $2
+                      AND EXTRACT(MONTH FROM date_debut) = $3
+                      AND EXTRACT(DAY FROM date_debut) = $4
+                      AND EXTRACT(HOUR FROM date_debut) = $5
+                      AND EXTRACT(MINUTE FROM date_debut) = $6
+                      AND EXTRACT(SECOND FROM created_at) = $7
+                    ORDER BY id DESC 
+                    LIMIT 1
+                    """,
+                    robot_reference,
+                    now.year, now.month, now.day, now.hour, now.minute, now.second
+                )
+                print("""
+                    SELECT * FROM missions_robot 
                     WHERE reference = $1 
                       AND EXTRACT(YEAR FROM date_debut) = $2
                       AND EXTRACT(MONTH FROM date_debut) = $3
