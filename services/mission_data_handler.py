@@ -13,8 +13,8 @@ mission_clients = set()
 async def mission_data_handler(request):
     ws = web.WebSocketResponse()
     await ws.prepare(request)
-    robot_reference = request.query.get("reference", "")
-    print("🔎 Incoming mission request from robot: "+robot_reference)
+    robot_referance = request.query.get("referance", "")
+    print("🔎 Incoming mission request from robot: "+robot_referance)
 
 
     mission_clients.add(ws)
@@ -23,11 +23,27 @@ async def mission_data_handler(request):
     try:
         while not ws.closed:
             try:
+            
+                print("""
+                    SELECT * FROM missions_robot 
+                    WHERE referance = $1 
+                      AND EXTRACT(YEAR FROM date_debut) = $2
+                      AND EXTRACT(MONTH FROM date_debut) = $3
+                      AND EXTRACT(DAY FROM date_debut) = $4
+                      AND EXTRACT(HOUR FROM date_debut) = $5
+                      AND EXTRACT(MINUTE FROM date_debut) = $6
+                      AND EXTRACT(SECOND FROM created_at) = $7
+                    ORDER BY id DESC 
+                    LIMIT 1
+                    """,
+                    robot_referance,
+                    now.year, now.month, now.day, now.hour, now.minute, now.second
+                )
                 now = datetime.utcnow()
                 conn = await asyncpg.connect(DB_URL)
                 rows = await conn.fetch("""
                     SELECT * FROM missions_robot 
-                    WHERE reference = $1 
+                    WHERE referance = $1 
                       AND EXTRACT(YEAR FROM date_debut) = $2
                       AND EXTRACT(MONTH FROM date_debut) = $3
                       AND EXTRACT(DAY FROM date_debut) = $4
@@ -37,22 +53,7 @@ async def mission_data_handler(request):
                     ORDER BY id DESC 
                     LIMIT 1
                     """,
-                    robot_reference,
-                    now.year, now.month, now.day, now.hour, now.minute, now.second
-                )
-                print("""
-                    SELECT * FROM missions_robot 
-                    WHERE reference = $1 
-                      AND EXTRACT(YEAR FROM date_debut) = $2
-                      AND EXTRACT(MONTH FROM date_debut) = $3
-                      AND EXTRACT(DAY FROM date_debut) = $4
-                      AND EXTRACT(HOUR FROM date_debut) = $5
-                      AND EXTRACT(MINUTE FROM date_debut) = $6
-                      AND EXTRACT(SECOND FROM created_at) = $7
-                    ORDER BY id DESC 
-                    LIMIT 1
-                    """,
-                    robot_reference,
+                    robot_referance,
                     now.year, now.month, now.day, now.hour, now.minute, now.second
                 )
                 await conn.close()
