@@ -29,8 +29,6 @@ def register():
     db.session.commit()
     new_user.verification_token = generate_token(new_user.id)
     db.session.commit()
-    token = generate_token(new_user.id)
-
     # Envoi de l'email de vérification
     send_verification_email(new_user)
     return jsonify({
@@ -127,6 +125,9 @@ def create_technicien(current_user):
     data = request.get_json()
     email = data.get('email')
     role = data.get('role')
+    name = data.get('name')
+
+
 
     if role not in ["technicien", "technicien_superieur"]:
         return jsonify({"message": "Rôle invalide. Choisir 'technicien' ou 'technicien_superieur'"}), 400
@@ -136,9 +137,11 @@ def create_technicien(current_user):
 
     new_user = User(
         email =email,
+        name=name,
         role=role,
         birthday=data.get('birthday'),
-        id_assigned=current_user.id,
+        id_assigned =data.get('id_assigned'),
+        # id_assigned=current_user.id,
         derector_valide=False,
         email_valide=False
     )
@@ -197,12 +200,34 @@ def verify_email():
         user.verification_token = None
         db.session.commit()
 
-        return jsonify({"message": "Email vérifié avec succès."}), 200
+
+        return jsonify({
+            "message": "Email vérifié avec succès."
+        }), 200
+
+        # return jsonify({"message": "Email vérifié avec succès."}), 200
 
     except jwt.ExpiredSignatureError:
         return jsonify({"error": "Le token a expiré."}), 400
     except jwt.InvalidTokenError:
         return jsonify({"error": "Token invalide."}), 400
+
+def get_technicien():
+    email = request.args.get('email')
+    if not email:
+        return jsonify({"error": "Email requis"}), 400
+    user = User.query.filter_by(email=email).first()
+    if not user:
+        return jsonify({"error": "Utilisateur non trouvé"}), 404
+    if user.password:
+        return jsonify({"error": "Compte deja existe"}), 404
+    user_data = {
+        "id": user.id,
+        "name": user.name,
+        "email": user.email,
+        "role": user.role
+    }
+    return jsonify(user_data), 200
 
 def register_technicien():
     data = request.get_json()
@@ -212,53 +237,102 @@ def register_technicien():
     name = data.get('name')
     password = data.get('password')
     birthday = data.get('birthday')
+    telephone = data.get('phone_number')
+    cin = data.get('cin')
+    id_entreprise = data.get('id_entreprise')
 
-    if not email or not password or not name:
-        return jsonify({"error": "Email, nom et mot de passe requis"}), 400
-    
     if role not in ["technicien", "technicien_superieur"]:
         return jsonify({"message": "Rôle invalide. Choisir 'technicien' ou 'technicien_superieur'"}), 400
 
-
     existing_user = User.query.filter_by(email=email).first()
+
     if existing_user:
-        # Si l'utilisateur existe déjà et le compte com
-        if existing_user.email_valide :
-            return jsonify({"error": "Compte déjà existe "}), 400
-
-        # Mise à jour du compte partiellement créé par le directeur
-        existing_user.name = name
-        existing_user.password = password
-        existing_user.email_valide = False
-        if birthday:
-            try:
-                existing_user.birthday = datetime.strptime(birthday, '%Y-%m-%d')
-            except ValueError:
-                return jsonify({"error": "Format de date invalide (attendu : YYYY-MM-DD)"}), 400
-            
-        existing_user.verification_token = generate_token(existing_user.id)
-        send_verification_email(existing_user)
-        db.session.commit()
-        return jsonify({"message": "Compte technicien complété. En attente de validation du directeur."}), 200
-
-    # Création d’un nouveau compte technicien
+        if not existing_user.password:
+            existing_user.password = generate_password_hash(password)
+            existing_user.cin = cin
+            existing_user.name = name
+            existing_user.birthday = datetime.strptime(birthday, '%Y-%m-%d') if birthday else None
+            existing_user.telephone = telephone
+            existing_user.role = role
+            existing_user.id_entreprise = id_entreprise
+            existing_user.email_valide = False
+            existing_user.verification_token = generate_token(existing_user.id)
+            db.session.commit()
+            send_verification_email(existing_user)
+            return jsonify({"message": "Compte technicien complété. En attente de validation d'email."}), 200
+        else:
+            #  Cas oublié : utilisateur déjà complet
+            return jsonify({"message": "Cet email est déjà utilisé par un compte existant."}), 400
 
     new_user = User(
         email=email,
-        name=name,
         role=role,
-        password=password,
+        name=name,
+        password=generate_password_hash(password),
         birthday=datetime.strptime(birthday, '%Y-%m-%d') if birthday else None,
+        telephone=telephone,
+        cin=cin,
+        id_entreprise=id_entreprise,
         derector_valide=False,
-        email_valide=False,
+        email_valide=False
     )
-
-    new_user.verification_token = generate_token(new_user.id)
     db.session.add(new_user)
+    db.session.flush()  # Pour récupérer l'ID
+    new_user.verification_token = generate_token(new_user.id)
     db.session.commit()
     send_verification_email(new_user)
+    return jsonify({
+        "message": "Compte technicien créé. Veuillez vérifier votre email pour activer votre compte. En attente de validation du directeur."
+    }), 201
+
+   
+
+    # if not email or not password or not name:
+    #     return jsonify({"error": "Email, nom et mot de passe requis"}), 400
     
-    return jsonify({"message": "Compte créé , Veuillez vérifier votre email pour activer votre compte.)."}), 201
+    # if role not in ["technicien", "technicien_superieur"]:
+    #     return jsonify({"message": "Rôle invalide. Choisir 'technicien' ou 'technicien_superieur'"}), 400
+
+
+    # existing_user = User.query.filter_by(email=email).first()
+    # if existing_user:
+    #     # Si l'utilisateur existe déjà et le compte com
+    #     if existing_user.email_valide :
+    #         return jsonify({"error": "Compte déjà existe "}), 400
+
+    #     # Mise à jour du compte partiellement créé par le directeur
+    #     existing_user.name = name
+    #     existing_user.password = password
+    #     existing_user.email_valide = False
+    #     if birthday:
+    #         try:
+    #             existing_user.birthday = datetime.strptime(birthday, '%Y-%m-%d')
+    #         except ValueError:
+    #             return jsonify({"error": "Format de date invalide (attendu : YYYY-MM-DD)"}), 400
+            
+    #     existing_user.verification_token = generate_token(existing_user.id)
+    #     send_verification_email(existing_user)
+    #     db.session.commit()
+    #     return jsonify({"message": "Compte technicien complété. En attente de validation du directeur."}), 200
+
+    # # Création d’un nouveau compte technicien
+
+    # new_user = User(
+    #     email=email,
+    #     name=name,
+    #     role=role,
+    #     password=password,
+    #     birthday=datetime.strptime(birthday, '%Y-%m-%d') if birthday else None,
+    #     derector_valide=False,
+    #     email_valide=False,
+    # )
+
+    # new_user.verification_token = generate_token(new_user.id)
+    # db.session.add(new_user)
+    # db.session.commit()
+    # send_verification_email(new_user)
+    
+    # return jsonify({"message": "Compte créé , Veuillez vérifier votre email pour activer votre compte.)."}), 201
 
 
 # valider  le compte du technicien par le directeur
