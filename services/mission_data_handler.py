@@ -1,7 +1,7 @@
 from aiohttp import web, WSMsgType
 import json
 import asyncpg
-import datetime
+from datetime import datetime
 
 DB_URL = "postgresql://postgres:postgres@localhost:5433/greenertech"
 
