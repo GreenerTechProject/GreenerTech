@@ -41,7 +41,7 @@ async def mission_data_handler(request):
                     now.year, now.month, now.day, now.hour, now.minute, now.second
                 )
                 conn = await asyncpg.connect(DB_URL)
-                robot = await conn.fetchrow("SELECT id FROM robots WHERE referance = $1", referance)
+                robot = await conn.fetchrow("SELECT id FROM robots WHERE referance = $1", robot_referance)
                 if not robot:
                     await ws.send_str(json.dumps({"error": "Robot not found"}))
                     continue
