@@ -41,9 +41,16 @@ async def mission_data_handler(request):
                     now.year, now.month, now.day, now.hour, now.minute, now.second
                 )
                 conn = await asyncpg.connect(DB_URL)
+                robot = await conn.fetchrow("SELECT id FROM robots WHERE referance = $1", referance)
+                if not robot:
+                    await ws.send_str(json.dumps({"error": "Robot not found"}))
+                    continue
+
+                id_robot = robot['id']
+                
                 rows = await conn.fetch("""
                     SELECT * FROM missions_robot 
-                    WHERE referance = $1 
+                    WHERE id_robot = $1 
                       AND EXTRACT(YEAR FROM date_debut) = $2
                       AND EXTRACT(MONTH FROM date_debut) = $3
                       AND EXTRACT(DAY FROM date_debut) = $4
@@ -52,7 +59,7 @@ async def mission_data_handler(request):
                     ORDER BY id DESC 
                     LIMIT 1
                     """,
-                    robot_referance,
+                    id_robot,
                     now.year, now.month, now.day, now.hour, now.minute
                 )
                 await conn.close()
