@@ -12,6 +12,7 @@ class MissionRobot(db.Model):
     rep_sem = Column(Integer)
     date_debut = Column(DateTime, default=datetime.utcnow)
     date_fin = Column(DateTime)
+    executed = db.Column(db.Boolean, default=False)
 
     def to_dict(self):
         return {
@@ -22,4 +23,5 @@ class MissionRobot(db.Model):
             "rep_sem": self.rep_sem,
             "date_debut": self.date_debut.isoformat() if self.date_debut else None,
             "date_fin": self.date_fin.isoformat() if self.date_fin else None,
+            "executed": self.executed
         }

@@ -181,7 +181,30 @@ async def sensor_data_handler(request):
                 try:
                     data = json.loads(msg.data)
                     latest_sensor_data = data
-                    print(f"📡 Données reçues : {data}")
+                    #print(f"📡 Données reçues : {data}")
+
+                    temperature = data.get("temperature")
+                    humidity = data.get("humidity")
+                    co2 = data.get("co2")
+                    luminosite = data.get("luminosite")
+
+                    warnings = []
+
+                    if temperature is not None:
+                        if not (15 <= temperature <= 35):
+                            warnings.append(f"⚠️ Température anormale: {temperature}°C")
+                    if humidity is not None:
+                        if not (30 <= humidity <= 90):
+                            warnings.append(f"⚠️ Humidité anormale: {humidity}%")
+                    if co2 is not None:
+                        if not (300 <= co2 <= 1000):
+                            warnings.append(f"⚠️ CO2 anormal: {co2} ppm")
+                    if luminosite is not None:
+                        if not (100 <= luminosite <= 2000):
+                            warnings.append(f"⚠️ Luminosité anormale: {luminosite} lx")
+
+                    for warning in warnings:
+                        print(warning)
 
                     # Diffusion à tous les clients (sauf l'expéditeur)
                     for client in sensor_clients:
@@ -194,11 +217,11 @@ async def sensor_data_handler(request):
         print("🔌 Client déconnecté")
     return ws
 
+
+
+
 import asyncpg
-import os
 from datetime import datetime
-import asyncio
-from aiohttp import web, WSMsgType
 
 
 DB_URL = "postgresql://postgres:postgres@localhost:5433/greenertech"
@@ -209,45 +232,70 @@ mission_clients = set()
 async def mission_data_handler(request):
     ws = web.WebSocketResponse()
     await ws.prepare(request)
-    robot_reference = request.query.get("reference", "")
-    print("🔎 Incoming mission request from robot: "+robot_reference)
-
+    robot_referance = request.query.get("referance", "")
+    print("🔎 Incoming mission request from robot: " + robot_referance)
 
     mission_clients.add(ws)
     print("📘 Mission WebSocket client connected")
 
+    last_mission_id = None
+
     try:
+        conn = await asyncpg.connect(DB_URL)
+        robot = await conn.fetchrow("SELECT id FROM robots WHERE referance = $1", robot_referance)
+        if not robot:
+            await ws.send_str(json.dumps({"error": "Robot not found"}))
+            await conn.close()
+            return ws
+
+        id_robot = robot['id']
+
         while not ws.closed:
             try:
                 now = datetime.utcnow()
-                conn = await asyncpg.connect(DB_URL)
                 rows = await conn.fetch("""
-                    SELECT * FROM mission 
-                    WHERE reference = $1 
+                    SELECT * FROM missions_robot 
+                    WHERE id_robot = $1 
                       AND EXTRACT(YEAR FROM date_debut) = $2
                       AND EXTRACT(MONTH FROM date_debut) = $3
                       AND EXTRACT(DAY FROM date_debut) = $4
                       AND EXTRACT(HOUR FROM date_debut) = $5
                       AND EXTRACT(MINUTE FROM date_debut) = $6
-                      AND EXTRACT(SECOND FROM created_at) = $7
+                      AND executed = False
                     ORDER BY id DESC 
                     LIMIT 1
                     """,
-                    robot_reference,
-                    now.year, now.month, now.day, now.hour, now.minute, now.second
+                    id_robot,
+                    now.year, now.month, now.day, now.hour, now.minute
                 )
-                await conn.close()
 
-                mission = dict(rows[0]) if rows else None
-                await ws.send_str(json.dumps({"mission": mission}))
+                if rows:
+                    mission = dict(rows[0])
+                    if mission["id"] != last_mission_id:
+                        last_mission_id = mission["id"]
+
+                        for k, v in mission.items():
+                            if isinstance(v, datetime):
+                                mission[k] = v.isoformat()
+
+                        await ws.send_str(json.dumps({"mission": mission}))
+                else:
+                    pass
+
             except Exception as e:
                 print(f"❌ Error fetching missions: {e}")
-            await asyncio.sleep(1)  # adjust polling interval
+
+            await asyncio.sleep(60)
+
     finally:
         mission_clients.discard(ws)
+        await conn.close()
         print("📕 Mission WebSocket client disconnected")
 
     return ws
+
+
+
 
 
 async def start_all():

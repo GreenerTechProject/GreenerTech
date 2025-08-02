@@ -15,40 +15,26 @@ async def mission_data_handler(request):
     ws = web.WebSocketResponse()
     await ws.prepare(request)
     robot_referance = request.query.get("referance", "")
-    print("🔎 Incoming mission request from robot: "+robot_referance)
-
+    print("🔎 Incoming mission request from robot: " + robot_referance)
 
     mission_clients.add(ws)
     print("📘 Mission WebSocket client connected")
 
+    last_mission_id = None
+
     try:
+        conn = await asyncpg.connect(DB_URL)
+        robot = await conn.fetchrow("SELECT id FROM robots WHERE referance = $1", robot_referance)
+        if not robot:
+            await ws.send_str(json.dumps({"error": "Robot not found"}))
+            await conn.close()
+            return ws
+
+        id_robot = robot['id']
+
         while not ws.closed:
             try:
-            
                 now = datetime.utcnow()
-                print("""
-                    SELECT * FROM missions_robot 
-                    WHERE referance = $1 
-                      AND EXTRACT(YEAR FROM date_debut) = $2
-                      AND EXTRACT(MONTH FROM date_debut) = $3
-                      AND EXTRACT(DAY FROM date_debut) = $4
-                      AND EXTRACT(HOUR FROM date_debut) = $5
-                      AND EXTRACT(MINUTE FROM date_debut) = $6
-                      AND EXTRACT(SECOND FROM created_at) = $7
-                    ORDER BY id DESC 
-                    LIMIT 1
-                    """,
-                    robot_referance,
-                    now.year, now.month, now.day, now.hour, now.minute, now.second
-                )
-                conn = await asyncpg.connect(DB_URL)
-                robot = await conn.fetchrow("SELECT id FROM robots WHERE referance = $1", robot_referance)
-                if not robot:
-                    await ws.send_str(json.dumps({"error": "Robot not found"}))
-                    continue
-
-                id_robot = robot['id']
-                
                 rows = await conn.fetch("""
                     SELECT * FROM missions_robot 
                     WHERE id_robot = $1 
@@ -57,28 +43,36 @@ async def mission_data_handler(request):
                       AND EXTRACT(DAY FROM date_debut) = $4
                       AND EXTRACT(HOUR FROM date_debut) = $5
                       AND EXTRACT(MINUTE FROM date_debut) = $6
+                      AND executed = False
                     ORDER BY id DESC 
                     LIMIT 1
                     """,
                     id_robot,
                     now.year, now.month, now.day, now.hour, now.minute
                 )
-                await conn.close()
 
-                mission = dict(rows[0]) if rows else None
-                # Convert all datetime fields to ISO format strings
-                if mission:
-                    for k, v in mission.items():
-                        if isinstance(v, datetime):
-                            mission[k] = v.isoformat()
+                if rows:
+                    mission = dict(rows[0])
+                    if mission["id"] != last_mission_id:
+                        last_mission_id = mission["id"]
 
-                await ws.send_str(json.dumps({"mission": mission}))
+                        for k, v in mission.items():
+                            if isinstance(v, datetime):
+                                mission[k] = v.isoformat()
+
+                        await ws.send_str(json.dumps({"mission": mission}))
+                else:
+                    pass
 
             except Exception as e:
                 print(f"❌ Error fetching missions: {e}")
-            await asyncio.sleep(5)  # adjust polling interval
+
+            await asyncio.sleep(60)
+
     finally:
         mission_clients.discard(ws)
+        await conn.close()
         print("📕 Mission WebSocket client disconnected")
 
     return ws
+

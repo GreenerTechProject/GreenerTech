@@ -108,7 +108,7 @@
   </div>
 
   <!-- Control Buttons Container -->
-  <div id="control-container">
+  <!--div id="control-container">
     <h3>Controls</h3>
     <button data-mode="top">Top</button>
     <button data-mode="down">Down</button>
@@ -118,7 +118,7 @@
   </div>
 
   <!-- Mission Creation Form -->
-  <div id="mission-form-container">
+  <!--div id="mission-form-container">
     <h3>Create New Mission</h3>
   
 <form id="missionForm">
@@ -142,7 +142,7 @@
 
   <button type="submit">Create Mission</button>
 </form>
-</div>
+</div-->
 
 
   <div id="missionResponse" class="response"></div>
@@ -249,7 +249,7 @@
       document.getElementById("sensor-data").innerText = "WebSocket connection error.";
     };
 
-	
+	/*
     const missionWs = new WebSocket(
       `${location.protocol === "https:" ? "wss" : "ws"}://${location.hostname}:8080/service/missions`
     );
@@ -300,7 +300,7 @@
         responseElem.style.color = "red";
         responseElem.textContent = "WebSocket not connected.";
       }
-    });
+    });*/
   </script>
 </body>
 </html>

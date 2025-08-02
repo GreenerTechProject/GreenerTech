@@ -14,7 +14,8 @@ def create_mission_robot(current_user):
             rep_jr=data['rep_jr'],
             rep_sem=data['rep_sem'],
             date_debut=data.get('date_debut'),
-            date_fin=data.get('date_fin')
+            date_fin=data.get('date_fin'),
+            executed=data.get('executed')
         )
         db.session.add(mission)
         db.session.commit()
@@ -53,6 +54,7 @@ def update_mission_robot(current_user, mission_id):
         mission.rep_sem = data.get('rep_sem', mission.rep_sem)
         mission.date_debut = data.get('date_debut', mission.date_debut)
         mission.date_fin = data.get('date_fin', mission.date_fin)
+        mission.executed = data.get('executed', mission.executed)
 
         # Si tu as d'autres champs à ajouter, complète ici
 
