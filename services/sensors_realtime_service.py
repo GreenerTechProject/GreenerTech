@@ -41,6 +41,7 @@ async def sensor_data_handler(request):
                             warnings.append(f"⚠️ Luminosité anormale: {luminosite} lx")
 
                     for warning in warnings:
+                        print(latest_qr_results)
                         print(warning)
 
                     # Diffusion à tous les clients (sauf l'expéditeur)
