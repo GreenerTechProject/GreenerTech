@@ -22,20 +22,20 @@ def register():
         name=data['name'],
         email=data['email'],
         password=generate_password_hash(data['password']),
-        role="directeur"
+        role="directeur",
+        verification_token=generate_token(1)
         #role=data.get('role', 'user')
     )
     db.session.add(new_user)
     db.session.commit()
-    new_user.verification_token = generate_token(new_user.id)
+    #new_user.verification_token = generate_token(new_user.id)
     db.session.commit()
-    token = generate_token(new_user.id)
+   # token = generate_token(new_user.id)
 
     # Envoi de l'email de vérification
     send_verification_email(new_user)
     return jsonify({
         "message": "User registered successfully. Please check your email to verify your account.",
-        "userId": new_user.id  
     }), 201
 
 
@@ -50,9 +50,10 @@ def login():
         if not user.email_valide:
             return jsonify({"message": "Email not verified. Please check your email."}), 403
         token = generate_token(user.id)
-        return jsonify({
+        return jsonify ({
+            "user" : user.to_dict(),
             "token": token, 
-            "role": "directeur"
+            "role": user.role
         }), 200
 
     return jsonify({"message": "Invalid credentials"}), 401
