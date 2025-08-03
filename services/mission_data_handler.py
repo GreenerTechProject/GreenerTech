@@ -35,6 +35,22 @@ async def mission_data_handler(request):
         while not ws.closed:
             try:
                 now = datetime.utcnow()
+            
+                now = datetime.utcnow()
+                print("""
+                    SELECT * FROM missions_robot 
+                    WHERE referance = $1 
+                      AND EXTRACT(YEAR FROM date_debut) = $2
+                      AND EXTRACT(MONTH FROM date_debut) = $3
+                      AND EXTRACT(DAY FROM date_debut) = $4
+                      AND EXTRACT(HOUR FROM date_debut) = $5
+                      AND EXTRACT(MINUTE FROM date_debut) <= $6
+                    ORDER BY id DESC 
+                    LIMIT 1
+                    """,
+                    robot_referance,
+                    now.year, now.month, now.day, now.hour, now.minute, now.second
+                )
                 rows = await conn.fetch("""
                     SELECT * FROM missions_robot 
                     WHERE id_robot = $1 
