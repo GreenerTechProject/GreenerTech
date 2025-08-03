@@ -157,7 +157,12 @@ async def offer(request):
     answer = await pc.createAnswer()
     await pc.setLocalDescription(answer)
     
-    sdp_modified = pc.localDescription.sdp.replace("172.18.0.5", "greenertech.mywire.org")
+    import re
+
+    sdp = pc.localDescription.sdp
+
+    sdp_modified = re.sub(r'172\.\d{1,3}\.\d{1,3}\.\d{1,3}', "greenertech.mywire.org", sdp)
+
 
     return web.json_response({
         "sdp": sdp_modified,
