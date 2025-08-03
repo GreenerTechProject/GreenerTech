@@ -167,11 +167,11 @@
 	const canvas = document.getElementById("video-canvas");
 	const ctx = canvas.getContext("2d");
 	
-	const ws = new WebSocket(`ws://${window.location.host}/service/video_stream_service`);
+	const ws0 = new WebSocket(`ws://${window.location.host}/service/video_stream_service`);
 	
-	ws.binaryType = "arraybuffer";
+	ws0.binaryType = "arraybuffer";
 	
-	ws.onmessage = (event) => {
+	ws0.onmessage = (event) => {
 	const blob = new Blob([event.data], { type: "image/jpeg" });
 	const url = URL.createObjectURL(blob);
 	
@@ -183,15 +183,15 @@
 	img.src = url;
 	};
 	
-	ws.onopen = () => {
+	ws0.onopen = () => {
 	console.log("WebSocket video viewer connected.");
 	};
 	
-	ws.onerror = (err) => {
+	ws0.onerror = (err) => {
 	console.error("WebSocket error:", err);
 	};
 	
-	ws.onclose = () => {
+	ws0.onclose = () => {
 	console.log("WebSocket video viewer disconnected.");
 	};
 
