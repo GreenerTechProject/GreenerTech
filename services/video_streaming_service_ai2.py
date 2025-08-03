@@ -64,7 +64,7 @@ async def video_stream_handler(request):
 
     return ws
 
-async def video_viewer_handler(request):
+async def offer(request):
     ws = web.WebSocketResponse()
     await ws.prepare(request)
 
