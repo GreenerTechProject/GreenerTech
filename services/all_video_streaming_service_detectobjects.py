@@ -254,7 +254,7 @@ async def mission_data_handler(request):
 
         while not ws.closed:
             try:
-                now = datetime.now(timezone(timedelta(hours=1)))()
+                now = datetime.now(timezone(timedelta(hours=1)))
                 rows = await conn.fetch("""
                     SELECT * FROM missions_robot 
                     WHERE id_robot = $1 

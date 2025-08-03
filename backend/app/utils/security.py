@@ -8,7 +8,7 @@ from app.models.user import User
 def generate_token(user_id):
     token = jwt.encode({
         'user_id': user_id,
-        'exp': datetime.now(timezone(timedelta(hours=1)))() + timedelta(hours=24)
+        'exp': datetime.now(timezone(timedelta(hours=1))) + timedelta(hours=24)
     }, current_app.config['SECRET_KEY'], algorithm="HS256")
     return token
 
