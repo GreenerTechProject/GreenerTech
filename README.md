@@ -59,8 +59,8 @@ docker-compose down
 ### 2.6. Acceder au projet
 
 ```bash
-http://localhost:3000/register
-http://localhost:3000/login
+http://localhost:3000/inscription-directeur
+http://localhost:3000/connexion
 POST : http://localhost:5000/api/register
 http://localhost:8080/video/
 ```
