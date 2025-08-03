@@ -142,9 +142,7 @@ async def offer(request):
             iceServers=[
                 RTCIceServer(urls=["stun:stun.l.google.com:19302"])
             ]
-        ),
-    iceTransportPolicy="all",
-    iceCandidatePoolSize=10
+        )
     )
 
 
