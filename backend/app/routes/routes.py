@@ -135,7 +135,7 @@ all_bp.route('/etat_bilan<int:etat_bilan_id>', methods=['DELETE'])(delete_etat_b
 
 
 all_bp.route('/alerte', methods=['POST'])(create_alerte)
-all_bp.route('/alerte>', methods=['GET'])(get_all_alertes)
+all_bp.route('/alerte', methods=['GET'])(get_all_alertes)
 all_bp.route('/alerte/<int:alerte_id>', methods=['GET'])(get_alerte)
 all_bp.route('/alerte<int:alerte_id>', methods=['PUT'])(update_alerte)
 all_bp.route('/alerte<int:alerte_id>', methods=['DELETE'])(delete_alerte)

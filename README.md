@@ -17,8 +17,11 @@ Comment lancer le projet avec Docker
 Assurez-vous d’avoir Docker installé sur votre machine. Ensuite, vous pouvez construire et lancer le conteneur Docker de la façon suivante :
 ```bash
 docker-compose up -d --build
-docker exec -it greenertech-backend bash -c "rm -rf migrations && flask db init && flask db migrate -m 'create tables' && flask db upgrade"
 cat greenertech_backup.sql | docker exec -i greenertech-db psql -U postgres -d greenertech
+
+OR
+
+docker exec -it greenertech-backend bash -c "rm -rf migrations && flask db init && flask db migrate -m 'create tables' && flask db upgrade"
 
 ```
 

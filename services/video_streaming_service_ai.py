@@ -69,13 +69,13 @@ async def video_stream_handler(request):
                             
                             try:
                                 data = json.loads(text)
-                                print(data["nom"])                                
+                                #print(data["nom"])                                
                                 print("Detected bilan : "+data["nom"])
                             
                             except json.JSONDecodeError:
                                 print("No json", text)
 
-                            print("Detected bilan : "+decoded_info[0])
+                            #print("Detected bilan : "+decoded_info[0])
                             pts = points[i].astype(int)
                             for j in range(4):
                                 pt1 = tuple(pts[j])
@@ -120,12 +120,16 @@ async def qr_data_handler(request):
 
     return ws
 
+
 def get_latest_qr_results():
     return latest_qr_results
 
+def get_latest_frame():
+    return latest_frame
+
 
 async def index(request):
-    return web.Response(content_type="text/html", text=open("index.html").read())
+    return web.Response(content_type="text/html", text=open("index.html", encoding="utf-8").read())
 
 async def offer(request):
     params = await request.json()

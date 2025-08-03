@@ -109,14 +109,15 @@
   </div>
 
   <!-- Control Buttons Container -->
-  <!--div id="control-container">
+  <div id="control-container">
     <h3>Controls</h3>
-    <button data-mode="top">Top</button>
-    <button data-mode="down">Down</button>
-    <button data-mode="normal">Normal</button>
-    <button data-mode="right">Right</button>
-    <button data-mode="left">Left</button>
+    <button data-mode="TOP">Top</button>
+    <button data-mode="DOWN">Down</button>
+    <button data-mode="NORMAL">Normal</button>
+    <button data-mode="RIGHT">Right</button>
+    <button data-mode="LEFT">Left</button>
   </div>
+  
 
   <!-- Mission Creation Form -->
   <!--div id="mission-form-container">
@@ -191,6 +192,8 @@
 	ws.onmessage = (event) => {
 	  try {
 		const data = JSON.parse(event.data);
+		console.log("Received data:", data);
+
 		const qrList = document.getElementById("qrList");
 		qrList.innerHTML = "";
 
@@ -230,13 +233,22 @@
 		  parent.appendChild(li);
 		}
 
-		for (const key in data) {
-		  printKeyValue(key, data[key], qrList);
+		if (data.qr_codes && Array.isArray(data.qr_codes)) {
+		  data.qr_codes.forEach((qrCodeStr, i) => {
+			try {
+			  const qrData = JSON.parse(qrCodeStr);
+			  printKeyValue(`QR Code ${i + 1}`, qrData, qrList);
+			} catch (e) {
+			  console.error("Failed to parse individual QR code:", e);
+			}
+		  });
 		}
+
 	  } catch (e) {
 		console.error("Failed to parse WebSocket message:", e);
 	  }
 	};
+
 
 
     ws.onclose = () => {
@@ -257,8 +269,19 @@
     // Buttons send control commands via control WebSocket
     const buttons = document.querySelectorAll("#control-container button");
     buttons.forEach(btn => {
-      btn.addEventListener("click", () => {
+      btn.addEventListener("mousedown", () => {
         const mode = btn.getAttribute("data-mode");
+        console.log("Sending mode:", mode);
+        if (controlWs.readyState === WebSocket.OPEN) {
+          controlWs.send(JSON.stringify({ control_mode: mode }));
+        } else {
+          console.warn("Control WebSocket not open");
+        }
+      });
+    });
+    buttons.forEach(btn => {
+      btn.addEventListener("mouseup", () => {
+        const mode = "STOP";
         console.log("Sending mode:", mode);
         if (controlWs.readyState === WebSocket.OPEN) {
           controlWs.send(JSON.stringify({ control_mode: mode }));
@@ -274,9 +297,10 @@
     ws2.onmessage = (event) => {
       const data = JSON.parse(event.data);
       document.getElementById("sensor-data").innerHTML = `
-        🌡 Temperature : ${data.temperature} °C<br>
-        💧 Humidity : ${data.humidity} %<br>
-        🟢 CO₂ : ${data.co2} ppm
+          🌡 Température : ${data.temperature} °C<br>
+          💧 Humidité : ${data.humidity} %<br>
+          🟢 CO₂ : ${data.co2} ppm<br>
+          💡 Luminosité : ${data.luminosite} lux
       `;
     };
 

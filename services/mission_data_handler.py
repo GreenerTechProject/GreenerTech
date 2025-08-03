@@ -42,7 +42,7 @@ async def mission_data_handler(request):
                       AND EXTRACT(MONTH FROM date_debut) = $3
                       AND EXTRACT(DAY FROM date_debut) = $4
                       AND EXTRACT(HOUR FROM date_debut) = $5
-                      AND EXTRACT(MINUTE FROM date_debut) = $6
+                      AND EXTRACT(MINUTE FROM date_debut) <= $6
                       AND executed = False
                     ORDER BY id DESC 
                     LIMIT 1
@@ -59,7 +59,11 @@ async def mission_data_handler(request):
                         for k, v in mission.items():
                             if isinstance(v, datetime):
                                 mission[k] = v.isoformat()
-
+                        #
+                        await conn.execute(f"""
+                            UPDATE missions_robot SET executed = True
+                            WHERE id = $1
+                        """, mission["id"])
                         await ws.send_str(json.dumps({"mission": mission}))
                 else:
                     pass

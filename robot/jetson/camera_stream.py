@@ -3,6 +3,9 @@ import asyncio
 import websockets
 import json
 
+#import serial
+
+
 host = "localhost"
 
 
@@ -47,6 +50,13 @@ async def receive_controls():
                     data = json.loads(message)
                     if "control_mode" in data:
                         print(f"Commande contrôle reçue: {data['control_mode']}")
+                        
+
+                        # Ouvre le port série vers Arduino (adapter le port si besoin)
+                        #arduino = serial.Serial('/dev/ttyACM0', 9600)
+                        #arduino.write((data['control_mode'] + "\n").encode())
+
+
         except (websockets.exceptions.ConnectionClosedError, ConnectionRefusedError) as e:
             print(f"❌ Connexion contrôle échouée ou perdue : {e}. Nouvelle tentative dans 2 secondes...")
             await asyncio.sleep(2)
@@ -65,10 +75,12 @@ async def simulate_sensor_data():
                 "temperature": round(random.uniform(20, 3000), 2),
                 "humidity": round(random.uniform(50, 80), 2),
                 "co2": round(random.uniform(300, 800), 2),
-                "luminosite": round(random.uniform(100, 1000), 2)
+                "luminosite": round(random.uniform(100, 1000), 2),
+                "x": round(random.uniform(-180.0, 180.0), 6),  # longitude
+                "y": round(random.uniform(-90.0, 90.0), 6)     # latitude
             }
             await ws.send(json.dumps(data))
-            print(f"📤 Données envoyées : {data}")
+            #print(f"📤 Données envoyées : {data}")
             await asyncio.sleep(2)
 
 
@@ -125,7 +137,7 @@ async def listen_missions(robot_referance):
     while True:
         try:
             print("Tentative de connexion au serveur mission...")
-            control_uri = "ws://"+host+":8080/service/missions?referance="+robot_referance
+            control_uri = "ws://greenertech.mywire.org:8080/service/missions?referance="+robot_referance
             async with websockets.connect(control_uri) as websocket:
                 print(f"Connected to mission websocket for robot '{robot_referance}'")
                 async for msg in websocket:
