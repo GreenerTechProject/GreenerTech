@@ -52,12 +52,12 @@ async def mission_data_handler(request):
                 #)
                 rows = await conn.fetch("""
                     SELECT * FROM missions_robot 
-                    WHERE id_robot = 2 
-                      AND EXTRACT(YEAR FROM date_debut) = 2025
-                      AND EXTRACT(MONTH FROM date_debut) = 08
-                      AND EXTRACT(DAY FROM date_debut) = 03
-                      AND EXTRACT(HOUR FROM date_debut) = 04
-                      AND EXTRACT(MINUTE FROM date_debut) <= 46
+                    WHERE id_robot = $1
+                      AND EXTRACT(YEAR FROM date_debut) = $2
+                      AND EXTRACT(MONTH FROM date_debut) = $3
+                      AND EXTRACT(DAY FROM date_debut) = $4
+                      AND EXTRACT(HOUR FROM date_debut) = $5
+                      AND EXTRACT(MINUTE FROM date_debut) <= $6
                       AND executed = False
                     ORDER BY id DESC 
                     LIMIT 1
