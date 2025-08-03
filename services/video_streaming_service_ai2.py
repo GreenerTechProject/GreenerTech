@@ -2,52 +2,22 @@ import asyncio
 import cv2
 import numpy as np
 from aiohttp import web, WSMsgType
-from aiortc import RTCPeerConnection, VideoStreamTrack, RTCSessionDescription
-from av import VideoFrame
 from cv2 import QRCodeDetector
-#from detectobjects import detect_frame
-#from classificationmaladies import predict_frame
 import json
 import os
 import time
-#import ast
-
+#from detectobjects import detect_frame
+#from classificationmaladies import predict_frame
 
 qr_detector = QRCodeDetector()
 latest_frame = None
 latest_qr_results = []
 connected_qr_clients = set()
+connected_video_clients = set()
 last_frame_time = 0
 
-class RelayStreamTrack(VideoStreamTrack):
-    def __init__(self):
-        super().__init__()
-        image_path = os.path.join(os.path.dirname(__file__), "no_signal.jpg")
-        self.fallback_frame = cv2.imread(image_path)
-        if self.fallback_frame is None:
-            print(f"⚠️ Failed to load fallback image from: {image_path}")
-        self.cached_frame = None
-
-    async def recv(self):
-        global latest_frame
-        pts, time_base = await self.next_timestamp()
-
-        frame_to_use = latest_frame if latest_frame is not None else self.fallback_frame
-        #frame_to_use = detect_frame(latest_frame) if latest_frame is not None else self.fallback_frame
-        #detected_frame, Billan_dicts = predict_frame(latest_frame) if latest_frame is not None else self.fallback_frame, 0
-        #print (Billan_dicts)
-        #frame_to_use = detected_frame
-        if frame_to_use is None:
-            raise Exception("No video stream and no fallback image found!")
-
-        if not np.array_equal(frame_to_use, self.cached_frame):
-            rgb_frame = cv2.cvtColor(frame_to_use, cv2.COLOR_BGR2RGB)
-            self.cached_frame = frame_to_use.copy()
-            self.av_frame = VideoFrame.from_ndarray(rgb_frame, format="rgb24")
-
-        self.av_frame.pts = pts
-        self.av_frame.time_base = time_base
-        return self.av_frame
+no_signal_image = cv2.imread(os.path.join(os.path.dirname(__file__), "no_signal.jpg"))
+ret, no_signal_jpeg = cv2.imencode('.jpg', no_signal_image) if no_signal_image is not None else (False, None)
 
 async def video_stream_handler(request):
     global latest_frame, latest_qr_results, last_frame_time
@@ -66,16 +36,12 @@ async def video_stream_handler(request):
                 if retval and points is not None:
                     for i, text in enumerate(decoded_info):
                         if text:
-                            
                             try:
                                 data = json.loads(text)
-                                #print(data["nom"])                                
-                                print("Detected bilan : "+data["nom"])
-                            
+                                print("Detected bilan : " + data["nom"])
                             except json.JSONDecodeError:
                                 print("No json", text)
 
-                            #print("Detected bilan : "+decoded_info[0])
                             pts = points[i].astype(int)
                             for j in range(4):
                                 pt1 = tuple(pts[j])
@@ -85,10 +51,9 @@ async def video_stream_handler(request):
                             cv2.putText(frame, text, (x, y - 10),
                                         cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
                             qr_results.append(text)
-                
-                
+
                 latest_frame = frame
-                
+
                 if qr_results:
                     if qr_results != latest_qr_results:
                         latest_qr_results = qr_results
@@ -96,6 +61,26 @@ async def video_stream_handler(request):
 
             except Exception as e:
                 print(f"❌ Error decoding video frame: {e}")
+
+    return ws
+
+async def video_viewer_handler(request):
+    ws = web.WebSocketResponse()
+    await ws.prepare(request)
+
+    connected_video_clients.add(ws)
+    try:
+        while not ws.closed:
+            if latest_frame is not None:
+                ret, jpeg = cv2.imencode('.jpg', latest_frame)
+                if ret:
+                    await ws.send_bytes(jpeg.tobytes())
+            else:
+                if no_signal_jpeg is not None:
+                    await ws.send_bytes(no_signal_jpeg.tobytes())
+            await asyncio.sleep(0.1)  
+    finally:
+        connected_video_clients.discard(ws)
 
     return ws
 
@@ -114,13 +99,10 @@ async def qr_data_handler(request):
                 except Exception as e:
                     print(f"❌ Failed to send QR data: {e}")
             await asyncio.sleep(0.8)
-
-
     finally:
         connected_qr_clients.discard(ws)
 
     return ws
-
 
 def get_latest_qr_results():
     return latest_qr_results
@@ -128,31 +110,8 @@ def get_latest_qr_results():
 def get_latest_frame():
     return latest_frame
 
-
 async def index(request):
-    return web.Response(content_type="text/html", text=open("index.html", encoding="utf-8").read())
-
-async def offer(request):
-    params = await request.json()
-    offer = params["offer"]
-
-    pc = RTCPeerConnection()
-
-    @pc.on("connectionstatechange")
-    async def on_connectionstatechange():
-        print("Connection state:", pc.connectionState)
-
-    pc.addTrack(RelayStreamTrack())
-    await pc.setRemoteDescription(
-        RTCSessionDescription(sdp=offer["sdp"], type=offer["type"])
-    )
-    answer = await pc.createAnswer()
-    await pc.setLocalDescription(answer)
-
-    return web.json_response({
-        "sdp": pc.localDescription.sdp,
-        "type": pc.localDescription.type
-    })
+    return web.Response(content_type="text/html", text=open("2index.html", encoding="utf-8").read())
 
 async def monitor_video_timeout():
     global latest_frame, last_frame_time

@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>WebRTC Viewer with QR Code Data and Mission Creation</title>
+  <meta charset="UTF-8" />
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+      display: flex;
+      flex-direction: row;
+      gap: 20px;
+      height: 550px;
+      align-items: flex-start;
+    }
+    #video-container, #qr-container, #control-container {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+    #video {
+      height: 500px;
+      border: 1px solid black;
+      background: black;
+      object-fit: contain;
+    }
+    #qr-container h3, #control-container h3 {
+      margin-top: 0;
+    }
+    #qrList {
+      font-family: monospace;
+      margin-top: 0px;
+      background: #f0f0f0;
+      padding: 10px;
+      border-radius: 5px;
+      list-style-type: none;
+      height: 300px;
+      overflow-y: auto;
+      box-shadow: inset 0 0 5px #ccc;
+    }
+    #qrList li {
+      padding: 4px 0;
+      border-bottom: 1px solid #ddd;
+    }
+    #control-container button {
+      margin: 5px 0;
+      padding: 10px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+    #mission-form-container {
+      flex: 1;
+      max-width: 350px;
+      border: 1px solid #ccc;
+      padding: 15px;
+      border-radius: 5px;
+      background: #fafafa;
+      height: fit-content;
+      font-size: 14px;
+    }
+    #mission-form-container h3 {
+      margin-top: 0;
+      margin-bottom: 10px;
+    }
+    #mission-form-container label {
+      display: block;
+      margin-bottom: 8px;
+    }
+    #mission-form-container input {
+      width: 100%;
+      padding: 6px;
+      margin-top: 2px;
+      box-sizing: border-box;
+    }
+    #mission-form-container button {
+      margin-top: 12px;
+      padding: 10px;
+      font-size: 16px;
+      cursor: pointer;
+      width: 100%;
+    }
+    #missionResponse {
+      margin-top: 10px;
+      min-height: 20px;
+      font-weight: bold;
+    }
+    #sensor-data-container {
+      flex: 1;
+      max-width: 250px;
+      padding: 10px;
+      border-radius: 5px;
+      height: fit-content;
+    }
+    #sensor-data {
+      font-family: monospace;
+      margin-top: 10px;
+      background: #f0f0f0;
+      padding: 10px;
+      border-radius: 5px;
+      list-style-type: none;
+      overflow-y: auto;
+      box-shadow: inset 0 0 5px #ccc;
+    }
+  </style>
+</head>
+<body>
+  <!-- Video Stream Container -->
+	<div id="video-container">
+	  <h2>Live Video</h2>
+	  <canvas id="video-canvas" width="640" height="480"></canvas>
+	</div>
+
+  <!-- Sensor Data Container -->
+  <div id="sensor-data-container">
+    <h2>🌿 Sensor Data (WebSocket)</h2>
+    <div id="sensor-data">Waiting for sensor data...</div>
+
+  <!-- QR Code Data Container -->
+  <div id="qr-container">
+    <h2>Detected QR Codes:</h2>
+    <ul id="qrList"></ul>
+  </div>
+  </div>
+
+  <!-- Control Buttons Container -->
+  <div id="control-container">
+    <h2>Controls</h2>
+    <button data-mode="TOP">Top 🔼</button>
+    <button data-mode="DOWN">Down 🔽</button>
+    <button data-mode="NORMAL">Normal 🟢</button>
+    <button data-mode="RIGHT">Right ▶️</button>
+    <button data-mode="LEFT">Left ◀️</button>
+  </div>
+  
+
+  <!-- Mission Creation Form -->
+  <!--div id="mission-form-container">
+    <h3>Create New Mission</h3>
+  
+<form id="missionForm">
+  <label for="referance">Robot Reference:</label>
+  <input type="text" id="referance" name="referance" required />
+
+  <label for="id_serre">Greenhouse ID (id_serre):</label>
+  <input type="number" id="id_serre" name="id_serre" required />
+
+  <label for="date_debut">Start Date & Time (date_debut):</label>
+  <input type="datetime-local" id="date_debut" name="date_debut" required />
+
+  <label for="date_fin">End Date & Time (date_fin):</label>
+  <input type="datetime-local" id="date_fin" name="date_fin" required />
+
+  <label for="rep_jr">Repeat Daily (rep_jr):</label>
+  <input type="number" id="rep_jr" name="rep_jr" value="0" />
+
+  <label for="rep_sem">Repeat Weekly (rep_sem):</label>
+  <input type="number" id="rep_sem" name="rep_sem" value="0" />
+
+  <button type="submit">Create Mission</button>
+</form>
+</div>
+
+
+  <div id="missionResponse" class="response"></div-->
+
+  <script>
+	const canvas = document.getElementById("video-canvas");
+	const ctx = canvas.getContext("2d");
+	
+	const ws = new WebSocket(`ws://${window.location.host}/service/video_stream_service`);
+	
+	ws.binaryType = "arraybuffer";
+	
+	ws.onmessage = (event) => {
+	const blob = new Blob([event.data], { type: "image/jpeg" });
+	const url = URL.createObjectURL(blob);
+	
+	const img = new Image();
+	img.onload = () => {
+		ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+		URL.revokeObjectURL(url);
+	};
+	img.src = url;
+	};
+	
+	ws.onopen = () => {
+	console.log("WebSocket video viewer connected.");
+	};
+	
+	ws.onerror = (err) => {
+	console.error("WebSocket error:", err);
+	};
+	
+	ws.onclose = () => {
+	console.log("WebSocket video viewer disconnected.");
+	};
+
+    // WebSocket for QR Code data
+    const ws = new WebSocket(`${window.location.protocol === "https:" ? "wss" : "ws"}://${window.location.hostname}:8080/service/qr_data`);
+
+    ws.onopen = () => {
+      console.log("WebSocket connected");
+    };
+
+	ws.onmessage = (event) => {
+	  try {
+		const data = JSON.parse(event.data);
+		console.log("Received data:", data);
+
+		const qrList = document.getElementById("qrList");
+		qrList.innerHTML = "";
+
+		function printKeyValue(key, value, parent) {
+		  const li = document.createElement("li");
+
+		  if (typeof value === "object" && value !== null) {
+			li.textContent = `${key} :`;
+			const sublist = document.createElement("ul");
+
+			if (Array.isArray(value)) {
+			  value.forEach((item, index) => {
+				const subLi = document.createElement("li");
+				if (typeof item === "object" && item !== null) {
+				  subLi.textContent = `Item ${index + 1}:`;
+				  const innerSubList = document.createElement("ul");
+				  for (const k in item) {
+					printKeyValue(k, item[k], innerSubList);
+				  }
+				  subLi.appendChild(innerSubList);
+				} else {
+				  subLi.textContent = item;
+				}
+				sublist.appendChild(subLi);
+			  });
+			} else {
+			  for (const k in value) {
+				printKeyValue(k, value[k], sublist);
+			  }
+			}
+
+			li.appendChild(sublist);
+		  } else {
+			li.textContent = `${key} : ${value}`;
+		  }
+
+		  parent.appendChild(li);
+		}
+
+		if (data.qr_codes && Array.isArray(data.qr_codes)) {
+		  data.qr_codes.forEach((qrCodeStr, i) => {
+			try {
+			  const qrData = JSON.parse(qrCodeStr);
+			  printKeyValue(`QR Code ${i + 1}`, qrData, qrList);
+			} catch (e) {
+			  console.error("Failed to parse individual QR code:", e);
+			}
+		  });
+		}
+
+	  } catch (e) {
+		console.error("Failed to parse WebSocket message:", e);
+	  }
+	};
+
+
+
+    ws.onclose = () => {
+      console.log("WebSocket disconnected");
+    };
+
+    ws.onerror = (err) => {
+      console.error("WebSocket error:", err);
+    };
+
+    // Control WebSocket for sending commands
+    const controlWs = new WebSocket(`${window.location.protocol === "https:" ? "wss" : "ws"}://${window.location.hostname}:8080/service/control`);
+
+    controlWs.onopen = () => console.log("Control WS connected");
+    controlWs.onerror = (err) => console.error("Control WS error:", err);
+    controlWs.onclose = () => console.log("Control WS disconnected");
+
+    // Buttons send control commands via control WebSocket
+    const buttons = document.querySelectorAll("#control-container button");
+    buttons.forEach(btn => {
+      btn.addEventListener("mousedown", () => {
+        const mode = btn.getAttribute("data-mode");
+        console.log("Sending mode:", mode);
+        if (controlWs.readyState === WebSocket.OPEN) {
+          controlWs.send(JSON.stringify({ control_mode: mode }));
+        } else {
+          console.warn("Control WebSocket not open");
+        }
+      });
+    });
+    buttons.forEach(btn => {
+      btn.addEventListener("mouseup", () => {
+        const mode = "STOP";
+        console.log("Sending mode:", mode);
+        if (controlWs.readyState === WebSocket.OPEN) {
+          controlWs.send(JSON.stringify({ control_mode: mode }));
+        } else {
+          console.warn("Control WebSocket not open");
+        }
+      });
+    });
+
+    // WebSocket for sensor data
+    const ws2 = new WebSocket(`${window.location.protocol === "https:" ? "wss" : "ws"}://${window.location.hostname}:8080/service/sensor_data`);
+
+    ws2.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+      document.getElementById("sensor-data").innerHTML = `
+          🌡 Température : ${data.temperature} °C<br>
+          💧 Humidité : ${data.humidity} %<br>
+          🟢 CO₂ : ${data.co2} ppm<br>
+          💡 Luminosité : ${data.luminosite} lux
+      `;
+    };
+
+    ws2.onerror = (e) => {
+      document.getElementById("sensor-data").innerText = "WebSocket connection error.";
+    };
+
+	/*
+    const missionWs = new WebSocket(
+      `${location.protocol === "https:" ? "wss" : "ws"}://${location.hostname}:8080/service/missions`
+    );
+
+    missionWs.onopen = () => {
+      console.log("✅ Mission WebSocket connected");
+    };
+
+    missionWs.onerror = (e) => {
+      console.error("❌ Mission WebSocket error", e);
+    };
+
+    missionWs.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        const responseElem = document.getElementById("missionResponse");
+
+        if (data.success) {
+          responseElem.style.color = "green";
+          responseElem.textContent = `✅ ${data.success}: ID ${data.mission.id}`;
+          document.getElementById("missionForm").reset();
+        } else if (data.error) {
+          responseElem.style.color = "red";
+          responseElem.textContent = `❌ ${data.error}`;
+        }
+      } catch (err) {
+        console.error("❌ Failed to parse mission response", err);
+      }
+    };
+
+    document.getElementById("missionForm").addEventListener("submit", (e) => {
+      e.preventDefault();
+
+      const missionData = {
+        action: "create",
+        referance: document.getElementById("referance").value,
+        id_serre: Number(document.getElementById("id_serre").value),
+        date_debut: document.getElementById("date_debut").value,
+        date_fin: document.getElementById("date_fin").value,
+        rep_jr: Number(document.getElementById("rep_jr").value),
+        rep_sem: Number(document.getElementById("rep_sem").value),
+      };
+
+      if (missionWs.readyState === WebSocket.OPEN) {
+        missionWs.send(JSON.stringify(missionData));
+      } else {
+        const responseElem = document.getElementById("missionResponse");
+        responseElem.style.color = "red";
+        responseElem.textContent = "WebSocket not connected.";
+      }
+    });*/
+  </script>
+</body>
+</html>
