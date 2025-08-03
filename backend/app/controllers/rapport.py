@@ -41,7 +41,7 @@ def create_rapport(current_user):
     db.session.add(rapport)
     db.session.commit()
 
-    return jsonify({"message": "Rapport généré avec succès", "lien_pdf": chemin_pdf}), 201
+    return jsonify(rapport.to_dict()), 201
 
 
 
