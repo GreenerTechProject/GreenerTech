@@ -8,7 +8,7 @@ import os
 def send_verification_email(user):
     token = user.verification_token
     frontend_url = os.getenv("FRONTEND_URL", "http://localhost:3000")
-    verify_url = f"http://{frontend_url}/verify-email?token={token}"  # ou ton vrai frontend
+    verify_url = f"{frontend_url}/verify-email?token={token}"  # ou ton vrai frontend
 
     subject = "Vérification de votre adresse e-mail"
     body = f"""

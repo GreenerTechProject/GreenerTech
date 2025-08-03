@@ -94,7 +94,7 @@ def get_user(current_user):
         "updated_at":current_user.updated_at.isoformat() if current_user.updated_at else None,
         "id_assigned":current_user.id_assigned,
         "is_connected":current_user.is_connected,
-        "derector_valide":current_user.derector_valide,
+        "derecteur_valide":current_user.derecteur_valide,
         "email_valide":current_user.email_valide
     }
     return jsonify(user_data),200
@@ -112,7 +112,7 @@ def get_user(current_user):
 #             "role": tech.role,
 #             "birthday": tech.birthday.strftime('%Y-%m-%d') if tech.birthday else None,
 #             "id_assigned": tech.id_assigned,
-#             "derector_valide": tech.derector_valide,
+#             "derecteur_valide": tech.derecteur_valide,
 #             "email_valide": tech.email_valide
 #         } for tech in techniciens
 #     ]
@@ -139,7 +139,7 @@ def create_technicien(current_user):
         role=role,
         birthday=data.get('birthday'),
         id_assigned=current_user.id,
-        derector_valide=False,
+        derecteur_valide=False,
         email_valide=False
     )
     db.session.add(new_user)
@@ -249,7 +249,7 @@ def register_technicien():
         role=role,
         password=password,
         birthday=datetime.strptime(birthday, '%Y-%m-%d') if birthday else None,
-        derector_valide=False,
+        derecteur_valide=False,
         email_valide=False,
     )
 
@@ -276,10 +276,10 @@ def validate_technicien(current_user):
     if not user:
         return jsonify({"error": "Utilisateur non trouvé"}), 404
 
-    if user.derector_valide:
+    if user.derecteur_valide:
         return jsonify({"message": "Compte déjà validé par le directeur."}), 200
 
-    user.derector_valide = True
+    user.derecteur_valide = True
     db.session.commit()
 
     return jsonify({"message": "Compte technicien validé avec succès."}), 200
