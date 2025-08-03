@@ -7,3 +7,4 @@ websockets
 psycopg2-binary
 asyncpg
 pillow
+requests
