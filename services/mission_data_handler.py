@@ -35,7 +35,7 @@ async def mission_data_handler(request):
         while not ws.closed:
             try:
             
-                now = datetime.now(timezone(timedelta(hours=1)))()
+                now = datetime.now(timezone(timedelta(hours=1)))
                 #print("""
                 #    SELECT * FROM missions_robot 
                 #    WHERE referance = $1 
