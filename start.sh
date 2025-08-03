@@ -9,8 +9,7 @@ else
 fi
 
 echo "🚀 Starting containers..."
-docker-compose build --no-cache
-docker-compose up -d
+docker-compose up -d --build --no-cache
 
 echo "Launching Python service..."
 cd services
