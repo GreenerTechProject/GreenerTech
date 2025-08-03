@@ -93,7 +93,7 @@ def get_user(current_user):
         "created_at":current_user.created_at.isoformat() if current_user.created_at else None,
         "updated_at":current_user.updated_at.isoformat() if current_user.updated_at else None,
         "id_assigned":current_user.id_assigned,
-        "is_connected":current_user.is_connected,
+        "setup_completed":current_user.setup_completed,
         "derecteur_valide":current_user.derecteur_valide,
         "email_valide":current_user.email_valide
     }

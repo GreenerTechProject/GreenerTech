@@ -16,7 +16,7 @@ class User(db.Model):
     telephone = db.Column(db.String(20), nullable=True)
     cin = db.Column(db.String(50), nullable=True)
     id_assigned = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)  
-    is_connected = db.Column(db.Boolean, nullable=False, default=False) #pour verifier la premier authentificatio
+    setup_completed = db.Column(db.Boolean, nullable=False, default=False) #pour verifier la premier authentificatio
     created_at = db.Column(db.DateTime, default=datetime.now(timezone(timedelta(hours=1))))
     updated_at = db.Column(db.DateTime, default=datetime.now(timezone(timedelta(hours=1))), onupdate=datetime.now(timezone(timedelta(hours=1))))
     derecteur_valide = db.Column(db.Boolean, default=False)      # Validé par directeur
@@ -38,7 +38,7 @@ class User(db.Model):
             'telephone': self.telephone,
             'cin': self.cin,
             'id_assigned': self.id_assigned,
-            'is_connected': self.is_connected,
+            'setup_completed': self.setup_completed,
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'updated_at': self.updated_at.isoformat() if self.updated_at else None,
             'derecteur_valide': self.derecteur_valide,
