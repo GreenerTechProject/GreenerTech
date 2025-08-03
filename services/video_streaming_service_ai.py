@@ -87,9 +87,7 @@ async def video_stream_handler(request):
                             qr_results.append(text)
                 
                 
-                image_path2 = os.path.join(os.path.dirname(__file__), "qr.jpg")
-                latest_frame = cv2.imread(image_path2)
-                #latest_frame = frame
+                latest_frame = frame
                 
                 if qr_results:
                     if qr_results != latest_qr_results:
