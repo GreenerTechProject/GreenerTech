@@ -19,7 +19,7 @@ def create_rapport(current_user):
         return jsonify({"message": "Champs requis manquants"}), 400
 
     # Créer le dossier des rapports s’il n'existe pas
-    output_dir = "static/rapports"
+    output_dir = "app/static/rapports"
     os.makedirs(output_dir, exist_ok=True)
 
     # Nom unique du PDF
