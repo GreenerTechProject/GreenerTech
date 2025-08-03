@@ -85,8 +85,11 @@ async def video_stream_handler(request):
                             cv2.putText(frame, text, (x, y - 10),
                                         cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
                             qr_results.append(text)
-
-                latest_frame = frame
+                
+                
+                image_path2 = os.path.join(os.path.dirname(__file__), "qr.jpg")
+                latest_frame = cv2.imread(image_path2)
+                #latest_frame = frame
                 
                 if qr_results:
                     if qr_results != latest_qr_results:
