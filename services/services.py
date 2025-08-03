@@ -8,7 +8,7 @@ from mission_data_handler import mission_data_handler
 async def start_all():
     app = web.Application()
     app.router.add_get("/video/", index)
-    app.router.add_post("/service/video_stream_service", offer)
+    app.router.add_get("/service/video_stream_service", offer)
     app.router.add_get("/service/video_stream_handler", video_stream_handler)
     app.router.add_get("/service/qr_data", qr_data_handler)
     app.router.add_get("/service/control", control_handler)
