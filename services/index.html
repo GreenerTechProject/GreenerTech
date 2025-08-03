@@ -188,22 +188,56 @@
       console.log("WebSocket connected");
     };
 
-    ws.onmessage = (event) => {
-      try {
-        const data = JSON.parse(event.data);
-        const qrList = document.getElementById("qrList");
-        qrList.innerHTML = "";
-        if (data.qr_codes && data.qr_codes.length > 0) {
-          data.qr_codes.forEach(code => {
-            const li = document.createElement("li");
-            li.textContent = code;
-            qrList.appendChild(li);
-          });
-        }
-      } catch (e) {
-        console.error("Failed to parse WebSocket message:", e);
-      }
-    };
+	ws.onmessage = (event) => {
+	  try {
+		const data = JSON.parse(event.data);
+		const qrList = document.getElementById("qrList");
+		qrList.innerHTML = "";
+
+		function printKeyValue(key, value, parent) {
+		  const li = document.createElement("li");
+
+		  if (typeof value === "object" && value !== null) {
+			li.textContent = `${key} :`;
+			const sublist = document.createElement("ul");
+
+			if (Array.isArray(value)) {
+			  value.forEach((item, index) => {
+				const subLi = document.createElement("li");
+				if (typeof item === "object" && item !== null) {
+				  subLi.textContent = `Item ${index + 1}:`;
+				  const innerSubList = document.createElement("ul");
+				  for (const k in item) {
+					printKeyValue(k, item[k], innerSubList);
+				  }
+				  subLi.appendChild(innerSubList);
+				} else {
+				  subLi.textContent = item;
+				}
+				sublist.appendChild(subLi);
+			  });
+			} else {
+			  for (const k in value) {
+				printKeyValue(k, value[k], sublist);
+			  }
+			}
+
+			li.appendChild(sublist);
+		  } else {
+			li.textContent = `${key} : ${value}`;
+		  }
+
+		  parent.appendChild(li);
+		}
+
+		for (const key in data) {
+		  printKeyValue(key, data[key], qrList);
+		}
+	  } catch (e) {
+		console.error("Failed to parse WebSocket message:", e);
+	  }
+	};
+
 
     ws.onclose = () => {
       console.log("WebSocket disconnected");
