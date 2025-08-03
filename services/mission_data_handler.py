@@ -14,8 +14,8 @@ mission_clients = set()
 async def ping_client(ws, interval=30):
     while not ws.closed:
         try:
-            await ws.ping()
-            # await ws.send_str(json.dumps({"type": "ping"}))
+            #await ws.ping()
+            await ws.send_str(json.dumps({"type": "ping"}))
         except Exception as e:
             print(f"Ping error: {e}")
             break
@@ -93,6 +93,7 @@ async def mission_data_handler(request):
                         await ws.send_str(json.dumps({"mission": mission}))
                 else:
                     pass
+                    #await ws.send_str(json.dumps({"type": "no_mission"}))
 
             except Exception as e:
                 print(f"❌ Error fetching missions: {e}")
