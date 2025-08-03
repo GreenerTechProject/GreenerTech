@@ -25,4 +25,5 @@ async def start_all():
     asyncio.create_task(monitor_video_timeout())
     await asyncio.Future()
 
-asyncio.run(start_all())
+if __name__ == "__main__":
+    asyncio.run(start_all())
