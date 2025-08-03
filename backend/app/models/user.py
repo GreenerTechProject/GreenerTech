@@ -1,6 +1,6 @@
 # models/user.py
 from database.config import db
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from sqlalchemy import ForeignKey
 
 
