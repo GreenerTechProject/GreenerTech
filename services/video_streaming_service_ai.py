@@ -136,7 +136,11 @@ async def offer(request):
     params = await request.json()
     offer = params["offer"]
 
-    pc = RTCPeerConnection()
+    pc = RTCPeerConnection(configuration={
+        "iceServers": [
+            { "urls": "stun:stun.l.google.com:19302" }
+        ]
+    })
 
     @pc.on("connectionstatechange")
     async def on_connectionstatechange():
