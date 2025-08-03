@@ -3,7 +3,7 @@ import asyncio
 import websockets
 import json
 
-host = "greenertech.mywire.org"
+host = "localhost"
 
 
 async def send_video():
@@ -23,8 +23,9 @@ async def send_video():
 
                     _, buffer = cv2.imencode(".jpg", frame)
                     await websocket.send(buffer.tobytes())
-                    #await asyncio.sleep(0.03)  # 1/0.03=33 ~30fps
-                    await asyncio.sleep(0.06)  # 1/0.06=16 ~15fps
+                    await asyncio.sleep(0.03)  # 1/0.03=33 ~30fps
+                    #await asyncio.sleep(0.06)  # 1/0.06=16 ~15fps
+                    #await asyncio.sleep(0.12)  # 1/0.12=8 ~8
 
         except (websockets.exceptions.ConnectionClosedError, ConnectionRefusedError) as e:
             print(f"❌ Connexion vidéo échouée ou perdue : {e}. Nouvelle tentative dans 2 secondes...")
@@ -67,7 +68,7 @@ async def simulate_sensor_data():
                 "luminosite": round(random.uniform(100, 1000), 2)
             }
             await ws.send(json.dumps(data))
-            #print(f"📤 Données envoyées : {data}")
+            print(f"📤 Données envoyées : {data}")
             await asyncio.sleep(2)
 
 

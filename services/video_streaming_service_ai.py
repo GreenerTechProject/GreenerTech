@@ -10,7 +10,7 @@ from cv2 import QRCodeDetector
 import json
 import os
 import time
-import ast
+#import ast
 
 
 qr_detector = QRCodeDetector()
@@ -66,11 +66,16 @@ async def video_stream_handler(request):
                 if retval and points is not None:
                     for i, text in enumerate(decoded_info):
                         if text:
-                            #print (decoded_info[0])
+                            
+                            try:
+                                data = json.loads(text)
+                                print(data["nom"])                                
+                                print("Detected bilan : "+data["nom"])
+                            
+                            except json.JSONDecodeError:
+                                print("No json", text)
 
-                            data = ast.literal_eval(decoded_info[0])
-
-                            print(data["nom"])
+                            print("Detected bilan : "+decoded_info[0])
                             pts = points[i].astype(int)
                             for j in range(4):
                                 pt1 = tuple(pts[j])
@@ -82,7 +87,10 @@ async def video_stream_handler(request):
                             qr_results.append(text)
 
                 latest_frame = frame
-                latest_qr_results = qr_results
+                
+                if qr_results:
+                    if qr_results != latest_qr_results:
+                        latest_qr_results = qr_results
                 last_frame_time = time.time()
 
             except Exception as e:
@@ -111,6 +119,10 @@ async def qr_data_handler(request):
         connected_qr_clients.discard(ws)
 
     return ws
+
+def get_latest_qr_results():
+    return latest_qr_results
+
 
 async def index(request):
     return web.Response(content_type="text/html", text=open("index.html").read())

@@ -80,7 +80,9 @@ async def video_stream_handler(request):
                             qr_results.append(text)
 
                 latest_frame = frame
-                latest_qr_results = qr_results
+                if qr_results:
+                    if qr_results != latest_qr_results:
+                        latest_qr_results = qr_results   
                 last_frame_time = time.time()
 
             except Exception as e:

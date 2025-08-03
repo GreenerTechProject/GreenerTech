@@ -1,5 +1,6 @@
 from aiohttp import web, WSMsgType
 import json
+from video_streaming_service_ai import get_latest_qr_results
 
 
 sensor_clients = set()
@@ -18,15 +19,15 @@ async def sensor_data_handler(request):
                 try:
                     data = json.loads(msg.data)
                     latest_sensor_data = data
-                    #print(f"📡 Données reçues : {data}")
+                    print(f"📡 Données reçues : {data}")
 
                     temperature = data.get("temperature")
                     humidity = data.get("humidity")
                     co2 = data.get("co2")
                     luminosite = data.get("luminosite")
-
+                    
                     warnings = []
-
+                    
                     if temperature is not None:
                         if not (15 <= temperature <= 35):
                             warnings.append(f"⚠️ Température anormale: {temperature}°C")
@@ -39,10 +40,12 @@ async def sensor_data_handler(request):
                     if luminosite is not None:
                         if not (100 <= luminosite <= 2000):
                             warnings.append(f"⚠️ Luminosité anormale: {luminosite} lx")
-
+                    
                     for warning in warnings:
-                        print(latest_qr_results)
-                        print(warning)
+                        if get_latest_qr_results() : 
+                            json.loads(get_latest_qr_results()[0])
+                            print("Anomalie in : " + data["nom"])
+                            print(warning)
 
                     # Diffusion à tous les clients (sauf l'expéditeur)
                     for client in sensor_clients:
