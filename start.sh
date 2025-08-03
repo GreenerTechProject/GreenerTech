@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Check for -v flag
-if [[ "$1" == "-v" ]]; then
+if [ "$1" == "-v" ]; then
     echo "🧹 Removing volumes..."
     docker-compose down -v
 else
@@ -9,7 +9,8 @@ else
 fi
 
 echo "🚀 Starting containers..."
-docker-compose up -d --build --no-cache
+docker-compose build --no-cache
+docker-compose up -d
 
 echo "Launching Python service..."
 cd services
