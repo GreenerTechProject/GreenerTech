@@ -18,6 +18,8 @@ Assurez-vous d’avoir Docker installé sur votre machine. Ensuite, vous pouvez 
 ```bash
 docker-compose up -d --build
 docker exec -it greenertech-backend bash -c "rm -rf migrations && flask db init && flask db migrate -m 'create tables' && flask db upgrade"
+cat greenertech_backup.sql | docker exec -i greenertech-db psql -U postgres -d greenertech
+
 ```
 
 Pour arrêter le projet :
@@ -40,6 +42,10 @@ git pull ; docker-compose down ; docker-compose up -d --build
 Update DB :
 ```bash
 docker exec -it greenertech-backend bash -c "flask db migrate -m 'update tables' && flask db upgrade"
+
+Export DB :
+docker exec -t greenertech-db pg_dump -U postgres -d greenertech > greenertech_backup.sql
+
 ```
 
 

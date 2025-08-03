@@ -52,7 +52,7 @@ def login():
         token = generate_token(user.id)
         return jsonify({
             "token": token, 
-            "role": "directeur"
+            "role": user.role
         }), 200
 
     return jsonify({"message": "Invalid credentials"}), 401
@@ -210,7 +210,7 @@ def register_technicien():
     email = data.get('email')
     role = data.get('role')
     name = data.get('name')
-    password = data.get('password')
+    password = generate_password_hash(data.get('password'))
     birthday = data.get('birthday')
 
     if not email or not password or not name:
