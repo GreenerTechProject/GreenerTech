@@ -7,32 +7,15 @@ COPY services/requirements.txt .
 #RUN apt-get update && apt-get install -y curl unzip && rm -rf /var/lib/apt/lists/*
 
 # Install required system packages
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    build-essential \
-    libglib2.0-0 \
-    libsm6 \
-    libxext6 \
-    libxrender1 \
-    libjpeg62-turbo-dev \
-    libpng-dev \
-    libavformat-dev \
-    libavcodec-dev \
-    libavdevice-dev \
-    libavfilter-dev \
-    libavutil-dev \
-    libswscale-dev \
-    ffmpeg \
-    pkg-config \
-    libgl1 \
-    libopus-dev \
-    libvpx-dev \
-    libjpeg-dev \
-	libx264-dev \
-    libx265-dev \
-    libnuma-dev \
-    libfreetype6-dev \
-    libfontconfig1-dev \
-    && rm -rf /var/lib/apt/lists/*
+#RUN apt-get update && apt-get install -y --no-install-recommends \
+#    libglib2.0-0 \
+#    libsm6 \
+#    libxext6 \
+#    libxrender1 \
+#    libjpeg62-turbo \
+#    libpng-dev \
+#    ffmpeg \
+#    && rm -rf /var/lib/apt/lists/*
 
 RUN pip install --no-cache-dir --progress-bar=off -r requirements.txt
 

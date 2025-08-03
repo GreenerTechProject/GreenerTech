@@ -1,0 +1,1 @@
+docker-compose down ; docker-compose up -d --build ; python3 services/services.py

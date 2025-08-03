@@ -1,3 +1,9 @@
+./services/CNN_GrennerTech.ipynb
+./services/DataYellow 
+./services/best_modelV2.pth
+./services/my_model.pt
+./services/Data
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

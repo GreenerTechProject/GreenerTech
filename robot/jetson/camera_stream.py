@@ -15,7 +15,7 @@ async def send_video():
     while True:
         try:
             print("Tentative de connexion au serveur vidéo...")
-            video_uri = "ws://greenertech.mywire.org:8080/service/video_stream_handler"
+            video_uri = "ws://"+host+":8080/service/video_stream_handler"
             async with websockets.connect(video_uri) as websocket:
                 print("Connecté au serveur vidéo avec succès")
                 while True:
