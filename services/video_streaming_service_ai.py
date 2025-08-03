@@ -142,7 +142,9 @@ async def offer(request):
             iceServers=[
                 RTCIceServer(urls=["stun:stun.l.google.com:19302"])
             ]
-        )
+        ),
+    iceTransportPolicy="all",
+    iceCandidatePoolSize=10
     )
 
 
@@ -156,9 +158,11 @@ async def offer(request):
     )
     answer = await pc.createAnswer()
     await pc.setLocalDescription(answer)
+    
+    sdp_modified = pc.localDescription.sdp.replace("172.18.0.3", "greenertech.mywire.org")
 
     return web.json_response({
-        "sdp": pc.localDescription.sdp,
+        "sdp": sdp_modified,
         "type": pc.localDescription.type
     })
 
