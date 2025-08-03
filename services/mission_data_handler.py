@@ -11,6 +11,16 @@ DB_URL = "postgresql://postgres:postgres@localhost:5433/greenertech"
 
 mission_clients = set()
 
+async def ping_client(ws, interval=30):
+    while not ws.closed:
+        try:
+            await ws.ping()
+            # await ws.send_str(json.dumps({"type": "ping"}))
+        except Exception as e:
+            print(f"Ping error: {e}")
+            break
+        await asyncio.sleep(interval)
+
 async def mission_data_handler(request):
     ws = web.WebSocketResponse()
     await ws.prepare(request)
@@ -19,6 +29,7 @@ async def mission_data_handler(request):
 
     mission_clients.add(ws)
     print("📘 Mission WebSocket client connected")
+    ping_task = asyncio.create_task(ping_client(ws, 30))
 
     last_mission_id = None
 
@@ -89,6 +100,7 @@ async def mission_data_handler(request):
             await asyncio.sleep(60)
 
     finally:
+        ping_task.cancel()
         mission_clients.discard(ws)
         await conn.close()
         print("📕 Mission WebSocket client disconnected")
