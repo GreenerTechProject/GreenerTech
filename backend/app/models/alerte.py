@@ -1,6 +1,6 @@
 from database.config import db
 from sqlalchemy import Column, Integer, String, Float, DateTime, ForeignKey
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 
 class Alerte(db.Model):
     __tablename__ = 'alertes'
@@ -12,7 +12,7 @@ class Alerte(db.Model):
     lien_image = Column(String)
     x1 = Column(Float)
     y1 = Column(Float)
-    date = Column(DateTime, default=datetime.utcnow)
+    date = Column(DateTime, default=datetime.now(timezone(timedelta(hours=1))))
     status = Column(String)  # e.g., "résolue", "non résolue"
 
     def to_dict(self):

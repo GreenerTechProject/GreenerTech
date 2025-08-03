@@ -1,7 +1,8 @@
 # models/user.py
 from database.config import db
-from datetime import datetime
+from datetime import datetime, timedelta
 from sqlalchemy import ForeignKey
+
 
 class User(db.Model):
     __tablename__ = 'users'
@@ -16,8 +17,8 @@ class User(db.Model):
     cin = db.Column(db.String(50), nullable=True)
     id_assigned = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)  
     is_connected = db.Column(db.Boolean, nullable=False, default=False) #pour verifier la premier authentificatio
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=datetime.now(timezone(timedelta(hours=1))))
+    updated_at = db.Column(db.DateTime, default=datetime.now(timezone(timedelta(hours=1))), onupdate=datetime.now(timezone(timedelta(hours=1))))
     derecteur_valide = db.Column(db.Boolean, default=False)      # Validé par directeur
     email_valide = db.Column(db.Boolean, default=False)   # Technicien a complété
     verification_token = db.Column(db.String(255), nullable=True)  # Token pour vérification email

@@ -1,6 +1,6 @@
 from sqlalchemy import Column, Integer, String, ForeignKey, DateTime
 from database.config import db
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 
 class MissionRobot(db.Model):
     __tablename__ = 'missions_robot'
@@ -10,7 +10,7 @@ class MissionRobot(db.Model):
     id_serre = Column(Integer, ForeignKey('serres.id'), nullable=False)
     rep_jr = Column(Integer)
     rep_sem = Column(Integer)
-    date_debut = Column(DateTime, default=datetime.utcnow)
+    date_debut = Column(DateTime, default=datetime.now(timezone(timedelta(hours=1))))
     date_fin = Column(DateTime)
     executed = db.Column(db.Boolean, default=False)
 

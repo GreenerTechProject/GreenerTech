@@ -223,7 +223,7 @@ async def sensor_data_handler(request):
 
 
 import asyncpg
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 
 
 DB_URL = "postgresql://postgres:postgres@localhost:5433/greenertech"
@@ -254,7 +254,7 @@ async def mission_data_handler(request):
 
         while not ws.closed:
             try:
-                now = datetime.utcnow()
+                now = datetime.now(timezone(timedelta(hours=1)))()
                 rows = await conn.fetch("""
                     SELECT * FROM missions_robot 
                     WHERE id_robot = $1 

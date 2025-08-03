@@ -1,6 +1,6 @@
 from sqlalchemy import Column, Integer, Float, String, DateTime, ForeignKey
 from database.config import db
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 
 class Etat_bilan(db.Model):
     __tablename__ = 'etat_bilans'
@@ -16,7 +16,7 @@ class Etat_bilan(db.Model):
     luminosite = Column(Float)
     co2 = Column(Float)
     rendement = Column(Float)
-    date = Column(DateTime, default=datetime.utcnow)
+    date = Column(DateTime, default=datetime.now(timezone(timedelta(hours=1))))
 
     def to_dict(self):
         return {

@@ -1,6 +1,6 @@
 import asyncpg
 import os
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 import asyncio
 import json
 from aiohttp import web, WSMsgType
@@ -34,31 +34,30 @@ async def mission_data_handler(request):
 
         while not ws.closed:
             try:
-                now = datetime.utcnow()
             
-                now = datetime.utcnow()
-                print("""
-                    SELECT * FROM missions_robot 
-                    WHERE referance = $1 
-                      AND EXTRACT(YEAR FROM date_debut) = $2
-                      AND EXTRACT(MONTH FROM date_debut) = $3
-                      AND EXTRACT(DAY FROM date_debut) = $4
-                      AND EXTRACT(HOUR FROM date_debut) = $5
-                      AND EXTRACT(MINUTE FROM date_debut) <= $6
-                    ORDER BY id DESC 
-                    LIMIT 1
-                    """,
-                    robot_referance,
-                    now.year, now.month, now.day, now.hour, now.minute, now.second
-                )
+                now = datetime.now(timezone(timedelta(hours=1)))()
+                #print("""
+                #    SELECT * FROM missions_robot 
+                #    WHERE referance = $1 
+                #      AND EXTRACT(YEAR FROM date_debut) = $2
+                #      AND EXTRACT(MONTH FROM date_debut) = $3
+                #      AND EXTRACT(DAY FROM date_debut) = $4
+                #      AND EXTRACT(HOUR FROM date_debut) = $5
+                #      AND EXTRACT(MINUTE FROM date_debut) <= $6
+                #    ORDER BY id DESC 
+                #    LIMIT 1
+                #    """,
+                #    robot_referance,
+                #    now.year, now.month, now.day, now.hour, now.minute, now.second
+                #)
                 rows = await conn.fetch("""
                     SELECT * FROM missions_robot 
-                    WHERE id_robot = $1 
-                      AND EXTRACT(YEAR FROM date_debut) = $2
-                      AND EXTRACT(MONTH FROM date_debut) = $3
-                      AND EXTRACT(DAY FROM date_debut) = $4
-                      AND EXTRACT(HOUR FROM date_debut) = $5
-                      AND EXTRACT(MINUTE FROM date_debut) <= $6
+                    WHERE id_robot = 2 
+                      AND EXTRACT(YEAR FROM date_debut) = 2025
+                      AND EXTRACT(MONTH FROM date_debut) = 08
+                      AND EXTRACT(DAY FROM date_debut) = 03
+                      AND EXTRACT(HOUR FROM date_debut) = 04
+                      AND EXTRACT(MINUTE FROM date_debut) <= 46
                       AND executed = False
                     ORDER BY id DESC 
                     LIMIT 1
