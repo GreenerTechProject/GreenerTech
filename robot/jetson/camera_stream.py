@@ -6,7 +6,7 @@ import json
 #import serial
 
 
-host = "greenertech.mywire.org"
+host = "localhost"
 
 
 async def send_video():
@@ -15,7 +15,7 @@ async def send_video():
     while True:
         try:
             print("Tentative de connexion au serveur vidéo...")
-            video_uri = "ws://localhost:8080/service/video_stream_handler"
+            video_uri = "ws://greenertech.mywire.org:8080/service/video_stream_handler"
             async with websockets.connect(video_uri) as websocket:
                 print("Connecté au serveur vidéo avec succès")
                 while True:
@@ -137,7 +137,7 @@ async def listen_missions(robot_referance):
     while True:
         try:
             print("Tentative de connexion au serveur mission...")
-            control_uri = "ws://greenertech.mywire.org:8080/service/missions?referance="+robot_referance
+            control_uri = "ws://"+host+":8080/service/missions?referance="+robot_referance
             async with websockets.connect(control_uri) as websocket:
                 print(f"Connected to mission websocket for robot '{robot_referance}'")
                 async for msg in websocket:

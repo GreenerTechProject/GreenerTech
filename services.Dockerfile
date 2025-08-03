@@ -17,6 +17,28 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     ffmpeg \
     && rm -rf /var/lib/apt/lists/*
 
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    libglib2.0-0 \
+    libsm6 \
+    libxext6 \
+    libxrender1 \
+    libjpeg62-turbo-dev \
+    libpng-dev \
+    libavformat-dev \
+    libavcodec-dev \
+    libavdevice-dev \
+    libavfilter-dev \
+    libavutil-dev \
+    libswscale-dev \
+    ffmpeg \
+    pkg-config \
+    libgl1 \
+    libopus-dev \
+    libvpx-dev \
+    libjpeg-dev \
+    && rm -rf /var/lib/apt/lists/*
+
 RUN pip install --no-cache-dir --progress-bar=off -r requirements.txt
 
 COPY services .
