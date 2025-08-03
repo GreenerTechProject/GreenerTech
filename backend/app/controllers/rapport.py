@@ -33,7 +33,7 @@ def create_rapport(current_user):
     # Création du rapport en BDD
     rapport = Rapport(
         description=description,
-        lien_pdf=chemin_pdf,
+        lien_pdf="static/rapports/"+nom_pdf,
         id_serre=id_serre,
         user_id=current_user.id,
         date=date.today()
