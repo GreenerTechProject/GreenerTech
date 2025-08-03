@@ -81,7 +81,8 @@ async def mission_data_handler(request):
                         """, mission["id"])
                         await ws.send_str(json.dumps({"mission": mission}))
                 else:
-                    await ws.send_str(json.dumps({"type": "no_mission"}))
+                    pass
+                #    #await ws.send_str(json.dumps({"type": "no_mission"}))
 
             except Exception as e:
                 print(f"❌ Error fetching missions: {e}")
