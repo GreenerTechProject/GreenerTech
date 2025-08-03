@@ -35,7 +35,7 @@ sh start.sh
 Pour supprimer les volumes avant de lancer :
 
 ```bash
-sh start.sh -v
+docker-compose down -v ; sh start.sh
 
 Ou Lancer manuellement avec Docker Compose :
 docker-compose up -d --build
