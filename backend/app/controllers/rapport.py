@@ -19,7 +19,7 @@ def create_rapport(current_user):
         return jsonify({"message": "Champs requis manquants"}), 400
 
     # Créer le dossier des rapports s’il n'existe pas
-    output_dir = "static/rapports"
+    output_dir = "app/static/rapports"
     os.makedirs(output_dir, exist_ok=True)
 
     # Nom unique du PDF
@@ -33,7 +33,7 @@ def create_rapport(current_user):
     # Création du rapport en BDD
     rapport = Rapport(
         description=description,
-        lien_pdf=chemin_pdf,
+        lien_pdf="static/rapports/"+nom_pdf,
         id_serre=id_serre,
         user_id=current_user.id,
         date=date.today()
@@ -41,7 +41,26 @@ def create_rapport(current_user):
     db.session.add(rapport)
     db.session.commit()
 
-    return jsonify({"message": "Rapport généré avec succès", "lien_pdf": chemin_pdf}), 201
+    return jsonify(rapport.to_dict()), 201
+
+
+
+@token_required
+@role_required("technicien", "directeur")
+def get_all_rapports(current_user):
+    rapports = Rapport.query.all()
+    result = [rapport.to_dict() for rapport in rapports]
+    return jsonify(result), 200
+
+@token_required
+@role_required("technicien", "directeur")
+def get_rapport(id, current_user):
+    rapport = Rapport.query.get(id)
+    if not rapport:
+        return jsonify({"message": "Rapport non trouvé"}), 404
+    return jsonify(rapport.to_dict()), 200
+
+
 
 # update rapport
 @token_required
@@ -57,6 +76,7 @@ def update_rapport(id):
     rapport.description = desctripion
     db.session.commit()
     return jsonify({"message": "Rapport mis à jour avec succès"}), 200
+
 @token_required
 @role_required("directeur")
 def delete_rapport(id):

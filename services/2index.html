@@ -105,10 +105,10 @@
 </head>
 <body>
   <!-- Video Stream Container -->
-  <div id="video-container">
-    <h2>Live Video</h2>
-    <video id="video" autoplay playsinline controls muted></video>
-  </div>
+	<div id="video-container">
+	  <h2>Live Video</h2>
+	  <canvas id="video-canvas" width="640" height="480"></canvas>
+	</div>
 
   <!-- Sensor Data Container -->
   <div id="sensor-data-container">
@@ -164,31 +164,36 @@
   <div id="missionResponse" class="response"></div-->
 
   <script>
-    // WebRTC connection for receiving live video stream
-    async function startWebRTC() {
-      const pc = new RTCPeerConnection();
-      pc.addTransceiver("video", { direction: "recvonly" });
-      pc.ontrack = (event) => {
-        const video = document.getElementById("video");
-        if (video.srcObject !== event.streams[0]) {
-          video.srcObject = event.streams[0];
-        }
-      };
-
-      const offer = await pc.createOffer();
-      await pc.setLocalDescription(offer);
-
-      const response = await fetch("/service/video_stream_service", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ offer: pc.localDescription })
-      });
-
-      const answer = await response.json();
-      await pc.setRemoteDescription(new RTCSessionDescription(answer));
-    }
-
-    startWebRTC().catch(console.error);
+	const canvas = document.getElementById("video-canvas");
+	const ctx = canvas.getContext("2d");
+	
+	const ws0 = new WebSocket(`ws://${window.location.host}/service/video_stream_service`);
+	
+	ws0.binaryType = "arraybuffer";
+	
+	ws0.onmessage = (event) => {
+	const blob = new Blob([event.data], { type: "image/jpeg" });
+	const url = URL.createObjectURL(blob);
+	
+	const img = new Image();
+	img.onload = () => {
+		ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+		URL.revokeObjectURL(url);
+	};
+	img.src = url;
+	};
+	
+	ws0.onopen = () => {
+	console.log("WebSocket video viewer connected.");
+	};
+	
+	ws0.onerror = (err) => {
+	console.error("WebSocket error:", err);
+	};
+	
+	ws0.onclose = () => {
+	console.log("WebSocket video viewer disconnected.");
+	};
 
     // WebSocket for QR Code data
     const ws = new WebSocket(`${window.location.protocol === "https:" ? "wss" : "ws"}://${window.location.hostname}:8080/service/qr_data`);

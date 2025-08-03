@@ -1,7 +1,8 @@
 # models/user.py
 from database.config import db
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 from sqlalchemy import ForeignKey
+
 
 class User(db.Model):
     __tablename__ = 'users'
@@ -15,10 +16,10 @@ class User(db.Model):
     telephone = db.Column(db.String(20), nullable=True)
     cin = db.Column(db.String(50), nullable=True)
     id_assigned = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)  
-    is_connected = db.Column(db.Boolean, nullable=False, default=False) #pour verifier la premier authentificatio
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    derector_valide = db.Column(db.Boolean, default=False)      # Validé par directeur
+    setup_completed = db.Column(db.Boolean, nullable=False, default=False) #pour verifier la premier authentificatio
+    created_at = db.Column(db.DateTime, default=datetime.now(timezone(timedelta(hours=1))))
+    updated_at = db.Column(db.DateTime, default=datetime.now(timezone(timedelta(hours=1))), onupdate=datetime.now(timezone(timedelta(hours=1))))
+    derecteur_valide = db.Column(db.Boolean, default=False)      # Validé par directeur
     email_valide = db.Column(db.Boolean, default=False)   # Technicien a complété
     verification_token = db.Column(db.String(255), nullable=True)  # Token pour vérification email
 
@@ -37,10 +38,10 @@ class User(db.Model):
             'telephone': self.telephone,
             'cin': self.cin,
             'id_assigned': self.id_assigned,
-            'is_connected': self.is_connected,
+            'setup_completed': self.setup_completed,
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'updated_at': self.updated_at.isoformat() if self.updated_at else None,
-            'derector_valide': self.derector_valide,
+            'derecteur_valide': self.derecteur_valide,
             'email_valide': self.email_valide,
             'verification_token': self.verification_token
         }

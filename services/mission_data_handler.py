@@ -1,138 +1,98 @@
-from aiohttp import web, WSMsgType
-import json
 import asyncpg
-from datetime import datetime
+import os
+from datetime import datetime, timedelta, timezone
+import asyncio
+import json
+from aiohttp import web, WSMsgType
+
 
 DB_URL = "postgresql://postgres:postgres@localhost:5433/greenertech"
 
+
 mission_clients = set()
-
-def serialize_mission(mission):
-    """Convert asyncpg.Record to dict with datetime fields serialized to ISO format."""
-    return {
-        key: (value.isoformat() if isinstance(value, datetime) else value)
-        for key, value in dict(mission).items()
-    }
-
-
-async def broadcast_mission_update(data):
-    disconnected = []
-    for ws in mission_clients:
-        if ws.closed:
-            disconnected.append(ws)
-        else:
-            try:
-                await ws.send_str(json.dumps(data))
-            except:
-                disconnected.append(ws)
-    for ws in disconnected:
-        mission_clients.discard(ws)
 
 async def mission_data_handler(request):
     ws = web.WebSocketResponse()
     await ws.prepare(request)
+    robot_referance = request.query.get("referance", "")
+    print("🔎 Incoming mission request from robot: " + robot_referance)
 
     mission_clients.add(ws)
-    print("🚀 Mission WebSocket client connected")
+    print("📘 Mission WebSocket client connected")
+
+    last_mission_id = None
 
     try:
-        async for msg in ws:
-            if msg.type == WSMsgType.TEXT:
-                try:
-                    data = json.loads(msg.data)
-                    action = data.get("action")
+        conn = await asyncpg.connect(DB_URL)
+        robot = await conn.fetchrow("SELECT id FROM robots WHERE referance = $1", robot_referance)
+        if not robot:
+            await ws.send_str(json.dumps({"error": "Robot not found"}))
+            await conn.close()
+            return ws
 
-                    conn = await asyncpg.connect(DB_URL)
+        id_robot = robot['id']
 
-                    if action == "create":
-                        referance = data.get("referance")
-                        id_serre = data.get("id_serre")
-                        date_debut = datetime.fromisoformat(data.get("date_debut"))
-                        date_fin = datetime.fromisoformat(data.get("date_fin"))
-                        rep_jr = data.get("rep_jr", 0)
-                        rep_sem = data.get("rep_sem", 0)
+        while not ws.closed:
+            try:
+            
+                now = datetime.now(timezone(timedelta(hours=1)))
+                #print("""
+                #    SELECT * FROM missions_robot 
+                #    WHERE referance = $1 
+                #      AND EXTRACT(YEAR FROM date_debut) = $2
+                #      AND EXTRACT(MONTH FROM date_debut) = $3
+                #      AND EXTRACT(DAY FROM date_debut) = $4
+                #      AND EXTRACT(HOUR FROM date_debut) = $5
+                #      AND EXTRACT(MINUTE FROM date_debut) <= $6
+                #    ORDER BY id DESC 
+                #    LIMIT 1
+                #    """,
+                #    robot_referance,
+                #    now.year, now.month, now.day, now.hour, now.minute, now.second
+                #)
+                rows = await conn.fetch("""
+                    SELECT * FROM missions_robot 
+                    WHERE id_robot = $1
+                      AND EXTRACT(YEAR FROM date_debut) = $2
+                      AND EXTRACT(MONTH FROM date_debut) = $3
+                      AND EXTRACT(DAY FROM date_debut) = $4
+                      AND EXTRACT(HOUR FROM date_debut) = $5
+                      AND EXTRACT(MINUTE FROM date_debut) <= $6
+                      AND executed = False
+                    ORDER BY id DESC 
+                    LIMIT 1
+                    """,
+                    id_robot,
+                    now.year, now.month, now.day, now.hour, now.minute
+                )
 
-                        if not (referance and id_serre and date_debut and date_fin):
-                            await ws.send_str(json.dumps({"error": "Missing fields"}))
-                            continue
+                if rows:
+                    mission = dict(rows[0])
+                    if mission["id"] != last_mission_id:
+                        last_mission_id = mission["id"]
 
-                        robot = await conn.fetchrow("SELECT id FROM robots WHERE referance = $1", referance)
-                        if not robot:
-                            await ws.send_str(json.dumps({"error": "Robot not found"}))
-                            continue
-
-                        id_robot = robot['id']
-
-                        result = await conn.fetchrow("""
-                            INSERT INTO missions_robot (id_serre, id_robot, date_debut, date_fin, rep_jr, rep_sem)
-                            VALUES ($1, $2, $3, $4, $5, $6)
-                            RETURNING *
-                        """, id_serre, id_robot, date_debut, date_fin, rep_jr, rep_sem)
-
-                        await broadcast_mission_update({"event": "created", "mission": serialize_mission(result)})
-
-                        await ws.send_str(json.dumps({"success": "Mission created", "mission": serialize_mission(result)}))
-
-                    elif action == "read":
-                        id_mission = data.get("id")
-                        if id_mission:
-                            mission = await conn.fetchrow("SELECT * FROM missions_robot WHERE id = $1", id_mission)
-                            if mission:
-                                await ws.send_str(json.dumps(serialize_mission(mission)))
-                            else:
-                                await ws.send_str(json.dumps({"error": "Mission not found"}))
-                        else:
-                            missions = await conn.fetch("SELECT * FROM missions_robot")
-                            await ws.send_str(json.dumps([dict(m) for m in missions]))
-
-                    elif action == "update":
-                        id_mission = data.get("id")
-                        fields = ["id_serre", "date_debut", "date_fin", "rep_jr", "rep_sem"]
-                        updates = {f: data[f] for f in fields if f in data}
-
-                        if not id_mission or not updates:
-                            await ws.send_str(json.dumps({"error": "Missing ID or data to update"}))
-                            continue
-
-                        set_clause = ", ".join([f"{k} = ${i+2}" for i, k in enumerate(updates.keys())])
-                        values = list(updates.values())
-
+                        for k, v in mission.items():
+                            if isinstance(v, datetime):
+                                mission[k] = v.isoformat()
+                        #
                         await conn.execute(f"""
-                            UPDATE missions_robot SET {set_clause}
+                            UPDATE missions_robot SET executed = True
                             WHERE id = $1
-                        """, id_mission, *values)
+                        """, mission["id"])
+                        await ws.send_str(json.dumps({"mission": mission}))
+                else:
+                    pass
+                #    #await ws.send_str(json.dumps({"type": "no_mission"}))
 
-                        updated_mission = await conn.fetchrow("SELECT * FROM missions_robot WHERE id = $1", id_mission)
+            except Exception as e:
+                print(f"❌ Error fetching missions: {e}")
 
-                        await broadcast_mission_update({"event": "updated", "mission": serialize_mission(updated_mission)})
-
-                        await ws.send_str(json.dumps({"success": "Mission updated", "mission": serialize_mission(updated_mission)}))
-
-                    elif action == "delete":
-                        id_mission = data.get("id")
-                        if not id_mission:
-                            await ws.send_str(json.dumps({"error": "Missing mission ID"}))
-                            continue
-
-                        await conn.execute("DELETE FROM missions_robot WHERE id = $1", id_mission)
-
-                        await broadcast_mission_update({"event": "deleted", "mission_id": id_mission})
-
-                        await ws.send_str(json.dumps({"success": "Mission deleted"}))
-
-                    else:
-                        await ws.send_str(json.dumps({"error": "Invalid action"}))
-
-                    await conn.close()
-
-                except Exception as e:
-                    await ws.send_str(json.dumps({"error": str(e)}))
-
-            elif msg.type == WSMsgType.ERROR:
-                print('WebSocket connection closed with exception %s' % ws.exception())
+            await asyncio.sleep(30)
 
     finally:
         mission_clients.discard(ws)
-        print("❌ Mission WebSocket client disconnected")
+        await conn.close()
+        print("📕 Mission WebSocket client disconnected")
 
     return ws
+

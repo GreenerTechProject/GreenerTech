@@ -1,6 +1,6 @@
 from flask import Blueprint
 
-from app.controllers.user import register, login, get_user, update_user, delete_user, create_technicien ,register_technicien ,verify_email ,validate_technicien
+from app.controllers.user import register, login, get_user, update_user, delete_user, create_technicien,register_technicien, verify_email, validate_technicien
 from app.controllers.entreprise import create_entreprise, get_entreprise, update_entreprise, delete_entreprise
 from app.controllers.domaine import create_domaine, get_domaine, get_all_domaines, update_domaine, delete_domaine ,get_serres_by_domaine
 from app.controllers.bilan import create_bilan, get_bilan, get_all_bilans, update_bilan, delete_bilan, generate_bilan_qrcode
@@ -21,7 +21,7 @@ from app.controllers.robot import create_robot, get_robot, update_robot, get_all
 from app.controllers.etat_bilan import create_etat_bilan, get_etat_bilan, update_etat_bilan, get_etat_bilan_by_bilan, delete_etat_bilan
 from app.controllers.alerte import create_alerte, get_alerte, get_all_alertes, update_alerte, delete_alerte
 
-from app.controllers.rapport import generer_rapport
+from app.controllers.rapport import create_rapport, get_all_rapports, get_rapport, update_rapport, delete_rapport
 
 all_bp = Blueprint('all_bp', __name__)
 all_bp.route('/register', methods=['POST'])(register)
@@ -124,7 +124,6 @@ all_bp.route('/robot/<int:robot_id>', methods=['DELETE'])(delete_robot)
 
 
 
-
 all_bp.route('/etat_bilan', methods=['POST'])(create_etat_bilan)
 all_bp.route('/etat_bilan/<int:etat_bilan_id>', methods=['GET'])(get_etat_bilan)
 all_bp.route('/etat_bilan/bilan/<int:bilan_id>', methods=['GET'])(get_etat_bilan_by_bilan)
@@ -133,12 +132,12 @@ all_bp.route('/etat_bilan<int:etat_bilan_id>', methods=['DELETE'])(delete_etat_b
 
 
 
-
 all_bp.route('/alerte', methods=['POST'])(create_alerte)
-all_bp.route('/alerte>', methods=['GET'])(get_all_alertes)
+all_bp.route('/alerte', methods=['GET'])(get_all_alertes)
 all_bp.route('/alerte/<int:alerte_id>', methods=['GET'])(get_alerte)
 all_bp.route('/alerte<int:alerte_id>', methods=['PUT'])(update_alerte)
 all_bp.route('/alerte<int:alerte_id>', methods=['DELETE'])(delete_alerte)
+
 
 
 all_bp.route('/notifications/<int:id_user>', methods=['GET'])(get_notifications_by_user)
@@ -146,7 +145,12 @@ all_bp.route('/notifications', methods=['GET'])(get_all_notifications)
 all_bp.route('/notifications/vue/<int:id>', methods=['PUT'])(mark_notification_as_seen)
 
 
-all_bp.route('/rapport', methods=['POST'])(generer_rapport)
+
+all_bp.route('/rapport', methods=['POST'])(create_rapport)
+all_bp.route('/rapport', methods=['GET'])(get_all_rapports)
+all_bp.route('/rapport/<int:id>', methods=['GET'])(get_rapport)
+all_bp.route('/rapport/<int:id>', methods=['PUT'])(update_rapport)
+all_bp.route('/rapport/<int:id>', methods=['DELETE'])(delete_rapport)
 
 
 

@@ -23,7 +23,7 @@ def create_intervention(current_user):
             date_fin=data.get('date_fin'),
         )
         db.session.add(new_interv)
-        db.session.flush() 
+        db.session.flush()
 
         if current_user.role=='technicien' :
             tech_sup = User.query.filter_by(role='technicien_superieur', id=current_user.id_assigned).first()
@@ -33,6 +33,9 @@ def create_intervention(current_user):
                     id_user=tech_sup.id,
                     id_intervention=new_interv.id
                 )
+
+        if current_user.role=='technicien_superieur' :
+            new_interv.valid = True
         
         # tech_sup = User.query.filter_by(role='technicien_superieur', id=current_user.id_assigned).first()
 
@@ -43,7 +46,8 @@ def create_intervention(current_user):
         #         id_intervention=new_interv.id
         #     )
         db.session.commit()
-        return jsonify({'message': 'Intervention créée et notification envoyée'}), 201
+        #return jsonify({'message': 'Intervention créée et notification envoyée'}), 201
+        return jsonify(new_interv.to_dict()), 201
     except Exception as e:
         db.session.rollback()
         return jsonify({'error': str(e)}), 400

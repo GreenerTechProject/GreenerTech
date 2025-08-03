@@ -3,8 +3,8 @@ from app.models.etat_bilan import Etat_bilan
 from database.config import db
 from app.utils.security import token_required, role_required
 
-@token_required
-@role_required("directeur", "technicien_superieur", "technicien")
+#@token_required
+#@role_required("directeur", "technicien_superieur", "technicien")
 def create_etat_bilan(current_user):
     data = request.get_json()
     try:

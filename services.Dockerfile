@@ -6,6 +6,17 @@ COPY services/requirements.txt .
 
 #RUN apt-get update && apt-get install -y curl unzip && rm -rf /var/lib/apt/lists/*
 
+# Install required system packages
+#RUN apt-get update && apt-get install -y --no-install-recommends \
+#    libglib2.0-0 \
+#    libsm6 \
+#    libxext6 \
+#    libxrender1 \
+#    libjpeg62-turbo \
+#    libpng-dev \
+#    ffmpeg \
+#    && rm -rf /var/lib/apt/lists/*
+
 RUN pip install --no-cache-dir --progress-bar=off -r requirements.txt
 
 COPY services .
@@ -14,4 +25,4 @@ COPY services .
 
 EXPOSE 8080
 
-CMD ["python3", "services.py"]
+CMD ["python3", "-u", "services.py"]
