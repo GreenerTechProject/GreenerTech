@@ -1,85 +1,128 @@
 # GreenerTech
-GreenerTech
 
-## Comment cloner le projet
+## 1. Cloner le projet
 
-Pour cloner le dépôt du projet, exécutez la commande suivante dans votre terminal :
+Pour cloner le dépôt du projet, ouvrez un terminal et exécutez :
+
 ```bash
 git clone https://github.com/GreenerTechProject/GreenerTech.git
-ou
+# ou avec SSH
 git clone git@github.com:GreenerTechProject/GreenerTech.git
 
 cd GreenerTech
 ```
 
-Comment lancer le projet avec Docker
+---
 
-Assurez-vous d’avoir Docker installé sur votre machine. Ensuite, vous pouvez construire et lancer le conteneur Docker de la façon suivante :
+## 2. Lancer le projet avec Docker
+
+### 2.1. Pré-requis
+
+Assurez-vous que Docker est installé sur votre machine.
+
+### 2.2. Télécharger le modèle d’IA
+
 ```bash
-docker-compose up -d --build
-cat greenertech_backup.sql | docker exec -i greenertech-db psql -U postgres -d greenertech
-
-OR
-
-docker exec -it greenertech-backend bash -c "rm -rf migrations && flask db init && flask db migrate -m 'create tables' && flask db upgrade"
-
+sh download_ia_model.sh
 ```
 
-Pour arrêter le projet :
+### 2.3. Démarrer ou redémarrer le projet
+
+```bash
+sh start.sh
+```
+
+Pour supprimer les volumes avant de lancer :
+
+```bash
+sh start.sh -v
+
+Ou Lancer manuellement avec Docker Compose :
+docker-compose up -d --build
+```
+
+### 2.4. Importer la base de données
+
+```bash
+cat greenertech_backup.sql | docker exec -i greenertech-db psql -U postgres -d greenertech
+
+Ou Initialiser la base de données (Flask) :
+docker exec -it greenertech-backend bash -c "rm -rf migrations && flask db init && flask db migrate -m 'create tables' && flask db upgrade"
+```
+
+### 2.5. Arrêter le projet
+
 ```bash
 docker-compose down
 ```
 
-Pour le Dev : 
+### 2.6. Acceder au projet
+
+```bash
+http://localhost:3000/register
+http://localhost:3000/login
+POST : http://localhost:5000/api/register
+http://localhost:8080/video/
+```
+
+---
+
+## 3. Développement (Dev)
+
 ```bash
 git checkout {branch}
 git add .
-git commit -m "Comment"
+git commit -m "Commentaire"
 git push
 
+# Ou en une seule ligne
 git add . ; git commit -m "Update Project" ; git push
 
+# Mettre à jour et redémarrer Docker
 git pull ; docker-compose down ; docker-compose up -d --build
 ```
 
-Update DB :
+---
+
+## 4. Mise à jour de la base de données
+
 ```bash
 docker exec -it greenertech-backend bash -c "flask db migrate -m 'update tables' && flask db upgrade"
-
-Export DB :
-docker exec -t greenertech-db pg_dump -U postgres -d greenertech > greenertech_backup.sql
-
 ```
-
-
-------------
-------------
-------------
-------------
-
-To access the **PostgreSQL shell** inside your Docker container, follow these steps:
 
 ---
 
-### ✅ **Step 1: Find your PostgreSQL container name**
+## 5. Exporter la base de données
 
-Run:
+```bash
+docker exec -t greenertech-db pg_dump -U postgres -d greenertech > greenertech_backup.sql
+```
+
+---
+
+## 6. Accès au shell PostgreSQL dans Docker
+
+### Étape 1 : Trouver le conteneur PostgreSQL
 
 ```bash
 docker ps
+
+Ou :
+docker ps -a
+docker logs <containerID>
 ```
 
-Look for a container with a name like `greenertech-db` or image like `postgres`.
+Recherchez un conteneur nommé `greenertech-db` ou une image `postgres`.
 
 ---
 
-### ✅ **Step 2: Access the container shell**
+### Étape 2 : Accéder au shell du conteneur
 
 ```bash
 docker exec -it greenertech-backend bash
 ```
 
-*If it's Alpine-based (no bash), use:*
+Si votre conteneur est basé sur Alpine (pas de bash) :
 
 ```bash
 docker exec -it greenertech-backend sh
@@ -87,32 +130,31 @@ docker exec -it greenertech-backend sh
 
 ---
 
-### ✅ **Step 3: Connect to PostgreSQL**
+### Étape 3 : Connexion à PostgreSQL
 
-Inside the container, run:
+Dans le conteneur, lancez :
 
 ```bash
-psql -U <username> -d <database_name>
+psql -U <utilisateur> -d <nom_base>
 ```
 
-For example, if you used the default settings:
+Exemple avec les paramètres par défaut :
 
 ```bash
 psql -U postgres -d postgres
 ```
 
-> `-U`: PostgreSQL user
-> `-d`: Database name
-
 ---
 
-### 📌 Full one-liner (skip container shell):
-
-If you just want to run `psql` directly:
+### Astuce : connexion rapide sans shell
 
 ```bash
 docker exec -it greenertech-db psql -U postgres -d postgres
+```
 
+Puis dans psql :
+
+```sql
 \c greenertech
 \dt
 SELECT * FROM users;
@@ -120,117 +162,34 @@ SELECT * FROM users;
 
 ---
 
+## 7. Commandes utiles PostgreSQL (`psql`)
 
+### Meta-commandes (dans le shell psql, commencent par `\`)
 
-Here’s a **complete and categorized reference** of the most useful PostgreSQL (`psql`) **commands**, both in the **interactive shell** and general SQL.
-
----
-
-## 🟢 **Connecting**
-
-```bash
-psql -U <user> -d <dbname>
-```
-
----
-
-## 📘 **Meta-Commands (psql shell only)**
-
-*(start with a backslash `\`)*
-
-| Command            | Description                                    |
-| ------------------ | ---------------------------------------------- |
-| `\l` or `\list`    | List all databases                             |
-| `\c <dbname>`      | Connect to a database                          |
-| `\dt`              | List all tables in the current schema          |
-| `\d <table>`       | Describe a table (columns, types, etc.)        |
-| `\du`              | List roles (users)                             |
-| `\dn`              | List schemas                                   |
-| `\df`              | List functions                                 |
-| `\x`               | Toggle expanded output (useful for large data) |
-| `\q`               | Quit the shell                                 |
-| `\conninfo`        | Show current connection info                   |
-| `\password <user>` | Change password                                |
-| `\e`               | Open editor to write long queries              |
-| `\! <command>`     | Run a shell command from within `psql`         |
+| Commande           | Description                              |
+| ------------------ | ---------------------------------------- |
+| `\l` ou `\list`    | Liste toutes les bases de données        |
+| `\c <dbname>`      | Se connecter à une base de données       |
+| `\dt`              | Liste les tables du schéma actuel        |
+| `\d <table>`       | Décrit une table (colonnes, types, etc.) |
+| `\du`              | Liste les rôles (utilisateurs)           |
+| `\dn`              | Liste les schémas                        |
+| `\df`              | Liste les fonctions                      |
+| `\x`               | Active/désactive l’affichage étendu      |
+| `\q`               | Quitter le shell                         |
+| `\conninfo`        | Affiche les infos de connexion           |
+| `\password <user>` | Change le mot de passe                   |
+| `\e`               | Ouvre l’éditeur pour écrire des requêtes |
+| `\! <commande>`    | Exécute une commande shell depuis psql   |
 
 ---
 
-## 📗 **SQL Commands (within `psql`)**
+### Commandes SQL utiles
 
-### 🔹 Database
-
-```sql
-CREATE DATABASE mydb;
-DROP DATABASE mydb;
-\c mydb;  -- connect
-```
-
-### 🔹 User
-
-```sql
-CREATE USER myuser WITH PASSWORD 'secret';
-GRANT ALL PRIVILEGES ON DATABASE mydb TO myuser;
-ALTER USER myuser WITH SUPERUSER;
-DROP USER myuser;
-```
-
-### 🔹 Table
-
-```sql
-CREATE TABLE mytable (
-    id SERIAL PRIMARY KEY,
-    name TEXT NOT NULL,
-    age INT
-);
-
-ALTER TABLE mytable ADD COLUMN email TEXT;
-DROP TABLE mytable;
-TRUNCATE TABLE mytable;
-```
-
-### 🔹 Data
-
-```sql
-INSERT INTO mytable (name, age) VALUES ('Ali', 30);
-SELECT * FROM mytable;
-UPDATE mytable SET age = 31 WHERE name = 'Ali';
-DELETE FROM mytable WHERE id = 1;
-```
-
-### 🔹 Indexes
-
-```sql
-CREATE INDEX idx_name ON mytable(name);
-DROP INDEX idx_name;
-```
-
----
-
-## 📙 **Backup & Restore**
-
-### Dump:
-
-```bash
-pg_dump -U <user> -d <dbname> > backup.sql
-```
-
-### Restore:
-
-```bash
-psql -U <user> -d <dbname> < backup.sql
-```
-
----
-
-## 📓 Extras
-
-| Action                   | Command                                                      |
-| ------------------------ | ------------------------------------------------------------ |
-| List current database    | `SELECT current_database();`                                 |
-| Show current user        | `SELECT current_user;`                                       |
-| List all tables (SQL)    | `SELECT tablename FROM pg_tables WHERE schemaname='public';` |
-| List all databases (SQL) | `SELECT datname FROM pg_database;`                           |
-| View active connections  | `SELECT * FROM pg_stat_activity;`                            |
-
----
+| Action                         | Commande SQL                                                 |
+| ------------------------------ | ------------------------------------------------------------ |
+| Afficher la base courante      | `SELECT current_database();`                                 |
+| Afficher l’utilisateur courant | `SELECT current_user;`                                       |
+| Lister toutes les tables (SQL) | `SELECT tablename FROM pg_tables WHERE schemaname='public';` |
+| Lister toutes les bases (SQL)  | `SELECT datname FROM pg_database;`                           |
+| Voir les connexions actives    | `SELECT * FROM pg_stat_activity;`                            |

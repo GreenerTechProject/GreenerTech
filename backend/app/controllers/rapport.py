@@ -43,6 +43,25 @@ def create_rapport(current_user):
 
     return jsonify({"message": "Rapport généré avec succès", "lien_pdf": chemin_pdf}), 201
 
+
+
+@token_required
+@role_required("technicien", "directeur")
+def get_all_rapports(current_user):
+    rapports = Rapport.query.all()
+    result = [rapport.to_dict() for rapport in rapports]
+    return jsonify(result), 200
+
+@token_required
+@role_required("technicien", "directeur")
+def get_rapport(id, current_user):
+    rapport = Rapport.query.get(id)
+    if not rapport:
+        return jsonify({"message": "Rapport non trouvé"}), 404
+    return jsonify(rapport.to_dict()), 200
+
+
+
 # update rapport
 @token_required
 @role_required("directeur")
@@ -57,6 +76,7 @@ def update_rapport(id):
     rapport.description = desctripion
     db.session.commit()
     return jsonify({"message": "Rapport mis à jour avec succès"}), 200
+
 @token_required
 @role_required("directeur")
 def delete_rapport(id):

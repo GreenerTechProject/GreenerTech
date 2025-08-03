@@ -21,7 +21,7 @@ from app.controllers.robot import create_robot, get_robot, update_robot, get_all
 from app.controllers.etat_bilan import create_etat_bilan, get_etat_bilan, update_etat_bilan, get_etat_bilan_by_bilan, delete_etat_bilan
 from app.controllers.alerte import create_alerte, get_alerte, get_all_alertes, update_alerte, delete_alerte
 
-from app.controllers.rapport import create_rapport
+from app.controllers.rapport import create_rapport, get_all_rapports, get_rapport, update_rapport, delete_rapport
 
 all_bp = Blueprint('all_bp', __name__)
 all_bp.route('/register', methods=['POST'])(register)
@@ -124,13 +124,11 @@ all_bp.route('/robot/<int:robot_id>', methods=['DELETE'])(delete_robot)
 
 
 
-
 all_bp.route('/etat_bilan', methods=['POST'])(create_etat_bilan)
 all_bp.route('/etat_bilan/<int:etat_bilan_id>', methods=['GET'])(get_etat_bilan)
 all_bp.route('/etat_bilan/bilan/<int:bilan_id>', methods=['GET'])(get_etat_bilan_by_bilan)
 all_bp.route('/etat_bilan<int:etat_bilan_id>', methods=['PUT'])(update_etat_bilan)
 all_bp.route('/etat_bilan<int:etat_bilan_id>', methods=['DELETE'])(delete_etat_bilan)
-
 
 
 
@@ -149,6 +147,10 @@ all_bp.route('/notifications/vue/<int:id>', methods=['PUT'])(mark_notification_a
 
 
 all_bp.route('/rapport', methods=['POST'])(create_rapport)
+all_bp.route('/rapport', methods=['GET'])(get_all_rapports)
+all_bp.route('/rapport/<int:id>', methods=['GET'])(get_rapport)
+all_bp.route('/rapport/<int:id>', methods=['PUT'])(update_rapport)
+all_bp.route('/rapport/<int:id>', methods=['DELETE'])(delete_rapport)
 
 
 
