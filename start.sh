@@ -1,1 +1,1 @@
-docker-compose down ; docker-compose up -d --build ; python3 services/services.py
+docker-compose down ; docker-compose up -d --build ; cd services ; python3 services.py
