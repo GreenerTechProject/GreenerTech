@@ -27,7 +27,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libopus-dev \
     libvpx-dev \
     libjpeg-dev \
-	libavresample-dev \
 	libx264-dev \
     libx265-dev \
     libnuma-dev \
