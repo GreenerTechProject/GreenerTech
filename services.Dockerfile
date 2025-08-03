@@ -14,4 +14,5 @@ COPY services .
 
 EXPOSE 8080
 
-CMD ["python3", "services.py"]
+#CMD ["python3", "services.py"]
+CMD ["ls"]
