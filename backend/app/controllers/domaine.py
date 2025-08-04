@@ -13,7 +13,7 @@ def create_domaine(current_user):
     data = request.get_json()
 
     # Récupérer entreprise liée au directeur connecté
-    entreprise = Entreprise.query.filter_by(id_user=current_user.id).first()
+    entreprise = Entreprise.query.filter_by(id=current_user.id_entreprise).first()
     if not entreprise:
         return jsonify({"message": "Aucune entreprise associée à cet utilisateur"}), 404
 

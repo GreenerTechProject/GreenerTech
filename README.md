@@ -184,6 +184,11 @@ SELECT * FROM users;
 
 ---
 
+
+
+copie le pdf 
+docker cp greenertech-backend:/app/static C:\Users\pc\Desktop\
+
 ### Commandes SQL utiles
 
 | Action                         | Commande SQL                                                 |
@@ -193,3 +198,4 @@ SELECT * FROM users;
 | Lister toutes les tables (SQL) | `SELECT tablename FROM pg_tables WHERE schemaname='public';` |
 | Lister toutes les bases (SQL)  | `SELECT datname FROM pg_database;`                           |
 | Voir les connexions actives    | `SELECT * FROM pg_stat_activity;`                            |
+
