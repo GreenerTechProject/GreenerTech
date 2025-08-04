@@ -6,10 +6,10 @@ python-dotenv
 psycopg2-binary
 PyJWT
 qrcode[pil]
-reportlab
+#reportlab
 
 WeasyPrint
 # fpdf
 
-Flask-Mail 
-itsdangerous
+Flask-Mail
+#itsdangerous

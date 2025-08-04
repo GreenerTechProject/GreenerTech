@@ -21,6 +21,8 @@ services:
     container_name: greenertech-backend
     ports:
       - "5000:5000"
+    volumes:
+      - rapports_data:/app/static/rapports
     environment:
       - FLASK_ENV=development
       - DATABASE_URL=postgresql://postgres:postgres@db:5432/greenertech
@@ -69,3 +71,4 @@ services:
 volumes:
   pgdata:
   pgadmin-data:
+  rapports_data:

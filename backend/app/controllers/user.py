@@ -50,7 +50,7 @@ def login():
         token = generate_token(user.id)
         return jsonify({
             "token": token, 
-            "role": "directeur"
+            "role": user.role
         }), 200
 
     return jsonify({"message": "Invalid credentials"}), 401
@@ -91,8 +91,8 @@ def get_user(current_user):
         "created_at":current_user.created_at.isoformat() if current_user.created_at else None,
         "updated_at":current_user.updated_at.isoformat() if current_user.updated_at else None,
         "id_assigned":current_user.id_assigned,
-        "is_connected":current_user.is_connected,
-        "derector_valide":current_user.derector_valide,
+        "setup_completed":current_user.setup_completed,
+        "derecteur_valide":current_user.derecteur_valide,
         "email_valide":current_user.email_valide
     }
     return jsonify(user_data),200
@@ -110,7 +110,7 @@ def get_user(current_user):
 #             "role": tech.role,
 #             "birthday": tech.birthday.strftime('%Y-%m-%d') if tech.birthday else None,
 #             "id_assigned": tech.id_assigned,
-#             "derector_valide": tech.derector_valide,
+#             "derecteur_valide": tech.derecteur_valide,
 #             "email_valide": tech.email_valide
 #         } for tech in techniciens
 #     ]
@@ -143,6 +143,7 @@ def create_technicien(current_user):
         id_assigned =data.get('id_assigned'),
         # id_assigned=current_user.id,
         derector_valide=False,
+
         email_valide=False
     )
     db.session.add(new_user)
@@ -235,7 +236,7 @@ def register_technicien():
     email = data.get('email')
     role = data.get('role')
     name = data.get('name')
-    password = data.get('password')
+    password = generate_password_hash(data.get('password'))
     birthday = data.get('birthday')
     telephone = data.get('phone_number')
     cin = data.get('cin')
@@ -270,11 +271,13 @@ def register_technicien():
         name=name,
         password=generate_password_hash(password),
         birthday=datetime.strptime(birthday, '%Y-%m-%d') if birthday else None,
+
         telephone=telephone,
         cin=cin,
         id_entreprise=id_entreprise,
         derector_valide=False,
         email_valide=False
+
     )
     db.session.add(new_user)
     db.session.flush()  # Pour récupérer l'ID
@@ -350,10 +353,10 @@ def validate_technicien(current_user):
     if not user:
         return jsonify({"error": "Utilisateur non trouvé"}), 404
 
-    if user.derector_valide:
+    if user.derecteur_valide:
         return jsonify({"message": "Compte déjà validé par le directeur."}), 200
 
-    user.derector_valide = True
+    user.derecteur_valide = True
     db.session.commit()
 
     return jsonify({"message": "Compte technicien validé avec succès."}), 200
