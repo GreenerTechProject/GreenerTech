@@ -1,7 +1,7 @@
 from flask import Blueprint
 
 
-from app.controllers.user import register, login, get_user, update_user, delete_user, create_technicien ,register_technicien ,verify_email ,validate_technicien, get_technicien
+from app.controllers.user import register, login, get_user, update_user, delete_user, create_technicien ,register_technicien ,verify_email ,validate_technicien, get_technicien, get_all_technicians
 
 from app.controllers.entreprise import create_entreprise, get_entreprise, update_entreprise, delete_entreprise
 from app.controllers.domaine import create_domaine, get_domaine, get_all_domaines, update_domaine, delete_domaine ,get_serres_by_domaine
@@ -37,11 +37,15 @@ all_bp.route('/user', methods=['DELETE'])(delete_user)
 all_bp.route('/verify_email', methods=['GET'])(verify_email)
 
 all_bp.route('/technicien', methods=['GET'])(get_technicien)
+all_bp.route('/technicien/all', methods=['GET'])(get_all_technicians)
 
 
 all_bp.route('/technicien', methods=['POST'])(create_technicien)
 all_bp.route('/technicien/register', methods=['POST'])(register_technicien)
 all_bp.route('/technicien/validate/<int:id>', methods=['PUT'])(validate_technicien)
+
+
+
 
 
 
