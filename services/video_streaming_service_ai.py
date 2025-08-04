@@ -12,6 +12,7 @@ import os
 import time
 #import ast
 
+from sensors_realtime_service import get_latest_sensor_data
 
 qr_detector = QRCodeDetector()
 latest_frame = None
@@ -69,7 +70,9 @@ async def video_stream_handler(request):
                             
                             try:
                                 data = json.loads(text)
-                                #print(data["nom"])                                
+                                #print(data["nom"])
+                                print("Old bilan : "+latest_qr_results)
+                                print("Old bilan sensor data : "+get_latest_sensor_data)
                                 print("Detected bilan : "+data["nom"])
                             
                             except json.JSONDecodeError:

@@ -74,7 +74,13 @@ def update_user(current_user):
 
     current_user.name = data.get('name', current_user.name)
     current_user.email = data.get('email', current_user.email)
-    current_user.password = data.get('password', current_user.password)
+    
+    new_password = data.get('password')
+    if new_password:
+        current_user.password = generate_password_hash(new_password)
+    else :
+        current_user.password = current_user.password
+    
     current_user.role = data.get('role', current_user.role)
     current_user.id_assigned=data.get('role', current_user.id_assigned)
 

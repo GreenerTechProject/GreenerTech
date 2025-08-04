@@ -13,6 +13,28 @@ import asyncio
 sensor_clients = set()
 latest_sensor_data = {}
 
+sensor_bounds = {
+    "temperature": {"min": None, "max": None, "sum": 0.0, "count": 0, "mean": None},
+    "humidity": {"min": None, "max": None, "sum": 0.0, "count": 0, "mean": None},
+    "co2": {"min": None, "max": None, "sum": 0.0, "count": 0, "mean": None},
+    "luminosite": {"min": None, "max": None, "sum": 0.0, "count": 0, "mean": None},
+}
+
+
+def update_bounds(metric, value):
+    if value is None:
+        return
+    bounds = sensor_bounds.get(metric)
+    if bounds["min"] is None or value < bounds["min"]:
+        bounds["min"] = value
+    if bounds["max"] is None or value > bounds["max"]:
+        bounds["max"] = value
+    bounds["sum"] += value
+    bounds["count"] += 1
+    bounds["mean"] = round(bounds["sum"] / bounds["count"], 2)
+
+
+
 async def sensor_data_handler(request):
     global latest_sensor_data
     ws = web.WebSocketResponse()
@@ -25,7 +47,6 @@ async def sensor_data_handler(request):
             if msg.type == WSMsgType.TEXT:
                 try:
                     data = json.loads(msg.data)
-                    latest_sensor_data = data
                     #print(f"📡 Données reçues : {data}")
 
                     temperature = data.get("temperature")
@@ -34,6 +55,33 @@ async def sensor_data_handler(request):
                     luminosite = data.get("luminosite")
                     x = data.get("x")
                     y = data.get("y")
+
+                    update_bounds("temperature", temperature)
+                    update_bounds("humidity", humidity)
+                    update_bounds("co2", co2)
+                    update_bounds("luminosite", luminosite)
+                    
+                    # Merge bounds with latest_sensor_data
+                    
+                    extended_data = {
+                        **data,
+                        **{
+                            f"min_{k}": v["min"]
+                            for k, v in sensor_bounds.items()
+                        },
+                        **{
+                            f"max_{k}": v["max"]
+                            for k, v in sensor_bounds.items()
+                        },
+                        **{
+                            f"mean_{k}": v["mean"]
+                            for k, v in sensor_bounds.items()
+                        }
+                    }
+
+                    latest_sensor_data = extended_data
+
+
                     
                     warnings = []
                     
@@ -92,10 +140,14 @@ async def sensor_data_handler(request):
                     # Diffusion à tous les clients (sauf l'expéditeur)
                     for client in sensor_clients:
                         if client != ws and not client.closed:
-                            await client.send_str(json.dumps(data))
+                            await client.send_str(json.dumps(latest_sensor_data))
                 except Exception as e:
                     print(f"❌ Erreur JSON : {e}")
     finally:
         sensor_clients.discard(ws)
         print("🔌 Client déconnecté")
     return ws
+
+
+def get_latest_sensor_data():
+    return latest_sensor_data
