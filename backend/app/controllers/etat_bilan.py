@@ -5,7 +5,7 @@ from app.utils.security import token_required, role_required
 
 #@token_required
 #@role_required("directeur", "technicien_superieur", "technicien")
-def create_etat_bilan(current_user):
+def create_etat_bilan():
     data = request.get_json()
     try:
         etat = Etat_bilan(

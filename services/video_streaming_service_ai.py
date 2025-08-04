@@ -11,8 +11,8 @@ import json
 import os
 import time
 #import ast
+import requests
 
-from sensors_realtime_service import get_latest_sensor_data
 
 qr_detector = QRCodeDetector()
 latest_frame = None
@@ -52,6 +52,7 @@ class RelayStreamTrack(VideoStreamTrack):
 
 async def video_stream_handler(request):
     global latest_frame, latest_qr_results, last_frame_time
+    from sensors_realtime_service import get_latest_sensor_data
 
     ws = web.WebSocketResponse()
     await ws.prepare(request)
@@ -71,9 +72,34 @@ async def video_stream_handler(request):
                             try:
                                 data = json.loads(text)
                                 #print(data["nom"])
-                                print("Old bilan : "+latest_qr_results)
-                                print("Old bilan sensor data : "+get_latest_sensor_data)
                                 print("Detected bilan : "+data["nom"])
+                                if latest_qr_results and text != latest_qr_results[0]:
+                                    data2 = json.loads(latest_qr_results[0])
+                                    if data["nom"] != data2["nom"]:
+                                        print("Old bilan : "+data2["nom"])
+                                        print(get_latest_sensor_data())
+                                        #print("Old bilan sensor data : "+str(get_latest_sensor_data()["temperature"]))
+                                        
+                                        
+                                        # Send etat_bilan
+                                        data3 = {
+                                          "id_bilan": data2["id"],
+                                          "temperature": get_latest_sensor_data()["mean_temperature"],
+                                          "humidite": get_latest_sensor_data()["mean_humidity"],
+                                          "luminosite": get_latest_sensor_data()["mean_luminosite"],
+                                          "co2": get_latest_sensor_data()["mean_co2"],
+                                          "nombre_tomates_maladies": 0,
+                                          "nombre_tomates_non_maladies": 0,
+                                          "nombre_malade1": 0,
+                                          "nombre_malade2": 0,
+                                          "rendement": 0
+                                        }
+                                        print(data3)
+                                        try:
+                                            response = requests.post("http://greenertech.mywire.org:5000/api/etat_bilan", json=data3)
+                                            print("✅ etat_bilan sent:", response.status_code, response.text)
+                                        except Exception as e:
+                                            print("❌ Failed to send etat_bilan:", e)
                             
                             except json.JSONDecodeError:
                                 print("No json", text)

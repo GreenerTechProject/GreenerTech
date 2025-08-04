@@ -3,7 +3,7 @@ import asyncio
 import websockets
 import json
 
-import serial
+#import serial
 
 
 host = "localhost"
@@ -108,8 +108,8 @@ async def receive_controls():
                         
 
                         # Ouvre le port série vers Arduino (adapter le port si besoin)
-                        arduino = serial.Serial('/dev/ttyACM0', 9600)
-                        arduino.write((data['control_mode'] + "\n").encode())
+                        #arduino = serial.Serial('/dev/ttyACM0', 9600)
+                        #arduino.write((data['control_mode'] + "\n").encode())
 
 
         except (websockets.exceptions.ConnectionClosedError, ConnectionRefusedError) as e:
@@ -127,7 +127,7 @@ async def simulate_sensor_data():
     async with websockets.connect(uri) as ws:
         while True:
             data = {
-                "temperature": round(random.uniform(20, 3000), 2),
+                "temperature": round(random.uniform(20, 30), 2),
                 "humidity": round(random.uniform(50, 80), 2),
                 "co2": round(random.uniform(300, 800), 2),
                 "luminosite": round(random.uniform(100, 1000), 2),
