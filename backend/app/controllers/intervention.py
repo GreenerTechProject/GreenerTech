@@ -28,10 +28,16 @@ def create_intervention(current_user):
         if current_user.role=='technicien' :
             tech_sup = User.query.filter_by(role='technicien_superieur', id=current_user.id_assigned).first()
             if tech_sup:
+                # envoyer_notification(
+                #     description=f"Nouvelle intervention à valider : {new_interv.description}",
+                #     id_user=tech_sup.id,
+                #     id_intervention=new_interv.id
+                # )
                 envoyer_notification(
-                    description=f"Nouvelle intervention à valider : {new_interv.description}",
+                    description="Une nouvelle intervention a été créée.",
                     id_user=tech_sup.id,
-                    id_intervention=new_interv.id
+                    id_intervention=new_interv.id,
+                    type_notification="intervention_creee"
                 )
 
         if current_user.role=='technicien_superieur' :
@@ -58,11 +64,17 @@ def validate_intervention(current_user,id):
     try:
         intervention = Intervention.query.get_or_404(id)
         intervention.valid = True
-        # Notifier le technicien (créateur de l'intervention)
+        # # Notifier le technicien (créateur de l'intervention)
+        # envoyer_notification(
+        #     description=f"Votre intervention '{intervention.description}' a été validée.",
+        #     id_user=intervention.id_user,
+        #     id_intervention=intervention.id
+        # )
         envoyer_notification(
-            description=f"Votre intervention '{intervention.description}' a été validée.",
+            description="Votre intervention a été validée par un technicien supérieur.",
             id_user=intervention.id_user,
-            id_intervention=intervention.id
+            id_intervention=intervention.id,
+            type_notification="intervention_validee"
         )
         db.session.commit()
         return jsonify({'message': 'Intervention validée'}), 200

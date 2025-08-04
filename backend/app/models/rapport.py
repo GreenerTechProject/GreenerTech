@@ -11,6 +11,7 @@ class Rapport(db.Model):
 
     id_serre = Column(Integer, ForeignKey('serres.id'), nullable=False)
     user_id = Column(Integer, ForeignKey('users.id'), nullable=False)
+    
 
 
 

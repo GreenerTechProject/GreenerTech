@@ -6,7 +6,7 @@ class Entreprise(db.Model):
 
     id = Column(Integer, primary_key=True, index=True)
     nom = Column(String, nullable=False)
-    id_user = Column(Integer, ForeignKey('users.id'), nullable=False)
+    # id_user = Column(Integer, ForeignKey('users.id'), nullable=False)
     status_juridique = Column(String)
     adresse = Column(String)
     id_fiscale = Column(String)
@@ -17,7 +17,7 @@ class Entreprise(db.Model):
         return {
             "id": self.id,
             "nom": self.nom,
-            "id_user": self.id_user,
+            # "id_user": self.id_user,
             "status_juridique": self.status_juridique,
             "adresse": self.adresse,
             "id_fiscale": self.id_fiscale,

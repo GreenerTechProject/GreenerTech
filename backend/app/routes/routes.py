@@ -1,6 +1,8 @@
 from flask import Blueprint
 
-from app.controllers.user import register, login, get_user, update_user, delete_user, create_technicien,register_technicien, verify_email, validate_technicien
+
+from app.controllers.user import register, login, get_user, update_user, delete_user, create_technicien ,register_technicien ,verify_email ,validate_technicien, get_technicien, get_all_technicians
+
 from app.controllers.entreprise import create_entreprise, get_entreprise, update_entreprise, delete_entreprise
 from app.controllers.domaine import create_domaine, get_domaine, get_all_domaines, update_domaine, delete_domaine ,get_serres_by_domaine
 from app.controllers.bilan import create_bilan, get_bilan, get_all_bilans, update_bilan, delete_bilan, generate_bilan_qrcode
@@ -21,7 +23,9 @@ from app.controllers.robot import create_robot, get_robot, update_robot, get_all
 from app.controllers.etat_bilan import create_etat_bilan, get_etat_bilan, update_etat_bilan, get_etat_bilan_by_bilan, delete_etat_bilan
 from app.controllers.alerte import create_alerte, get_alerte, get_all_alertes, update_alerte, delete_alerte
 
+
 from app.controllers.rapport import create_rapport, get_all_rapports, get_rapport, update_rapport, delete_rapport
+
 
 all_bp = Blueprint('all_bp', __name__)
 all_bp.route('/register', methods=['POST'])(register)
@@ -32,10 +36,16 @@ all_bp.route('/user', methods=['DELETE'])(delete_user)
 # all_bp.route('/technicien/check_email', methods=['POST'])(check_email)
 all_bp.route('/verify_email', methods=['GET'])(verify_email)
 
+all_bp.route('/technicien', methods=['GET'])(get_technicien)
+all_bp.route('/technicien/all', methods=['GET'])(get_all_technicians)
+
 
 all_bp.route('/technicien', methods=['POST'])(create_technicien)
 all_bp.route('/technicien/register', methods=['POST'])(register_technicien)
 all_bp.route('/technicien/validate/<int:id>', methods=['PUT'])(validate_technicien)
+
+
+
 
 
 
