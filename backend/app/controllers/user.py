@@ -7,6 +7,7 @@ from app.utils.security import token_required, token_unrequired, generate_token,
 from app.utils.send_email import send_verification_email
 from werkzeug.security import generate_password_hash, check_password_hash
 import os
+from app.utils.notifications import envoyer_notification
 
 
 # from werkzeug.security import generate_password_hash, check_password_hash
@@ -97,7 +98,8 @@ def get_user(current_user):
         "id_assigned":current_user.id_assigned,
         "setup_completed":current_user.setup_completed,
         "derecteur_valide":current_user.derecteur_valide,
-        "email_valide":current_user.email_valide
+        "email_valide":current_user.email_valide,
+        "id_entreprise" : current_user.id_entreprise
     }
     return jsonify(user_data),200
 
@@ -283,6 +285,17 @@ def register_technicien():
         email_valide=False
 
     )
+    directeur = User.query.filter_by(role='directeur', id_entreprise=1).first()
+    # reteurner une erreur si pas de directeur
+    if not directeur:
+        return jsonify({"error": "Aucun directeur trouvé pour cette entreprise."}), 404
+    elif directeur:
+        envoyer_notification(
+            description=f"Un nouveau technicien ({name}) a créé un compte.",
+            id_user=directeur.id,
+            type_notification="compte_technicien"
+        )
+        
     db.session.add(new_user)
     db.session.flush()  # Pour récupérer l'ID
     new_user.verification_token = generate_token(new_user.id)
@@ -356,6 +369,11 @@ def validate_technicien(current_user, id):
 
     user.derecteur_valide = True
     db.session.commit()
+    # envoyer_notification(
+    #     description="Votre compte a été validé par le directeur.",
+    #     id_user=user.id,
+    #     type_notification="compte_valide"
+    # )
 
     return jsonify({"message": "Compte technicien validé avec succès."}), 200
 
