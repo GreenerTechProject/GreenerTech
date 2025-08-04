@@ -3,7 +3,7 @@ import asyncio
 import websockets
 import json
 
-#import serial
+import serial
 
 
 host = "localhost"
@@ -108,8 +108,8 @@ async def receive_controls():
                         
 
                         # Ouvre le port série vers Arduino (adapter le port si besoin)
-                        #arduino = serial.Serial('/dev/ttyACM0', 9600)
-                        #arduino.write((data['control_mode'] + "\n").encode())
+                        arduino = serial.Serial('/dev/ttyACM0', 9600)
+                        arduino.write((data['control_mode'] + "\n").encode())
 
 
         except (websockets.exceptions.ConnectionClosedError, ConnectionRefusedError) as e:
@@ -223,7 +223,7 @@ async def main():
         send_video(),
         receive_controls(),
         simulate_sensor_data(),
-        # listen_missions(robot_ref) 
+        listen_missions(robot_ref) 
         )
     
 

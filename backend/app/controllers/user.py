@@ -106,7 +106,7 @@ def get_user(current_user):
 # creat fonction pour recuperer tous les techniciens et techniciens superieur (GET)
 @token_required
 @role_required('directeur')
-def get_all_technicians( current_user):
+def get_all_technicians(current_user):
     techniciens = User.query.filter(User.role.in_(["technicien", "technicien_superieur"])).all()
     techniciens_data = [
         {
@@ -132,7 +132,6 @@ def create_technicien(current_user):
     email = data.get('email')
     role = data.get('role')
     name = data.get('name')
-
 
 
     if role not in ["technicien", "technicien_superieur"]:
@@ -219,8 +218,7 @@ def verify_email():
     except jwt.InvalidTokenError:
         return jsonify({"error": "Token invalide."}), 400
 
-def get_technicien():
-    email = request.args.get('email')
+def get_technicien_by_email(email):
     if not email:
         return jsonify({"error": "Email requis"}), 400
     user = User.query.filter_by(email=email).first()
