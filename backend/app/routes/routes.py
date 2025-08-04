@@ -133,7 +133,7 @@ all_bp.route('/robot/<int:robot_id>', methods=['DELETE'])(delete_robot)
 
 all_bp.route('/etat_bilan', methods=['POST'])(create_etat_bilan)
 all_bp.route('/etat_bilan/<int:etat_bilan_id>', methods=['GET'])(get_etat_bilan)
-all_bp.route('/etat_bilan/serre/<int:serre_id>', methods=['GET'])(get_last_etat_bilan_by_serre)
+#all_bp.route('/etat_bilan/serre/<int:serre_id>', methods=['GET'])(get_last_etat_bilan_by_serre)
 all_bp.route('/etat_bilan/bilan/<int:bilan_id>', methods=['GET'])(get_etat_bilan_by_bilan)
 all_bp.route('/etat_bilan/<int:etat_bilan_id>', methods=['PUT'])(update_etat_bilan)
 all_bp.route('/etat_bilan/<int:etat_bilan_id>', methods=['DELETE'])(delete_etat_bilan)
