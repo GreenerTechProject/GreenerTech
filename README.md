@@ -225,3 +225,7 @@ psql -U <user> -d <dbname> < backup.sql
 | View active connections  | `SELECT * FROM pg_stat_activity;`                            |
 
 ---
+
+
+copie le pdf 
+docker cp greenertech-backend:/app/static C:\Users\pc\Desktop\

@@ -80,24 +80,51 @@
 
     <div class="section">
         <h2 style="color: #2980b9;">🩺 États des Bilans</h2>
-        {% if etats_bilan %}
-            {% for etat in etats_bilan %}
+        {% if etat_bilan %}
+            {% for etat in etat_bilan %}
                 <div style="margin-bottom: 20px;">
-                    <p><strong>Date :</strong> {{ etat.date }}</p>
-                    <p><strong>Maladie :</strong> {{ etat.maladie }}</p>
-                    <p><strong>Température :</strong> {{ etat.température }} °C</p>
-                    <p><strong>Humidité :</strong> {{ etat.humidité }} %</p>
-                    <p><strong>Luminosité :</strong> {{ etat.luminosité }} Lux</p>
+                    <p><strong>Date :</strong> {{ etat.date.strftime('%d/%m/%Y %H:%M') }}</p>
+                    <p><strong>Nombre de tomates malades :</strong> {{ etat.nombre_tomates_maladies }}</p>
+                    <p><strong>Nombre de tomates saines :</strong> {{ etat.nombre_tomates_non_maladies }}</p>
+                    <p><strong>Nombre Maladie 1 :</strong> {{ etat.nombre_malade1 }}</p>
+                    <p><strong>Nombre Maladie 2 :</strong> {{ etat.nombre_malade2 }}</p>
+                    <p><strong>Température :</strong> {{ etat.temperature }} °C</p>
+                    <p><strong>Humidité :</strong> {{ etat.humidite }} %</p>
+                    <p><strong>Luminosité :</strong> {{ etat.luminosite }} Lux</p>
                     <p><strong>CO₂ :</strong> {{ etat.co2 }} ppm</p>
-                    <p><strong>Calibre :</strong> {{ etat.calibre }}</p>
-                    <p><strong>Position :</strong> ({{ etat.x1 }}, {{ etat.y1 }})</p>
-
+                    <p><strong>Rendement estimé :</strong> {{ etat.rendement }} kg</p>
                 </div>
             {% endfor %}
         {% else %}
             <p>Aucun état de bilan fourni.</p>
         {% endif %}
-    </div>    
+    </div>
+
+    <hr style="border: 0; height: 2px; background: #ccc; margin: 40px 0;">
+
+    <div class="section">
+        <h2 style="color: #e74c3c;">🚨 Alertes</h2>
+        {% if alertes %}
+            {% for alerte in alertes %}
+                <div style="margin-bottom: 20px; border-left: 5px solid #e74c3c; padding-left: 10px;">
+                    <p><strong>Date :</strong> {{ alerte.date.strftime('%d/%m/%Y %H:%M') }}</p>
+                    <p><strong>Maladie détectée :</strong> {{ alerte.maladie }}</p>
+                    <p><strong>Status de gravité (niveau) :</strong> {{ alerte.status_alert }}</p>
+                    <p><strong>Position :</strong> ({{ alerte.x1 }}, {{ alerte.y1 }})</p>
+                    <p><strong>Status de traitement :</strong> {{ alerte.status }}</p>
+                    {% if alerte.lien_image %}
+                        <p><strong>Image :</strong><br>
+                            <img src="{{ alerte.lien_image }}" alt="Image alerte" style="max-width: 300px; border: 1px solid #ccc;">
+                        </p>
+                    {% endif %}
+                </div>
+            {% endfor %}
+        {% else %}
+            <p>Aucune alerte détectée.</p>
+        {% endif %}
+    </div>
+    
+      
 
     <footer>
         Rapport généré automatiquement - GreenerTech © {{ date }}

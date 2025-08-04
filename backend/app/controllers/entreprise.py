@@ -2,6 +2,7 @@ from flask import request, jsonify
 from app.models.entreprise import Entreprise
 from database.config import db
 from app.utils.security import token_required, role_required
+from app.models.user import User
 
 @token_required
 @role_required("directeur")
@@ -9,13 +10,19 @@ def create_entreprise(current_user):
     data = request.get_json()
     entreprise = Entreprise(
         nom=data['nom'],
-        id_user=current_user.id,
+        # id_user=current_user.id,
         status_juridique=data.get('status_juridique'),
         adresse=data.get('adresse'),
         id_fiscale=data.get('id_fiscale'),
         email=data.get('email')
     )
+
     db.session.add(entreprise)
+    # recuprer id de l'entreprise nouvellement créée
+    db.session.flush()
+    # Associer l'entreprise à l'utilisateur actuel
+    current_user.id_entreprise = entreprise.id
+    db.session.add(current_user)  # Mettre à jour l'utilisateur avec l'id_entreprise
     db.session.commit()
    #return jsonify({"message": "Entreprise créée avec succès", "entreprise": entreprise.to_dict()}), 201
     return jsonify(entreprise.to_dict()), 201

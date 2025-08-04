@@ -7,7 +7,8 @@ from weasyprint import HTML
 from datetime import datetime, date
 import os
 import uuid
-# from app.models.etat_bilan import EtatBilan  # Assure-toi que c'est bien importé
+from  app.models.alerte import Alerte  
+from app.models.etat_bilan import Etat_bilan  # Assure-toi que c'est bien importé
 
 # @token_required
 # @role_required("technicien", "directeur")
@@ -71,6 +72,14 @@ def create_rapport(current_user):
     data = request.get_json()
     description = data.get("description")
     id_serre = data.get("id_serre")
+    # recuperer tous les id des bilans conserner ou ce rapport
+    id_bilan = data.get("ids_bilans", [])
+    # recuperer seulement la dernier etat de  chaque bilan dans la table d'etat_bilan
+    etat_bilan = Etat_bilan.query.filter(Etat_bilan.id_bilan.in_(id_bilan)).order_by(Etat_bilan.date.desc()).all()
+    # etat_bilan = Etat_bilan.query.filter(Etat_bilan.id_bilan.in_(id_bilan)).all()
+    # recuperer les alertes conserner par ce rapport
+    alertes = Alerte.query.filter(Alerte.id_bilan.in_(id_bilan)).all()
+
 
     if not description or not id_serre:
         return jsonify({"message": "Champs requis manquants"}), 400
@@ -86,7 +95,7 @@ def create_rapport(current_user):
     user = User.query.get(current_user.id)
     nom_user=user.name
     # Génération du PDF via HTML
-    generer_pdf_rapport(description, nom_user, id_serre, chemin_pdf)
+    generer_pdf_rapport(description, nom_user, id_serre, chemin_pdf, etat_bilan, alertes)
     # Création du rapport en BDD
     rapport = Rapport(
         description=description,
@@ -126,16 +135,17 @@ def create_rapport(current_user):
 
 
 
-def generer_pdf_rapport(description, nom , id_serre, output_path):
+def generer_pdf_rapport(description, nom, id_serre, output_path, etats_bilan, alertes):
     html = render_template(
         "rapport_template.html",
         description=description,
         user_name=nom,
         id_serre=id_serre,
-        date=datetime.now().strftime('%Y-%m-%d %H:%M')
+        date=datetime.now().strftime('%Y-%m-%d %H:%M'),
+        etats_bilan=etats_bilan,
+        alertes=alertes
     )
     HTML(string=html).write_pdf(output_path)
-
 
 
 # from flask import  request, jsonify
