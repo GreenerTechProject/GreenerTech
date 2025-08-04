@@ -345,14 +345,8 @@ def register_technicien():
 # valider  le compte du technicien par le directeur
 @token_required
 @role_required('directeur')
-def validate_technicien(current_user):
-    data = request.get_json()
-    user_id = data.get('user_id')
-
-    if not user_id:
-        return jsonify({"error": "ID utilisateur requis"}), 400
-
-    user = User.query.get(user_id)
+def validate_technicien(current_user, id):
+    user = User.query.get(id)
 
     if not user:
         return jsonify({"error": "Utilisateur non trouvé"}), 404
