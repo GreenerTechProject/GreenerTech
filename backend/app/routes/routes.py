@@ -13,14 +13,14 @@ from app.controllers.guide_culture import create_guide_culture , update_guide_cu
 from app.controllers.intervention import create_intervention, validate_intervention, get_all_interention, get_intervention
 from app.controllers.type_tache import create_type_tache , get_type_tache, get_all_type_taches
 
-from app.controllers.notification import get_notifications_by_user,get_all_notifications , mark_notification_as_seen
+from app.controllers.notification import get_notifications_by_user, get_all_notifications, mark_notification_as_seen
 from app.controllers.autorisation_domaine import create_autorisation_domaine, get_autorisation_domaine, delete_autorisation_domaine
 from app.controllers.autorisation_serre import create_autorisation_serre, get_autorisation_serre, delete_autorisation_serre
 from app.controllers.autorisation_bilan import create_autorisation_bilan, get_autorisation_bilan, delete_autorisation_bilan
 
 from app.controllers.mission_robot import create_mission_robot, get_mission_robot, update_mission_robot, get_all_missions_robot, delete_mission_robot
 from app.controllers.robot import create_robot, get_robot, update_robot, get_all_robots, delete_robot
-from app.controllers.etat_bilan import create_etat_bilan, get_etat_bilan, update_etat_bilan, get_etat_bilan_by_bilan, delete_etat_bilan
+from app.controllers.etat_bilan import create_etat_bilan, get_etat_bilan, update_etat_bilan, get_etat_bilan_by_bilan, get_last_etat_bilan_by_serre, delete_etat_bilan
 from app.controllers.alerte import create_alerte, get_alerte, get_all_alertes, update_alerte, delete_alerte
 
 
@@ -133,17 +133,18 @@ all_bp.route('/robot/<int:robot_id>', methods=['DELETE'])(delete_robot)
 
 all_bp.route('/etat_bilan', methods=['POST'])(create_etat_bilan)
 all_bp.route('/etat_bilan/<int:etat_bilan_id>', methods=['GET'])(get_etat_bilan)
+all_bp.route('/etat_bilan/serre/<int:bilan_id>', methods=['GET'])(get_last_etat_bilan_by_serre)
 all_bp.route('/etat_bilan/bilan/<int:bilan_id>', methods=['GET'])(get_etat_bilan_by_bilan)
-all_bp.route('/etat_bilan<int:etat_bilan_id>', methods=['PUT'])(update_etat_bilan)
-all_bp.route('/etat_bilan<int:etat_bilan_id>', methods=['DELETE'])(delete_etat_bilan)
+all_bp.route('/etat_bilan/<int:etat_bilan_id>', methods=['PUT'])(update_etat_bilan)
+all_bp.route('/etat_bilan/<int:etat_bilan_id>', methods=['DELETE'])(delete_etat_bilan)
 
 
 
 all_bp.route('/alerte', methods=['POST'])(create_alerte)
 all_bp.route('/alerte', methods=['GET'])(get_all_alertes)
 all_bp.route('/alerte/<int:alerte_id>', methods=['GET'])(get_alerte)
-all_bp.route('/alerte<int:alerte_id>', methods=['PUT'])(update_alerte)
-all_bp.route('/alerte<int:alerte_id>', methods=['DELETE'])(delete_alerte)
+all_bp.route('/alerte/<int:alerte_id>', methods=['PUT'])(update_alerte)
+all_bp.route('/alerte/<int:alerte_id>', methods=['DELETE'])(delete_alerte)
 
 
 
