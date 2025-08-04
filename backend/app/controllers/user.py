@@ -74,7 +74,13 @@ def update_user(current_user):
 
     current_user.name = data.get('name', current_user.name)
     current_user.email = data.get('email', current_user.email)
-    current_user.password = data.get('password', current_user.password)
+    
+    new_password = data.get('password')
+    if new_password:
+        current_user.password = generate_password_hash(new_password)
+    else :
+        current_user.password = current_user.password
+    
     current_user.role = data.get('role', current_user.role)
     current_user.id_assigned=data.get('role', current_user.id_assigned)
 
@@ -106,7 +112,7 @@ def get_user(current_user):
 # creat fonction pour recuperer tous les techniciens et techniciens superieur (GET)
 @token_required
 @role_required('directeur')
-def get_all_technicians( current_user):
+def get_all_technicians(current_user):
     techniciens = User.query.filter(User.role.in_(["technicien", "technicien_superieur"])).all()
     techniciens_data = [
         {
@@ -132,7 +138,6 @@ def create_technicien(current_user):
     email = data.get('email')
     role = data.get('role')
     name = data.get('name')
-
 
 
     if role not in ["technicien", "technicien_superieur"]:
@@ -219,8 +224,7 @@ def verify_email():
     except jwt.InvalidTokenError:
         return jsonify({"error": "Token invalide."}), 400
 
-def get_technicien():
-    email = request.args.get('email')
+def get_technicien_by_email(email):
     if not email:
         return jsonify({"error": "Email requis"}), 400
     user = User.query.filter_by(email=email).first()
