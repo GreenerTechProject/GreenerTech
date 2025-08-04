@@ -21,7 +21,7 @@ async def control_handler(request):
                 data = json.loads(msg.data)
                 if "control_mode" in data:
                     mode = data["control_mode"]
-                    #print(f"Control mode received: {mode}")
+                    print(f"Control mode received: {mode}")
 
                     for client in control_clients:
                         if client is not ws and not client.closed:
