@@ -22,10 +22,7 @@ from app.controllers.mission_robot import create_mission_robot, get_mission_robo
 from app.controllers.robot import create_robot, get_robot, update_robot, get_all_robots, delete_robot
 from app.controllers.etat_bilan import create_etat_bilan, get_etat_bilan, update_etat_bilan, get_etat_bilan_by_bilan, get_last_etat_bilan_by_serre, delete_etat_bilan
 from app.controllers.alerte import create_alerte, get_alerte, get_all_alertes, update_alerte, delete_alerte
-
-
 from app.controllers.rapport import create_rapport, get_all_rapports, get_rapport, update_rapport, delete_rapport
-
 
 all_bp = Blueprint('all_bp', __name__)
 all_bp.route('/register', methods=['POST'])(register)
@@ -40,16 +37,17 @@ all_bp.route('/verify_email', methods=['GET'])(verify_email)
 
 all_bp.route('/technicien', methods=['POST'])(create_technicien)
 all_bp.route('/technicien/register', methods=['POST'])(register_technicien)
-all_bp.route('/technicien/<int:email>', methods=['GET'])(get_technicien_by_email)
+all_bp.route('/technicien', methods=['GET'])(get_technicien_by_email)
 all_bp.route('/technicien/validate/<int:id>', methods=['PUT'])(validate_technicien)
 all_bp.route('/technicien', methods=['GET'])(get_all_technicians)
-
 
 
 all_bp.route('/entreprise', methods=['POST'])(create_entreprise)
 all_bp.route('/entreprise', methods=['GET'])(get_entreprise)
 all_bp.route('/entreprise', methods=['PUT'])(update_entreprise)
 all_bp.route('/entreprise', methods=['DELETE'])(delete_entreprise)
+all_bp.route('/entreprises', methods=['GET'])(list_entreprises)
+
 
 
 

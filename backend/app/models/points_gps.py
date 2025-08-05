@@ -14,7 +14,7 @@ class GroupCor(db.Model):
         return {
             "id": self.id,
             #"id_group_cor": self.id_group_cor,
-            "latitude": self.point_x,
-            "longitude": self.point_y,
+            "lat": self.point_x,
+            "lng": self.point_y,
             "ordre": self.ordre
         }
