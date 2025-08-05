@@ -21,6 +21,8 @@ async def mission_data_handler(request):
     print("📘 Mission WebSocket client connected")
 
     last_mission_id = None
+    
+    conn = None
 
     try:
         conn = await asyncpg.connect(DB_URL)
@@ -91,7 +93,8 @@ async def mission_data_handler(request):
 
     finally:
         mission_clients.discard(ws)
-        await conn.close()
+        if conn is not None:
+            await conn.close()
         print("📕 Mission WebSocket client disconnected")
 
     return ws

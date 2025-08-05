@@ -1,11 +1,14 @@
 from flask import request, jsonify
 from app.models.etat_bilan import Etat_bilan
+from app.models.bilan import Bilan
 from database.config import db
 from app.utils.security import token_required, role_required
+from sqlalchemy import func
+
 
 #@token_required
 #@role_required("directeur", "technicien_superieur", "technicien")
-def create_etat_bilan(current_user):
+def create_etat_bilan():
     data = request.get_json()
     try:
         etat = Etat_bilan(
@@ -40,6 +43,38 @@ def get_etat_bilan(current_user, etat_bilan_id):
 def get_etat_bilan_by_bilan(current_user, bilan_id):
     etats = Etat_bilan.query.filter_by(id_bilan=bilan_id).all()
     return jsonify([e.to_dict() for e in etats]), 200
+
+
+
+
+
+
+@token_required
+def get_last_etat_bilan_by_serre(current_user, serre_id):
+    try:
+        # Subquery to get latest etat_bilan id per bilan (in the serre)
+        subquery = (
+            db.session.query(
+                Etat_bilan.id_bilan,
+                func.max(Etat_bilan.id).label("max_etat_id")
+            )
+            .join(Bilan, Etat_bilan.id_bilan == Bilan.id)
+            .filter(Bilan.id_serre == serre_id)
+            .group_by(Etat_bilan.id_bilan)
+            .subquery()
+        )
+
+        # Main query: get full Etat_bilan rows matching max id
+        results = (
+            db.session.query(Etat_bilan)
+            .join(subquery, Etat_bilan.id == subquery.c.max_etat_id)
+            .all()
+        )
+
+        return jsonify([etat.to_dict() for etat in results]), 200
+
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 400
 
 
 @token_required
