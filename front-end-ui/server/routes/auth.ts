@@ -60,7 +60,7 @@ export const mockPreRegisteredTechniciens: (User & { preRegistered: true })[] =
       id: "pre_2",
       email: "techsup.pre@example.com",
       name: "Marie Martin",
-      role: "technicien supérieur",
+      role: "technicien_superieur",
       is_connected: false,
       preRegistered: true,
     },

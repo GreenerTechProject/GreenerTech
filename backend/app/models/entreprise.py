@@ -10,6 +10,7 @@ class Entreprise(db.Model):
     status_juridique = Column(String)
     adresse = Column(String)
     cie = Column(String)
+    id_fiscale = Column(String)
     email = Column(String)
 
 
@@ -21,5 +22,6 @@ class Entreprise(db.Model):
             "status_juridique": self.status_juridique,
             "adresse": self.adresse,
             "cie": self.cie,
+            "id_fiscale": self.id_fiscale,
             "email": self.email
         }

@@ -16,7 +16,7 @@ export const useAuthRedirect = (redirectTo: string = "/dashboard") => {
         navigate("/directeur", { replace: true });
       } else if (user?.role === "technicien") {
         navigate("/technician", { replace: true });
-      } else if (user?.role === "technicien supérieur") {
+      } else if (user?.role === "technicien_superieur") {
         navigate("/technicien-sup", { replace: true });
       } else {
         navigate(redirectTo, { replace: true });

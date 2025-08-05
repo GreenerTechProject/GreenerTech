@@ -7,7 +7,7 @@ export interface CreateTechnicienRequest {
   cin: string;
   email: string;
   password: string;
-  role: "technicien supérieur" | "technicien";
+  role: "technicien_superieur" | "technicien";
   assignedSerres: string[];
   companyId: string;
 }
@@ -25,7 +25,7 @@ export interface Technician {
   telephone: string;
   cin: string;
   email: string;
-  role: "technicien supérieur" | "technicien";
+  role: "technicien_superieur" | "technicien";
   assignedSerres: string[];
   companyId: string;
 }
@@ -73,7 +73,7 @@ export const handleCreateTechnicien: RequestHandler = async (req, res) => {
     }
 
     // Validate role
-    if (role !== "technicien supérieur" && role !== "technicien") {
+    if (role !== "technicien_superieur" && role !== "technicien") {
       return res.status(400).json({
         success: false,
         message: "Rôle invalide",

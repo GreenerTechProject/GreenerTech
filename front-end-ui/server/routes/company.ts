@@ -111,7 +111,7 @@ interface Technician {
   cin: string;
   email: string;
   password: string;
-  role: "technicien supérieur" | "technicien";
+  role: "technicien_superieur" | "technicien";
   assignedSerres: string[];
 }
 
@@ -274,7 +274,7 @@ export const handleCompleteSetup: RequestHandler = async (req, res) => {
       0,
     );
     const technicienSuperieurCount = technicians.filter(
-      (t) => t.role === "technicien supérieur",
+      (t) => t.role === "technicien_superieur",
     ).length;
 
     // Simulate saving complete setup to database

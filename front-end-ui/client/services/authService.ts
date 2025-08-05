@@ -172,7 +172,7 @@ export const authService = {
     const { user, token } = response.data;
 
     // Check for unvalidated technician accounts
-    if ((user.role === "technicien" || user.role === "technicien supérieur") && !user.directeur_valide) {
+    if ((user.role === "technicien" || user.role === "technicien_superieur") && !user.directeur_valide) {
       tokenManager.clearAll();
       console.log("this user is not validated by director");
 

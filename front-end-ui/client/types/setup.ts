@@ -38,7 +38,7 @@ export interface TechnicianSetup {
   cin: string;
   email: string;
   password: string;
-  role: "technicien supérieur" | "technicien";
+  role: "technicien_superieur" | "technicien";
   assignedSerres: string[];
 }
 

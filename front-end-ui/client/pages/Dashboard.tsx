@@ -10,7 +10,7 @@ export default function Dashboard() {
   useEffect(() => {
     if (user?.role === "directeur") {
       navigate("/directeur", { replace: true });
-    } else if (user?.role === "technicien" || user?.role === "technicien supérieur") {
+    } else if (user?.role === "technicien" || user?.role === "technicien_superieur") {
       navigate("/technician", { replace: true });
     }
   }, [user, navigate]);

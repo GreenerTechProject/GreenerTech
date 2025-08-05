@@ -29,7 +29,7 @@ const registrationSchema = z
     // For non-pre-registered users
     firstName: z.string().optional(),
     lastName: z.string().optional(),
-    role: z.enum(["technicien", "technicien supérieur"]).optional(),
+    role: z.enum(["technicien", "technicien_superieur"]).optional(),
     companyName: z.string().optional(),
   })
   .refine((data) => data.password === data.confirmPassword, {
@@ -67,7 +67,7 @@ export default function TechnicienRegistration() {
 
   // Convert role selection value to proper role name
   const getRoleName = (roleValue: string): string => {
-    if (roleValue === "technicien-superieur") return "technicien supérieur";
+    if (roleValue === "technicien-superieur") return "technicien_superieur";
     if (roleValue === "technicien") return "technicien";
     return roleValue;
   };
