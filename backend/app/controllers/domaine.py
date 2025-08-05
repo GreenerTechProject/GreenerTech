@@ -20,7 +20,6 @@ def create_domaine(current_user):
     area = data.get('area')
     center = data.get('center')
     path = data.get('path')
-    path = data.get('path')
 
     if not name or not area or not center or not path:
         return jsonify({"message": "Les champs name, area, center et path sont obligatoires"}), 400
