@@ -232,6 +232,9 @@ ALTER SEQUENCE public.bilans_id_seq OWNED BY public.bilans.id;
 CREATE TABLE public.domaines (
     id integer NOT NULL,
     nom character varying NOT NULL,
+    surface integer NOT NULL,
+    center_lat double precision NOT NULL,
+    center_lng double precision NOT NULL,
     id_group_cor integer NOT NULL,
     id_entreprise integer NOT NULL
 );
@@ -271,6 +274,7 @@ CREATE TABLE public.entreprises (
     id_user integer NOT NULL,
     status_juridique character varying,
     adresse character varying,
+    cie character varying,
     id_fiscale character varying,
     email character varying
 );
@@ -917,8 +921,8 @@ COPY public.bilans (id, nom, id_group_cor, id_serre) FROM stdin;
 -- Data for Name: domaines; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.domaines (id, nom, id_group_cor, id_entreprise) FROM stdin;
-1	Domaine Central	1	1
+COPY public.domaines (id, nom, surface, center_lat, center_lng, id_group_cor, id_entreprise) FROM stdin;
+1	Domaine Central	4	34.123	-6.789	1	1
 \.
 
 
@@ -926,8 +930,8 @@ COPY public.domaines (id, nom, id_group_cor, id_entreprise) FROM stdin;
 -- Data for Name: entreprises; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.entreprises (id, nom, id_user, status_juridique, adresse, id_fiscale, email) FROM stdin;
-1	AgriTech Maroc	1	SARL	4 Rue 321	IF123456	email@gmail.com
+COPY public.entreprises (id, nom, id_user, status_juridique, adresse, cie, id_fiscale, email) FROM stdin;
+1	AgriTech Maroc	1	SARL	4 Rue 321	SARL	IF123456	email@gmail.com
 \.
 
 

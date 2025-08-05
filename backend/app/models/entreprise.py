@@ -9,6 +9,7 @@ class Entreprise(db.Model):
     # id_user = Column(Integer, ForeignKey('users.id'), nullable=False)
     status_juridique = Column(String)
     adresse = Column(String)
+    cie = Column(String)
     id_fiscale = Column(String)
     email = Column(String)
 
@@ -20,6 +21,7 @@ class Entreprise(db.Model):
             # "id_user": self.id_user,
             "status_juridique": self.status_juridique,
             "adresse": self.adresse,
+            "cie": self.cie,
             "id_fiscale": self.id_fiscale,
             "email": self.email
         }

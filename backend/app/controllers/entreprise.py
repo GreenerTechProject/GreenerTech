@@ -13,6 +13,7 @@ def create_entreprise(current_user):
         # id_user=current_user.id,
         status_juridique=data.get('status_juridique'),
         adresse=data.get('adresse'),
+        cie=data.get('cie'),
         id_fiscale=data.get('id_fiscale'),
         email=data.get('email')
     )
@@ -43,6 +44,7 @@ def get_entreprise(current_user):
             "nom": e.nom,
             "status_juridique": e.status_juridique,
             "adresse": e.adresse,
+            "cie": e.cie,
             "id_fiscale": e.id_fiscale,
             "email": e.email
         })
@@ -60,6 +62,7 @@ def update_entreprise(current_user):
     entreprise.nom = data.get('nom', entreprise.nom)
     entreprise.status_juridique = data.get('status_juridique', entreprise.status_juridique)
     entreprise.adresse = data.get('adresse', entreprise.adresse)
+    entreprise.cie = data.get('cie', entreprise.cie)
     entreprise.id_fiscale = data.get('id_fiscale', entreprise.id_fiscale)
     entreprise.email = data.get('email', entreprise.email)
 
@@ -78,3 +81,15 @@ def delete_entreprise(current_user):
     db.session.delete(entreprise)
     db.session.commit()
     return jsonify({"message": "Entreprise supprimée"}), 200
+
+
+# === Récupérer toutes les entreprises ===
+def list_entreprises():
+    try:
+        entreprises = Entreprise.query.all()
+        entreprise_list = [e.to_dict() for e in entreprises]
+
+        return jsonify(entreprise_list), 200
+    except Exception as e:
+        print("Erreur dans list_entreprises:", str(e))
+        return jsonify({"error": "Erreur lors de la récupération des entreprises"}), 500
