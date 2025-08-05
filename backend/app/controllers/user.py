@@ -88,7 +88,7 @@ def update_user(current_user):
     current_user.telephone = data.get('telephone', current_user.telephone)
     current_user.cin = data.get('cin', current_user.cin)
     current_user.id_assigned = data.get('id_assigned', current_user.id_assigned)
-    current_user.is_connected = data.get('is_connected', current_user.is_connected)
+    current_user.setup_completed = data.get('setup_completed', current_user.setup_completed)
     current_user.directeur_valide = data.get('directeur_valide', current_user.directeur_valide)
     current_user.email_valide = data.get('email_valide', current_user.email_valide)
     current_user.verification_token = data.get('verification_token', current_user.verification_token)
@@ -333,7 +333,7 @@ def register_technicien():
             id_entreprise=id_entreprise,
             directeur_valide=False,
             email_valide=False,
-            #is_connected=False,
+            #setup_completed=False,
             #id_assigned=data.get('id_assigned'),
             created_at=datetime.utcnow(),
             updated_at=datetime.utcnow(),
@@ -410,7 +410,7 @@ def register_technicien():
     #     role=role,
     #     password=password,
     #     birthday=datetime.strptime(birthday, '%Y-%m-%d') if birthday else None,
-    #     derector_valide=False,
+    #     directeur_valide=False,
     #     email_valide=False,
     # )
 

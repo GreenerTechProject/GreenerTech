@@ -6,8 +6,8 @@ export interface User {
   email: string;
   name?: string;
   role?: string;
-  is_connected?: boolean;
-  derector_valide?: boolean;
+  setup_completed?: boolean;
+  directeur_valide?: boolean;
 
 }
 
