@@ -2,7 +2,7 @@
 ./services/DataYellow 
 ./services/best_modelV2.pth
 ./services/my_model.pt
-./services/Data
+./services/Data/*
 ./services/images/*
 
 # Byte-compiled / optimized / DLL files
