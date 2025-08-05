@@ -7,6 +7,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "./contexts/AuthContext";
+import { AlertProvider } from "./contexts/AlertContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Index from "./pages/Index";
 import Register from "./pages/Register";
@@ -19,6 +20,7 @@ import DirecteurDashboard from "./pages/DirecteurDashboard";
 import TechnicianDashboard from "./pages/TechnicianDashboard";
 import TechnicienSupDashboard from "./pages/TechnicienSupDashboard";
 import TechnicienRegistration from "./pages/TechnicienRegistration";
+import AlertDemo from "./components/AlertDemo";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
