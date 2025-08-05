@@ -11,6 +11,7 @@ from app.models.serre import Serre
 @role_required("directeur")
 def create_domaine(current_user):
     data = request.get_json()
+
     entreprise = Entreprise.query.filter_by(id_user=current_user.id).first()
     if not entreprise:
         return jsonify({"message": "Aucune entreprise associée à cet utilisateur"}), 404
