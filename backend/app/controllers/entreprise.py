@@ -84,7 +84,7 @@ def delete_entreprise(current_user):
 
 
 # === Récupérer toutes les entreprises ===
-def list_entreprises():
+def get_all_entreprises():
     try:
         entreprises = Entreprise.query.all()
         entreprise_list = [e.to_dict() for e in entreprises]
