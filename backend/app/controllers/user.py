@@ -49,7 +49,7 @@ def login():
         if not user.email_valide:
             return jsonify({"message": "Email not verified. Please check your email."}), 403
         if user.role in ["technicien", "technicien_superieur"]:
-            if not user.derecteur_valide:
+            if not user.directeur_valide:
                 return jsonify({"message": "Account not validated by director. Please wait for approval."}), 403
 
         token = generate_token(user.id)
@@ -103,7 +103,7 @@ def get_user(current_user):
         "updated_at":current_user.updated_at.isoformat() if current_user.updated_at else None,
         "id_assigned":current_user.id_assigned,
         "setup_completed":current_user.setup_completed,
-        "derecteur_valide":current_user.derecteur_valide,
+        "directeur_valide":current_user.directeur_valide,
         "email_valide":current_user.email_valide,
         "id_entreprise" : current_user.id_entreprise
     }
@@ -122,7 +122,7 @@ def get_all_technicians(current_user):
             "role": tech.role,
             "birthday": tech.birthday.strftime('%Y-%m-%d') if tech.birthday else None,
             "id_assigned": tech.id_assigned,
-            "derecteur_valide": tech.derecteur_valide,
+            "directeur_valide": tech.directeur_valide,
             "email_valide": tech.email_valide
         } for tech in techniciens
     ]
@@ -224,6 +224,13 @@ def verify_email():
     except jwt.InvalidTokenError:
         return jsonify({"error": "Token invalide."}), 400
 
+/api/technicien?email=email@gmail.com
+/api/technicien/email@gmail.com
+
+
+/api/user/1
+/api?page=user&user=1
+
 def get_technicien_by_email(email):
     if not email:
         return jsonify({"error": "Email requis"}), 400
@@ -285,7 +292,7 @@ def register_technicien():
         telephone=telephone,
         cin=cin,
         id_entreprise=id_entreprise,
-        derecteur_valide =False,
+        directeur_valide =False,
         email_valide=False
 
     )
@@ -368,10 +375,10 @@ def validate_technicien(current_user, id):
     if not user:
         return jsonify({"error": "Utilisateur non trouvé"}), 404
 
-    if user.derecteur_valide:
+    if user.directeur_valide:
         return jsonify({"message": "Compte déjà validé par le directeur."}), 200
 
-    user.derecteur_valide = True
+    user.directeur_valide = True
     db.session.commit()
     # envoyer_notification(
     #     description="Votre compte a été validé par le directeur.",

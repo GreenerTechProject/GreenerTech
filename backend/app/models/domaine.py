@@ -8,6 +8,7 @@ class Domaine(db.Model):
     id = Column(Integer, primary_key=True)
     nom = Column(String, nullable=False)
     id_group_cor = Column(Integer, nullable=False) 
+    center = Column(Integer, nullable=False) 
     id_entreprise = Column(Integer, ForeignKey("entreprises.id"), nullable=False)
 
     group_coords = relationship(
@@ -23,5 +24,5 @@ class Domaine(db.Model):
             "nom": self.nom,
             #"id_group_cor": self.id_group_cor,
             "id_entreprise": self.id_entreprise,
-            "position": [g.to_dict() for g in self.group_coords] if self.group_coords else []
+            "path": [g.to_dict() for g in self.group_coords] if self.group_coords else []
         }
