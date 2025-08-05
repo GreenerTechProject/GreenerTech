@@ -1,5 +1,7 @@
 from sqlalchemy import Column, Integer, String ,ForeignKey
 from database.config import db
+from sqlalchemy.orm import relationship
+
 
 class Entreprise(db.Model):
     __tablename__ = "entreprises"
@@ -12,6 +14,20 @@ class Entreprise(db.Model):
     cie = Column(String)
     id_fiscale = Column(String)
     email = Column(String)
+    
+
+    
+    createur = relationship(
+        "User",
+        back_populates="entreprises_creees",
+        foreign_keys=[id_user]
+    )
+    
+    membres = relationship(
+        "User",
+        back_populates="entreprise",
+        foreign_keys="[User.id_entreprise]"
+    )
 
 
     def to_dict(self):
