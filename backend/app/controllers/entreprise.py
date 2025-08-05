@@ -10,7 +10,7 @@ def create_entreprise(current_user):
     data = request.get_json()
     entreprise = Entreprise(
         nom=data['nom'],
-        # id_user=current_user.id,
+        id_user=current_user.id,
         status_juridique=data.get('status_juridique'),
         adresse=data.get('adresse'),
         cie=data.get('cie'),
