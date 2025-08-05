@@ -32,61 +32,71 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <AuthProvider>
-          <Routes>
-            {/* Public Routes */}
-            <Route path="/login" element={<Index />} />
-            <Route path="/role-selection" element={<RoleSelection />} />
-            <Route path="/register" element={<Register />} />
-            <Route
-              path="/affiliation-request"
-              element={<AffiliationRequest />}
-            />
-            <Route path="/email-verification" element={<EmailVerification />} />
-            <Route path="/verify-email" element={<VerifyEmail />} />
-            <Route
-              path="/technicien-registration"
-              element={<TechnicienRegistration />}
-            />
-            {/* Protected Routes */}
-            <Route
-              path="/dashboard"
-              element={
-                <ProtectedRoute>
-                  <Dashboard />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/directeur"
-              element={
-                <ProtectedRoute>
-                  <DirecteurDashboard />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/technician"
-              element={
-                <ProtectedRoute>
-                  <TechnicianDashboard />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/technicien-sup"
-              element={
-                <ProtectedRoute>
-                  <TechnicienSupDashboard />
-                </ProtectedRoute>
-              }
-            />
+          <AlertProvider>
+            <Routes>
+              {/* Public Routes */}
+              <Route path="/login" element={<Index />} />
+              <Route path="/role-selection" element={<RoleSelection />} />
+              <Route path="/register" element={<Register />} />
+              <Route
+                path="/affiliation-request"
+                element={<AffiliationRequest />}
+              />
+              <Route path="/email-verification" element={<EmailVerification />} />
+              <Route path="/verify-email" element={<VerifyEmail />} />
+              <Route
+                path="/technicien-registration"
+                element={<TechnicienRegistration />}
+              />
+              {/* Protected Routes */}
+              <Route
+                path="/dashboard"
+                element={
+                  <ProtectedRoute>
+                    <Dashboard />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/directeur"
+                element={
+                  <ProtectedRoute>
+                    <DirecteurDashboard />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/technician"
+                element={
+                  <ProtectedRoute>
+                    <TechnicianDashboard />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/technicien-sup"
+                element={
+                  <ProtectedRoute>
+                    <TechnicienSupDashboard />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/alerts-demo"
+                element={
+                  <ProtectedRoute>
+                    <AlertDemo />
+                  </ProtectedRoute>
+                }
+              />
 
-            {/* Redirect root to dashboard if authenticated, otherwise to login */}
-            <Route path="/" element={<Navigate to="/dashboard" replace />} />
+              {/* Redirect root to dashboard if authenticated, otherwise to login */}
+              <Route path="/" element={<Navigate to="/dashboard" replace />} />
 
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
+              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </AlertProvider>
         </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>
