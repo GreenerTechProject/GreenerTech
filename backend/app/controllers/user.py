@@ -145,18 +145,18 @@ def create_technicien(current_user):
     data = request.get_json()
     email = data.get('email')
     role = data.get('role')
-    name = data.get('name')
+    name = data.get('fullName')
 
 
-    if role not in ["technicien", "technicien supérieur"]:
-        return jsonify({"message": "Rôle invalide. Choisir 'technicien' ou 'technicien supérieur'"}), 400
+    if role not in ["technicien", "technicien_superieur"]:
+        return jsonify({"message": "Rôle invalide. Choisir 'technicien' ou 'technicien_superieur'"}), 400
 
     if User.query.filter_by(email=email).first():
         return jsonify({"message": "Email déjà utilisé"}), 409
 
     new_user = User(
-        name = data.get('fullName'),
-        email =email,
+        #name = data.get('fullName'),
+        email=email,
         name=name,
         role=role,
         id_assigned=current_user.id,
