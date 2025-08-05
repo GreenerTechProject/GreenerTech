@@ -53,7 +53,7 @@ export interface ApiError {
 }
 
 // Configure axios base URL - update this to match your backend
-const API_BASE_URL = "http://localhost:5000/api";
+const API_BASE_URL = `${window.location.protocol}//${window.location.hostname}:5000/api`;
 
 // Create axios instance
 const api = axios.create({
