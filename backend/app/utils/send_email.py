@@ -8,7 +8,7 @@ def send_verification_email(user):
     token = user.verification_token
     token_encoded = quote(token)  # URL encode the token
 
-    verify_url = f"http://localhost:8082/verify-email?token={token_encoded}"
+    verify_url = f"http://localhost:8080/verify-email?token={token_encoded}"
 
     subject = "Vérification de votre adresse e-mail"
     html = f"""

@@ -18,7 +18,7 @@ class User(db.Model):
     is_connected = db.Column(db.Boolean, nullable=False, default=False) #pour verifier la premier authentificatio
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    derector_valide = db.Column(db.Boolean, default=False)      # Validé par directeur
+    director_valide = db.Column(db.Boolean, default=False)      # Validé par directeur
     email_valide = db.Column(db.Boolean, default=False)   # Technicien a complété
     verification_token = db.Column(db.String(255), nullable=True)  # Token pour vérification email
 
@@ -39,7 +39,7 @@ class User(db.Model):
             'is_connected': self.is_connected,
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'updated_at': self.updated_at.isoformat() if self.updated_at else None,
-            'derector_valide': self.derector_valide,
+            'director_valide': self.director_valide,
             'email_valide': self.email_valide,
             'verification_token': self.verification_token
         }
