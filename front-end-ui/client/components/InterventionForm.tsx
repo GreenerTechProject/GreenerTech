@@ -269,52 +269,61 @@ export default function InterventionForm({
               </div>
 
               {/* Row 3: Description */}
-              <div className="space-y-3">
-                <Label htmlFor="description" className="text-sm font-semibold text-gray-900">
-                  Description de l'intervention (optionnel)
-                </Label>
-                <Textarea
-                  id="description"
-                  value={formData.description}
-                  onChange={(e) => updateFormData("description", e.target.value)}
-                  placeholder="Détails supplémentaires sur l'intervention..."
-                  rows={4}
-                  className="border-gray-300 rounded-lg resize-none"
-                />
-              </div>
+              <div className="bg-gray-50 p-6 rounded-lg border border-gray-200">
+                <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                  <div className="w-5 h-5 bg-blue-600 rounded-full flex items-center justify-center">
+                    <span className="text-white text-xs font-bold">3</span>
+                  </div>
+                  Détails
+                </h3>
+                <div className="space-y-4">
+                  <div className="space-y-3">
+                    <Label htmlFor="description" className="text-sm font-semibold text-gray-900">
+                      Description de l'intervention (optionnel)
+                    </Label>
+                    <Textarea
+                      id="description"
+                      value={formData.description}
+                      onChange={(e) => updateFormData("description", e.target.value)}
+                      placeholder="Détails supplémentaires sur l'intervention..."
+                      rows={4}
+                      className="border-gray-300 rounded-lg resize-none"
+                    />
+                  </div>
 
-              {/* Row 4: Priority */}
-              <div className="space-y-3">
-                <Label className="text-sm font-semibold text-gray-900">
-                  Priorité
-                </Label>
-                <RadioGroup
-                  value={formData.priority}
-                  onValueChange={(value: any) => updateFormData("priority", value)}
-                  className="flex flex-wrap gap-6 pt-2"
-                >
-                  {priorityOptions.map((option) => (
-                    <div key={option.value} className="flex items-center space-x-2">
-                      <RadioGroupItem
-                        value={option.value}
-                        id={option.value}
-                        className={cn(
-                          "border-gray-400",
-                          formData.priority === option.value && "border-blue-500"
-                        )}
-                      />
-                      <Label 
-                        htmlFor={option.value} 
-                        className={cn(
-                          "text-sm font-normal cursor-pointer",
-                          option.color
-                        )}
-                      >
-                        {option.label}
-                      </Label>
-                    </div>
-                  ))}
-                </RadioGroup>
+                  <div className="space-y-3">
+                    <Label className="text-sm font-semibold text-gray-900">
+                      Priorité
+                    </Label>
+                    <RadioGroup
+                      value={formData.priority}
+                      onValueChange={(value: any) => updateFormData("priority", value)}
+                      className="flex flex-wrap gap-6 pt-2"
+                    >
+                      {priorityOptions.map((option) => (
+                        <div key={option.value} className="flex items-center space-x-2">
+                          <RadioGroupItem
+                            value={option.value}
+                            id={option.value}
+                            className={cn(
+                              "border-gray-400",
+                              formData.priority === option.value && "border-blue-500"
+                            )}
+                          />
+                          <Label
+                            htmlFor={option.value}
+                            className={cn(
+                              "text-sm font-normal cursor-pointer",
+                              option.color
+                            )}
+                          >
+                            {option.label}
+                          </Label>
+                        </div>
+                      ))}
+                    </RadioGroup>
+                  </div>
+                </div>
               </div>
             </form>
           </div>
