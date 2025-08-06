@@ -384,7 +384,10 @@ export default function TechnicianDashboard() {
           <div className="flex justify-between items-center py-4">
             <div className="flex items-center">
               {/* Sidebar Button */}
-              <TechnicianSidebar userRole="technicien" />
+              <TechnicianSidebar
+                userRole="technicien"
+                onInterventionClick={() => setIsInterventionFormOpen(true)}
+              />
               <h1 className="text-xl font-semibold text-gray-900 ml-4">
                 Tableau de Bord Technicien
               </h1>
