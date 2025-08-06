@@ -383,7 +383,10 @@ export default function TechnicienSupDashboard() {
           <div className="flex justify-between items-center py-4">
             <div className="flex items-center">
               {/* Sidebar Button */}
-              <TechnicianSidebar userRole="technicien_sup" />
+              <TechnicianSidebar
+                userRole="technicien_sup"
+                onInterventionClick={() => setIsInterventionFormOpen(true)}
+              />
               <div className="flex items-center space-x-2 ml-4">
                 <Shield className="h-6 w-6 text-[#B4CC5F]" />
                 <h1 className="text-xl font-semibold text-gray-900">
