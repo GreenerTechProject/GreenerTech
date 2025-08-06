@@ -38,8 +38,8 @@ export default function TechnicianSidebar({
 
   const basePath =
     userRole === "technicien_sup"
-      ? "/technicien-sup-dashboard"
-      : "/technician-dashboard";
+      ? "/technicien-sup"
+      : "/technician";
 
   const sidebarItems: SidebarItem[] = [
     {
