@@ -32,6 +32,8 @@ import {
   Sun,
   Sprout,
 } from "lucide-react";
+import TechnicianSidebar from "../components/TechnicianSidebar";
+import InterventionForm from "../components/InterventionForm";
 import { cn } from "@/lib/utils";
 import { getGoogleMapsAPIKey } from "@/config/maps";
 import { Billon } from "@shared/api";
@@ -171,6 +173,7 @@ export default function TechnicianDashboard() {
     notes: "",
   });
   const [map, setMap] = useState<google.maps.Map | null>(null);
+  const [isInterventionFormOpen, setIsInterventionFormOpen] = useState(false);
   const mapRef = useRef<HTMLDivElement>(null);
 
   // Initialize map
@@ -340,6 +343,17 @@ export default function TechnicianDashboard() {
     }
   };
 
+  const handleInterventionSubmit = (data: any) => {
+    console.log("Intervention submitted:", data);
+    // TODO: Send to backend API
+    // Here you would typically call an API to save the intervention
+  };
+
+  const handleInterventionSaveDraft = (data: any) => {
+    console.log("Intervention saved as draft:", data);
+    // TODO: Save draft to backend or local storage
+  };
+
   const getZoneIcon = (type: string) => {
     switch (type) {
       case "irrigation":
@@ -362,15 +376,52 @@ export default function TechnicianDashboard() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <PageHeader
-        title="Tableau de Bord Technicien"
-        badge={{
-          text: `${totalBillons} Billons gérés`,
-          className: "bg-green-50 border-green-200 text-green-700"
-        }}
-        userRole="technicien"
-      />
-
+      {/* Header */}
+      <header className="bg-white shadow-sm border-b sticky top-0 z-10">
+        <div className="max-w-full px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center py-4">
+            <div className="flex items-center">
+              {/* Sidebar Button */}
+              <TechnicianSidebar
+                userRole="technicien"
+                onInterventionClick={() => setIsInterventionFormOpen(true)}
+              />
+              <h1 className="text-xl font-semibold text-gray-900 ml-4">
+                Tableau de Bord Technicien
+              </h1>
+              <Badge
+                variant="outline"
+                className="bg-green-50 border-green-200 text-green-700"
+              >
+                {totalBillons} Billons gérés
+              </Badge>
+              <Button
+                onClick={() => setIsInterventionFormOpen(true)}
+                className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white shadow-lg hover:shadow-xl transform transition-all duration-200 hover:scale-105 relative overflow-hidden group"
+                size="sm"
+              >
+                <div className="absolute inset-0 bg-white opacity-0 group-hover:opacity-10 transition-opacity duration-200"></div>
+                <Bell className="h-4 w-4 mr-2 relative z-10" />
+                <span className="relative z-10 font-medium">Nouvelle Intervention</span>
+              </Button>
+            </div>
+            <div className="flex items-center space-x-4">
+              <span className="text-sm text-gray-600 hidden sm:block">
+                {user?.name || user?.email}
+              </span>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => logout()}
+                className="flex items-center space-x-1"
+              >
+                <LogOut className="h-4 w-4" />
+                <span className="hidden sm:inline">Déconnexion</span>
+              </Button>
+            </div>
+          </div>
+        </div>
+      </header>
       <div className="flex h-[calc(100vh-73px)]">
         {/* Left Control Panel */}
         <div className="w-full lg:w-96 bg-white shadow-lg">
@@ -842,6 +893,14 @@ export default function TechnicianDashboard() {
           )}
         </div>
       </div>
+
+      {/* Intervention Form Modal */}
+      <InterventionForm
+        isOpen={isInterventionFormOpen}
+        onClose={() => setIsInterventionFormOpen(false)}
+        onSubmit={handleInterventionSubmit}
+        onSaveDraft={handleInterventionSaveDraft}
+      />
     </div>
   );
 }
