@@ -39,10 +39,13 @@ export default function Interventions() {
             </div>
             
             {/* Add Intervention Button */}
-            <Button 
-              size="sm" 
-              className="bg-[#B4CC5F] hover:bg-[#A3C247]"
-              onClick={() => setIsInterventionFormOpen(true)}
+            <Button
+              size="sm"
+              className="bg-[#B4CC5F] hover:bg-[#A3C247] text-white"
+              onClick={() => {
+                console.log("Header button clicked");
+                setIsInterventionFormOpen(true);
+              }}
             >
               <Plus className="h-4 w-4 mr-1" />
               Nouvelle intervention
