@@ -26,7 +26,7 @@ def register():
         email=data['email'],
         password=generate_password_hash(data['password']),
         role="directeur",
-        director_valide = True     # Validé par directeur
+        directeur_valide = True     # Validé par directeur
         #role=data.get('role', 'user')
     )
     db.session.add(new_user)
@@ -50,9 +50,11 @@ def login():
     if user and check_password_hash(user.password, data['password']):
         if not user.email_valide:
             return jsonify({"message": "Email not verified. Please check your email."}), 403
-        if user.role in ["technicien", "technicien_superieur"]:
+
+        if user.role in ["technicien", "technicien supérieur"]:
             if not user.directeur_valide:
                 return jsonify({"message": "Account not validated by director. Please wait for approval."}), 403
+
         token = generate_token(user.id)
         return jsonify ({
             "user" : user.to_dict(),
@@ -145,7 +147,6 @@ def create_technicien(current_user):
     data = request.get_json()
     email = data.get('email')
     role = data.get('role')
-    name = data.get('name')
 
 
     if role not in ["technicien", "technicien supérieur"]:
@@ -157,7 +158,6 @@ def create_technicien(current_user):
     new_user = User(
         name = data.get('fullName'),
         email =email,
-        name=name,
         role=role,
         id_assigned=current_user.id,
         director_valide=True,
