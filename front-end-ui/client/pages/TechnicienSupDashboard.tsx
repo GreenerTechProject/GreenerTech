@@ -811,6 +811,14 @@ export default function TechnicienSupDashboard() {
           )}
         </div>
       </div>
+
+      {/* Intervention Form Modal */}
+      <InterventionForm
+        isOpen={isInterventionFormOpen}
+        onClose={() => setIsInterventionFormOpen(false)}
+        onSubmit={handleInterventionSubmit}
+        onSaveDraft={handleInterventionSaveDraft}
+      />
     </div>
   );
 }
