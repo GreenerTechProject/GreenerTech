@@ -66,19 +66,13 @@ export default function TechnicianSidebar({
       id: "surveillance",
       label: "Surveillance",
       icon: <Camera className="h-5 w-5" />,
-      onClick: () => {
-        // TODO: Navigate to surveillance page when implemented
-        console.log("Surveillance clicked");
-      },
+      path: "/surveillance",
     },
     {
       id: "alertes",
       label: "Alertes",
       icon: <AlertTriangle className="h-5 w-5" />,
-      onClick: () => {
-        // TODO: Navigate to alerts page when implemented
-        console.log("Alertes clicked");
-      },
+      path: "/alerts",
     },
     {
       id: "interventions",
@@ -92,10 +86,7 @@ export default function TechnicianSidebar({
       id: "rapports",
       label: "Rapports",
       icon: <Bookmark className="h-5 w-5" />,
-      onClick: () => {
-        // TODO: Navigate to reports page when implemented
-        console.log("Rapports clicked");
-      },
+      path: "/reports",
     },
   ];
 
