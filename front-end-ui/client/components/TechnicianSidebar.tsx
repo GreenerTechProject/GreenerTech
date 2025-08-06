@@ -82,8 +82,6 @@ export default function TechnicianSidebar({
         setIsOpen(false); // Close sidebar first
         onInterventionClick?.();
       },
-
-
       path: "/interventions",
     },
     {
