@@ -113,24 +113,8 @@ export default function ProfileEdit() {
         updateData.password = data.password;
       }
 
-      // Call backend API to update user
-      const response = await fetch("/api/user", {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${authService.tokenManager.getToken()}`,
-        },
-        body: JSON.stringify(updateData),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || "Erreur lors de la mise à jour");
-      }
-
-      // Update local storage
-      const updatedUser = { ...user, ...updateData };
-      authService.tokenManager.setUser(updatedUser);
+      // Call backend API to update user using authService
+      await authService.updateProfile(updateData);
 
       toast({
         title: "Succès",
