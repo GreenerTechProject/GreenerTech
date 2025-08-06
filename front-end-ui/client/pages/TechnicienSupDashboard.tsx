@@ -40,6 +40,7 @@ import {
   Shield,
 } from "lucide-react";
 import TechnicianSidebar from "../components/TechnicianSidebar";
+import InterventionForm from "../components/InterventionForm";
 import { cn } from "@/lib/utils";
 import { getGoogleMapsAPIKey } from "@/config/maps";
 
@@ -202,6 +203,7 @@ export default function TechnicienSupDashboard() {
   const [map, setMap] = useState<google.maps.Map | null>(null);
   const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false);
   const [selectedTechnician, setSelectedTechnician] = useState("");
+  const [isInterventionFormOpen, setIsInterventionFormOpen] = useState(false);
   const mapRef = useRef<HTMLDivElement>(null);
 
   // Mock technicians list
@@ -330,6 +332,17 @@ export default function TechnicienSupDashboard() {
     }
   };
 
+  const handleInterventionSubmit = (data: any) => {
+    console.log("Intervention submitted:", data);
+    // TODO: Send to backend API
+    // Here you would typically call an API to save the intervention
+  };
+
+  const handleInterventionSaveDraft = (data: any) => {
+    console.log("Intervention saved as draft:", data);
+    // TODO: Save draft to backend or local storage
+  };
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case "optimal":
@@ -370,7 +383,10 @@ export default function TechnicienSupDashboard() {
           <div className="flex justify-between items-center py-4">
             <div className="flex items-center">
               {/* Sidebar Button */}
-              <TechnicianSidebar userRole="technicien_sup" />
+              <TechnicianSidebar
+                userRole="technicien_sup"
+                onInterventionClick={() => setIsInterventionFormOpen(true)}
+              />
               <div className="flex items-center space-x-2 ml-4">
                 <Shield className="h-6 w-6 text-[#B4CC5F]" />
                 <h1 className="text-xl font-semibold text-gray-900">
@@ -384,6 +400,14 @@ export default function TechnicienSupDashboard() {
                 {serres.filter((s) => s.status === "active").length} Serres
                 Supervisées
               </Badge>
+              <Button
+                onClick={() => setIsInterventionFormOpen(true)}
+                className="bg-blue-600 hover:bg-blue-700 text-white"
+                size="sm"
+              >
+                <Bell className="h-4 w-4 mr-2" />
+                Nouvelle Intervention
+              </Button>
             </div>
             <div className="flex items-center space-x-4">
               <span className="text-sm text-gray-600 hidden sm:block">
@@ -795,6 +819,14 @@ export default function TechnicienSupDashboard() {
           )}
         </div>
       </div>
+
+      {/* Intervention Form Modal */}
+      <InterventionForm
+        isOpen={isInterventionFormOpen}
+        onClose={() => setIsInterventionFormOpen(false)}
+        onSubmit={handleInterventionSubmit}
+        onSaveDraft={handleInterventionSaveDraft}
+      />
     </div>
   );
 }

@@ -25,10 +25,12 @@ interface SidebarItem {
 
 interface TechnicianSidebarProps {
   userRole: "technicien" | "technicien_sup";
+  onInterventionClick?: () => void;
 }
 
 export default function TechnicianSidebar({
   userRole,
+  onInterventionClick,
 }: TechnicianSidebarProps) {
   const [isOpen, setIsOpen] = useState(false);
   const { logout } = useAuth();
@@ -83,8 +85,7 @@ export default function TechnicianSidebar({
       label: "Interventions",
       icon: <Bell className="h-5 w-5" />,
       onClick: () => {
-        // TODO: Navigate to interventions page when implemented
-        console.log("Interventions clicked");
+        onInterventionClick?.();
       },
     },
     {

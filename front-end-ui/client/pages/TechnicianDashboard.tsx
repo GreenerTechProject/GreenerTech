@@ -35,6 +35,7 @@ import {
   Calendar,
 } from "lucide-react";
 import TechnicianSidebar from "../components/TechnicianSidebar";
+import InterventionForm from "../components/InterventionForm";
 import { cn } from "@/lib/utils";
 import { getGoogleMapsAPIKey } from "@/config/maps";
 import { Billon } from "@shared/api";
@@ -174,6 +175,7 @@ export default function TechnicianDashboard() {
     notes: "",
   });
   const [map, setMap] = useState<google.maps.Map | null>(null);
+  const [isInterventionFormOpen, setIsInterventionFormOpen] = useState(false);
   const mapRef = useRef<HTMLDivElement>(null);
 
   // Initialize map
@@ -343,6 +345,17 @@ export default function TechnicianDashboard() {
     }
   };
 
+  const handleInterventionSubmit = (data: any) => {
+    console.log("Intervention submitted:", data);
+    // TODO: Send to backend API
+    // Here you would typically call an API to save the intervention
+  };
+
+  const handleInterventionSaveDraft = (data: any) => {
+    console.log("Intervention saved as draft:", data);
+    // TODO: Save draft to backend or local storage
+  };
+
   const getZoneIcon = (type: string) => {
     switch (type) {
       case "irrigation":
@@ -371,7 +384,10 @@ export default function TechnicianDashboard() {
           <div className="flex justify-between items-center py-4">
             <div className="flex items-center">
               {/* Sidebar Button */}
-              <TechnicianSidebar userRole="technicien" />
+              <TechnicianSidebar
+                userRole="technicien"
+                onInterventionClick={() => setIsInterventionFormOpen(true)}
+              />
               <h1 className="text-xl font-semibold text-gray-900 ml-4">
                 Tableau de Bord Technicien
               </h1>
@@ -381,6 +397,14 @@ export default function TechnicianDashboard() {
               >
                 {totalBillons} Billons gérés
               </Badge>
+              <Button
+                onClick={() => setIsInterventionFormOpen(true)}
+                className="bg-blue-600 hover:bg-blue-700 text-white"
+                size="sm"
+              >
+                <Bell className="h-4 w-4 mr-2" />
+                Nouvelle Intervention
+              </Button>
             </div>
             <div className="flex items-center space-x-4">
               <span className="text-sm text-gray-600 hidden sm:block">
@@ -871,6 +895,14 @@ export default function TechnicianDashboard() {
           )}
         </div>
       </div>
+
+      {/* Intervention Form Modal */}
+      <InterventionForm
+        isOpen={isInterventionFormOpen}
+        onClose={() => setIsInterventionFormOpen(false)}
+        onSubmit={handleInterventionSubmit}
+        onSaveDraft={handleInterventionSaveDraft}
+      />
     </div>
   );
 }
