@@ -31,6 +31,13 @@ import {
   handleCreateTechnicien,
   handleGetTechniciensByCompany,
 } from "./routes/technicien";
+import {
+  handleGetAllAlertes,
+  handleGetAlerte,
+  handleUpdateAlerte,
+  handleCreateAlerte,
+  handleDeleteAlerte,
+} from "./routes/alerts";
 
 export function createServer() {
   const app = express();
