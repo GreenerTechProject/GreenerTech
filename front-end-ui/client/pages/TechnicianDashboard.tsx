@@ -175,6 +175,7 @@ export default function TechnicianDashboard() {
     notes: "",
   });
   const [map, setMap] = useState<google.maps.Map | null>(null);
+  const [isInterventionFormOpen, setIsInterventionFormOpen] = useState(false);
   const mapRef = useRef<HTMLDivElement>(null);
 
   // Initialize map
