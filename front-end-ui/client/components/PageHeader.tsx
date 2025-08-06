@@ -25,14 +25,15 @@ interface PageHeaderProps {
   actions?: React.ReactNode;
 }
 
-export default function PageHeader({ 
-  title, 
-  subtitle, 
-  badge, 
+export default function PageHeader({
+  title,
+  subtitle,
+  badge,
   userRole = "technicien",
-  actions 
+  actions
 }: PageHeaderProps) {
   const { user, logout } = useAuth();
+  const navigate = useNavigate();
 
   return (
     <header className="bg-white shadow-sm border-b sticky top-0 z-10">
