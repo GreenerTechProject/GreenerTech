@@ -11,7 +11,7 @@ from app.models.guide_culture import GuideCulture
 
 
 @token_required
-@role_required("directeur" , "technicien supérieur")
+@role_required("directeur" , "technicien_superieur")
 @access_domaine_required
 def create_serre(current_user):
     data = request.get_json()
@@ -20,7 +20,7 @@ def create_serre(current_user):
     if not domaine:
         return jsonify({"message": "Domaine non trouvé"}), 404
 
-    entreprise = Entreprise.query.filter_by(id_user=current_user.id).first()
+    entreprise = Entreprise.query.filter_by(id=current_user.id_entreprise).first()
     if not entreprise or domaine.id_entreprise != entreprise.id:
         return jsonify({"message": "Non autorisé"}), 403
 
@@ -55,7 +55,7 @@ def create_serre(current_user):
 @role_required("directeur" , "technicien_superieur")
 #@access_domaine_required
 def get_all_serres(current_user):
-    entreprise = Entreprise.query.filter_by(id_user=current_user.id).first()
+    entreprise = Entreprise.query.filter_by(id=current_user.id_entreprise).first()
     if not entreprise:
         return jsonify({"message": "Aucune entreprise associée"}), 404
 
@@ -72,7 +72,7 @@ def get_all_serres(current_user):
 def get_serre(current_user, id):
     serre = Serre.query.get_or_404(id)
     domaine = Domaine.query.get(serre.id_domaine)
-    entreprise = Entreprise.query.filter_by(id_user=current_user.id).first()
+    entreprise = Entreprise.query.filter_by(id=current_user.id_entreprise).first()
     if not entreprise or domaine.id_entreprise != entreprise.id:
         return jsonify({"message": "Non autorisé"}), 403
 
@@ -85,7 +85,7 @@ def get_serre(current_user, id):
 def update_serre(current_user, id):
     serre = Serre.query.get_or_404(id)
     domaine = Domaine.query.get(serre.id_domaine)
-    entreprise = Entreprise.query.filter_by(id_user=current_user.id).first()
+    entreprise = Entreprise.query.filter_by(id=current_user.id_entreprise).first()
     if not entreprise or domaine.id_entreprise != entreprise.id:
         return jsonify({"message": "Non autorisé"}), 403
 
@@ -114,7 +114,7 @@ def update_serre(current_user, id):
 def delete_serre(current_user, id):
     serre = Serre.query.get_or_404(id)
     domaine = Domaine.query.get(serre.id_domaine)
-    entreprise = Entreprise.query.filter_by(id_user=current_user.id).first()
+    entreprise = Entreprise.query.filter_by(id=current_user.id_entreprise).first()
     if not entreprise or domaine.id_entreprise != entreprise.id:
         return jsonify({"message": "Non autorisé"}), 403
 
@@ -128,7 +128,7 @@ def delete_serre(current_user, id):
 @token_required
 @role_required("directeur" , "technicien_superieur")
 def get_bilans_by_serre(current_user, id_serre):
-    entreprise = Entreprise.query.filter_by(id_user=current_user.id).first()
+    entreprise = Entreprise.query.filter_by(id=current_user.id_entreprise).first()
     if not entreprise:
         return jsonify({"message": "Aucune entreprise associée"}), 404
 
@@ -150,7 +150,7 @@ def get_guides_by_serre(current_user, id_serre):
 
     # Cas spécifique : technicien doit avoir accès à la serre
     # if current_user.role == "technicien":
-    #     autorisation = Autorisation.query.filter_by(id_user=current_user.id, id_serre=id_serre).first()
+    #     autorisation = Autorisation.query.filter_by(id=current_user.id_entreprise, id_serre=id_serre).first()
     #     if not autorisation or not autorisation.access_serre:
     #         return jsonify({"message": "Accès non autorisé à cette serre"}), 403
 
