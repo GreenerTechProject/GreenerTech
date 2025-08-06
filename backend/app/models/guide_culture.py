@@ -16,6 +16,8 @@ class GuideCulture(db.Model):
     date_fin_saison = Column(Date, nullable=False)
     nombre_de_plants = Column(Integer, nullable=False)
     id_serre = Column(Integer, ForeignKey("serres.id"), nullable=False)
+    
+    #{"variety":"poivron","yield":21.5,"plantingDate":"2025-07-31T23:00:00.000Z","harvestDate":"2025-08-29T23:00:00.000Z","irrigationType":"micro-aspersion","notes":"dd"}
 
     def to_dict(self):
         return {

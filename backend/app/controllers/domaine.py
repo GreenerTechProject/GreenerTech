@@ -12,10 +12,20 @@ from app.models.serre import Serre
 def create_domaine(current_user):
     data = request.get_json()
 
-    # Récupérer entreprise liée au directeur connecté
-    entreprise = Entreprise.query.filter_by(id=current_user.id_entreprise).first()
+    entreprise = Entreprise.query.filter_by(id_user=current_user.id).first()
     if not entreprise:
         return jsonify({"message": "Aucune entreprise associée à cet utilisateur"}), 404
+
+    name = data.get('name')
+    area = data.get('area')
+    center = data.get('center')
+    path = data.get('path')
+
+    if not name or not area or not center or not path:
+        return jsonify({"message": "Les champs name, area, center et path sont obligatoires"}), 400
+
+
+
 
 
     # Récupérer le dernier id_group_cor existant (max)
@@ -26,7 +36,7 @@ def create_domaine(current_user):
     id_group_cor = last_id_group_cor + 1
 
 
-    gps_points = data.get('position', [])
+    gps_points = data.get('path', [])
     if not gps_points:
         return jsonify({"message": "Veuillez fournir une liste de points GPS"}), 400
 
@@ -34,22 +44,26 @@ def create_domaine(current_user):
     for point in gps_points:
         gc = GroupCor(
             id_group_cor=id_group_cor,
-            point_x=point['latitude'],
-            point_y=point['longitude'],
+            point_x=point['lat'],
+            point_y=point['lng'],
             ordre=point.get('ordre', 0)
         )
         db.session.add(gc)
-
-    # Créer le domaine
+        
+        
     domaine = Domaine(
-        nom=data['nom'],
+        nom=name,
         id_group_cor=id_group_cor,
+        surface=area,
+        center_lat=center.get('lat'),
+        center_lng=center.get('lng'),
+        #path=path,
         id_entreprise=entreprise.id
     )
+
     db.session.add(domaine)
     db.session.commit()
 
-    #return jsonify({"message": "Domaine et points GPS créés", "domaine": domaine.to_dict()}), 201
     return jsonify(domaine.to_dict()), 201
 
 
@@ -75,31 +89,30 @@ def get_domaine(current_user, id):
 
 @token_required
 @role_required("directeur")
+@token_required
+@role_required("directeur")
 def update_domaine(current_user, id):
     domaine = Domaine.query.get_or_404(id)
     entreprise = Entreprise.query.filter_by(id_user=current_user.id).first()
+
     if not entreprise or domaine.id_entreprise != entreprise.id:
         return jsonify({"message": "Non autorisé"}), 403
 
     data = request.get_json()
-    domaine.nom = data.get('nom', domaine.nom)
 
-    gps_points = data.get('gps_points')
-    if gps_points:
-        # Supprimer les anciens points liés
-        GroupCor.query.filter_by(id_group_cor=domaine.id_group_cor).delete()
+    domaine.nom = data.get('name', domaine.nom)
+    domaine.surface = data.get('area', domaine.surface)
 
-        for point in gps_points:
-            new_point = GroupCor(
-                id_group_cor=domaine.id_group_cor,
-                point_x=point['point_x'],
-                point_y=point['point_y'],
-                ordre=point.get('ordre', 0)
-            )
-            db.session.add(new_point)
+    center = data.get('center')
+    if center:
+        domaine.center_lat = center.get('lat', domaine.center_lat)
+        domaine.center_lng = center.get('lng', domaine.center_lng)
+
+    path = data.get('path')
+    if path:
+        domaine.path = path
 
     db.session.commit()
-    #return jsonify({"message": "Domaine mis à jour", "domaine": domaine.to_dict()}), 200
     return jsonify(domaine.to_dict()), 200
 
 

@@ -232,6 +232,9 @@ ALTER SEQUENCE public.bilans_id_seq OWNED BY public.bilans.id;
 CREATE TABLE public.domaines (
     id integer NOT NULL,
     nom character varying NOT NULL,
+    surface integer NOT NULL,
+    center_lat double precision NOT NULL,
+    center_lng double precision NOT NULL,
     id_group_cor integer NOT NULL,
     id_entreprise integer NOT NULL
 );
@@ -271,6 +274,7 @@ CREATE TABLE public.entreprises (
     id_user integer NOT NULL,
     status_juridique character varying,
     adresse character varying,
+    cie character varying,
     id_fiscale character varying,
     email character varying
 );
@@ -702,7 +706,7 @@ CREATE TABLE public.users (
     setup_completed boolean NOT NULL,
     created_at timestamp without time zone,
     updated_at timestamp without time zone,
-    derecteur_valide boolean,
+    directeur_valide boolean,
     email_valide boolean,
     verification_token character varying(255),
     id_entreprise integer
@@ -917,8 +921,8 @@ COPY public.bilans (id, nom, id_group_cor, id_serre) FROM stdin;
 -- Data for Name: domaines; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.domaines (id, nom, id_group_cor, id_entreprise) FROM stdin;
-1	Domaine Central	1	1
+COPY public.domaines (id, nom, surface, center_lat, center_lng, id_group_cor, id_entreprise) FROM stdin;
+1	Domaine Central	4	34.123	-6.789	1	1
 \.
 
 
@@ -926,8 +930,8 @@ COPY public.domaines (id, nom, id_group_cor, id_entreprise) FROM stdin;
 -- Data for Name: entreprises; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.entreprises (id, nom, id_user, status_juridique, adresse, id_fiscale, email) FROM stdin;
-1	AgriTech Maroc	1	SARL	4 Rue 321	IF123456	email@gmail.com
+COPY public.entreprises (id, nom, id_user, status_juridique, adresse, cie, id_fiscale, email) FROM stdin;
+1	AgriTech Maroc	1	SARL	4 Rue 321	SARL	IF123456	email@gmail.com
 \.
 
 
@@ -1034,10 +1038,10 @@ COPY public.type_tache (id, nom) FROM stdin;
 -- Data for Name: users; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.users (id, name, email, password, role, birthday, telephone, cin, id_assigned, setup_completed, created_at, updated_at, derecteur_valide, email_valide, verification_token, id_entreprise) FROM stdin;
-1	directeur	directeur@gmail.com	scrypt:32768:8:1$rcVxsphM7L5kueeB$19b24046cbdd06eb5de2e87138567b1a8d1cf3bdb2e84d50a98ce555bb1a0a9b5c0f923577344fb6eb3198d942563df97143cf983bcead85782c9a3bc64243a6	directeur	\N	\N	\N	\N	f	2025-08-03 00:33:30.761993	2025-08-03 00:34:33.48069	f	t	\N	1
-2	technicien_superieur	technicien_superieur@gmail.com	scrypt:32768:8:1$rcVxsphM7L5kueeB$19b24046cbdd06eb5de2e87138567b1a8d1cf3bdb2e84d50a98ce555bb1a0a9b5c0f923577344fb6eb3198d942563df97143cf983bcead85782c9a3bc64243a6	technicien_superieur	\N	\N	\N	1	f	2025-08-03 00:52:12.750209	2025-08-03 01:17:18.380698	f	t	\N	1
-3	technicien	technicien@gmail.com	scrypt:32768:8:1$rcVxsphM7L5kueeB$19b24046cbdd06eb5de2e87138567b1a8d1cf3bdb2e84d50a98ce555bb1a0a9b5c0f923577344fb6eb3198d942563df97143cf983bcead85782c9a3bc64243a6	technicien	\N	\N	\N	2	f	2025-08-03 00:55:31.168334	2025-08-03 01:17:31.852935	f	t	\N	1
+COPY public.users (id, name, email, password, role, birthday, telephone, cin, id_assigned, setup_completed, created_at, updated_at, directeur_valide, email_valide, verification_token, id_entreprise) FROM stdin;
+1	directeur	directeur@gmail.com	scrypt:32768:8:1$rcVxsphM7L5kueeB$19b24046cbdd06eb5de2e87138567b1a8d1cf3bdb2e84d50a98ce555bb1a0a9b5c0f923577344fb6eb3198d942563df97143cf983bcead85782c9a3bc64243a6	directeur	\N	\N	\N	\N	f	2025-08-03 00:33:30.761993	2025-08-03 00:34:33.48069	t	t	\N	1
+2	technicien_superieur	technicien_superieur@gmail.com	scrypt:32768:8:1$rcVxsphM7L5kueeB$19b24046cbdd06eb5de2e87138567b1a8d1cf3bdb2e84d50a98ce555bb1a0a9b5c0f923577344fb6eb3198d942563df97143cf983bcead85782c9a3bc64243a6	technicien_superieur	\N	\N	\N	1	f	2025-08-03 00:52:12.750209	2025-08-03 01:17:18.380698	t	t	\N	1
+3	technicien	technicien@gmail.com	scrypt:32768:8:1$rcVxsphM7L5kueeB$19b24046cbdd06eb5de2e87138567b1a8d1cf3bdb2e84d50a98ce555bb1a0a9b5c0f923577344fb6eb3198d942563df97143cf983bcead85782c9a3bc64243a6	technicien	\N	\N	\N	2	f	2025-08-03 00:55:31.168334	2025-08-03 01:17:31.852935	t	t	\N	1
 \.
 
 

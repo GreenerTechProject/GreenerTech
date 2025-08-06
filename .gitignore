@@ -1,5 +1,5 @@
 ./services/CNN_GrennerTech.ipynb
-./services/DataYellow 
+./services/DataYellow/*
 ./services/best_modelV2.pth
 ./services/my_model.pt
 ./services/Data/*
@@ -25,7 +25,6 @@ dist/
 downloads/
 eggs/
 .eggs/
-lib/
 lib64/
 parts/
 sdist/
