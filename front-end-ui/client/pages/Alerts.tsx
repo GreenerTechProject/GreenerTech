@@ -1,119 +1,98 @@
 import React, { useState, useEffect } from "react";
-import { AlertTriangle, Eye, Clock, CheckCircle, XCircle, ArrowLeft } from "lucide-react";
-import { useNavigate } from "react-router-dom";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { 
+  AlertTriangle, 
+  CheckCircle, 
+  Clock,
+  Search,
+  ChevronLeft,
+  ChevronRight,
+  TrendingUp
+} from "lucide-react";
 import { cn } from "@/lib/utils";
+import { AlertService } from "@/services/alertService";
+import { Alert, AlertStats } from "@/types/alert";
+import { useAuth } from "@/contexts/AuthContext";
 
-interface Alert {
-  id: number;
-  id_bilan: number;
-  status_alert: number;
-  maladie: string;
-  lien_image?: string;
-  x1?: number;
-  y1?: number;
-  date: string;
-  status: string;
-}
-
-const getStatusColor = (status: string) => {
-  switch (status.toLowerCase()) {
-    case "résolue":
-      return "bg-green-100 text-green-800 border-green-200";
-    case "non résolue":
-      return "bg-red-100 text-red-800 border-red-200";
-    case "en cours":
-      return "bg-yellow-100 text-yellow-800 border-yellow-200";
-    default:
-      return "bg-gray-100 text-gray-800 border-gray-200";
-  }
-};
-
-const getSeverityColor = (statusAlert: number) => {
-  switch (statusAlert) {
-    case 1:
-      return "text-red-600";
-    case 2:
-      return "text-orange-600";
-    case 3:
-      return "text-yellow-600";
-    default:
-      return "text-gray-600";
-  }
-};
-
-const getSeverityLabel = (statusAlert: number) => {
-  switch (statusAlert) {
-    case 1:
-      return "Critique";
-    case 2:
-      return "Modérée";
-    case 3:
-      return "Faible";
-    default:
-      return "Inconnue";
-  }
-};
-
-export default function Alerts() {
-  const navigate = useNavigate();
+export default function AlertsPage() {
+  const { user } = useAuth();
   const [alerts, setAlerts] = useState<Alert[]>([]);
+  const [stats, setStats] = useState<AlertStats | null>(null);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<"all" | "resolved" | "unresolved">("all");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalAlerts, setTotalAlerts] = useState(0);
+  const alertsPerPage = 7;
 
   useEffect(() => {
-    fetchAlerts();
-  }, []);
+    loadAlerts();
+    loadStats();
+  }, [currentPage, searchTerm]);
 
-  const fetchAlerts = async () => {
+  const loadAlerts = async () => {
     try {
-      const response = await fetch("/api/alertes");
-      if (response.ok) {
-        const data = await response.json();
-        setAlerts(data);
-      } else {
-        console.error("Failed to fetch alerts");
-      }
+      setLoading(true);
+      const filters = searchTerm ? { search: searchTerm } : undefined;
+      const response = await AlertService.getAllAlerts(currentPage, alertsPerPage, filters);
+      setAlerts(response.alerts);
+      setTotalAlerts(response.total);
     } catch (error) {
-      console.error("Error fetching alerts:", error);
+      console.error("Error loading alerts:", error);
     } finally {
       setLoading(false);
     }
   };
 
-  const updateAlertStatus = async (alertId: number, newStatus: string) => {
+  const loadStats = async () => {
     try {
-      const response = await fetch(`/api/alertes/${alertId}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ status: newStatus }),
-      });
-
-      if (response.ok) {
-        await fetchAlerts(); // Refresh alerts
-      }
+      const statsData = await AlertService.getAlertStats();
+      setStats(statsData);
     } catch (error) {
-      console.error("Error updating alert status:", error);
+      console.error("Error loading stats:", error);
     }
   };
 
-  const filteredAlerts = alerts.filter((alert) => {
-    switch (filter) {
-      case "resolved":
-        return alert.status === "résolue";
-      case "unresolved":
-        return alert.status === "non résolue";
-      default:
-        return true;
+  const handleUpdateAlert = async (alertId: number, status: "résolue" | "non résolue") => {
+    try {
+      await AlertService.updateAlert(alertId, { status });
+      loadAlerts();
+      loadStats();
+    } catch (error) {
+      console.error("Error updating alert:", error);
     }
-  });
+  };
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleString("fr-FR", {
+  const getAlertLevel = (statusAlert: number): "High" | "Medium" | "Low" => {
+    if (statusAlert >= 8) return "High";
+    if (statusAlert >= 5) return "Medium";
+    return "Low";
+  };
+
+  const getAlertLevelColor = (level: "High" | "Medium" | "Low"): string => {
+    switch (level) {
+      case "High":
+        return "bg-red-100 text-red-800";
+      case "Medium":
+        return "bg-orange-100 text-orange-800";
+      case "Low":
+        return "bg-green-100 text-green-800";
+      default:
+        return "bg-gray-100 text-gray-800";
+    }
+  };
+
+  const getStatusColor = (status: "résolue" | "non résolue"): string => {
+    return status === "résolue"
+      ? "bg-green-100 text-green-800"
+      : "bg-red-100 text-red-800";
+  };
+
+  const formatDate = (dateString: string): string => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString("fr-FR", {
       day: "2-digit",
       month: "2-digit",
       year: "numeric",
@@ -122,246 +101,289 @@ export default function Alerts() {
     });
   };
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-greener-500"></div>
-      </div>
-    );
-  }
+  const totalPages = Math.ceil(totalAlerts / alertsPerPage);
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      <div className="max-w-7xl mx-auto">
-        {/* Header */}
+    <div className="min-h-screen bg-gray-50">
+      {/* Header */}
+      <header className="bg-white border-b border-gray-200 shadow-sm">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-16">
+            <div className="flex items-center space-x-4">
+              <Button variant="ghost" size="sm">
+                <div className="grid grid-cols-1 gap-1">
+                  <div className="h-0.5 w-6 bg-gray-600"></div>
+                  <div className="h-0.5 w-6 bg-gray-600"></div>
+                  <div className="h-0.5 w-6 bg-gray-600"></div>
+                </div>
+              </Button>
+              <img 
+                src="https://api.builder.io/api/v1/image/assets/TEMP/e838108a21bc561dc1bf539fbfff0473770f8f68?width=364" 
+                alt="GreenerTech" 
+                className="h-8"
+              />
+            </div>
+            
+            <div className="flex items-center space-x-6">
+              <div className="hidden md:flex items-center space-x-4">
+                <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
+                  <span className="text-white text-sm">🏠</span>
+                </div>
+                <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
+                  <span className="text-white text-sm">📊</span>
+                </div>
+                <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
+                  <span className="text-white text-sm">📹</span>
+                </div>
+              </div>
+              
+              <div className="relative">
+                <Input
+                  type="text"
+                  placeholder="Rechercher..."
+                  className="w-64 pl-10"
+                />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+              </div>
+              
+              <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
+                <span className="text-white text-sm">👤</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      {/* Main Content */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Page Header */}
         <div className="mb-8">
-          <div className="flex items-center gap-4 mb-4">
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">Gestion des Alertes</h1>
+          <p className="text-gray-600">Surveillez et gérez toutes les alertes de votre système</p>
+        </div>
+
+        {/* Search Bar */}
+        <div className="mb-8">
+          <div className="relative max-w-md">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <Input
+              type="text"
+              placeholder="Rechercher une alerte..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+        </div>
+
+        {/* Alerts Table */}
+        <Card className="mb-8">
+          <div className="overflow-hidden">
+            <table className="w-full">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                    Nom d'anomalie
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                    Niveau
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                    Statut
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                    Localisation
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                    Horodatage
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {loading ? (
+                  <tr>
+                    <td colSpan={5} className="px-6 py-8 text-center text-gray-500">
+                      Chargement...
+                    </td>
+                  </tr>
+                ) : alerts.length === 0 ? (
+                  <tr>
+                    <td colSpan={5} className="px-6 py-8 text-center text-gray-500">
+                      Aucune alerte trouvée
+                    </td>
+                  </tr>
+                ) : (
+                  alerts.map((alert, index) => {
+                    const level = getAlertLevel(alert.status_alert);
+                    return (
+                      <tr 
+                        key={alert.id} 
+                        className={cn(
+                          "hover:bg-gray-50 transition-colors",
+                          index % 2 === 1 && "bg-gray-50"
+                        )}
+                      >
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm font-medium text-gray-900">
+                            {alert.maladie}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <Badge variant="outline" className={getAlertLevelColor(level)}>
+                            {level}
+                          </Badge>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className={cn(
+                              "flex items-center space-x-1",
+                              getStatusColor(alert.status)
+                            )}
+                            onClick={() => handleUpdateAlert(
+                              alert.id, 
+                              alert.status === "résolue" ? "non résolue" : "résolue"
+                            )}
+                          >
+                            {alert.status === "résolue" ? (
+                              <CheckCircle className="h-3 w-3" />
+                            ) : (
+                              <AlertTriangle className="h-3 w-3" />
+                            )}
+                            <span>{alert.status === "résolue" ? "Résolu" : "Non Résolu"}</span>
+                          </Button>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm text-gray-600">
+                            Bilan ID: {alert.id_bilan}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm text-gray-600">
+                            {formatDate(alert.date)}
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
+          </div>
+        </Card>
+
+        {/* Pagination */}
+        <div className="flex items-center justify-between">
+          <div className="text-sm text-gray-700">
+            Affichage de {((currentPage - 1) * alertsPerPage) + 1} à {Math.min(currentPage * alertsPerPage, totalAlerts)} sur {totalAlerts} alerte{totalAlerts > 1 ? 's' : ''}
+          </div>
+          
+          <div className="flex items-center space-x-2">
             <Button
               variant="outline"
               size="sm"
-              onClick={() => navigate(-1)}
-              className="flex items-center gap-2"
+              onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+              disabled={currentPage === 1}
             >
-              <ArrowLeft className="h-4 w-4" />
-              Retour
+              <ChevronLeft className="h-4 w-4" />
+              Précédent
+            </Button>
+            
+            {[...Array(Math.min(3, totalPages))].map((_, i) => {
+              const pageNum = i + 1;
+              return (
+                <Button
+                  key={pageNum}
+                  variant={currentPage === pageNum ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setCurrentPage(pageNum)}
+                  className="w-8"
+                >
+                  {pageNum}
+                </Button>
+              );
+            })}
+            
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+              disabled={currentPage === totalPages}
+            >
+              Suivant
+              <ChevronRight className="h-4 w-4" />
             </Button>
           </div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            Alertes Agricoles
-          </h1>
-          <p className="text-gray-600">
-            Surveillance et gestion des alertes de santé des cultures
-          </p>
         </div>
 
-        {/* Filter Buttons */}
-        <div className="flex gap-4 mb-6">
-          <Button
-            variant={filter === "all" ? "default" : "outline"}
-            onClick={() => setFilter("all")}
-            className="flex items-center gap-2"
-          >
-            <AlertTriangle className="h-4 w-4" />
-            Toutes ({alerts.length})
-          </Button>
-          <Button
-            variant={filter === "unresolved" ? "default" : "outline"}
-            onClick={() => setFilter("unresolved")}
-            className="flex items-center gap-2"
-          >
-            <XCircle className="h-4 w-4" />
-            Non résolues (
-            {alerts.filter((a) => a.status === "non résolue").length})
-          </Button>
-          <Button
-            variant={filter === "resolved" ? "default" : "outline"}
-            onClick={() => setFilter("resolved")}
-            className="flex items-center gap-2"
-          >
-            <CheckCircle className="h-4 w-4" />
-            Résolues ({alerts.filter((a) => a.status === "résolue").length})
-          </Button>
-        </div>
-
-        {/* Alerts Grid */}
-        {filteredAlerts.length === 0 ? (
+        {/* Stats Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mt-8">
           <Card>
-            <CardContent className="flex flex-col items-center justify-center py-12">
-              <AlertTriangle className="h-12 w-12 text-gray-400 mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">
-                Aucune alerte
-              </h3>
-              <p className="text-gray-500 text-center">
-                {filter === "all"
-                  ? "Aucune alerte n'a été détectée pour le moment."
-                  : `Aucune alerte ${
-                      filter === "resolved" ? "résolue" : "non résolue"
-                    }.`}
-              </p>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600">Alertes Non Résolues</p>
+                  <p className="text-2xl font-bold text-red-600">
+                    {stats?.unresolvedAlerts || 0}
+                  </p>
+                </div>
+                <div className="w-11 h-11 bg-red-100 rounded-full flex items-center justify-center">
+                  <AlertTriangle className="h-5 w-5 text-red-600" />
+                </div>
+              </div>
             </CardContent>
           </Card>
-        ) : (
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {filteredAlerts.map((alert) => (
-              <Card key={alert.id} className="hover:shadow-lg transition-shadow">
-                <CardHeader className="pb-4">
-                  <div className="flex items-start justify-between">
-                    <CardTitle className="text-lg font-semibold">
-                      Alerte #{alert.id}
-                    </CardTitle>
-                    <Badge
-                      className={cn("text-xs font-medium", getStatusColor(alert.status))}
-                    >
-                      {alert.status}
-                    </Badge>
-                  </div>
-                  <div className="flex items-center gap-2 text-sm text-gray-500">
-                    <Clock className="h-4 w-4" />
-                    {formatDate(alert.date)}
-                  </div>
-                </CardHeader>
 
-                <CardContent className="space-y-4">
-                  {/* Disease Information */}
-                  <div>
-                    <h4 className="font-medium text-gray-900 mb-1">Maladie détectée</h4>
-                    <p className="text-gray-700">{alert.maladie}</p>
-                  </div>
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600">Alertes Résolues</p>
+                  <p className="text-2xl font-bold text-green-600">
+                    {stats?.resolvedAlerts || 0}
+                  </p>
+                </div>
+                <div className="w-11 h-11 bg-green-100 rounded-full flex items-center justify-center">
+                  <CheckCircle className="h-5 w-5 text-green-600" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
 
-                  {/* Severity */}
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium text-gray-500">
-                      Sévérité
-                    </span>
-                    <span
-                      className={cn(
-                        "text-sm font-medium",
-                        getSeverityColor(alert.status_alert)
-                      )}
-                    >
-                      {getSeverityLabel(alert.status_alert)}
-                    </span>
-                  </div>
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600">Temps Moyen de Résolution</p>
+                  <p className="text-2xl font-bold text-orange-600">
+                    {stats?.averageResolutionTime || 0}h
+                  </p>
+                </div>
+                <div className="w-11 h-11 bg-orange-100 rounded-full flex items-center justify-center">
+                  <Clock className="h-5 w-5 text-orange-600" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
 
-                  {/* Location */}
-                  {alert.x1 !== undefined && alert.y1 !== undefined && (
-                    <div className="text-sm text-gray-600">
-                      <span className="font-medium">Position: </span>
-                      ({alert.x1.toFixed(2)}, {alert.y1.toFixed(2)})
-                    </div>
-                  )}
-
-                  {/* Bilan ID */}
-                  <div className="text-sm text-gray-600">
-                    <span className="font-medium">Bilan: </span>#{alert.id_bilan}
-                  </div>
-
-                  {/* Image */}
-                  {alert.lien_image && (
-                    <div>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="w-full flex items-center gap-2"
-                        onClick={() => window.open(alert.lien_image, "_blank")}
-                      >
-                        <Eye className="h-4 w-4" />
-                        Voir l'image
-                      </Button>
-                    </div>
-                  )}
-
-                  {/* Actions */}
-                  {alert.status !== "résolue" && (
-                    <div className="flex gap-2 pt-2">
-                      <Button
-                        size="sm"
-                        className="flex-1"
-                        onClick={() => updateAlertStatus(alert.id, "résolue")}
-                      >
-                        Marquer comme résolue
-                      </Button>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        )}
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600">Total Alertes</p>
+                  <p className="text-2xl font-bold text-blue-600">
+                    {stats?.totalAlerts || 0}
+                  </p>
+                </div>
+                <div className="w-11 h-11 bg-blue-100 rounded-full flex items-center justify-center">
+                  <TrendingUp className="h-5 w-5 text-blue-600" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </div>
   );
-}
-
-
-// Mock data for demo purposes
-function getMockAlerts(): Alert[] {
-  return [
-    {
-      id: 1,
-      id_bilan: 1,
-      status_alert: 9,
-      maladie: "Température élevée détectée",
-      lien_image: "",
-      x1: 33.9716,
-      y1: -6.8498,
-      date: "2025-07-15T14:23:00Z",
-      status: "non résolue",
-    },
-    {
-      id: 2,
-      id_bilan: 2,
-      status_alert: 6,
-      maladie: "Humidité faible",
-      lien_image: "",
-      x1: 33.9720,
-      y1: -6.8500,
-      date: "2025-07-15T12:45:00Z",
-      status: "résolue",
-    },
-    {
-      id: 3,
-      id_bilan: 3,
-      status_alert: 8,
-      maladie: "Défaillance capteur CO2",
-      lien_image: "",
-      x1: 33.9712,
-      y1: -6.8495,
-      date: "2025-07-15T11:30:00Z",
-      status: "non résolue",
-    },
-    {
-      id: 4,
-      id_bilan: 4,
-      status_alert: 3,
-      maladie: "Niveau d'eau bas",
-      lien_image: "",
-      x1: 33.9718,
-      y1: -6.8502,
-      date: "2025-07-15T09:15:00Z",
-      status: "résolue",
-    },
-    {
-      id: 5,
-      id_bilan: 5,
-      status_alert: 7,
-      maladie: "Éclairage défectueux",
-      lien_image: "",
-      x1: 33.9714,
-      y1: -6.8497,
-      date: "2025-07-15T08:42:00Z",
-      status: "non résolue",
-    },
-    {
-      id: 6,
-      id_bilan: 6,
-      status_alert: 4,
-      maladie: "Ventilation insuffisante",
-      lien_image: "",
-      x1: 33.9722,
-      y1: -6.8505,
-      date: "2025-07-14T16:28:00Z",
-      status: "résolue",
-    },
-  ];
 }

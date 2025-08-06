@@ -26,7 +26,7 @@ export class AlertService {
       if (filters?.dateFrom) params.append("dateFrom", filters.dateFrom);
       if (filters?.dateTo) params.append("dateTo", filters.dateTo);
 
-      const response = await fetch(`${API_BASE_URL}/alerts?${params}`);
+      const response = await fetch(`${API_BASE_URL}/alertes?${params}`);
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
@@ -44,7 +44,7 @@ export class AlertService {
 
   static async getAlert(id: number): Promise<Alert> {
     try {
-      const response = await fetch(`${API_BASE_URL}/alerts/${id}`);
+      const response = await fetch(`${API_BASE_URL}/alertes/${id}`);
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
@@ -57,7 +57,7 @@ export class AlertService {
 
   static async createAlert(alert: CreateAlertRequest): Promise<Alert> {
     try {
-      const response = await fetch(`${API_BASE_URL}/alerts`, {
+      const response = await fetch(`${API_BASE_URL}/alertes`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -81,7 +81,7 @@ export class AlertService {
     alert: UpdateAlertRequest
   ): Promise<Alert> {
     try {
-      const response = await fetch(`${API_BASE_URL}/alerts/${id}`, {
+      const response = await fetch(`${API_BASE_URL}/alertes/${id}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -102,7 +102,7 @@ export class AlertService {
 
   static async deleteAlert(id: number): Promise<void> {
     try {
-      const response = await fetch(`${API_BASE_URL}/alerts/${id}`, {
+      const response = await fetch(`${API_BASE_URL}/alertes/${id}`, {
         method: "DELETE",
       });
       
