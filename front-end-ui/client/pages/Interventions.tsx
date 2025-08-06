@@ -64,9 +64,10 @@ const priorityColors = {
 };
 
 const Interventions: React.FC = () => {
-  const [interventions] = useState<Intervention[]>(mockInterventions);
+  const [interventions, setInterventions] = useState<Intervention[]>(mockInterventions);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [isInterventionFormOpen, setIsInterventionFormOpen] = useState(false);
 
   const filteredInterventions = interventions.filter(intervention => {
     const matchesSearch = intervention.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
