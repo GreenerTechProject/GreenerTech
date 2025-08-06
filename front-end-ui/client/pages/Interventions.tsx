@@ -3,10 +3,12 @@ import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import InterventionForm from "../components/InterventionForm";
 import TechnicianSidebar from "../components/TechnicianSidebar";
+import { useAuth } from "../contexts/AuthContext";
 import { cn } from "@/lib/utils";
 
 export default function Interventions() {
   const [isInterventionFormOpen, setIsInterventionFormOpen] = useState(false);
+  const { user } = useAuth();
 
   const handleInterventionSubmit = (data: any) => {
     console.log("Intervention submitted:", data);
