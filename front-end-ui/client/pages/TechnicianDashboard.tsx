@@ -33,6 +33,7 @@ import {
   LogOut,
   Sprout,
   Calendar,
+  Bell,
 } from "lucide-react";
 import TechnicianSidebar from "../components/TechnicianSidebar";
 import InterventionForm from "../components/InterventionForm";
@@ -381,30 +382,34 @@ export default function TechnicianDashboard() {
       {/* Header */}
       <header className="bg-white shadow-sm border-b sticky top-0 z-10">
         <div className="max-w-full px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-4">
-            <div className="flex items-center">
-              {/* Sidebar Button */}
-              <TechnicianSidebar
-                userRole="technicien"
-                onInterventionClick={() => setIsInterventionFormOpen(true)}
-              />
-              <h1 className="text-xl font-semibold text-gray-900 ml-4">
-                Tableau de Bord Technicien
-              </h1>
-              <Badge
-                variant="outline"
-                className="bg-green-50 border-green-200 text-green-700"
-              >
-                {totalBillons} Billons gérés
-              </Badge>
-              <Button
-                onClick={() => setIsInterventionFormOpen(true)}
-                className="bg-blue-600 hover:bg-blue-700 text-white"
-                size="sm"
-              >
-                <Bell className="h-4 w-4 mr-2" />
-                Nouvelle Intervention
-              </Button>
+          <div className="flex flex-col lg:flex-row lg:justify-between lg:items-center py-4 gap-4">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
+              <div className="flex items-center gap-4">
+                {/* Sidebar Button */}
+                <TechnicianSidebar
+                  userRole="technicien"
+                  onInterventionClick={() => setIsInterventionFormOpen(true)}
+                />
+                <h1 className="text-lg sm:text-xl font-semibold text-gray-900">
+                  Tableau de Bord Technicien
+                </h1>
+              </div>
+              <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+                <Badge
+                  variant="outline"
+                  className="bg-green-50 border-green-200 text-green-700 w-fit"
+                >
+                  {totalBillons} Billons gérés
+                </Badge>
+                <Button
+                  onClick={() => setIsInterventionFormOpen(true)}
+                  className="bg-blue-600 hover:bg-blue-700 text-white w-fit"
+                  size="sm"
+                >
+                  <Bell className="h-4 w-4 mr-2" />
+                  <span className="hidden sm:inline">Nouvelle </span>Intervention
+                </Button>
+              </div>
             </div>
             <div className="flex items-center space-x-4">
               <span className="text-sm text-gray-600 hidden sm:block">
@@ -424,9 +429,9 @@ export default function TechnicianDashboard() {
         </div>
       </header>
 
-      <div className="flex h-[calc(100vh-73px)]">
+      <div className="flex flex-col lg:flex-row h-[calc(100vh-73px)]">
         {/* Left Control Panel */}
-        <div className="w-full lg:w-96 bg-white shadow-lg">
+        <div className="w-full lg:w-96 bg-white shadow-lg max-h-[50vh] lg:max-h-full">
           <ScrollArea className="h-full">
             <div className="p-6 space-y-6">
               {/* Create New Billon Section */}
@@ -862,7 +867,7 @@ export default function TechnicianDashboard() {
         </div>
 
         {/* Right Map Section */}
-        <div className="flex-1 relative" data-testid="map-section">
+        <div className="flex-1 relative min-h-[50vh] lg:min-h-full" data-testid="map-section">
           <GoogleMapsWrapper apiKey={GOOGLE_MAPS_API_KEY}>
             <div ref={mapRef} className="w-full h-full" />
           </GoogleMapsWrapper>
