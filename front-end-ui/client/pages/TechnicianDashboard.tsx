@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useAuth } from "../contexts/AuthContext";
 import GoogleMapsWrapper from "../components/GoogleMapsWrapper";
+import PageHeader from "../components/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -29,11 +30,10 @@ import {
   Thermometer,
   Droplets,
   Sun,
-  Users,
-  LogOut,
   Sprout,
   Calendar,
   Bell,
+  LogOut,
 } from "lucide-react";
 import TechnicianSidebar from "../components/TechnicianSidebar";
 import InterventionForm from "../components/InterventionForm";
@@ -387,7 +387,10 @@ export default function TechnicianDashboard() {
               {/* Sidebar Button */}
               <TechnicianSidebar
                 userRole="technicien"
-                onInterventionClick={() => setIsInterventionFormOpen(true)}
+                onInterventionClick={() => {
+                  console.log("Sidebar intervention clicked...");
+                  setIsInterventionFormOpen(true);
+                }}
               />
               <h1 className="text-xl font-semibold text-gray-900 ml-4">
                 Tableau de Bord Technicien
@@ -399,12 +402,17 @@ export default function TechnicianDashboard() {
                 {totalBillons} Billons gérés
               </Badge>
               <Button
-                onClick={() => setIsInterventionFormOpen(true)}
+                onClick={() => {
+                  console.log("Opening intervention form...");
+                  setIsInterventionFormOpen(true);
+                }}
                 className="bg-blue-600 hover:bg-blue-700 text-white"
+                onClick={() => setIsInterventionFormOpen(true)}
                 size="sm"
               >
-                <Bell className="h-4 w-4 mr-2" />
-                Nouvelle Intervention
+                <div className="absolute inset-0 bg-white opacity-0 group-hover:opacity-10 transition-opacity duration-200"></div>
+                <Bell className="h-4 w-4 mr-2 relative z-10" />
+                <span className="relative z-10 font-medium">Nouvelle Intervention</span>
               </Button>
             </div>
             <div className="flex items-center space-x-4">
@@ -424,7 +432,6 @@ export default function TechnicianDashboard() {
           </div>
         </div>
       </header>
-
       <div className="flex h-[calc(100vh-73px)]">
         {/* Left Control Panel */}
         <div className="w-full lg:w-96 bg-white shadow-lg">
