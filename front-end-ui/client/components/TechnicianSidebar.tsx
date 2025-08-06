@@ -25,6 +25,7 @@ interface SidebarItem {
 
 interface TechnicianSidebarProps {
   userRole: "technicien" | "technicien_sup";
+  onInterventionClick?: () => void;
 }
 
 export default function TechnicianSidebar({
