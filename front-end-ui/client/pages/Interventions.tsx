@@ -98,6 +98,11 @@ const Interventions: React.FC = () => {
     console.log("Intervention saved as draft:", data);
   };
 
+  const clearAllFilters = () => {
+    setSearchTerm("");
+    setStatusFilter("all");
+  };
+
   return (
     <div className="p-6 space-y-6">
       <div className="flex justify-between items-center">
