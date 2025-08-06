@@ -1,461 +1,517 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { useToast } from '@/hooks/use-toast';
-import { missionService, type MissionRobot } from '@/services/missionService';
+import React, { useState, useEffect } from "react";
+import { useAuth } from "../contexts/AuthContext";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Camera,
+  Play,
+  Pause,
+  Square,
+  RefreshCw,
+  AlertTriangle,
+  CheckCircle,
+  Clock,
+  Monitor,
+  Settings,
+  Download,
+  Calendar,
+  Filter,
+} from "lucide-react";
+import TechnicianSidebar from "../components/TechnicianSidebar";
+import { cn } from "@/lib/utils";
 
-interface QRCode {
-  [key: string]: any;
+interface CameraFeed {
+  id: string;
+  name: string;
+  location: string;
+  status: "online" | "offline" | "maintenance";
+  isRecording: boolean;
+  lastActivity: Date;
+  streamUrl?: string;
 }
 
-interface SensorData {
-  temperature: number;
-  humidity: number;
-  co2: number;
-  luminosite: number;
+interface Alert {
+  id: string;
+  cameraId: string;
+  type: "motion" | "anomaly" | "intrusion" | "equipment";
+  message: string;
+  timestamp: Date;
+  severity: "low" | "medium" | "high" | "critical";
+  acknowledged: boolean;
 }
 
-interface ControlCommand {
-  control_mode: 'TOP' | 'DOWN' | 'NORMAL' | 'RIGHT' | 'LEFT' | 'STOP';
-}
+const mockCameras: CameraFeed[] = [
+  {
+    id: "cam1",
+    name: "Serre Nord A - Entrée",
+    location: "Serre Nord A",
+    status: "online",
+    isRecording: true,
+    lastActivity: new Date(),
+    streamUrl: "/api/camera/stream/cam1"
+  },
+  {
+    id: "cam2", 
+    name: "Serre Nord A - Zone Culture",
+    location: "Serre Nord A",
+    status: "online",
+    isRecording: true,
+    lastActivity: new Date(Date.now() - 300000), // 5 minutes ago
+  },
+  {
+    id: "cam3",
+    name: "Serre Sud B - Système Irrigation",
+    location: "Serre Sud B", 
+    status: "offline",
+    isRecording: false,
+    lastActivity: new Date(Date.now() - 3600000), // 1 hour ago
+  },
+  {
+    id: "cam4",
+    name: "Extérieur - Périmètre Ouest",
+    location: "Périmètre Extérieur",
+    status: "maintenance",
+    isRecording: false,
+    lastActivity: new Date(Date.now() - 7200000), // 2 hours ago
+  }
+];
 
-const Surveillance: React.FC = () => {
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const pcRef = useRef<RTCPeerConnection | null>(null);
-  const qrWebSocketRef = useRef<WebSocket | null>(null);
-  const controlWebSocketRef = useRef<WebSocket | null>(null);
-  const sensorWebSocketRef = useRef<WebSocket | null>(null);
-  
-  const [qrCodes, setQrCodes] = useState<QRCode[]>([]);
-  const [sensorData, setSensorData] = useState<SensorData | null>(null);
-  const [isConnected, setIsConnected] = useState(false);
-  const [missionForm, setMissionForm] = useState({
-    referance: '',
-    id_serre: '',
-    date_debut: '',
-    date_fin: '',
-    rep_jr: '0',
-    rep_sem: '0'
+const mockAlerts: Alert[] = [
+  {
+    id: "alert1",
+    cameraId: "cam2",
+    type: "anomaly",
+    message: "Mouvement inhabituel détecté dans la zone de culture",
+    timestamp: new Date(Date.now() - 600000), // 10 minutes ago
+    severity: "medium",
+    acknowledged: false
+  },
+  {
+    id: "alert2", 
+    cameraId: "cam3",
+    type: "equipment",
+    message: "Caméra hors ligne - Vérifier la connexion",
+    timestamp: new Date(Date.now() - 3600000), // 1 hour ago
+    severity: "high",
+    acknowledged: false
+  },
+  {
+    id: "alert3",
+    cameraId: "cam1",
+    type: "motion",
+    message: "Mouvement détecté à l'entrée",
+    timestamp: new Date(Date.now() - 1800000), // 30 minutes ago
+    severity: "low",
+    acknowledged: true
+  }
+];
+
+export default function Surveillance() {
+  const { user } = useAuth();
+  const [cameras, setCameras] = useState<CameraFeed[]>(mockCameras);
+  const [alerts, setAlerts] = useState<Alert[]>(mockAlerts);
+  const [selectedCamera, setSelectedCamera] = useState<CameraFeed | null>(cameras[0]);
+  const [filterStatus, setFilterStatus] = useState<string>("all");
+  const [alertFilter, setAlertFilter] = useState<string>("all");
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "online":
+        return "bg-green-100 text-green-800 border-green-300";
+      case "offline":
+        return "bg-red-100 text-red-800 border-red-300";
+      case "maintenance":
+        return "bg-yellow-100 text-yellow-800 border-yellow-300";
+      default:
+        return "bg-gray-100 text-gray-800 border-gray-300";
+    }
+  };
+
+  const getSeverityColor = (severity: string) => {
+    switch (severity) {
+      case "low":
+        return "bg-blue-100 text-blue-800 border-blue-300";
+      case "medium":
+        return "bg-yellow-100 text-yellow-800 border-yellow-300";
+      case "high":
+        return "bg-orange-100 text-orange-800 border-orange-300";
+      case "critical":
+        return "bg-red-100 text-red-800 border-red-300";
+      default:
+        return "bg-gray-100 text-gray-800 border-gray-300";
+    }
+  };
+
+  const toggleRecording = (cameraId: string) => {
+    setCameras(prev => prev.map(cam => 
+      cam.id === cameraId 
+        ? { ...cam, isRecording: !cam.isRecording }
+        : cam
+    ));
+  };
+
+  const acknowledgeAlert = (alertId: string) => {
+    setAlerts(prev => prev.map(alert => 
+      alert.id === alertId 
+        ? { ...alert, acknowledged: true }
+        : alert
+    ));
+  };
+
+  const filteredCameras = cameras.filter(camera => 
+    filterStatus === "all" || camera.status === filterStatus
+  );
+
+  const filteredAlerts = alerts.filter(alert => {
+    if (alertFilter === "all") return true;
+    if (alertFilter === "unacknowledged") return !alert.acknowledged;
+    return alert.severity === alertFilter;
   });
-  
-  const { toast } = useToast();
 
-  // WebRTC Setup
-  const startWebRTC = async () => {
-    try {
-      const pc = new RTCPeerConnection();
-      pcRef.current = pc;
-      
-      pc.addTransceiver('video', { direction: 'recvonly' });
-      pc.ontrack = (event) => {
-        if (videoRef.current && videoRef.current.srcObject !== event.streams[0]) {
-          videoRef.current.srcObject = event.streams[0];
-        }
-      };
-
-      const offer = await pc.createOffer();
-      await pc.setLocalDescription(offer);
-
-      const response = await fetch('/service/video_stream_service', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ offer: pc.localDescription })
-      });
-
-      const answer = await response.json();
-      await pc.setRemoteDescription(new RTCSessionDescription(answer));
-      setIsConnected(true);
-    } catch (error) {
-      console.error('WebRTC setup failed:', error);
-      toast({
-        title: "Connection Error",
-        description: "Failed to establish video connection",
-        variant: "destructive"
-      });
-    }
-  };
-
-  // WebSocket Setup for QR Codes
-  const setupQRWebSocket = () => {
-    const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
-    const ws = new WebSocket(`${protocol}://${window.location.hostname}:8080/service/qr_data`);
-    qrWebSocketRef.current = ws;
-
-    ws.onopen = () => {
-      console.log('QR WebSocket connected');
-    };
-
-    ws.onmessage = (event) => {
-      try {
-        const data = JSON.parse(event.data);
-        if (data.qr_codes && Array.isArray(data.qr_codes)) {
-          const parsedQRCodes = data.qr_codes.map((qrCodeStr: string, index: number) => {
-            try {
-              return { id: index, data: JSON.parse(qrCodeStr) };
-            } catch (e) {
-              return { id: index, data: qrCodeStr };
-            }
-          });
-          setQrCodes(parsedQRCodes);
-        }
-      } catch (error) {
-        console.error('Failed to parse QR WebSocket message:', error);
-      }
-    };
-
-    ws.onclose = () => {
-      console.log('QR WebSocket disconnected');
-    };
-
-    ws.onerror = (error) => {
-      console.error('QR WebSocket error:', error);
-    };
-  };
-
-  // WebSocket Setup for Control
-  const setupControlWebSocket = () => {
-    const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
-    const ws = new WebSocket(`${protocol}://${window.location.hostname}:8080/service/control`);
-    controlWebSocketRef.current = ws;
-
-    ws.onopen = () => {
-      console.log('Control WebSocket connected');
-    };
-
-    ws.onerror = (error) => {
-      console.error('Control WebSocket error:', error);
-    };
-
-    ws.onclose = () => {
-      console.log('Control WebSocket disconnected');
-    };
-  };
-
-  // WebSocket Setup for Sensor Data
-  const setupSensorWebSocket = () => {
-    const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
-    const ws = new WebSocket(`${protocol}://${window.location.hostname}:8080/service/sensor_data`);
-    sensorWebSocketRef.current = ws;
-
-    ws.onmessage = (event) => {
-      try {
-        const data = JSON.parse(event.data);
-        setSensorData(data);
-      } catch (error) {
-        console.error('Failed to parse sensor data:', error);
-      }
-    };
-
-    ws.onerror = () => {
-      setSensorData(null);
-    };
-  };
-
-  // Control Functions
-  const sendControlCommand = (command: ControlCommand['control_mode']) => {
-    if (controlWebSocketRef.current?.readyState === WebSocket.OPEN) {
-      controlWebSocketRef.current.send(JSON.stringify({ control_mode: command }));
-    } else {
-      console.warn('Control WebSocket not open');
-    }
-  };
-
-  const handleButtonMouseDown = (command: ControlCommand['control_mode']) => {
-    sendControlCommand(command);
-  };
-
-  const handleButtonMouseUp = () => {
-    sendControlCommand('STOP');
-  };
-
-  // Mission Form Handler
-  const handleMissionSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    try {
-      const mission: Omit<MissionRobot, 'id'> = {
-        id_robot: 1, // This should be dynamic based on your robot selection
-        id_serre: parseInt(missionForm.id_serre),
-        rep_jr: parseInt(missionForm.rep_jr),
-        rep_sem: parseInt(missionForm.rep_sem),
-        date_debut: missionForm.date_debut || undefined,
-        date_fin: missionForm.date_fin || undefined,
-      };
-
-      await missionService.createMission(mission);
-      
-      toast({
-        title: "Mission Created",
-        description: "Mission has been successfully created",
-      });
-
-      setMissionForm({
-        referance: '',
-        id_serre: '',
-        date_debut: '',
-        date_fin: '',
-        rep_jr: '0',
-        rep_sem: '0'
-      });
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to create mission",
-        variant: "destructive"
-      });
-    }
-  };
-
-  // Cleanup function
-  const cleanup = () => {
-    if (pcRef.current) {
-      pcRef.current.close();
-    }
-    [qrWebSocketRef, controlWebSocketRef, sensorWebSocketRef].forEach(wsRef => {
-      if (wsRef.current) {
-        wsRef.current.close();
-      }
-    });
-  };
-
-  useEffect(() => {
-    startWebRTC();
-    setupQRWebSocket();
-    setupControlWebSocket();
-    setupSensorWebSocket();
-
-    return cleanup;
-  }, []);
-
-  const renderQRData = (data: any, depth = 0): React.ReactNode => {
-    if (typeof data === 'object' && data !== null) {
-      return (
-        <div className={`ml-${depth * 4}`}>
-          {Array.isArray(data) ? (
-            data.map((item, index) => (
-              <div key={index} className="mb-1">
-                <span className="font-medium">Item {index + 1}:</span>
-                {renderQRData(item, depth + 1)}
-              </div>
-            ))
-          ) : (
-            Object.entries(data).map(([key, value]) => (
-              <div key={key} className="mb-1">
-                <span className="font-medium">{key}:</span> {renderQRData(value, depth + 1)}
-              </div>
-            ))
-          )}
-        </div>
-      );
-    }
-    return <span className="text-sm">{String(data)}</span>;
-  };
+  const onlineCameras = cameras.filter(cam => cam.status === "online").length;
+  const recordingCameras = cameras.filter(cam => cam.isRecording).length;
+  const unacknowledgedAlerts = alerts.filter(alert => !alert.acknowledged).length;
 
   return (
-    <div className="min-h-screen bg-background p-6">
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 h-[calc(100vh-3rem)]">
-        {/* Video Stream */}
-        <Card className="lg:col-span-1">
-          <CardHeader>
-            <CardTitle>Live Video</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <video
-              ref={videoRef}
-              autoPlay
-              playsInline
-              controls
-              muted
-              className="w-full h-[300px] bg-black object-contain border rounded"
-            />
-            <div className="mt-2 text-sm text-muted-foreground">
-              Status: {isConnected ? '🟢 Connected' : '🔴 Disconnected'}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Sensor Data */}
-        <Card className="lg:col-span-1">
-          <CardHeader>
-            <CardTitle>🌿 Sensor Data</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {sensorData ? (
-              <div className="space-y-2 font-mono text-sm">
-                <div>🌡 Température: {sensorData.temperature}°C</div>
-                <div>💧 Humidité: {sensorData.humidity}%</div>
-                <div>🟢 CO₂: {sensorData.co2} ppm</div>
-                <div>💡 Luminosité: {sensorData.luminosite} lux</div>
+    <div className="min-h-screen bg-gray-50">
+      {/* Header */}
+      <header className="bg-white shadow-sm border-b sticky top-0 z-10">
+        <div className="max-w-full px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center py-4">
+            <div className="flex items-center space-x-4">
+              <TechnicianSidebar 
+                userRole="technicien"
+                onInterventionClick={() => {}}
+              />
+              <h1 className="text-xl font-semibold text-gray-900">
+                Surveillance
+              </h1>
+              <div className="flex space-x-2">
+                <Badge
+                  variant="outline"
+                  className="bg-green-50 border-green-200 text-green-700"
+                >
+                  {onlineCameras}/{cameras.length} En ligne
+                </Badge>
+                <Badge
+                  variant="outline" 
+                  className="bg-blue-50 border-blue-200 text-blue-700"
+                >
+                  {recordingCameras} Enregistrement
+                </Badge>
+                {unacknowledgedAlerts > 0 && (
+                  <Badge
+                    variant="outline"
+                    className="bg-red-50 border-red-200 text-red-700"
+                  >
+                    {unacknowledgedAlerts} Alertes
+                  </Badge>
+                )}
               </div>
-            ) : (
-              <div className="text-muted-foreground">Waiting for sensor data...</div>
-            )}
-          </CardContent>
-        </Card>
+            </div>
+            <div className="flex items-center space-x-4">
+              <span className="text-sm text-gray-600 hidden sm:block">
+                {user?.name || user?.email}
+              </span>
+              <Button
+                variant="outline"
+                size="sm"
+                className="flex items-center space-x-1"
+              >
+                <Settings className="h-4 w-4" />
+                <span className="hidden sm:inline">Paramètres</span>
+              </Button>
+            </div>
+          </div>
+        </div>
+      </header>
 
-        {/* QR Codes */}
-        <Card className="lg:col-span-1">
-          <CardHeader>
-            <CardTitle>Detected QR Codes</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ScrollArea className="h-[300px]">
-              {qrCodes.length > 0 ? (
+      <div className="flex h-[calc(100vh-73px)]">
+        {/* Left Panel - Camera List & Controls */}
+        <div className="w-full lg:w-96 bg-white shadow-lg">
+          <ScrollArea className="h-full">
+            <div className="p-6 space-y-6">
+              {/* Camera Filters */}
+              <div className="space-y-3">
+                <h3 className="text-lg font-semibold text-gray-900 flex items-center space-x-2">
+                  <Camera className="h-5 w-5" />
+                  <span>Caméras ({filteredCameras.length})</span>
+                </h3>
+                
+                <Select value={filterStatus} onValueChange={setFilterStatus}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Filtrer par statut" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Toutes les caméras</SelectItem>
+                    <SelectItem value="online">En ligne</SelectItem>
+                    <SelectItem value="offline">Hors ligne</SelectItem>
+                    <SelectItem value="maintenance">Maintenance</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Camera List */}
+              <div className="space-y-3">
+                {filteredCameras.map((camera) => (
+                  <Card
+                    key={camera.id}
+                    className={cn(
+                      "cursor-pointer transition-all duration-200 hover:shadow-md border",
+                      selectedCamera?.id === camera.id
+                        ? "ring-2 ring-blue-500 border-blue-500 shadow-md"
+                        : "border-gray-200 hover:border-blue-300",
+                    )}
+                    onClick={() => setSelectedCamera(camera)}
+                  >
+                    <CardContent className="p-4">
+                      <div className="flex items-start justify-between mb-3">
+                        <div className="flex-1">
+                          <h4 className="font-semibold text-gray-900 text-sm">
+                            {camera.name}
+                          </h4>
+                          <p className="text-xs text-gray-600">
+                            {camera.location}
+                          </p>
+                        </div>
+                        <div className="flex flex-col items-end space-y-1">
+                          <Badge
+                            variant="outline"
+                            className={cn("text-xs", getStatusColor(camera.status))}
+                          >
+                            {camera.status === "online" 
+                              ? "En ligne" 
+                              : camera.status === "offline"
+                                ? "Hors ligne"
+                                : "Maintenance"
+                            }
+                          </Badge>
+                          {camera.isRecording && (
+                            <div className="flex items-center space-x-1 text-red-600">
+                              <div className="w-2 h-2 bg-red-600 rounded-full animate-pulse" />
+                              <span className="text-xs">REC</span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-between text-xs text-gray-500">
+                        <span>
+                          {camera.lastActivity.toLocaleTimeString()}
+                        </span>
+                        <div className="flex space-x-1">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              toggleRecording(camera.id);
+                            }}
+                            disabled={camera.status !== "online"}
+                            className="h-6 w-6 p-0"
+                          >
+                            {camera.isRecording ? (
+                              <Square className="h-3 w-3 text-red-600" />
+                            ) : (
+                              <Play className="h-3 w-3" />
+                            )}
+                          </Button>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+
+              {/* Recent Alerts */}
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-lg font-semibold text-gray-900 flex items-center space-x-2">
+                    <AlertTriangle className="h-5 w-5" />
+                    <span>Alertes récentes</span>
+                  </h3>
+                  <Select value={alertFilter} onValueChange={setAlertFilter}>
+                    <SelectTrigger className="w-32">
+                      <Filter className="h-4 w-4" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Toutes</SelectItem>
+                      <SelectItem value="unacknowledged">Non lues</SelectItem>
+                      <SelectItem value="critical">Critiques</SelectItem>
+                      <SelectItem value="high">Élevées</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
                 <div className="space-y-2">
-                  {qrCodes.map((qr) => (
-                    <div key={qr.id} className="p-2 bg-muted rounded text-xs">
-                      <div className="font-medium">QR Code {qr.id + 1}:</div>
-                      {renderQRData(qr.data)}
-                    </div>
+                  {filteredAlerts.slice(0, 5).map((alert) => (
+                    <Card key={alert.id} className="border-l-4 border-l-orange-400">
+                      <CardContent className="p-3">
+                        <div className="flex items-start justify-between mb-2">
+                          <Badge
+                            variant="outline"
+                            className={cn("text-xs", getSeverityColor(alert.severity))}
+                          >
+                            {alert.severity === "low" ? "Faible" :
+                             alert.severity === "medium" ? "Moyenne" :
+                             alert.severity === "high" ? "Élevée" : "Critique"}
+                          </Badge>
+                          {!alert.acknowledged && (
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => acknowledgeAlert(alert.id)}
+                              className="h-6 px-2 text-xs"
+                            >
+                              <CheckCircle className="h-3 w-3" />
+                            </Button>
+                          )}
+                        </div>
+                        <p className="text-sm text-gray-900 mb-1">
+                          {alert.message}
+                        </p>
+                        <div className="flex items-center justify-between text-xs text-gray-500">
+                          <span>{alert.timestamp.toLocaleTimeString()}</span>
+                          <span className="capitalize">{alert.type}</span>
+                        </div>
+                      </CardContent>
+                    </Card>
                   ))}
                 </div>
-              ) : (
-                <div className="text-muted-foreground">No QR codes detected</div>
-              )}
-            </ScrollArea>
-          </CardContent>
-        </Card>
-
-        {/* Controls and Mission Form */}
-        <Card className="lg:col-span-1">
-          <CardHeader>
-            <CardTitle>Controls & Mission</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {/* Robot Controls */}
-            <div>
-              <h3 className="font-semibold mb-3">Robot Controls</h3>
-              <div className="grid grid-cols-2 gap-2">
-                <Button
-                  onMouseDown={() => handleButtonMouseDown('TOP')}
-                  onMouseUp={handleButtonMouseUp}
-                  variant="outline"
-                  size="sm"
-                >
-                  Top 🔼
-                </Button>
-                <Button
-                  onMouseDown={() => handleButtonMouseDown('DOWN')}
-                  onMouseUp={handleButtonMouseUp}
-                  variant="outline"
-                  size="sm"
-                >
-                  Down 🔽
-                </Button>
-                <Button
-                  onMouseDown={() => handleButtonMouseDown('LEFT')}
-                  onMouseUp={handleButtonMouseUp}
-                  variant="outline"
-                  size="sm"
-                >
-                  Left ◀️
-                </Button>
-                <Button
-                  onMouseDown={() => handleButtonMouseDown('RIGHT')}
-                  onMouseUp={handleButtonMouseUp}
-                  variant="outline"
-                  size="sm"
-                >
-                  Right ▶️
-                </Button>
-                <Button
-                  onMouseDown={() => handleButtonMouseDown('NORMAL')}
-                  onMouseUp={handleButtonMouseUp}
-                  variant="default"
-                  size="sm"
-                  className="col-span-2"
-                >
-                  Normal 🟢
-                </Button>
               </div>
             </div>
+          </ScrollArea>
+        </div>
 
-            {/* Mission Form */}
-            <div>
-              <h3 className="font-semibold mb-3">Create Mission</h3>
-              <form onSubmit={handleMissionSubmit} className="space-y-3">
-                <div>
-                  <Label htmlFor="referance" className="text-xs">Robot Reference</Label>
-                  <Input
-                    id="referance"
-                    value={missionForm.referance}
-                    onChange={(e) => setMissionForm(prev => ({ ...prev, referance: e.target.value }))}
-                    className="h-8 text-xs"
-                    required
-                  />
-                </div>
-                
-                <div>
-                  <Label htmlFor="id_serre" className="text-xs">Greenhouse ID</Label>
-                  <Input
-                    id="id_serre"
-                    type="number"
-                    value={missionForm.id_serre}
-                    onChange={(e) => setMissionForm(prev => ({ ...prev, id_serre: e.target.value }))}
-                    className="h-8 text-xs"
-                    required
-                  />
-                </div>
-
-                <div>
-                  <Label htmlFor="date_debut" className="text-xs">Start Date</Label>
-                  <Input
-                    id="date_debut"
-                    type="datetime-local"
-                    value={missionForm.date_debut}
-                    onChange={(e) => setMissionForm(prev => ({ ...prev, date_debut: e.target.value }))}
-                    className="h-8 text-xs"
-                  />
-                </div>
-
-                <div>
-                  <Label htmlFor="date_fin" className="text-xs">End Date</Label>
-                  <Input
-                    id="date_fin"
-                    type="datetime-local"
-                    value={missionForm.date_fin}
-                    onChange={(e) => setMissionForm(prev => ({ ...prev, date_fin: e.target.value }))}
-                    className="h-8 text-xs"
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-2">
+        {/* Right Panel - Video Feed */}
+        <div className="flex-1 bg-black relative">
+          {selectedCamera ? (
+            <div className="h-full flex flex-col">
+              {/* Video Feed Header */}
+              <div className="bg-white p-4 border-b">
+                <div className="flex items-center justify-between">
                   <div>
-                    <Label htmlFor="rep_jr" className="text-xs">Repeat Daily</Label>
-                    <Input
-                      id="rep_jr"
-                      type="number"
-                      value={missionForm.rep_jr}
-                      onChange={(e) => setMissionForm(prev => ({ ...prev, rep_jr: e.target.value }))}
-                      className="h-8 text-xs"
-                    />
+                    <h2 className="text-lg font-semibold text-gray-900">
+                      {selectedCamera.name}
+                    </h2>
+                    <p className="text-sm text-gray-600">
+                      {selectedCamera.location}
+                    </p>
                   </div>
-                  
-                  <div>
-                    <Label htmlFor="rep_sem" className="text-xs">Repeat Weekly</Label>
-                    <Input
-                      id="rep_sem"
-                      type="number"
-                      value={missionForm.rep_sem}
-                      onChange={(e) => setMissionForm(prev => ({ ...prev, rep_sem: e.target.value }))}
-                      className="h-8 text-xs"
-                    />
+                  <div className="flex items-center space-x-2">
+                    <Badge
+                      variant="outline"
+                      className={cn(getStatusColor(selectedCamera.status))}
+                    >
+                      {selectedCamera.status === "online" 
+                        ? "En ligne" 
+                        : selectedCamera.status === "offline"
+                          ? "Hors ligne"
+                          : "Maintenance"
+                      }
+                    </Badge>
+                    <Button size="sm" variant="outline">
+                      <Download className="h-4 w-4 mr-2" />
+                      Exporter
+                    </Button>
                   </div>
                 </div>
+              </div>
 
-                <Button type="submit" className="w-full h-8 text-xs">
-                  Create Mission
-                </Button>
-              </form>
+              {/* Video Display Area */}
+              <div className="flex-1 bg-gray-900 flex items-center justify-center">
+                {selectedCamera.status === "online" ? (
+                  <div className="text-center text-white">
+                    <Monitor className="h-16 w-16 mx-auto mb-4 opacity-50" />
+                    <p className="text-lg mb-2">Flux vidéo en direct</p>
+                    <p className="text-sm opacity-75">
+                      {selectedCamera.name}
+                    </p>
+                    {selectedCamera.isRecording && (
+                      <div className="flex items-center justify-center space-x-2 mt-4">
+                        <div className="w-3 h-3 bg-red-500 rounded-full animate-pulse" />
+                        <span className="text-red-400">ENREGISTREMENT</span>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="text-center text-gray-400">
+                    <Camera className="h-16 w-16 mx-auto mb-4 opacity-50" />
+                    <p className="text-lg mb-2">Caméra indisponible</p>
+                    <p className="text-sm opacity-75">
+                      {selectedCamera.status === "offline" 
+                        ? "Vérifiez la connexion réseau"
+                        : "En cours de maintenance"
+                      }
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              {/* Video Controls */}
+              <div className="bg-white p-4 border-t">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-4">
+                    <Button
+                      size="sm"
+                      variant={selectedCamera.isRecording ? "destructive" : "default"}
+                      onClick={() => toggleRecording(selectedCamera.id)}
+                      disabled={selectedCamera.status !== "online"}
+                    >
+                      {selectedCamera.isRecording ? (
+                        <>
+                          <Square className="h-4 w-4 mr-2" />
+                          Arrêter
+                        </>
+                      ) : (
+                        <>
+                          <Play className="h-4 w-4 mr-2" />
+                          Enregistrer
+                        </>
+                      )}
+                    </Button>
+                    
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      disabled={selectedCamera.status !== "online"}
+                    >
+                      <RefreshCw className="h-4 w-4 mr-2" />
+                      Actualiser
+                    </Button>
+                  </div>
+
+                  <div className="flex items-center space-x-2 text-sm text-gray-600">
+                    <Clock className="h-4 w-4" />
+                    <span>
+                      Dernière activité: {selectedCamera.lastActivity.toLocaleTimeString()}
+                    </span>
+                  </div>
+                </div>
+              </div>
             </div>
-          </CardContent>
-        </Card>
+          ) : (
+            <div className="h-full flex items-center justify-center text-gray-400">
+              <div className="text-center">
+                <Camera className="h-24 w-24 mx-auto mb-4 opacity-50" />
+                <p className="text-xl mb-2">Aucune caméra sélectionnée</p>
+                <p className="text-sm opacity-75">
+                  Sélectionnez une caméra dans la liste pour voir le flux vidéo
+                </p>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
-};
-
-export default Surveillance;
+}

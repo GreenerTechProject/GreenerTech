@@ -69,6 +69,7 @@ export default function InterventionForm({
   onSubmit,
   onSaveDraft,
 }: InterventionFormProps) {
+  console.log("InterventionForm rendered, isOpen:", isOpen);
   const [formData, setFormData] = useState<InterventionData>({
     interventionType: "",
     serreId: "",

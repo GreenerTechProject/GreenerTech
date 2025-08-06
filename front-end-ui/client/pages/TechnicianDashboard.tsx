@@ -386,7 +386,10 @@ export default function TechnicianDashboard() {
               {/* Sidebar Button */}
               <TechnicianSidebar
                 userRole="technicien"
-                onInterventionClick={() => setIsInterventionFormOpen(true)}
+                onInterventionClick={() => {
+                  console.log("Sidebar intervention clicked...");
+                  setIsInterventionFormOpen(true);
+                }}
               />
               <h1 className="text-xl font-semibold text-gray-900 ml-4">
                 Tableau de Bord Technicien
@@ -398,8 +401,12 @@ export default function TechnicianDashboard() {
                 {totalBillons} Billons gérés
               </Badge>
               <Button
+                onClick={() => {
+                  console.log("Opening intervention form...");
+                  setIsInterventionFormOpen(true);
+                }}
+                className="bg-blue-600 hover:bg-blue-700 text-white"
                 onClick={() => setIsInterventionFormOpen(true)}
-                className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white shadow-lg hover:shadow-xl transform transition-all duration-200 hover:scale-105 relative overflow-hidden group"
                 size="sm"
               >
                 <div className="absolute inset-0 bg-white opacity-0 group-hover:opacity-10 transition-opacity duration-200"></div>

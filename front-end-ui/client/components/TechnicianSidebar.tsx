@@ -66,10 +66,7 @@ export default function TechnicianSidebar({
       id: "surveillance",
       label: "Surveillance",
       icon: <Camera className="h-5 w-5" />,
-      onClick: () => {
-        // TODO: Navigate to surveillance page when implemented
-        console.log("Surveillance clicked");
-      },
+      path: "/surveillance",
     },
     {
       id: "alertes",
