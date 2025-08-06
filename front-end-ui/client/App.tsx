@@ -19,6 +19,7 @@ import DirecteurDashboard from "./pages/DirecteurDashboard";
 import TechnicianDashboard from "./pages/TechnicianDashboard";
 import TechnicienSupDashboard from "./pages/TechnicienSupDashboard";
 import TechnicienRegistration from "./pages/TechnicienRegistration";
+import InterventionDemo from "./pages/InterventionDemo";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -78,6 +79,9 @@ const App = () => (
                 </ProtectedRoute>
               }
             />
+
+            {/* Demo route for intervention form */}
+            <Route path="/intervention-demo" element={<InterventionDemo />} />
 
             {/* Redirect root to dashboard if authenticated, otherwise to login */}
             <Route path="/" element={<Navigate to="/dashboard" replace />} />

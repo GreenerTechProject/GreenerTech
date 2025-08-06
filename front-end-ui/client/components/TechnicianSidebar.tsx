@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import InterventionForm from "./InterventionForm";
 import {
   Home,
   Map,
@@ -31,6 +32,7 @@ export default function TechnicianSidebar({
   userRole,
 }: TechnicianSidebarProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const [isInterventionFormOpen, setIsInterventionFormOpen] = useState(false);
   const { logout } = useAuth();
   const navigate = useNavigate();
 
@@ -83,8 +85,8 @@ export default function TechnicianSidebar({
       label: "Interventions",
       icon: <Bell className="h-5 w-5" />,
       onClick: () => {
-        // TODO: Navigate to interventions page when implemented
-        console.log("Interventions clicked");
+        setIsInterventionFormOpen(true);
+        setIsOpen(false);
       },
     },
     {
@@ -210,6 +212,16 @@ export default function TechnicianSidebar({
         {/* Decorative gradient border */}
         <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-greener-100/20 via-transparent to-blue-100/20 pointer-events-none" />
       </div>
+
+      {/* Intervention Form Modal */}
+      <InterventionForm
+        isOpen={isInterventionFormOpen}
+        onClose={() => setIsInterventionFormOpen(false)}
+        onSubmit={(data) => {
+          console.log("Intervention submitted:", data);
+          // Here you would typically send data to your API
+        }}
+      />
     </>
   );
 }
