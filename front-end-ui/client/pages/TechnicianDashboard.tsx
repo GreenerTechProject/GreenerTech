@@ -386,7 +386,10 @@ export default function TechnicianDashboard() {
               {/* Sidebar Button */}
               <TechnicianSidebar
                 userRole="technicien"
-                onInterventionClick={() => setIsInterventionFormOpen(true)}
+                onInterventionClick={() => {
+                  console.log("Sidebar intervention clicked...");
+                  setIsInterventionFormOpen(true);
+                }}
               />
               <h1 className="text-xl font-semibold text-gray-900 ml-4">
                 Tableau de Bord Technicien
