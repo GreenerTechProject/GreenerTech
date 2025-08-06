@@ -20,6 +20,8 @@ import TechnicianDashboard from "./pages/TechnicianDashboard";
 import TechnicienSupDashboard from "./pages/TechnicienSupDashboard";
 import TechnicienRegistration from "./pages/TechnicienRegistration";
 import Surveillance from "./pages/Surveillance";
+import Interventions from "./pages/Interventions";
+import Alerts from "./pages/Alerts";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -85,12 +87,28 @@ const App = () => (
                 <ProtectedRoute>
                   <Surveillance />
                 </ProtectedRoute>
+              }/>
+                
+             <Route
+              path="/interventions"
+              element={
+                <ProtectedRoute>
+                  <Interventions />
+              </ProtectedRoute>
+            }/>
+                   
+             <Route
+              path="/alerts"
+              element={
+                <ProtectedRoute>
+                  <Alerts />
+                </ProtectedRoute>
               }
             />
 
             {/* Redirect root to dashboard if authenticated, otherwise to login */}
             <Route path="/" element={<Navigate to="/dashboard" replace />} />
-
+     
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
