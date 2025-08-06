@@ -203,6 +203,7 @@ export default function TechnicienSupDashboard() {
   const [map, setMap] = useState<google.maps.Map | null>(null);
   const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false);
   const [selectedTechnician, setSelectedTechnician] = useState("");
+  const [isInterventionFormOpen, setIsInterventionFormOpen] = useState(false);
   const mapRef = useRef<HTMLDivElement>(null);
 
   // Mock technicians list
