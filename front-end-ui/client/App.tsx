@@ -19,6 +19,9 @@ import DirecteurDashboard from "./pages/DirecteurDashboard";
 import TechnicianDashboard from "./pages/TechnicianDashboard";
 import TechnicienSupDashboard from "./pages/TechnicienSupDashboard";
 import TechnicienRegistration from "./pages/TechnicienRegistration";
+import AlertsPage from "./pages/AlertsPage";
+import SurveillancePage from "./pages/SurveillancePage";
+import ReportsPage from "./pages/ReportsPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -91,6 +94,30 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <TechnicienSupDashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/alerts"
+              element={
+                <ProtectedRoute>
+                  <AlertsPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/surveillance"
+              element={
+                <ProtectedRoute>
+                  <SurveillancePage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/reports"
+              element={
+                <ProtectedRoute>
+                  <ReportsPage />
                 </ProtectedRoute>
               }
             />
