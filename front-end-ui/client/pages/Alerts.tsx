@@ -135,6 +135,17 @@ export default function Alerts() {
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="mb-8">
+          <div className="flex items-center gap-4 mb-4">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => navigate(-1)}
+              className="flex items-center gap-2"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Retour
+            </Button>
+          </div>
           <h1 className="text-3xl font-bold text-gray-900 mb-2">
             Alertes Agricoles
           </h1>
