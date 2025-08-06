@@ -212,6 +212,16 @@ export default function TechnicianSidebar({
         {/* Decorative gradient border */}
         <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-greener-100/20 via-transparent to-blue-100/20 pointer-events-none" />
       </div>
+
+      {/* Intervention Form Modal */}
+      <InterventionForm
+        isOpen={isInterventionFormOpen}
+        onClose={() => setIsInterventionFormOpen(false)}
+        onSubmit={(data) => {
+          console.log("Intervention submitted:", data);
+          // Here you would typically send data to your API
+        }}
+      />
     </>
   );
 }
