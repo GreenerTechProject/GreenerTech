@@ -125,6 +125,12 @@ const App = () => (
               </ProtectedRoute>
             } />
 
+            <Route path="/rapports" element={
+              <ProtectedRoute>
+                <ReportsPage />
+              </ProtectedRoute>
+            } />
+
             {/* Additional Protected Routes */}
             <Route path="/interventions" element={
               <ProtectedRoute>
