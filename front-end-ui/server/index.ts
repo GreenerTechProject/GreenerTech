@@ -82,5 +82,12 @@ export function createServer() {
   app.post("/api/technicien", handleCreateTechnicien);
   app.get("/api/technicien/company/:companyId", handleGetTechniciensByCompany);
 
+  // Mission routes
+  app.post("/api/missions", createMission);
+  app.get("/api/missions", getAllMissions);
+  app.get("/api/missions/:id", getMission);
+  app.put("/api/missions/:id", updateMission);
+  app.delete("/api/missions/:id", deleteMission);
+
   return app;
 }
