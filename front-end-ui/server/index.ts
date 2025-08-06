@@ -82,5 +82,12 @@ export function createServer() {
   app.post("/api/technicien", handleCreateTechnicien);
   app.get("/api/technicien/company/:companyId", handleGetTechniciensByCompany);
 
+  // Alerts routes
+  app.get("/api/alertes", handleGetAllAlertes);
+  app.get("/api/alertes/:id", handleGetAlerte);
+  app.put("/api/alertes/:id", handleUpdateAlerte);
+  app.post("/api/alertes", handleCreateAlerte);
+  app.delete("/api/alertes/:id", handleDeleteAlerte);
+
   return app;
 }
