@@ -184,6 +184,13 @@ const Interventions: React.FC = () => {
           <p className="text-gray-500">Aucune intervention trouvée</p>
         </div>
       )}
+
+      <InterventionForm
+        isOpen={isInterventionFormOpen}
+        onClose={() => setIsInterventionFormOpen(false)}
+        onSubmit={handleInterventionSubmit}
+        onSaveDraft={handleInterventionSaveDraft}
+      />
     </div>
   );
 };
