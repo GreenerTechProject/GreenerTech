@@ -19,6 +19,7 @@ import DirecteurDashboard from "./pages/DirecteurDashboard";
 import TechnicianDashboard from "./pages/TechnicianDashboard";
 import TechnicienSupDashboard from "./pages/TechnicienSupDashboard";
 import TechnicienRegistration from "./pages/TechnicienRegistration";
+import Interventions from "./pages/Interventions";
 import Alerts from "./pages/Alerts";
 import NotFound from "./pages/NotFound";
 
@@ -80,6 +81,11 @@ const App = () => (
               }
             />
             <Route
+              path="/interventions"
+              element={
+                <ProtectedRoute>
+                  <Interventions />
+
               path="/alerts"
               element={
                 <ProtectedRoute>

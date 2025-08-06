@@ -79,10 +79,7 @@ export default function TechnicianSidebar({
       id: "interventions",
       label: "Interventions",
       icon: <Bell className="h-5 w-5" />,
-      onClick: () => {
-        // TODO: Navigate to interventions page when implemented
-        console.log("Interventions clicked");
-      },
+      path: "/interventions",
     },
     {
       id: "rapports",
