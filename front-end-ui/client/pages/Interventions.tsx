@@ -103,6 +103,12 @@ const Interventions: React.FC = () => {
     setStatusFilter("all");
   };
 
+  const refreshInterventions = () => {
+    // Reset to original mock data (in a real app, this would refetch from API)
+    setInterventions(mockInterventions);
+    console.log("Interventions refreshed");
+  };
+
   return (
     <div className="p-6 space-y-6">
       <div className="flex justify-between items-center">
