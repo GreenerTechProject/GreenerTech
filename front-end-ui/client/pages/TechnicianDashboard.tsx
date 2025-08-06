@@ -398,7 +398,10 @@ export default function TechnicianDashboard() {
                 {totalBillons} Billons gérés
               </Badge>
               <Button
-                onClick={() => setIsInterventionFormOpen(true)}
+                onClick={() => {
+                  console.log("Opening intervention form...");
+                  setIsInterventionFormOpen(true);
+                }}
                 className="bg-blue-600 hover:bg-blue-700 text-white"
                 size="sm"
               >
