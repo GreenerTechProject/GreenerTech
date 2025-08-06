@@ -67,10 +67,13 @@ export default function Interventions() {
               Commencez par créer votre première intervention.
             </p>
             <div className="mt-6">
-              <Button 
-                size="sm" 
-                className="bg-[#B4CC5F] hover:bg-[#A3C247]"
-                onClick={() => setIsInterventionFormOpen(true)}
+              <Button
+                size="sm"
+                className="bg-[#B4CC5F] hover:bg-[#A3C247] text-white"
+                onClick={() => {
+                  console.log("Center button clicked");
+                  setIsInterventionFormOpen(true);
+                }}
               >
                 <Plus className="h-4 w-4 mr-1" />
                 Nouvelle intervention
