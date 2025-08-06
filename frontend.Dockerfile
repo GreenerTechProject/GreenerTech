@@ -10,4 +10,4 @@ COPY front-end-ui .
 
 EXPOSE 3000
 
-CMD ["npm", "run", "dev"]
+CMD sh -c '[ -f .env ] || cp copy.env .env && npm rin dev'
