@@ -200,6 +200,7 @@ export default function InterventionForm({
   if (showSuccess) {
     return (
       <Dialog open={isOpen} onOpenChange={handleClose}>
+        <DialogTitle>Intervention Created</DialogTitle>
         <DialogContent className="max-w-md w-[90vw] p-0 bg-white rounded-xl border border-gray-200 shadow-lg">
           <div className="flex flex-col items-center justify-center py-12 px-8 text-center">
             <div className="mb-6 relative">

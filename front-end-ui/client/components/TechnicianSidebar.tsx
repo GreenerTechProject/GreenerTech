@@ -89,10 +89,7 @@ export default function TechnicianSidebar({
       id: "rapports",
       label: "Rapports",
       icon: <Bookmark className="h-5 w-5" />,
-      onClick: () => {
-        // TODO: Navigate to reports page when implemented
-        console.log("Rapports clicked");
-      },
+      path: "/reports",
     },
   ];
 
