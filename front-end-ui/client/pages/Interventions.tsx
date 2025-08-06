@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Filter, Search, Plus, Calendar, MapPin, User } from "lucide-react";
+import { Search, Plus, Calendar, MapPin, User, SlidersHorizontal } from "lucide-react";
 
 interface Intervention {
   id: string;
