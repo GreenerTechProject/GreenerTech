@@ -118,13 +118,38 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <ReportsPage />
+                   </ProtectedRoute>
+              }
+            />
+                  
+<!--               <Route
+              path="/surveillance"
+              element={
+                <ProtectedRoute>
+                  <Surveillance />
+                </ProtectedRoute>
+              }/>
+                 -->
+             <Route
+              path="/interventions"
+              element={
+                <ProtectedRoute>
+                  <Interventions />
+              </ProtectedRoute>
+            }/>
+                   
+             <Route
+              path="/alerts"
+              element={
+                <ProtectedRoute>
+                  <Alerts />
                 </ProtectedRoute>
               }
             />
 
             {/* Redirect root to dashboard if authenticated, otherwise to login */}
             <Route path="/" element={<Navigate to="/dashboard" replace />} />
-
+     
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

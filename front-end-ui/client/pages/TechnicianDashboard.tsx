@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useAuth } from "../contexts/AuthContext";
 import GoogleMapsWrapper from "../components/GoogleMapsWrapper";
+import PageHeader from "../components/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -29,11 +30,11 @@ import {
   Thermometer,
   Droplets,
   Sun,
-  Users,
-  LogOut,
   Sprout,
   Calendar,
   Bell,
+  LogOut,
+
 } from "lucide-react";
 import TechnicianSidebar from "../components/TechnicianSidebar";
 import InterventionForm from "../components/InterventionForm";
@@ -410,6 +411,7 @@ export default function TechnicianDashboard() {
                   <span className="hidden sm:inline">Nouvelle </span>Intervention
                 </Button>
               </div>
+
             </div>
             <div className="flex items-center space-x-4">
               <span className="text-sm text-gray-600 hidden sm:block">
@@ -430,6 +432,7 @@ export default function TechnicianDashboard() {
       </header>
 
       <div className="flex flex-col lg:flex-row h-[calc(100vh-73px)]">
+
         {/* Left Control Panel */}
         <div className="w-full lg:w-96 bg-white shadow-lg max-h-[50vh] lg:max-h-full">
           <ScrollArea className="h-full">
@@ -487,7 +490,7 @@ export default function TechnicianDashboard() {
                             }
                           >
                             <SelectTrigger>
-                              <SelectValue placeholder="Sélectionnez une variété" />
+                              <SelectValue placeholder="S��lectionnez une variété" />
                             </SelectTrigger>
                             <SelectContent>
                               {cropVarieties.map((variety) => (
