@@ -1,408 +1,637 @@
-import React, { useState, useEffect } from 'react';
-import { useAuth } from '../contexts/AuthContext';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
-import { Card, CardContent } from '@/components/ui/card';
-import { Pagination, PaginationContent, PaginationItem, PaginationNext, PaginationPrevious } from '@/components/ui/pagination';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Search, ChevronDown, Edit, Home, Map, Camera } from 'lucide-react';
-import { getAllInterventions, Intervention, getStatusDisplay, getInterventionTypeDisplay } from '../services/interventionService';
-import TechnicianSidebar from '../components/TechnicianSidebar';
+import React, { useState, useMemo } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Separator } from "@/components/ui/separator";
+import {
+  Search,
+  Filter,
+  Calendar,
+  Clock,
+  MapPin,
+  User,
+  Wrench,
+  AlertTriangle,
+  CheckCircle,
+  Pause,
+  Plus,
+  Download,
+  RefreshCw,
+} from "lucide-react";
+import PageHeader from "../components/PageHeader";
+import { cn } from "@/lib/utils";
 
-// Mock data for demonstration - will be replaced with real API data
+interface Intervention {
+  id: string;
+  title: string;
+  description: string;
+  type: "maintenance" | "repair" | "inspection" | "emergency" | "installation";
+  priority: "low" | "medium" | "high" | "urgent";
+  status: "pending" | "in_progress" | "completed" | "cancelled" | "paused";
+  assignedTo: string;
+  assignedBy: string;
+  serre: string;
+  location: string;
+  scheduledDate: string;
+  completedDate?: string;
+  estimatedDuration: number; // in minutes
+  actualDuration?: number; // in minutes
+  equipment: string[];
+  notes?: string;
+  createdAt: string;
+}
+
 const mockInterventions: Intervention[] = [
   {
-    id: 1,
-    description: 'Préparation du Sol',
-    status: 'terminé',
-    date_debut: '2024-01-15',
-    date_fin: '2024-01-20',
-    total_charges: 150.00,
-    id_user: 1,
-    id_serre: 1,
-    id_type_tache: 1,
-    valid: true,
+    id: "int-001",
+    title: "Remplacement système d'irrigation Zone A",
+    description: "Remplacement des tuyaux d'irrigation défaillants dans la zone A de la serre Nord",
+    type: "repair",
+    priority: "high",
+    status: "in_progress",
+    assignedTo: "Jean Dupont",
+    assignedBy: "Marie Martin",
+    serre: "Serre Nord A",
+    location: "Zone A - Secteur irrigation",
+    scheduledDate: "2024-01-15",
+    estimatedDuration: 120,
+    actualDuration: 90,
+    equipment: ["Tuyaux irrigation", "Raccords", "Outils plomberie"],
+    notes: "Attention aux raccords existants",
+    createdAt: "2024-01-10",
   },
   {
-    id: 2,
-    description: 'Plantation',
-    status: 'encours',
-    date_debut: '2024-01-21',
-    date_fin: null,
-    total_charges: 200.00,
-    id_user: 1,
-    id_serre: 2,
-    id_type_tache: 2,
-    valid: false,
+    id: "int-002",
+    title: "Inspection mensuelle capteurs température",
+    description: "Vérification et calibrage des capteurs de température de toutes les serres",
+    type: "inspection",
+    priority: "medium",
+    status: "pending",
+    assignedTo: "Pierre Lambert",
+    assignedBy: "Marie Martin",
+    serre: "Toutes les serres",
+    location: "Systèmes de contrôle",
+    scheduledDate: "2024-01-20",
+    estimatedDuration: 180,
+    equipment: ["Multimètre", "Calibreur", "Tablette"],
+    createdAt: "2024-01-12",
   },
   {
-    id: 3,
-    description: 'Palissage',
-    status: 'terminé',
-    date_debut: '2024-01-10',
-    date_fin: '2024-01-15',
-    total_charges: 100.00,
-    id_user: 1,
-    id_serre: 3,
-    id_type_tache: 3,
-    valid: true,
+    id: "int-003",
+    title: "Installation nouveau système ventilation",
+    description: "Installation d'un système de ventilation automatisé dans la serre Sud B",
+    type: "installation",
+    priority: "medium",
+    status: "completed",
+    assignedTo: "Jean Dupont",
+    assignedBy: "Marie Martin",
+    serre: "Serre Sud B",
+    location: "Toiture - Ventilation",
+    scheduledDate: "2024-01-05",
+    completedDate: "2024-01-06",
+    estimatedDuration: 240,
+    actualDuration: 220,
+    equipment: ["Ventilateurs", "Capteurs", "Câblage", "Contrôleur"],
+    notes: "Installation réussie, tests validés",
+    createdAt: "2024-01-02",
   },
   {
-    id: 4,
-    description: 'Ébourgeonnage',
-    status: 'encours',
-    date_debut: '2024-01-22',
-    date_fin: null,
-    total_charges: 75.00,
-    id_user: 1,
-    id_serre: 4,
-    id_type_tache: 4,
-    valid: false,
+    id: "int-004",
+    title: "Urgence - Panne chauffage Serre Est",
+    description: "Réparation d'urgence du système de chauffage défaillant",
+    type: "emergency",
+    priority: "urgent",
+    status: "completed",
+    assignedTo: "Pierre Lambert",
+    assignedBy: "Service Urgences",
+    serre: "Serre Est C",
+    location: "Chaufferie principale",
+    scheduledDate: "2024-01-08",
+    completedDate: "2024-01-08",
+    estimatedDuration: 180,
+    actualDuration: 240,
+    equipment: ["Pièces chauffage", "Outils spécialisés"],
+    notes: "Intervention urgente réussie",
+    createdAt: "2024-01-08",
   },
   {
-    id: 5,
-    description: 'Effeuillage',
-    status: 'terminé',
-    date_debut: '2024-01-12',
-    date_fin: '2024-01-18',
-    total_charges: 120.00,
-    id_user: 1,
-    id_serre: 5,
-    id_type_tache: 5,
-    valid: true,
-  },
-  {
-    id: 6,
-    description: 'Éclaircissage',
-    status: 'encours',
-    date_debut: '2024-01-25',
-    date_fin: null,
-    total_charges: 90.00,
-    id_user: 1,
-    id_serre: 6,
-    id_type_tache: 6,
-    valid: false,
+    id: "int-005",
+    title: "Maintenance préventive pompes",
+    description: "Maintenance préventive des pompes d'irrigation",
+    type: "maintenance",
+    priority: "low",
+    status: "paused",
+    assignedTo: "Jean Dupont",
+    assignedBy: "Marie Martin",
+    serre: "Serre Nord A",
+    location: "Local technique",
+    scheduledDate: "2024-01-18",
+    estimatedDuration: 90,
+    equipment: ["Huile", "Filtres", "Outils maintenance"],
+    notes: "En attente de pièces de rechange",
+    createdAt: "2024-01-14",
   },
 ];
 
-// Mock greenhouse and domain data
-const getSerreInfo = (id: number) => {
-  const serres = [
-    { id: 1, name: 'Serre A1', domaine: 'Domaine Nord', bilan: 'Bilan Q1' },
-    { id: 2, name: 'Serre B2', domaine: 'Domaine Sud', bilan: 'Bilan Q2' },
-    { id: 3, name: 'Serre C3', domaine: 'Domaine Est', bilan: 'Bilan Q1' },
-    { id: 4, name: 'Serre D4', domaine: 'Domaine Ouest', bilan: 'Bilan Q3' },
-    { id: 5, name: 'Serre E5', domaine: 'Domaine Central', bilan: 'Bilan Q2' },
-    { id: 6, name: 'Serre F6', domaine: 'Domaine Nord', bilan: 'Bilan Q4' },
-  ];
-  
-  return serres.find(s => s.id === id) || { name: 'Serre inconnue', domaine: '', bilan: '' };
-};
+const interventionTypes = [
+  { value: "all", label: "Tous les types" },
+  { value: "maintenance", label: "Maintenance" },
+  { value: "repair", label: "Réparation" },
+  { value: "inspection", label: "Inspection" },
+  { value: "emergency", label: "Urgence" },
+  { value: "installation", label: "Installation" },
+];
 
-const getInterventionIcon = (description: string) => {
-  const typeDisplay = getInterventionTypeDisplay(description);
-  const iconMap: Record<string, JSX.Element> = {
-    'Préparation du Sol': (
-      <div className="w-8 h-8 rounded-full bg-greener-500 flex items-center justify-center">
-        <svg width="14" height="14" viewBox="0 0 14 15" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M14 1.625C14 4.73125 11.6867 7.29883 8.68984 7.69531C8.4957 6.23516 7.85313 4.91719 6.9043 3.88633C7.95156 2.01602 9.95312 0.75 12.25 0.75H13.125C13.609 0.75 14 1.14102 14 1.625ZM0 3.375C0 2.89102 0.391016 2.5 0.875 2.5H1.75C5.13242 2.5 7.875 5.24258 7.875 8.625V9.5V13.875C7.875 14.359 7.48398 14.75 7 14.75C6.51602 14.75 6.125 14.359 6.125 13.875V9.5C2.74258 9.5 0 6.75742 0 3.375Z" fill="white"/>
-        </svg>
-      </div>
-    ),
-    'Plantation': (
-      <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center">
-        <svg width="14" height="14" viewBox="0 0 14 15" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M6.63359 0.911328L2.57031 5.38203C2.46367 5.49687 2.40625 5.65 2.40625 5.80586C2.40625 6.15586 2.68789 6.4375 3.03789 6.4375H3.71875L1.71172 8.44453C1.59688 8.55937 1.53125 8.71797 1.53125 8.88203C1.53125 9.22383 1.80742 9.5 2.14922 9.5H3.0625L1.02266 11.9473C0.926953 12.0621 0.875 12.207 0.875 12.3574C0.875 12.7129 1.16211 13 1.51758 13H6.125V13.875C6.125 14.359 6.51602 14.75 7 14.75C7.48398 14.75 7.875 14.359 7.875 13.875V13H12.4824C12.8379 13 13.125 12.7129 13.125 12.3574C13.125 12.207 13.073 12.0621 12.9773 11.9473L10.9375 9.5H11.8508C12.1926 9.5 12.4688 9.22383 12.4688 8.88203C12.4688 8.71797 12.4031 8.55937 12.2883 8.44453L10.2812 6.4375H10.9621C11.3094 6.4375 11.5938 6.15586 11.5938 5.80586C11.5938 5.65 11.5363 5.49687 11.4297 5.38203L7.36641 0.911328C7.27344 0.807422 7.13945 0.75 7 0.75C6.86055 0.75 6.72656 0.807422 6.63359 0.911328Z" fill="white"/>
-        </svg>
-      </div>
-    ),
-    'Palissage': (
-      <div className="w-8 h-8 rounded-full bg-yellow-500 flex items-center justify-center">
-        <svg width="14" height="14" viewBox="0 0 14 15" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M1.75 8.625C1.26602 8.625 0.875 9.01602 0.875 9.5C0.875 9.98398 1.26602 10.375 1.75 10.375H12.25C12.734 10.375 13.125 9.98398 13.125 9.5C13.125 9.01602 12.734 8.625 12.25 8.625H1.75ZM1.75 5.125C1.26602 5.125 0.875 5.51602 0.875 6C0.875 6.48398 1.26602 6.875 1.75 6.875H12.25C12.734 6.875 13.125 6.48398 13.125 6C13.125 5.51602 12.734 5.125 12.25 5.125H1.75Z" fill="white"/>
-        </svg>
-      </div>
-    ),
-    'Ébourgeonnage': (
-      <div className="w-8 h-8 rounded-full bg-purple-500 flex items-center justify-center">
-        <svg width="14" height="14" viewBox="0 0 14 15" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M7 6L5.91992 4.91992C6.05391 4.57539 6.125 4.20352 6.125 3.8125C6.125 2.11992 4.75508 0.75 3.0625 0.75C1.36992 0.75 0 2.11992 0 3.8125C0 5.50508 1.36992 6.875 3.0625 6.875C3.45352 6.875 3.82539 6.80117 4.16992 6.66992L5.25 7.75L4.16992 8.83008C3.82539 8.69609 3.45352 8.625 3.0625 8.625C1.36992 8.625 0 9.99492 0 11.6875C0 13.3801 1.36992 14.75 3.0625 14.75C4.75508 14.75 6.125 13.3801 6.125 11.6875C6.125 11.2965 6.05117 10.9246 5.91992 10.5801L13.65 2.85C13.8441 2.65586 13.8441 2.34414 13.65 2.15C12.8762 1.37617 11.6238 1.37617 10.85 2.15L7 6ZM7.61797 10.118L10.85 13.35C11.6238 14.1238 12.8762 14.1238 13.65 13.35C13.8441 13.1559 13.8441 12.8441 13.65 12.65L9.36797 8.36797L7.61797 10.118ZM1.75 3.8125C1.75 3.64014 1.78395 3.46947 1.84991 3.31023C1.91587 3.15099 2.01255 3.0063 2.13442 2.88442C2.2563 2.76255 2.40099 2.66587 2.56023 2.59991C2.71947 2.53395 2.89014 2.5 3.0625 2.5C3.23486 2.5 3.40553 2.53395 3.56477 2.59991C3.72401 2.66587 3.8687 2.76255 3.99058 2.88442C4.11245 3.0063 4.20913 3.15099 4.27509 3.31023C4.34105 3.46947 4.375 3.64014 4.375 3.8125C4.375 3.98486 4.34105 4.15553 4.27509 4.31477C4.20913 4.47401 4.11245 4.6187 3.99058 4.74058C3.8687 4.86245 3.72401 4.95913 3.56477 5.02509C3.40553 5.09105 3.23486 5.125 3.0625 5.125C2.89014 5.125 2.71947 5.09105 2.56023 5.02509C2.40099 4.95913 2.2563 4.86245 2.13442 4.74058C2.01255 4.6187 1.91587 4.47401 1.84991 4.31477C1.78395 4.15553 1.75 3.98486 1.75 3.8125ZM3.0625 10.375C3.23486 10.375 3.40553 10.4089 3.56477 10.4749C3.72401 10.5409 3.8687 10.6375 3.99058 10.7594C4.11245 10.8813 4.20913 11.026 4.27509 11.1852C4.34105 11.3445 4.375 11.5151 4.375 11.6875C4.375 11.8599 4.34105 12.0305 4.27509 12.1898C4.20913 12.349 4.11245 12.4937 3.99058 12.6156C3.8687 12.7375 3.72401 12.8341 3.56477 12.9001C3.40553 12.9661 3.23486 13 3.0625 13C2.89014 13 2.71947 12.9661 2.56023 12.9001C2.40099 12.8341 2.2563 12.7375 2.13442 12.6156C2.01255 12.4937 1.91587 12.349 1.84991 12.1898C1.78395 12.0305 1.75 11.8599 1.75 11.6875C1.75 11.5151 1.78395 11.3445 1.84991 11.1852C1.91587 11.026 2.01255 10.8813 2.13442 10.7594C2.2563 10.6375 2.40099 10.5409 2.56023 10.4749C2.71947 10.4089 2.89014 10.375 3.0625 10.375Z" fill="white"/>
-        </svg>
-      </div>
-    ),
-    'Effeuillage': (
-      <div className="w-8 h-8 rounded-full bg-green-600 flex items-center justify-center">
-        <svg width="14" height="14" viewBox="0 0 14 15" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M7.4375 3.37511C5.28828 3.37511 3.46992 4.78331 2.85195 6.72471C3.7707 6.25987 4.80703 6.0001 5.90625 6.0001H8.3125C8.55313 6.0001 8.75 6.19698 8.75 6.4376C8.75 6.67823 8.55313 6.8751 8.3125 6.8751H7.875H5.90625C5.45234 6.8751 5.01211 6.92706 4.58828 7.02276C3.88008 7.18409 3.22109 7.4712 2.63594 7.86221C1.04727 8.92042 0 10.7278 0 12.7814V13.2189C0 13.5825 0.292578 13.8751 0.65625 13.8751C1.01992 13.8751 1.3125 13.5825 1.3125 13.2189V12.7814C1.3125 11.4497 1.87852 10.2521 2.78359 9.41261C3.325 11.4771 5.20352 13.0001 7.4375 13.0001H7.46484C11.077 12.981 14 9.42081 14 5.03214C14 3.86729 13.7949 2.75987 13.423 1.76182C13.352 1.57315 13.0758 1.58136 12.9801 1.75909C12.466 2.72159 11.4488 3.37511 10.2812 3.37511H7.4375Z" fill="white"/>
-        </svg>
-      </div>
-    ),
-    'Éclaircissage': (
-      <div className="w-8 h-8 rounded-full bg-orange-500 flex items-center justify-center">
-        <svg width="14" height="14" viewBox="0 0 14 15" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M7 6L5.91992 4.91992C6.05391 4.57539 6.125 4.20352 6.125 3.8125C6.125 2.11992 4.75508 0.75 3.0625 0.75C1.36992 0.75 0 2.11992 0 3.8125C0 5.50508 1.36992 6.875 3.0625 6.875C3.45352 6.875 3.82539 6.80117 4.16992 6.66992L5.25 7.75L4.16992 8.83008C3.82539 8.69609 3.45352 8.625 3.0625 8.625C1.36992 8.625 0 9.99492 0 11.6875C0 13.3801 1.36992 14.75 3.0625 14.75C4.75508 14.75 6.125 13.3801 6.125 11.6875C6.125 11.2965 6.05117 10.9246 5.91992 10.5801L13.65 2.85C13.8441 2.65586 13.8441 2.34414 13.65 2.15C12.8762 1.37617 11.6238 1.37617 10.85 2.15L7 6ZM7.61797 10.118L10.85 13.35C11.6238 14.1238 12.8762 14.1238 13.65 13.35C13.8441 13.1559 13.8441 12.8441 13.65 12.65L9.36797 8.36797L7.61797 10.118ZM1.75 3.8125C1.75 3.64014 1.78395 3.46947 1.84991 3.31023C1.91587 3.15099 2.01255 3.0063 2.13442 2.88442C2.2563 2.76255 2.40099 2.66587 2.56023 2.59991C2.71947 2.53395 2.89014 2.5 3.0625 2.5C3.23486 2.5 3.40553 2.53395 3.56477 2.59991C3.72401 2.66587 3.8687 2.76255 3.99058 2.88442C4.11245 3.0063 4.20913 3.15099 4.27509 3.31023C4.34105 3.46947 4.375 3.64014 4.375 3.8125C4.375 3.98486 4.34105 4.15553 4.27509 4.31477C4.20913 4.47401 4.11245 4.6187 3.99058 4.74058C3.8687 4.86245 3.72401 4.95913 3.56477 5.02509C3.40553 5.09105 3.23486 5.125 3.0625 5.125C2.89014 5.125 2.71947 5.09105 2.56023 5.02509C2.40099 4.95913 2.2563 4.86245 2.13442 4.74058C2.01255 4.6187 1.91587 4.47401 1.84991 4.31477C1.78395 4.15553 1.75 3.98486 1.75 3.8125ZM3.0625 10.375C3.23486 10.375 3.40553 10.4089 3.56477 10.4749C3.72401 10.5409 3.8687 10.6375 3.99058 10.7594C4.11245 10.8813 4.20913 11.026 4.27509 11.1852C4.34105 11.3445 4.375 11.5151 4.375 11.6875C4.375 11.8599 4.34105 12.0305 4.27509 12.1898C4.20913 12.349 4.11245 12.4937 3.99058 12.6156C3.8687 12.7375 3.72401 12.8341 3.56477 12.9001C3.40553 12.9661 3.23486 13 3.0625 13C2.89014 13 2.71947 12.9661 2.56023 12.9001C2.40099 12.8341 2.2563 12.7375 2.13442 12.6156C2.01255 12.4937 1.91587 12.349 1.84991 12.1898C1.78395 12.0305 1.75 11.8599 1.75 11.6875C1.75 11.5151 1.78395 11.3445 1.84991 11.1852C1.91587 11.026 2.01255 10.8813 2.13442 10.7594C2.2563 10.6375 2.40099 10.5409 2.56023 10.4749C2.71947 10.4089 2.89014 10.375 3.0625 10.375Z" fill="white"/>
-        </svg>
-      </div>
-    ),
-  };
-  
-  return iconMap[description] || (
-    <div className="w-8 h-8 rounded-full bg-gray-500 flex items-center justify-center">
-      <span className="text-white text-xs">⚙️</span>
-    </div>
-  );
-};
+const priorityLevels = [
+  { value: "all", label: "Toutes les priorités" },
+  { value: "urgent", label: "Urgent" },
+  { value: "high", label: "Haute" },
+  { value: "medium", label: "Moyenne" },
+  { value: "low", label: "Basse" },
+];
+
+const statusOptions = [
+  { value: "all", label: "Tous les statuts" },
+  { value: "pending", label: "En attente" },
+  { value: "in_progress", label: "En cours" },
+  { value: "completed", label: "Terminé" },
+  { value: "paused", label: "En pause" },
+  { value: "cancelled", label: "Annulé" },
+];
 
 export default function Interventions() {
-  const { user } = useAuth();
-  const [interventions, setInterventions] = useState<Intervention[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [currentPage, setCurrentPage] = useState(1);
-  const [sortBy, setSortBy] = useState('date');
-  const itemsPerPage = 7;
+  const [interventions] = useState<Intervention[]>(mockInterventions);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [typeFilter, setTypeFilter] = useState("all");
+  const [priorityFilter, setPriorityFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [serreFilter, setSerreFilter] = useState("all");
+  const [assignedToFilter, setAssignedToFilter] = useState("all");
 
-  useEffect(() => {
-    const fetchInterventions = async () => {
-      try {
-        setLoading(true);
-        // For now, use mock data. Later replace with: const data = await getAllInterventions();
-        setInterventions(mockInterventions);
-      } catch (error) {
-        console.error('Error loading interventions:', error);
-        // Fallback to mock data
-        setInterventions(mockInterventions);
-      } finally {
-        setLoading(false);
-      }
-    };
+  // Get unique values for filters
+  const uniqueSerres = Array.from(new Set(interventions.map(i => i.serre)));
+  const uniqueAssignees = Array.from(new Set(interventions.map(i => i.assignedTo)));
 
-    fetchInterventions();
-  }, []);
+  // Filtered interventions based on search and filters
+  const filteredInterventions = useMemo(() => {
+    return interventions.filter((intervention) => {
+      const matchesSearch = searchTerm === "" || 
+        intervention.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        intervention.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        intervention.serre.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        intervention.assignedTo.toLowerCase().includes(searchTerm.toLowerCase());
 
-  // Filter interventions based on search term
-  const filteredInterventions = interventions.filter(intervention =>
-    intervention.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    getSerreInfo(intervention.id_serre).name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+      const matchesType = typeFilter === "all" || intervention.type === typeFilter;
+      const matchesPriority = priorityFilter === "all" || intervention.priority === priorityFilter;
+      const matchesStatus = statusFilter === "all" || intervention.status === statusFilter;
+      const matchesSerre = serreFilter === "all" || intervention.serre === serreFilter;
+      const matchesAssignee = assignedToFilter === "all" || intervention.assignedTo === assignedToFilter;
 
-  // Calculate pagination
-  const totalPages = Math.ceil(filteredInterventions.length / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const paginatedInterventions = filteredInterventions.slice(startIndex, startIndex + itemsPerPage);
+      return matchesSearch && matchesType && matchesPriority && matchesStatus && matchesSerre && matchesAssignee;
+    });
+  }, [interventions, searchTerm, typeFilter, priorityFilter, statusFilter, serreFilter, assignedToFilter]);
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-greener-500 mx-auto"></div>
-          <p className="mt-2 text-gray-600">Chargement des interventions...</p>
-        </div>
-      </div>
-    );
-  }
+  const getTypeColor = (type: string) => {
+    switch (type) {
+      case "maintenance":
+        return "bg-blue-100 text-blue-800 border-blue-300";
+      case "repair":
+        return "bg-orange-100 text-orange-800 border-orange-300";
+      case "inspection":
+        return "bg-purple-100 text-purple-800 border-purple-300";
+      case "emergency":
+        return "bg-red-100 text-red-800 border-red-300";
+      case "installation":
+        return "bg-green-100 text-green-800 border-green-300";
+      default:
+        return "bg-gray-100 text-gray-800 border-gray-300";
+    }
+  };
+
+  const getPriorityColor = (priority: string) => {
+    switch (priority) {
+      case "urgent":
+        return "bg-red-100 text-red-800 border-red-300";
+      case "high":
+        return "bg-orange-100 text-orange-800 border-orange-300";
+      case "medium":
+        return "bg-yellow-100 text-yellow-800 border-yellow-300";
+      case "low":
+        return "bg-green-100 text-green-800 border-green-300";
+      default:
+        return "bg-gray-100 text-gray-800 border-gray-300";
+    }
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "pending":
+        return "bg-gray-100 text-gray-800 border-gray-300";
+      case "in_progress":
+        return "bg-blue-100 text-blue-800 border-blue-300";
+      case "completed":
+        return "bg-green-100 text-green-800 border-green-300";
+      case "paused":
+        return "bg-yellow-100 text-yellow-800 border-yellow-300";
+      case "cancelled":
+        return "bg-red-100 text-red-800 border-red-300";
+      default:
+        return "bg-gray-100 text-gray-800 border-gray-300";
+    }
+  };
+
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case "pending":
+        return <Clock className="h-4 w-4" />;
+      case "in_progress":
+        return <RefreshCw className="h-4 w-4" />;
+      case "completed":
+        return <CheckCircle className="h-4 w-4" />;
+      case "paused":
+        return <Pause className="h-4 w-4" />;
+      case "cancelled":
+        return <AlertTriangle className="h-4 w-4" />;
+      default:
+        return <Clock className="h-4 w-4" />;
+    }
+  };
+
+  const getTypeLabel = (type: string) => {
+    switch (type) {
+      case "maintenance":
+        return "Maintenance";
+      case "repair":
+        return "Réparation";
+      case "inspection":
+        return "Inspection";
+      case "emergency":
+        return "Urgence";
+      case "installation":
+        return "Installation";
+      default:
+        return type;
+    }
+  };
+
+  const getPriorityLabel = (priority: string) => {
+    switch (priority) {
+      case "urgent":
+        return "Urgent";
+      case "high":
+        return "Haute";
+      case "medium":
+        return "Moyenne";
+      case "low":
+        return "Basse";
+      default:
+        return priority;
+    }
+  };
+
+  const getStatusLabel = (status: string) => {
+    switch (status) {
+      case "pending":
+        return "En attente";
+      case "in_progress":
+        return "En cours";
+      case "completed":
+        return "Terminé";
+      case "paused":
+        return "En pause";
+      case "cancelled":
+        return "Annulé";
+      default:
+        return status;
+    }
+  };
+
+  const clearAllFilters = () => {
+    setSearchTerm("");
+    setTypeFilter("all");
+    setPriorityFilter("all");
+    setStatusFilter("all");
+    setSerreFilter("all");
+    setAssignedToFilter("all");
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header with logo and navigation */}
-      <header className="bg-white border-b border-gray-200 shadow-sm">
-        <div className="mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-6">
-              <TechnicianSidebar userRole={user?.role as "technicien" | "technicien_sup"} />
-              
-              <img 
-                src="https://api.builder.io/api/v1/image/assets/TEMP/e838108a21bc561dc1bf539fbfff0473770f8f68?width=364" 
-                alt="Greener Tech Logo" 
-                className="h-16 w-auto"
-              />
-            </div>
+      <PageHeader
+        title="Interventions"
+        badge={{
+          text: `${filteredInterventions.length} intervention${filteredInterventions.length !== 1 ? 's' : ''}`,
+          className: "bg-blue-50 border-blue-200 text-blue-700"
+        }}
+        userRole="technicien"
+      />
 
-            <div className="flex items-center space-x-6">
-              <div className="flex items-center space-x-4 text-blue-600">
-                <Home className="h-6 w-6" />
-                <Map className="h-6 w-6" />
-                <Camera className="h-6 w-6" />
+      <div className="container mx-auto p-4 lg:p-6 space-y-6">
+        {/* Search and Filters Section */}
+        <Card className="border-0 shadow-sm">
+          <CardHeader className="pb-4">
+            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-4 lg:space-y-0">
+              <CardTitle className="text-lg flex items-center space-x-2">
+                <Filter className="h-5 w-5 text-gray-600" />
+                <span>Recherche et Filtres</span>
+              </CardTitle>
+              <div className="flex flex-wrap gap-2">
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={clearAllFilters}
+                  className="text-gray-600 hover:text-gray-900"
+                >
+                  <RefreshCw className="h-4 w-4 mr-1" />
+                  Réinitialiser
+                </Button>
+                <Button variant="outline" size="sm">
+                  <Download className="h-4 w-4 mr-1" />
+                  Exporter
+                </Button>
+                <Button size="sm" className="bg-[#B4CC5F] hover:bg-[#A3C247]">
+                  <Plus className="h-4 w-4 mr-1" />
+                  Nouvelle intervention
+                </Button>
               </div>
-              
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {/* Search Bar */}
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
                 <Input
-                  type="search"
-                  placeholder="Rechercher..."
-                  className="pl-10 w-80 bg-white border-gray-300"
+                  placeholder="Rechercher par titre, description, serre ou technicien..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10 h-10"
                 />
               </div>
+
+              {/* Filter Grid - Responsive */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+                <div>
+                  <Label htmlFor="type-filter" className="text-sm font-medium">Type</Label>
+                  <Select value={typeFilter} onValueChange={setTypeFilter}>
+                    <SelectTrigger id="type-filter">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {interventionTypes.map((type) => (
+                        <SelectItem key={type.value} value={type.value}>
+                          {type.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label htmlFor="priority-filter" className="text-sm font-medium">Priorité</Label>
+                  <Select value={priorityFilter} onValueChange={setPriorityFilter}>
+                    <SelectTrigger id="priority-filter">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {priorityLevels.map((priority) => (
+                        <SelectItem key={priority.value} value={priority.value}>
+                          {priority.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label htmlFor="status-filter" className="text-sm font-medium">Statut</Label>
+                  <Select value={statusFilter} onValueChange={setStatusFilter}>
+                    <SelectTrigger id="status-filter">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {statusOptions.map((status) => (
+                        <SelectItem key={status.value} value={status.value}>
+                          {status.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label htmlFor="serre-filter" className="text-sm font-medium">Serre</Label>
+                  <Select value={serreFilter} onValueChange={setSerreFilter}>
+                    <SelectTrigger id="serre-filter">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Toutes les serres</SelectItem>
+                      {uniqueSerres.map((serre) => (
+                        <SelectItem key={serre} value={serre}>
+                          {serre}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label htmlFor="assignee-filter" className="text-sm font-medium">Technicien</Label>
+                  <Select value={assignedToFilter} onValueChange={setAssignedToFilter}>
+                    <SelectTrigger id="assignee-filter">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Tous les techniciens</SelectItem>
+                      {uniqueAssignees.map((assignee) => (
+                        <SelectItem key={assignee} value={assignee}>
+                          {assignee}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
             </div>
-          </div>
-        </div>
-      </header>
-
-      {/* Main Content */}
-      <main className="mx-auto px-6 py-14">
-        {/* Title Section */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Gestion des Interventions</h1>
-          <p className="text-gray-600">Suivi et gestion des interventions entre superviseurs et techniciens</p>
-        </div>
-
-        {/* Search and Actions Bar */}
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center space-x-4">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <Input
-                type="search"
-                placeholder="Rechercher une Intervention..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 w-112 bg-white border-gray-300"
-              />
-            </div>
-          </div>
-
-          <div className="flex items-center space-x-4">
-            <Select value={sortBy} onValueChange={setSortBy}>
-              <SelectTrigger className="w-36 bg-gray-50 border-gray-300">
-                <SelectValue placeholder="Trier par" />
-                <ChevronDown className="h-4 w-4 ml-2" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="date">Date</SelectItem>
-                <SelectItem value="status">Statut</SelectItem>
-                <SelectItem value="type">Type</SelectItem>
-              </SelectContent>
-            </Select>
-
-            <Button className="bg-greener-500 hover:bg-greener-600 text-white">
-              <Edit className="h-4 w-4 mr-2" />
-              Demande une intervention
-            </Button>
-          </div>
-        </div>
-
-        {/* Interventions Table */}
-        <Card className="border border-gray-200 rounded-lg">
-          <CardContent className="p-0">
-            <Table>
-              <TableHeader className="bg-gray-50">
-                <TableRow>
-                  <TableHead className="text-gray-600 font-medium text-xs tracking-wider uppercase px-6 py-3">
-                    Type d'intervention
-                  </TableHead>
-                  <TableHead className="text-gray-600 font-medium text-xs tracking-wider uppercase px-6 py-3">
-                    ID Serre
-                  </TableHead>
-                  <TableHead className="text-gray-600 font-medium text-xs tracking-wider uppercase px-6 py-3 text-center">
-                    Statut
-                  </TableHead>
-                  <TableHead className="text-gray-600 font-medium text-xs tracking-wider uppercase px-6 py-3 text-center">
-                    Actions
-                  </TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody className="bg-white">
-                {paginatedInterventions.map((intervention, index) => {
-                  const serreInfo = getSerreInfo(intervention.id_serre);
-                  const statusDisplay = getStatusDisplay(intervention.status);
-                  const isEvenRow = index % 2 === 1;
-                  
-                  return (
-                    <TableRow 
-                      key={intervention.id}
-                      className={`${isEvenRow ? 'bg-gray-50' : 'bg-white'} border-t border-gray-100`}
-                    >
-                      <TableCell className="px-6 py-4">
-                        <div className="flex items-center space-x-3">
-                          {getInterventionIcon(intervention.description)}
-                          <span className="font-medium text-gray-900 text-sm">
-                            {intervention.description}
-                          </span>
-                        </div>
-                      </TableCell>
-                      
-                      <TableCell className="px-6 py-4">
-                        <span className="text-gray-900 text-sm">
-                          {serreInfo.name} / {serreInfo.domaine} / {serreInfo.bilan}
-                        </span>
-                      </TableCell>
-                      
-                      <TableCell className="px-6 py-4">
-                        <div className="flex items-center space-x-2">
-                          <Badge 
-                            className={`${statusDisplay.color} text-white text-xs font-medium px-3 py-1 rounded-full`}
-                          >
-                            {statusDisplay.text}
-                          </Badge>
-                          {intervention.status === 'encours' && (
-                            <Badge className="bg-red-500 text-white text-xs font-medium px-3 py-1 rounded-full">
-                              En cours
-                            </Badge>
-                          )}
-                        </div>
-                      </TableCell>
-                      
-                      <TableCell className="px-6 py-4 text-center">
-                        <Badge 
-                          className={`${intervention.valid ? 'bg-green-500' : 'bg-gray-300'} text-white text-xs font-medium px-3 py-1 rounded-full`}
-                        >
-                          {intervention.valid ? 'Programmé' : 'Demande'}
-                        </Badge>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
           </CardContent>
         </Card>
 
-        {/* Pagination */}
-        <div className="flex items-center justify-between mt-6">
-          <div className="text-sm text-gray-600">
-            Affichage de {startIndex + 1} à {Math.min(startIndex + itemsPerPage, filteredInterventions.length)} sur {filteredInterventions.length} intervention{filteredInterventions.length !== 1 ? 's' : ''}
-          </div>
-          
-          <div className="flex items-center space-x-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-              disabled={currentPage === 1}
-              className="text-gray-600 border-gray-300"
-            >
-              Précédent
-            </Button>
-            
-            {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-              <Button
-                key={page}
-                variant={currentPage === page ? "default" : "outline"}
-                size="sm"
-                onClick={() => setCurrentPage(page)}
-                className={currentPage === page 
-                  ? "bg-blue-600 text-white" 
-                  : "text-gray-600 border-gray-300 hover:bg-gray-50"
-                }
-              >
-                {page}
-              </Button>
-            ))}
-            
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
-              disabled={currentPage === totalPages}
-              className="text-gray-600 border-gray-300"
-            >
-              Suivant
-            </Button>
-          </div>
+        {/* Interventions List */}
+        <div className="space-y-4">
+          {filteredInterventions.length === 0 ? (
+            <Card className="border-dashed border-2 border-gray-200">
+              <CardContent className="p-8 text-center">
+                <Wrench className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-gray-900 mb-2">
+                  Aucune intervention trouvée
+                </h3>
+                <p className="text-gray-600 mb-4">
+                  Aucune intervention ne correspond à vos critères de recherche.
+                </p>
+                <Button 
+                  variant="outline" 
+                  onClick={clearAllFilters}
+                  className="text-gray-600 hover:text-gray-900"
+                >
+                  Effacer les filtres
+                </Button>
+              </CardContent>
+            </Card>
+          ) : (
+            filteredInterventions.map((intervention) => (
+              <Card key={intervention.id} className="border-0 shadow-sm hover:shadow-md transition-shadow duration-200">
+                <CardContent className="p-6">
+                  <div className="space-y-4">
+                    {/* Header Row */}
+                    <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between space-y-3 lg:space-y-0">
+                      <div className="flex-1 space-y-2">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <h3 className="text-lg font-semibold text-gray-900">
+                            {intervention.title}
+                          </h3>
+                          <Badge
+                            variant="outline"
+                            className={cn("text-xs", getTypeColor(intervention.type))}
+                          >
+                            {getTypeLabel(intervention.type)}
+                          </Badge>
+                          <Badge
+                            variant="outline"
+                            className={cn("text-xs", getPriorityColor(intervention.priority))}
+                          >
+                            {getPriorityLabel(intervention.priority)}
+                          </Badge>
+                        </div>
+                        <p className="text-gray-600 text-sm leading-relaxed">
+                          {intervention.description}
+                        </p>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Badge
+                          variant="outline"
+                          className={cn("text-xs flex items-center space-x-1", getStatusColor(intervention.status))}
+                        >
+                          {getStatusIcon(intervention.status)}
+                          <span>{getStatusLabel(intervention.status)}</span>
+                        </Badge>
+                      </div>
+                    </div>
+
+                    <Separator />
+
+                    {/* Details Grid - Responsive */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
+                      <div className="flex items-center space-x-2">
+                        <User className="h-4 w-4 text-gray-500" />
+                        <div>
+                          <span className="text-gray-500">Assigné à:</span>
+                          <p className="font-medium text-gray-900">{intervention.assignedTo}</p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center space-x-2">
+                        <MapPin className="h-4 w-4 text-gray-500" />
+                        <div>
+                          <span className="text-gray-500">Localisation:</span>
+                          <p className="font-medium text-gray-900">{intervention.serre}</p>
+                          <p className="text-gray-600 text-xs">{intervention.location}</p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center space-x-2">
+                        <Calendar className="h-4 w-4 text-gray-500" />
+                        <div>
+                          <span className="text-gray-500">Programmée:</span>
+                          <p className="font-medium text-gray-900">
+                            {new Date(intervention.scheduledDate).toLocaleDateString("fr-FR")}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center space-x-2">
+                        <Clock className="h-4 w-4 text-gray-500" />
+                        <div>
+                          <span className="text-gray-500">Durée:</span>
+                          <p className="font-medium text-gray-900">
+                            {intervention.actualDuration 
+                              ? `${intervention.actualDuration}min (réel)`
+                              : `${intervention.estimatedDuration}min (estimé)`
+                            }
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Equipment and Notes */}
+                    {(intervention.equipment.length > 0 || intervention.notes) && (
+                      <>
+                        <Separator />
+                        <div className="space-y-3">
+                          {intervention.equipment.length > 0 && (
+                            <div>
+                              <span className="text-sm font-medium text-gray-700">Équipement requis:</span>
+                              <div className="flex flex-wrap gap-1 mt-1">
+                                {intervention.equipment.map((item, index) => (
+                                  <Badge key={index} variant="secondary" className="text-xs">
+                                    {item}
+                                  </Badge>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {intervention.notes && (
+                            <div>
+                              <span className="text-sm font-medium text-gray-700">Notes:</span>
+                              <p className="text-sm text-gray-600 mt-1">{intervention.notes}</p>
+                            </div>
+                          )}
+                        </div>
+                      </>
+                    )}
+
+                    {/* Action Buttons */}
+                    <div className="flex flex-wrap gap-2 pt-2">
+                      <Button size="sm" variant="outline">
+                        Voir détails
+                      </Button>
+                      {intervention.status === "pending" && (
+                        <Button size="sm" className="bg-[#B4CC5F] hover:bg-[#A3C247]">
+                          Commencer
+                        </Button>
+                      )}
+                      {intervention.status === "in_progress" && (
+                        <>
+                          <Button size="sm" variant="outline">
+                            Mettre en pause
+                          </Button>
+                          <Button size="sm" className="bg-green-600 hover:bg-green-700 text-white">
+                            Terminer
+                          </Button>
+                        </>
+                      )}
+                      <Button size="sm" variant="ghost" className="text-gray-600">
+                        Modifier
+                      </Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))
+          )}
         </div>
-      </main>
+      </div>
+
     </div>
   );
 }
