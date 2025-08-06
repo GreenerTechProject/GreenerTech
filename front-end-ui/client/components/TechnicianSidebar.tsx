@@ -30,6 +30,7 @@ interface TechnicianSidebarProps {
 
 export default function TechnicianSidebar({
   userRole,
+  onInterventionClick,
 }: TechnicianSidebarProps) {
   const [isOpen, setIsOpen] = useState(false);
   const { logout } = useAuth();
