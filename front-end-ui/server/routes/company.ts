@@ -129,7 +129,7 @@ export interface CompanySetupResponse {
     email: string;
     name?: string;
     role?: string;
-    is_connected: boolean;
+    setup_completed: boolean;
   };
 }
 
@@ -177,7 +177,7 @@ export const handleCompanySetup: RequestHandler = async (req, res) => {
       companyEmail,
     });
 
-    // Update user's is_connected status to true
+    // Update user's setup_completed status to true
     const updatedUser = updateUserConnectionStatus(userId, true);
 
     if (!updatedUser) {
@@ -307,10 +307,10 @@ export const handleCompleteSetup: RequestHandler = async (req, res) => {
     // 1. Save company information to the company table
     // 2. Save domains with their geometries
     // 3. Save serres with their crop data
-    // 4. Update user's is_connected status to true
+    // 4. Update user's setup_completed status to true
     // 5. Link everything together with proper foreign keys
 
-    // Update user's is_connected status to true
+    // Update user's setup_completed status to true
     const updatedUser = updateUserConnectionStatus(userId, true);
 
     if (!updatedUser) {

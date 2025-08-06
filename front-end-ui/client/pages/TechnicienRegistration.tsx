@@ -83,7 +83,7 @@ export default function TechnicienRegistration() {
   // Fetch companies for dropdown
  const fetchCompanies = async () => {
   try {
-    const response = await axios.get("http://localhost:5000/api/entreprises");
+    const response = await axios.get(`${window.location.protocol}//${window.location.hostname}:5000/api/entreprises`)
     setCompanies(Array.isArray(response.data) ? response.data : []);
   } catch (error) {
     console.error("Error fetching companies:", error);
@@ -108,7 +108,7 @@ export default function TechnicienRegistration() {
     setIsLoading(true);
     try {
       // Send GET request with email as a query param
-      const response = await axios.get("http://localhost:5000/api/technicien", {
+      const response = await axios.get(`${window.location.protocol}//${window.location.hostname}:5000/api/technicien`, {
         params: { email }
       });
 
@@ -222,7 +222,7 @@ export default function TechnicienRegistration() {
       }
 
      const response = await axios.post(
-      "http://localhost:5000/api/technicien/register",
+      `${window.location.protocol}//${window.location.hostname}:5000/api/technicien/register`,
       payload
       );
       const result = response.data;
