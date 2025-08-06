@@ -98,7 +98,7 @@ const Interventions: React.FC = () => {
         </div>
         
         <div className="flex items-center gap-2">
-          <Filter className="h-4 w-4 text-gray-500" />
+          <SlidersHorizontal className="h-4 w-4 text-gray-500" />
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
