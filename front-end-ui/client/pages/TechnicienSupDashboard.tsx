@@ -332,6 +332,17 @@ export default function TechnicienSupDashboard() {
     }
   };
 
+  const handleInterventionSubmit = (data: any) => {
+    console.log("Intervention submitted:", data);
+    // TODO: Send to backend API
+    // Here you would typically call an API to save the intervention
+  };
+
+  const handleInterventionSaveDraft = (data: any) => {
+    console.log("Intervention saved as draft:", data);
+    // TODO: Save draft to backend or local storage
+  };
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case "optimal":
