@@ -230,23 +230,21 @@ export default function InterventionForm({
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="max-w-[1396px] w-[95vw] max-h-[90vh] overflow-y-auto p-0 bg-white rounded-xl border border-gray-200 shadow-lg transform transition-all duration-300 ease-out">
-        <div className="flex h-[644px] px-8 py-8 items-center relative overflow-hidden">
-          {/* Animated Background */}
-          <div className="absolute inset-0 bg-gradient-to-br from-blue-50/30 to-green-50/30 animate-pulse opacity-50"></div>
-
-          <div className="w-full max-w-[1166px] mx-auto relative z-10">
-            <div className="mb-6 flex items-center gap-3 animate-fade-in">
-              <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                <Plus className="w-5 h-5 text-blue-600" />
+      <DialogContent className="max-w-4xl w-[95vw] max-h-[95vh] overflow-y-auto p-0 rounded-xl shadow-2xl border-0">
+        <div className="flex flex-col h-full bg-white">
+          {/* Header */}
+          <DialogHeader className="px-8 pt-8 pb-6 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-indigo-50">
+            <DialogTitle className="text-2xl font-bold text-gray-900 flex items-center gap-3">
+              <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
+                <Calendar className="w-4 h-4 text-white" />
               </div>
-              <div>
-                <h2 className="text-2xl font-semibold text-gray-900">Nouvelle Intervention</h2>
-                <p className="text-gray-600">Créez une demande d'intervention personnalisée</p>
-              </div>
-            </div>
+              Nouvelle Intervention
+            </DialogTitle>
+          </DialogHeader>
 
-            <form className="space-y-8 animate-slide-up">
+          {/* Form Content */}
+          <div className="flex-1 px-8 py-8 space-y-1">
+            <form className="space-y-8 max-w-none">
               {/* Row 1: Type d'intervention & ID Serre */}
               <div className="grid grid-cols-2 gap-8">
                 <div className="space-y-3">
@@ -355,104 +353,92 @@ export default function InterventionForm({
               </div>
 
               {/* Row 3: Description */}
-              <div className="space-y-3">
-                <label className="block text-sm font-semibold text-gray-900 font-roboto">
-                  Description de l'intervention (optionnel)
-                </label>
-                <Textarea
-                  value={formData.description}
-                  onChange={(e) => updateFormData("description", e.target.value)}
-                  placeholder="Détails supplémentaires sur l'intervention..."
-                  className="h-[122px] w-full border border-gray-300 rounded-lg bg-white p-4 font-roboto text-base placeholder-gray-400 resize-none transition-all duration-200 hover:border-blue-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
-                />
-              </div>
+              <div className="bg-gray-50 p-6 rounded-lg border border-gray-200">
+                <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                  <div className="w-5 h-5 bg-blue-600 rounded-full flex items-center justify-center">
+                    <span className="text-white text-xs font-bold">3</span>
+                  </div>
+                  Détails
+                </h3>
+                <div className="space-y-4">
+                  <div className="space-y-3">
+                    <Label htmlFor="description" className="text-sm font-semibold text-gray-900">
+                      Description de l'intervention (optionnel)
+                    </Label>
+                    <Textarea
+                      id="description"
+                      value={formData.description}
+                      onChange={(e) => updateFormData("description", e.target.value)}
+                      placeholder="Détails supplémentaires sur l'intervention..."
+                      rows={4}
+                      className="border-gray-300 rounded-lg resize-none"
+                    />
+                  </div>
 
-              {/* Row 4: Priority */}
-              <div className="space-y-3">
-                <label className="block text-sm font-semibold text-gray-900 font-roboto">
-                  Priorité
-                </label>
-                <RadioGroup
-                  value={formData.priority}
-                  onValueChange={(value: any) => updateFormData("priority", value)}
-                  className="flex gap-6 pt-2"
-                >
-                  {priorityOptions.map((option) => (
-                    <div key={option.value} className="flex items-center gap-2">
-                      <RadioGroupItem
-                        value={option.value}
-                        id={option.value}
-                        className={cn(
-                          "w-4 h-4 border border-black rounded-full",
-                          formData.priority === option.value && "border-blue-500 bg-blue-500"
-                        )}
-                      />
-                      <label 
-                        htmlFor={option.value} 
-                        className="text-sm text-gray-700 font-roboto cursor-pointer"
-                      >
-                        {option.label}
-                      </label>
-                    </div>
-                  ))}
-                </RadioGroup>
-              </div>
-
-              {/* Footer Actions */}
-              <div className="border-t border-gray-200 pt-6 flex justify-between items-center">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={handleClose}
-                  disabled={isSubmitting || isDrafting}
-                  className="h-12 px-6 bg-gray-100 border-0 text-gray-600 font-roboto text-base font-medium rounded-lg hover:bg-gray-200 transition-all duration-200 flex items-center gap-2 disabled:opacity-50"
-                >
-                  <ArrowLeft className="h-4 w-4" />
-                  Annuler
-                </Button>
-
-                <div className="flex gap-4">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={handleSaveDraft}
-                    disabled={isSubmitting || isDrafting}
-                    className="h-12 px-6 bg-blue-50 border-0 text-blue-700 font-roboto text-base font-medium rounded-lg hover:bg-blue-100 transition-all duration-200 transform hover:scale-105 flex items-center gap-2 disabled:opacity-50 disabled:transform-none"
-                  >
-                    {isDrafting ? (
-                      <>
-                        <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
-                        Sauvegarde...
-                      </>
-                    ) : (
-                      <>
-                        <Save className="h-4 w-4" />
-                        Sauvegarder en brouillon
-                      </>
-                    )}
-                  </Button>
-
-                  <Button
-                    type="button"
-                    onClick={handleSubmit}
-                    disabled={isSubmitting || isDrafting}
-                    className="h-12 px-9 bg-blue-700 text-white font-roboto text-base font-medium rounded-lg hover:bg-blue-800 shadow-lg transition-all duration-200 transform hover:scale-105 flex items-center gap-2 disabled:opacity-50 disabled:transform-none"
-                  >
-                    {isSubmitting ? (
-                      <>
-                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                        Envoi en cours...
-                      </>
-                    ) : (
-                      <>
-                        <Send className="h-4 w-4" />
-                        Envoyer la demande
-                      </>
-                    )}
-                  </Button>
+                  <div className="space-y-3">
+                    <Label className="text-sm font-semibold text-gray-900">
+                      Priorité
+                    </Label>
+                    <RadioGroup
+                      value={formData.priority}
+                      onValueChange={(value: any) => updateFormData("priority", value)}
+                      className="flex flex-wrap gap-6 pt-2"
+                    >
+                      {priorityOptions.map((option) => (
+                        <div key={option.value} className="flex items-center space-x-2">
+                          <RadioGroupItem
+                            value={option.value}
+                            id={option.value}
+                            className={cn(
+                              "border-gray-400",
+                              formData.priority === option.value && "border-blue-500"
+                            )}
+                          />
+                          <Label
+                            htmlFor={option.value}
+                            className={cn(
+                              "text-sm font-normal cursor-pointer",
+                              option.color
+                            )}
+                          >
+                            {option.label}
+                          </Label>
+                        </div>
+                      ))}
+                    </RadioGroup>
+                  </div>
                 </div>
               </div>
-            </form>
+
+          {/* Footer Actions */}
+          <div className="flex flex-col lg:flex-row justify-between items-stretch lg:items-center gap-4 px-8 py-6 border-t border-gray-200 bg-gradient-to-r from-gray-50 to-blue-50">
+            <Button
+              variant="outline"
+              onClick={handleClose}
+              className="order-3 lg:order-1 w-full lg:w-auto px-6 py-3 border-gray-300 text-gray-600 hover:bg-gray-100"
+            >
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Annuler
+            </Button>
+
+            <div className="order-1 lg:order-2 flex flex-col sm:flex-row gap-3 w-full lg:w-auto">
+              <Button
+                variant="outline"
+                onClick={handleSaveDraft}
+                className="w-full sm:w-auto px-6 py-3 border-blue-300 text-blue-600 bg-blue-50 hover:bg-blue-100 flex items-center justify-center"
+              >
+                <Save className="h-4 w-4 mr-2" />
+                Sauvegarder en brouillon
+              </Button>
+
+              <Button
+                onClick={handleSubmit}
+                className="w-full sm:w-auto px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white shadow-lg flex items-center justify-center"
+              >
+                <Send className="h-4 w-4 mr-2" />
+                Envoyer la demande
+              </Button>
+            </div>
           </div>
         </div>
       </DialogContent>
