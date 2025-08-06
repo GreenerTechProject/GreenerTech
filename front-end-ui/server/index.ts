@@ -31,6 +31,13 @@ import {
   handleCreateTechnicien,
   handleGetTechniciensByCompany,
 } from "./routes/technicien";
+import {
+  createMission,
+  getAllMissions,
+  getMission,
+  updateMission,
+  deleteMission,
+} from "./routes/missions";
 
 export function createServer() {
   const app = express();
