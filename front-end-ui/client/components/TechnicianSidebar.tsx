@@ -75,10 +75,7 @@ export default function TechnicianSidebar({
       id: "alertes",
       label: "Alertes",
       icon: <AlertTriangle className="h-5 w-5" />,
-      onClick: () => {
-        // TODO: Navigate to alerts page when implemented
-        console.log("Alertes clicked");
-      },
+      path: "/alerts",
     },
     {
       id: "interventions",
@@ -87,6 +84,8 @@ export default function TechnicianSidebar({
       onClick: () => {
         onInterventionClick?.();
       },
+
+      path: "/interventions",
     },
     {
       id: "rapports",

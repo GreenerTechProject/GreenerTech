@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useAuth } from "../contexts/AuthContext";
 import GoogleMapsWrapper from "../components/GoogleMapsWrapper";
+import PageHeader from "../components/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -29,10 +30,7 @@ import {
   Thermometer,
   Droplets,
   Sun,
-  Users,
-  LogOut,
   Sprout,
-  Calendar,
 } from "lucide-react";
 import TechnicianSidebar from "../components/TechnicianSidebar";
 import InterventionForm from "../components/InterventionForm";
@@ -424,7 +422,6 @@ export default function TechnicianDashboard() {
           </div>
         </div>
       </header>
-
       <div className="flex h-[calc(100vh-73px)]">
         {/* Left Control Panel */}
         <div className="w-full lg:w-96 bg-white shadow-lg">
