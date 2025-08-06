@@ -2,6 +2,8 @@
 from database.config import db
 from datetime import datetime, timedelta, timezone
 from sqlalchemy import ForeignKey
+from sqlalchemy.orm import relationship
+
 
 
 class User(db.Model):
