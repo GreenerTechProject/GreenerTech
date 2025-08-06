@@ -57,7 +57,7 @@ interface Technician {
   id: string;
   fullName: string;
   email: string;
-  role: "technicien supérieur" | "technicien";
+  role: "technicien_superieur" | "technicien";
   assignedSerres: string[]; // Array of serre IDs
 }
 
@@ -73,7 +73,7 @@ const technicianSchema = z.object({
     .string()
     .min(2, "Le nom complet doit contenir au moins 2 caractères"),
   email: z.string().email("Email invalide"),
-  role: z.enum(["technicien supérieur", "technicien"]),
+  role: z.enum(["technicien_superieur", "technicien"]),
   assignedSerres: z.array(z.string()).optional(),
 });
 
@@ -261,7 +261,7 @@ export default function TechnicianCreation({
                             <SelectItem value="technicien">
                               Technicien
                             </SelectItem>
-                            <SelectItem value="technicien supérieur">
+                            <SelectItem value="technicien_superieur">
                               Technicien Supérieur
                             </SelectItem>
                           </SelectContent>
@@ -379,7 +379,7 @@ export default function TechnicianCreation({
                         </h4>
                         <Badge
                           variant={
-                            technician.role === "technicien supérieur"
+                            technician.role === "technicien_superieur"
                               ? "default"
                               : "secondary"
                           }

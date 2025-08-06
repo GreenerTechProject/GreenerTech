@@ -24,12 +24,40 @@ def create_domaine(current_user):
     if not name or not area or not center or not path:
         return jsonify({"message": "Les champs name, area, center et path sont obligatoires"}), 400
 
+
+
+
+
+    # Récupérer le dernier id_group_cor existant (max)
+    last_id_group_cor = db.session.query(func.max(GroupCor.id_group_cor)).scalar()
+    if last_id_group_cor is None:
+        last_id_group_cor = 0  # si pas encore d'enregistrement
+
+    id_group_cor = last_id_group_cor + 1
+
+
+    gps_points = data.get('path', [])
+    if not gps_points:
+        return jsonify({"message": "Veuillez fournir une liste de points GPS"}), 400
+
+    # Créer chaque point group_cor
+    for point in gps_points:
+        gc = GroupCor(
+            id_group_cor=id_group_cor,
+            point_x=point['lat'],
+            point_y=point['lng'],
+            ordre=point.get('ordre', 0)
+        )
+        db.session.add(gc)
+        
+        
     domaine = Domaine(
         nom=name,
+        id_group_cor=id_group_cor,
         surface=area,
         center_lat=center.get('lat'),
         center_lng=center.get('lng'),
-        path=path,
+        #path=path,
         id_entreprise=entreprise.id
     )
 

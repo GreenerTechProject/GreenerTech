@@ -2,6 +2,8 @@
 from database.config import db
 from datetime import datetime, timedelta, timezone
 from sqlalchemy import ForeignKey
+from sqlalchemy.orm import relationship
+
 
 
 class User(db.Model):
@@ -19,12 +21,24 @@ class User(db.Model):
     setup_completed = db.Column(db.Boolean, nullable=False, default=False) #pour verifier la premier authentificatio
     created_at = db.Column(db.DateTime, default=datetime.now(timezone(timedelta(hours=1))))
     updated_at = db.Column(db.DateTime, default=datetime.now(timezone(timedelta(hours=1))), onupdate=datetime.now(timezone(timedelta(hours=1))))
-    directeur_valide = db.Column(db.Boolean, default=False)# Validé par directeur
+    directeur_valide = db.Column(db.Boolean, default=False)      # Validé par directeur
     email_valide = db.Column(db.Boolean, default=False)   # Technicien a complété
     verification_token = db.Column(db.String(255), nullable=True)  # Token pour vérification email
-    id_entreprise = db.Column(db.Integer, db.ForeignKey('entreprises.id'), nullable=True)  
-    entreprise = db.relationship('Entreprise', backref='users', lazy=True)  # Relation avec Entreprise
+    id_entreprise = db.Column(db.Integer, db.ForeignKey('entreprises.id'), nullable=True)
     
+
+
+    entreprise = relationship(
+        "Entreprise",
+        back_populates="membres",
+        foreign_keys=[id_entreprise]
+    )
+    
+    entreprises_creees = relationship(
+        "Entreprise",
+        back_populates="createur",
+        foreign_keys="[Entreprise.id_user]"
+    )    
 
     
 

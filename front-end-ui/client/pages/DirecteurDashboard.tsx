@@ -49,7 +49,7 @@ interface Technician {
   id: string;
   fullName: string;
   email: string;
-  role: "technicien supérieur" | "technicien";
+  role: "technicien_superieur" | "technicien";
   assignedSerres: string[];
 }
 

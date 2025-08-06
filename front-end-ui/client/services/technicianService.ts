@@ -5,14 +5,14 @@ export interface Technician {
   id: string;
   fullName: string;
   email: string;
-  role: "technicien supérieur" | "technicien";
+  role: "technicien_superieur" | "technicien";
   assignedSerres: string[];
 }
 
 export interface CreateTechnicianRequest {
   fullName: string;
   email: string;
-  role: "technicien supérieur" | "technicien";
+  role: "technicien_superieur" | "technicien";
   assignedSerres: string[];
   companyId: string;
 }
@@ -29,7 +29,7 @@ export interface ApiError {
 }
 
 // Configure axios base URL
-const API_BASE_URL = "http://localhost:5000/api";
+const API_BASE_URL = `${window.location.protocol}//${window.location.hostname}:5000/api`;
 
 // Create axios instance with auth headers
 const createAuthenticatedRequest = () => {

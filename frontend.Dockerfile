@@ -4,10 +4,10 @@ WORKDIR /app
 
 COPY front-end-ui/package*.json ./
 
-RUN npm install
+RUN npm install --legacy-peer-deps
 
 COPY front-end-ui .
 
 EXPOSE 3000
 
-CMD ["npm", "start"]
+CMD ["npm", "run", "dev"]

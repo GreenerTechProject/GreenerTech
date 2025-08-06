@@ -17,7 +17,7 @@ export default function VerifyEmail() {
   );
 
   // Use environment variable if available, fallback to localhost
-  const API_BASE ="http://localhost:5000";
+  const API_BASE = `${window.location.protocol}//${window.location.hostname}:5000`;
 
   const verify = async (abortSignal: AbortSignal) => {
     try {

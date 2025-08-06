@@ -3,7 +3,8 @@ from flask import Blueprint
 
 from app.controllers.user import register, login, get_user, update_user, delete_user, create_technicien, register_technicien, verify_email, validate_technicien, get_technicien_by_email, get_all_technicians
 
-from app.controllers.entreprise import create_entreprise, get_entreprise, update_entreprise, delete_entreprise, list_entreprises
+from app.controllers.entreprise import create_entreprise, get_entreprise, get_all_entreprises, update_entreprise, delete_entreprise
+
 from app.controllers.domaine import create_domaine, get_domaine, get_all_domaines, update_domaine, delete_domaine, get_serres_by_domaine
 from app.controllers.bilan import create_bilan, get_bilan, get_all_bilans, update_bilan, delete_bilan, generate_bilan_qrcode
 from app.controllers.serre import create_serre, get_serre, get_all_serres, update_serre, delete_serre, get_bilans_by_serre
@@ -44,9 +45,10 @@ all_bp.route('/technicien', methods=['GET'])(get_all_technicians)
 
 all_bp.route('/entreprise', methods=['POST'])(create_entreprise)
 all_bp.route('/entreprise', methods=['GET'])(get_entreprise)
+all_bp.route('/entreprises', methods=['GET'])(get_all_entreprises)
 all_bp.route('/entreprise', methods=['PUT'])(update_entreprise)
 all_bp.route('/entreprise', methods=['DELETE'])(delete_entreprise)
-all_bp.route('/entreprises', methods=['GET'])(list_entreprises)
+
 
 
 

@@ -6,7 +6,7 @@ export interface User {
   email: string;
   name?: string;
   role?: string;
-  is_connected?: boolean;
+  setup_completed?: boolean;
 }
 
 export interface LoginRequest {
@@ -53,15 +53,15 @@ export const mockPreRegisteredTechniciens: (User & { preRegistered: true })[] =
       email: "technicien.pre@example.com",
       name: "Jean Dupont",
       role: "technicien",
-      is_connected: false,
+      setup_completed: false,
       preRegistered: true,
     },
     {
       id: "pre_2",
       email: "techsup.pre@example.com",
       name: "Marie Martin",
-      role: "technicien supérieur",
-      is_connected: false,
+      role: "technicien_superieur",
+      setup_completed: false,
       preRegistered: true,
     },
   ];
@@ -73,14 +73,14 @@ export const mockUsers: User[] = [
     email: "directeur@example.com",
     name: "Directeur Test",
     role: "directeur",
-    is_connected: false, // Will be set to true after company setup
+    setup_completed: false, // Will be set to true after company setup
   },
   {
     id: "2",
     email: "technicien@example.com",
     name: "Technicien Test",
     role: "technicien",
-    is_connected: true,
+    setup_completed: true,
   },
 ];
 
@@ -91,14 +91,14 @@ export const mockAffiliationRequests: (AffiliationRequest & {
   createdAt: Date;
 })[] = [];
 
-// Function to update user's is_connected status
+// Function to update user's setup_completed status
 export const updateUserConnectionStatus = (
   userId: string,
   isConnected: boolean,
 ): User | null => {
   const userIndex = mockUsers.findIndex((u) => u.id === userId);
   if (userIndex !== -1) {
-    mockUsers[userIndex].is_connected = isConnected;
+    mockUsers[userIndex].setup_completed = isConnected;
     return mockUsers[userIndex];
   }
   return null;
@@ -141,7 +141,7 @@ export const handleLogin: RequestHandler = async (req, res) => {
     console.log("Login successful:", {
       email,
       role: user.role,
-      is_connected: user.is_connected,
+      setup_completed: user.setup_completed,
     });
 
     res.status(200).json(response);
@@ -182,7 +182,7 @@ export const handleRegister: RequestHandler = async (req, res) => {
       email,
       name,
       role: role || "directeur", // Default to directeur
-      is_connected: false, // Will be set to true after setup
+      setup_completed: false, // Will be set to true after setup
     };
 
     // Add to mock database
@@ -389,7 +389,7 @@ export const handleTechnicienCompleteRegistration: RequestHandler = async (
         email: preRegisteredUser.email,
         name: preRegisteredUser.name,
         role: preRegisteredUser.role,
-        is_connected: true,
+        setup_completed: true,
       };
 
       // Add to main users array

@@ -55,7 +55,7 @@ interface Technician {
   cin: string;
   email: string;
   password: string;
-  role: "technicien supérieur" | "technicien";
+  role: "technicien_superieur" | "technicien";
   assignedSerres: string[];
 }
 
@@ -397,13 +397,13 @@ export default function FinalOverview({
                       <div className="flex items-center space-x-2">
                         <Badge
                           variant={
-                            technician.role === "technicien supérieur"
+                            technician.role === "technicien_superieur"
                               ? "default"
                               : "secondary"
                           }
                           className="text-xs"
                         >
-                          {technician.role === "technicien supérieur"
+                          {technician.role === "technicien_superieur"
                             ? "Sup."
                             : "Tech."}
                         </Badge>

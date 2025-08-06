@@ -6,8 +6,8 @@ export interface User {
   email: string;
   name?: string;
   role?: string;
-  is_connected?: boolean;
-  derector_valide?: boolean;
+  setup_completed?: boolean;
+  directeur_valide?: boolean;
 
 }
 
@@ -53,7 +53,7 @@ export interface ApiError {
 }
 
 // Configure axios base URL - update this to match your backend
-const API_BASE_URL = "http://localhost:5000/api";
+const API_BASE_URL = `${window.location.protocol}//${window.location.hostname}:5000/api`;
 
 // Create axios instance
 const api = axios.create({
@@ -172,7 +172,7 @@ export const authService = {
     const { user, token } = response.data;
 
     // Check for unvalidated technician accounts
-    if ((user.role === "technicien" || user.role === "technicien supérieur") && !user.directeur_valide) {
+    if ((user.role === "technicien" || user.role === "technicien_superieur") && !user.directeur_valide) {
       tokenManager.clearAll();
       console.log("this user is not validated by director");
 
