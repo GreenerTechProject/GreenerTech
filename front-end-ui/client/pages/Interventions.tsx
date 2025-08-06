@@ -113,10 +113,20 @@ const Interventions: React.FC = () => {
     <div className="p-6 space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold">Interventions</h1>
-        <Button onClick={() => setIsInterventionFormOpen(true)}>
-          <Plus className="h-4 w-4 mr-2" />
-          Nouvelle intervention
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            onClick={refreshInterventions}
+            className="flex items-center gap-2"
+          >
+            <RefreshCw className="h-4 w-4" />
+            Actualiser
+          </Button>
+          <Button onClick={() => setIsInterventionFormOpen(true)}>
+            <Plus className="h-4 w-4 mr-2" />
+            Nouvelle intervention
+          </Button>
+        </div>
       </div>
 
       {/* Filters and Search */}
