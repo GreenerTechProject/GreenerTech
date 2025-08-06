@@ -31,6 +31,13 @@ import {
   handleCreateTechnicien,
   handleGetTechniciensByCompany,
 } from "./routes/technicien";
+import {
+  handleGetAllAlertes,
+  handleGetAlerte,
+  handleUpdateAlerte,
+  handleCreateAlerte,
+  handleDeleteAlerte,
+} from "./routes/alerts";
 
 export function createServer() {
   const app = express();
@@ -74,6 +81,13 @@ export function createServer() {
   app.get("/api/serres/domain/:domainId", handleGetSerresByDomain);
   app.post("/api/technicien", handleCreateTechnicien);
   app.get("/api/technicien/company/:companyId", handleGetTechniciensByCompany);
+
+  // Alerts routes
+  app.get("/api/alertes", handleGetAllAlertes);
+  app.get("/api/alertes/:id", handleGetAlerte);
+  app.put("/api/alertes/:id", handleUpdateAlerte);
+  app.post("/api/alertes", handleCreateAlerte);
+  app.delete("/api/alertes/:id", handleDeleteAlerte);
 
   return app;
 }
