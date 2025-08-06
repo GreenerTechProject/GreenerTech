@@ -400,6 +400,14 @@ export default function TechnicienSupDashboard() {
                 {serres.filter((s) => s.status === "active").length} Serres
                 Supervisées
               </Badge>
+              <Button
+                onClick={() => setIsInterventionFormOpen(true)}
+                className="bg-blue-600 hover:bg-blue-700 text-white"
+                size="sm"
+              >
+                <Bell className="h-4 w-4 mr-2" />
+                Nouvelle Intervention
+              </Button>
             </div>
             <div className="flex items-center space-x-4">
               <span className="text-sm text-gray-600 hidden sm:block">
