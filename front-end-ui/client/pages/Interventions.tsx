@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Search, Plus, Calendar, MapPin, User, SlidersHorizontal } from "lucide-react";
+import InterventionForm from "@/components/InterventionForm";
 
 interface Intervention {
   id: string;
