@@ -104,12 +104,20 @@ export default function InterventionForm({
   const handleSubmit = () => {
     if (validateForm()) {
       onSubmit?.(formData);
+      toast({
+        title: "Intervention créée",
+        description: "Votre demande d'intervention a été envoyée avec succès.",
+      });
       handleClose();
     }
   };
 
   const handleSaveDraft = () => {
     onSaveDraft?.(formData);
+    toast({
+      title: "Brouillon sauvegardé",
+      description: "Votre intervention a été sauvegardée en brouillon.",
+    });
     handleClose();
   };
 
