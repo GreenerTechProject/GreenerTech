@@ -40,6 +40,7 @@ import {
   Shield,
 } from "lucide-react";
 import TechnicianSidebar from "../components/TechnicianSidebar";
+import InterventionForm from "../components/InterventionForm";
 import { cn } from "@/lib/utils";
 import { getGoogleMapsAPIKey } from "@/config/maps";
 
