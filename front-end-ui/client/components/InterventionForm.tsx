@@ -146,15 +146,18 @@ export default function InterventionForm({
       <DialogContent className="max-w-4xl w-[95vw] max-h-[95vh] overflow-y-auto p-0 rounded-xl shadow-2xl border-0">
         <div className="flex flex-col h-full bg-white">
           {/* Header */}
-          <DialogHeader className="px-8 pt-8 pb-6 border-b border-gray-200">
-            <DialogTitle className="text-xl font-semibold text-gray-900">
+          <DialogHeader className="px-8 pt-8 pb-6 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-indigo-50">
+            <DialogTitle className="text-2xl font-bold text-gray-900 flex items-center gap-3">
+              <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
+                <Calendar className="w-4 h-4 text-white" />
+              </div>
               Nouvelle Intervention
             </DialogTitle>
           </DialogHeader>
 
           {/* Form Content */}
-          <div className="flex-1 px-8 py-6">
-            <form className="space-y-8">
+          <div className="flex-1 px-8 py-8 space-y-1">
+            <form className="space-y-8 max-w-none">
               {/* Row 1: Type d'intervention & ID Serre */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <div className="space-y-3">
@@ -317,7 +320,7 @@ export default function InterventionForm({
           </div>
 
           {/* Footer Actions */}
-          <div className="flex flex-col lg:flex-row justify-between items-stretch lg:items-center gap-4 px-4 sm:px-8 py-6 border-t border-gray-200 bg-gray-50">
+          <div className="flex flex-col lg:flex-row justify-between items-stretch lg:items-center gap-4 px-8 py-6 border-t border-gray-200 bg-gradient-to-r from-gray-50 to-blue-50">
             <Button
               variant="outline"
               onClick={handleClose}
