@@ -79,6 +79,7 @@ export default function InterventionForm({
   });
 
   const [errors, setErrors] = useState<Partial<InterventionData>>({});
+  const { toast } = useToast();
 
   const validateForm = () => {
     const newErrors: Partial<InterventionData> = {};
