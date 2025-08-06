@@ -38,8 +38,8 @@ export default function TechnicianSidebar({
 
   const basePath =
     userRole === "technicien_sup"
-      ? "/technicien-sup-dashboard"
-      : "/technician-dashboard";
+      ? "/technicien-sup"
+      : "/technician";
 
   const sidebarItems: SidebarItem[] = [
     {
@@ -66,34 +66,29 @@ export default function TechnicianSidebar({
       id: "surveillance",
       label: "Surveillance",
       icon: <Camera className="h-5 w-5" />,
-      onClick: () => {
-        // TODO: Navigate to surveillance page when implemented
-        console.log("Surveillance clicked");
-      },
+      path: "/surveillance",
     },
     {
       id: "alertes",
       label: "Alertes",
       icon: <AlertTriangle className="h-5 w-5" />,
-      onClick: () => {
-        // TODO: Navigate to alerts page when implemented
-        console.log("Alertes clicked");
-      },
+      path: "/alerts",
     },
     {
       id: "interventions",
       label: "Interventions",
       icon: <Bell className="h-5 w-5" />,
+      onClick: () => {
+        setIsOpen(false); // Close sidebar first
+        onInterventionClick?.();
+      },
       path: "/interventions",
     },
     {
       id: "rapports",
       label: "Rapports",
       icon: <Bookmark className="h-5 w-5" />,
-      onClick: () => {
-        // TODO: Navigate to reports page when implemented
-        console.log("Rapports clicked");
-      },
+      path: "/reports",
     },
   ];
 
@@ -167,15 +162,31 @@ export default function TechnicianSidebar({
                     className={cn(
                       "flex items-center w-full px-4 py-3 text-left rounded-lg transition-all duration-200",
                       "hover:bg-gray-50 focus:outline-none focus:bg-gray-50 focus:ring-2 focus:ring-greener-400/20",
-                      "group",
+                      "group transform hover:scale-[1.02]",
+                      item.id === "interventions" && "bg-gradient-to-r from-blue-50 to-blue-100 hover:from-blue-100 hover:to-blue-200 border border-blue-200 shadow-sm"
                     )}
                   >
                     <div className="flex items-center space-x-3">
-                      <div className="text-gray-500 group-hover:text-greener-500 transition-colors duration-200">
+                      <div className={cn(
+                        "transition-colors duration-200",
+                        item.id === "interventions"
+                          ? "text-blue-600 group-hover:text-blue-700"
+                          : "text-gray-500 group-hover:text-greener-500"
+                      )}>
                         {item.icon}
                       </div>
-                      <span className="text-gray-700 font-medium text-sm group-hover:text-gray-900 transition-colors duration-200">
+                      <span className={cn(
+                        "font-medium text-sm transition-colors duration-200",
+                        item.id === "interventions"
+                          ? "text-blue-700 group-hover:text-blue-800 font-semibold"
+                          : "text-gray-700 group-hover:text-gray-900"
+                      )}>
                         {item.label}
+                        {item.id === "interventions" && (
+                          <span className="inline-block ml-2 px-2 py-0.5 text-xs bg-blue-500 text-white rounded-full animate-pulse">
+                            +
+                          </span>
+                        )}
                       </span>
                     </div>
                   </button>
