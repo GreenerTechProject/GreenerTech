@@ -326,38 +326,14 @@ export default function Interventions() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Modern Header without logo */}
-      <header className="bg-white shadow-sm border-b sticky top-0 z-10">
-        <div className="max-w-full px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-4">
-            <div className="flex items-center space-x-4">
-              <TechnicianSidebar userRole="technicien" />
-              <div className="flex items-center space-x-3">
-                <h1 className="text-xl font-semibold text-gray-900">
-                  Interventions
-                </h1>
-                <Badge variant="outline" className="bg-blue-50 border-blue-200 text-blue-700">
-                  {filteredInterventions.length} intervention{filteredInterventions.length !== 1 ? 's' : ''}
-                </Badge>
-              </div>
-            </div>
-            <div className="flex items-center space-x-4">
-              <span className="text-sm text-gray-600 hidden sm:block">
-                {user?.name || user?.email}
-              </span>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => logout()}
-                className="flex items-center space-x-1"
-              >
-                <LogOut className="h-4 w-4" />
-                <span className="hidden sm:inline">Déconnexion</span>
-              </Button>
-            </div>
-          </div>
-        </div>
-      </header>
+      <PageHeader
+        title="Interventions"
+        badge={{
+          text: `${filteredInterventions.length} intervention${filteredInterventions.length !== 1 ? 's' : ''}`,
+          className: "bg-blue-50 border-blue-200 text-blue-700"
+        }}
+        userRole="technicien"
+      />
 
       <div className="container mx-auto p-4 lg:p-6 space-y-6">
         {/* Search and Filters Section */}
@@ -500,7 +476,7 @@ export default function Interventions() {
                   Aucune intervention trouvée
                 </h3>
                 <p className="text-gray-600 mb-4">
-                  Aucune intervention ne correspond �� vos critères de recherche.
+                  Aucune intervention ne correspond à vos critères de recherche.
                 </p>
                 <Button 
                   variant="outline" 
