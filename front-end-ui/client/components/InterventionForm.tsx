@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -18,7 +18,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Calendar, Save, Send, ArrowLeft } from "lucide-react";
+import { Calendar, Save, Send, ArrowLeft, Plus, CheckCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface InterventionFormProps {
@@ -80,6 +80,25 @@ export default function InterventionForm({
 
   const [errors, setErrors] = useState<Partial<InterventionData>>({});
   const { toast } = useToast();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isDrafting, setIsDrafting] = useState(false);
+  const [formStep, setFormStep] = useState(0);
+  const [showSuccess, setShowSuccess] = useState(false);
+
+  // Auto-focus first field when form opens
+  useEffect(() => {
+    if (isOpen) {
+      setFormStep(0);
+      setShowSuccess(false);
+      // Focus first field after animation
+      setTimeout(() => {
+        const firstField = document.querySelector('#intervention-type-trigger');
+        if (firstField) {
+          (firstField as HTMLElement).focus();
+        }
+      }, 300);
+    }
+  }, [isOpen]);
 
   const validateForm = () => {
     const newErrors: Partial<InterventionData> = {};
@@ -101,37 +120,84 @@ export default function InterventionForm({
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (validateForm()) {
-      onSubmit?.(formData);
-      toast({
-        title: "Intervention créée",
-        description: "Votre demande d'intervention a été envoyée avec succès.",
-      });
-      handleClose();
+      setIsSubmitting(true);
+      try {
+        // Simulate API call
+        await new Promise(resolve => setTimeout(resolve, 1500));
+
+        onSubmit?.(formData);
+        setShowSuccess(true);
+
+        toast({
+          title: "✅ Intervention créée",
+          description: "Votre demande d'intervention a été envoyée avec succès.",
+          duration: 3000,
+        });
+
+        // Close after showing success
+        setTimeout(() => {
+          handleClose();
+        }, 1500);
+      } catch (error) {
+        toast({
+          title: "❌ Erreur",
+          description: "Une erreur est survenue lors de l'envoi.",
+          variant: "destructive",
+        });
+      } finally {
+        setIsSubmitting(false);
+      }
     }
   };
 
-  const handleSaveDraft = () => {
-    onSaveDraft?.(formData);
-    toast({
-      title: "Brouillon sauvegardé",
-      description: "Votre intervention a été sauvegardée en brouillon.",
-    });
-    handleClose();
+  const handleSaveDraft = async () => {
+    setIsDrafting(true);
+    try {
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 800));
+
+      onSaveDraft?.(formData);
+      toast({
+        title: "💾 Brouillon sauvegardé",
+        description: "Votre intervention a été sauvegardée en brouillon.",
+        duration: 2000,
+      });
+
+      setTimeout(() => {
+        handleClose();
+      }, 500);
+    } catch (error) {
+      toast({
+        title: "❌ Erreur",
+        description: "Erreur lors de la sauvegarde.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsDrafting(false);
+    }
   };
 
   const handleClose = () => {
-    setFormData({
-      interventionType: "",
-      serreId: "",
-      interventionDate: "",
-      functionary: "",
-      description: "",
-      priority: "moyenne",
-    });
-    setErrors({});
-    onClose();
+    // Reset form with animation
+    setFormStep(0);
+    setShowSuccess(false);
+    setIsSubmitting(false);
+    setIsDrafting(false);
+
+    setTimeout(() => {
+      setFormData({
+        interventionType: "",
+        serreId: "",
+        interventionDate: "",
+        functionary: "",
+        description: "",
+        priority: "moyenne",
+      });
+      setErrors({});
+      onClose();
+    }, 150);
   };
 
   const updateFormData = (field: keyof InterventionData, value: string) => {
@@ -141,12 +207,46 @@ export default function InterventionForm({
     }
   };
 
+  if (showSuccess) {
+    return (
+      <Dialog open={isOpen} onOpenChange={handleClose}>
+        <DialogContent className="max-w-md w-[90vw] p-0 bg-white rounded-xl border border-gray-200 shadow-lg">
+          <div className="flex flex-col items-center justify-center py-12 px-8 text-center">
+            <div className="mb-6 relative">
+              <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center animate-pulse">
+                <CheckCircle className="w-10 h-10 text-green-600 animate-bounce" />
+              </div>
+            </div>
+            <h3 className="text-xl font-semibold text-gray-900 mb-2">Intervention créée !</h3>
+            <p className="text-gray-600 mb-6">Votre demande a été envoyée avec succès.</p>
+            <div className="w-full bg-gray-200 rounded-full h-1">
+              <div className="bg-green-600 h-1 rounded-full animate-pulse" style={{width: '100%'}}></div>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="max-w-[1396px] w-[95vw] max-h-[90vh] overflow-y-auto p-0 bg-white rounded-xl border border-gray-200 shadow-sm">
-        <div className="flex h-[644px] px-8 py-8 items-center">
-          <div className="w-full max-w-[1166px] mx-auto">
-            <form className="space-y-8">
+      <DialogContent className="max-w-[1396px] w-[95vw] max-h-[90vh] overflow-y-auto p-0 bg-white rounded-xl border border-gray-200 shadow-lg transform transition-all duration-300 ease-out">
+        <div className="flex h-[644px] px-8 py-8 items-center relative overflow-hidden">
+          {/* Animated Background */}
+          <div className="absolute inset-0 bg-gradient-to-br from-blue-50/30 to-green-50/30 animate-pulse opacity-50"></div>
+
+          <div className="w-full max-w-[1166px] mx-auto relative z-10">
+            <div className="mb-6 flex items-center gap-3 animate-fade-in">
+              <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                <Plus className="w-5 h-5 text-blue-600" />
+              </div>
+              <div>
+                <h2 className="text-2xl font-semibold text-gray-900">Nouvelle Intervention</h2>
+                <p className="text-gray-600">Créez une demande d'intervention personnalisée</p>
+              </div>
+            </div>
+
+            <form className="space-y-8 animate-slide-up">
               {/* Row 1: Type d'intervention & ID Serre */}
               <div className="grid grid-cols-2 gap-8">
                 <div className="space-y-3">
@@ -158,7 +258,13 @@ export default function InterventionForm({
                     value={formData.interventionType}
                     onValueChange={(value) => updateFormData("interventionType", value)}
                   >
-                    <SelectTrigger className="h-[47px] w-[567px] border border-gray-300 rounded-lg bg-white px-3 font-roboto text-base">
+                    <SelectTrigger
+                      id="intervention-type-trigger"
+                      className={cn(
+                        "h-[47px] w-[567px] border border-gray-300 rounded-lg bg-white px-3 font-roboto text-base transition-all duration-200 hover:border-blue-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-200",
+                        errors.interventionType && "border-red-500 focus:border-red-500 focus:ring-red-200"
+                      )}
+                    >
                       <SelectValue placeholder="Sélectionner un type d'intervention" className="text-gray-900" />
                     </SelectTrigger>
                     <SelectContent>
@@ -184,7 +290,10 @@ export default function InterventionForm({
                     value={formData.serreId}
                     onChange={(e) => updateFormData("serreId", e.target.value)}
                     placeholder="Serre / Domaine / Bilan"
-                    className="h-[50px] w-[567px] border border-gray-300 rounded-lg bg-white px-4 font-roboto text-base placeholder-gray-400"
+                    className={cn(
+                      "h-[50px] w-[567px] border border-gray-300 rounded-lg bg-white px-4 font-roboto text-base placeholder-gray-400 transition-all duration-200 hover:border-blue-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-200",
+                      errors.serreId && "border-red-500 focus:border-red-500 focus:ring-red-200"
+                    )}
                   />
                   {errors.serreId && (
                     <p className="text-sm text-red-500">{errors.serreId}</p>
@@ -204,7 +313,10 @@ export default function InterventionForm({
                       type="date"
                       value={formData.interventionDate}
                       onChange={(e) => updateFormData("interventionDate", e.target.value)}
-                      className="h-[52px] w-[567px] border border-gray-300 rounded-lg bg-white px-7 font-inter text-lg text-black"
+                      className={cn(
+                        "h-[52px] w-[567px] border border-gray-300 rounded-lg bg-white px-7 font-inter text-lg text-black transition-all duration-200 hover:border-blue-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-200",
+                        errors.interventionDate && "border-red-500 focus:border-red-500 focus:ring-red-200"
+                      )}
                     />
                     <Calendar className="absolute right-3 top-1/2 transform -translate-y-1/2 h-6 w-6 text-black pointer-events-none" />
                   </div>
@@ -222,7 +334,10 @@ export default function InterventionForm({
                     value={formData.functionary}
                     onValueChange={(value) => updateFormData("functionary", value)}
                   >
-                    <SelectTrigger className="h-[47px] w-[567px] border border-gray-300 rounded-lg bg-white px-3 font-roboto text-base">
+                    <SelectTrigger className={cn(
+                      "h-[47px] w-[567px] border border-gray-300 rounded-lg bg-white px-3 font-roboto text-base transition-all duration-200 hover:border-blue-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-200",
+                      errors.functionary && "border-red-500 focus:border-red-500 focus:ring-red-200"
+                    )}>
                       <SelectValue placeholder="Sélectionner un fonctionnaire" className="text-gray-900" />
                     </SelectTrigger>
                     <SelectContent>
@@ -248,7 +363,7 @@ export default function InterventionForm({
                   value={formData.description}
                   onChange={(e) => updateFormData("description", e.target.value)}
                   placeholder="Détails supplémentaires sur l'intervention..."
-                  className="h-[122px] w-full border border-gray-300 rounded-lg bg-white p-4 font-roboto text-base placeholder-gray-400 resize-none"
+                  className="h-[122px] w-full border border-gray-300 rounded-lg bg-white p-4 font-roboto text-base placeholder-gray-400 resize-none transition-all duration-200 hover:border-blue-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
                 />
               </div>
 
@@ -289,7 +404,8 @@ export default function InterventionForm({
                   type="button"
                   variant="outline"
                   onClick={handleClose}
-                  className="h-12 px-6 bg-gray-100 border-0 text-gray-600 font-roboto text-base font-medium rounded-lg hover:bg-gray-200 flex items-center gap-2"
+                  disabled={isSubmitting || isDrafting}
+                  className="h-12 px-6 bg-gray-100 border-0 text-gray-600 font-roboto text-base font-medium rounded-lg hover:bg-gray-200 transition-all duration-200 flex items-center gap-2 disabled:opacity-50"
                 >
                   <ArrowLeft className="h-4 w-4" />
                   Annuler
@@ -300,19 +416,39 @@ export default function InterventionForm({
                     type="button"
                     variant="outline"
                     onClick={handleSaveDraft}
-                    className="h-12 px-6 bg-blue-50 border-0 text-blue-700 font-roboto text-base font-medium rounded-lg hover:bg-blue-100 flex items-center gap-2"
+                    disabled={isSubmitting || isDrafting}
+                    className="h-12 px-6 bg-blue-50 border-0 text-blue-700 font-roboto text-base font-medium rounded-lg hover:bg-blue-100 transition-all duration-200 transform hover:scale-105 flex items-center gap-2 disabled:opacity-50 disabled:transform-none"
                   >
-                    <Save className="h-4 w-4" />
-                    Sauvegarder en brouillon
+                    {isDrafting ? (
+                      <>
+                        <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+                        Sauvegarde...
+                      </>
+                    ) : (
+                      <>
+                        <Save className="h-4 w-4" />
+                        Sauvegarder en brouillon
+                      </>
+                    )}
                   </Button>
 
                   <Button
                     type="button"
                     onClick={handleSubmit}
-                    className="h-12 px-9 bg-blue-700 text-white font-roboto text-base font-medium rounded-lg hover:bg-blue-800 shadow-lg flex items-center gap-2"
+                    disabled={isSubmitting || isDrafting}
+                    className="h-12 px-9 bg-blue-700 text-white font-roboto text-base font-medium rounded-lg hover:bg-blue-800 shadow-lg transition-all duration-200 transform hover:scale-105 flex items-center gap-2 disabled:opacity-50 disabled:transform-none"
                   >
-                    <Send className="h-4 w-4" />
-                    Envoyer la demande
+                    {isSubmitting ? (
+                      <>
+                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                        Envoi en cours...
+                      </>
+                    ) : (
+                      <>
+                        <Send className="h-4 w-4" />
+                        Envoyer la demande
+                      </>
+                    )}
                   </Button>
                 </div>
               </div>
