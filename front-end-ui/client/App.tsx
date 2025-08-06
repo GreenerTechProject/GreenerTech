@@ -80,6 +80,9 @@ const App = () => (
               }
             />
 
+            {/* Demo route for intervention form */}
+            <Route path="/intervention-demo" element={<InterventionDemo />} />
+
             {/* Redirect root to dashboard if authenticated, otherwise to login */}
             <Route path="/" element={<Navigate to="/dashboard" replace />} />
 
