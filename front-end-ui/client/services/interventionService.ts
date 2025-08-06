@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import axios from 'axios';
 
 // Schema matching the backend Intervention model
 export const InterventionSchema = z.object({
@@ -53,24 +54,24 @@ export interface InterventionDisplay extends Intervention {
 }
 
 class InterventionService {
-  private baseUrl = '/api';
+  private baseUrl = `${window.location.protocol}//${window.location.hostname}:5000/api`;
 
-  async getAllInterventions(): Promise<InterventionDisplay[]> {
-    const response = await fetch(`${this.baseUrl}/intervention`, {
-      method: 'GET',
+async getAllInterventions(): Promise<InterventionDisplay[]> {
+  try {
+    const response = await axios.get(`${this.baseUrl}/intervention`, {
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${localStorage.getItem('token')}`,
       },
     });
 
-    if (!response.ok) {
-      throw new Error(`Erreur lors de la récupération des interventions: ${response.statusText}`);
-    }
-
-    const data = await response.json();
-    return data;
+    return response.data;
+  } catch (error: any) {
+    throw new Error(
+      `Erreur lors de la récupération des interventions: ${error.response?.statusText || error.message}`
+    );
   }
+}
 
   async getIntervention(id: number): Promise<InterventionDisplay> {
     const response = await fetch(`${this.baseUrl}/intervention/${id}`, {
