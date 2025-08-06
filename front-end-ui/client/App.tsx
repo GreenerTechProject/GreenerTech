@@ -23,9 +23,12 @@ import TechnicienRegistration from "./pages/TechnicienRegistration";
 import AlertsPage from "./pages/AlertsPage";
 import SurveillancePage from "./pages/SurveillancePage";
 import ReportsPage from "./pages/ReportsPage";
+<<<<<<< HEAD
 import Interventions from "./pages/Interventions";
 import Alerts from "./pages/Alerts";
 import Surveillance from "./pages/Surveillance";
+=======
+>>>>>>> b646880c84ba7a34cdde440dc1fe98e687dea513
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -45,7 +48,108 @@ const App = () => (
             <Route path="/affiliation-request" element={<AffiliationRequest />} />
             <Route path="/email-verification" element={<EmailVerification />} />
             <Route path="/verify-email" element={<VerifyEmail />} />
-            <Route path="/technicien-registration" element={<TechnicienRegistration />} />
+            <Route
+              path="/technicien-registration"
+              element={<TechnicienRegistration />}
+            />
+            {/* Protected Routes */}
+            <Route
+              path="/dashboard"
+              element={
+                <ProtectedRoute>
+                  <Dashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/directeur"
+              element={
+                <ProtectedRoute>
+                  <DirecteurDashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/technician"
+              element={
+                <ProtectedRoute>
+                  <TechnicianDashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/technician-dashboard"
+              element={
+                <ProtectedRoute>
+                  <TechnicianDashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/technicien-sup"
+              element={
+                <ProtectedRoute>
+                  <TechnicienSupDashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/technicien-sup-dashboard"
+              element={
+                <ProtectedRoute>
+                  <TechnicienSupDashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/alerts"
+              element={
+                <ProtectedRoute>
+                  <AlertsPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/surveillance"
+              element={
+                <ProtectedRoute>
+                  <SurveillancePage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/reports"
+              element={
+                <ProtectedRoute>
+                  <ReportsPage />
+                   </ProtectedRoute>
+              }
+            />
+                  
+<!--               <Route
+              path="/surveillance"
+              element={
+                <ProtectedRoute>
+                  <Surveillance />
+                </ProtectedRoute>
+              }/>
+                 -->
+             <Route
+              path="/interventions"
+              element={
+                <ProtectedRoute>
+                  <Interventions />
+              </ProtectedRoute>
+            }/>
+                   
+             <Route
+              path="/alerts"
+              element={
+                <ProtectedRoute>
+                  <Alerts />
+                </ProtectedRoute>
+              }
+            />
 
             {/* Protected Routes */}
             <Route path="/dashboard" element={
