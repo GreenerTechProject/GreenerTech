@@ -84,9 +84,7 @@ export default function TechnicianSidebar({
       id: "interventions",
       label: "Interventions",
       icon: <Bell className="h-5 w-5" />,
-      onClick: () => {
-        onInterventionClick?.();
-      },
+      path: "/interventions",
     },
     {
       id: "rapports",
