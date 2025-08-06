@@ -77,6 +77,27 @@ const Interventions: React.FC = () => {
     return matchesSearch && matchesStatus;
   });
 
+  const handleInterventionSubmit = (data: any) => {
+    // Create new intervention from form data
+    const newIntervention: Intervention = {
+      id: (interventions.length + 1).toString(),
+      title: data.interventionType,
+      description: data.description || "Aucune description fournie",
+      status: "pending",
+      date: data.interventionDate,
+      location: `Serre ${data.serreId}`,
+      technician: data.functionary,
+      priority: data.priority === "basse" ? "low" : data.priority === "moyenne" ? "medium" : "high"
+    };
+
+    setInterventions(prev => [newIntervention, ...prev]);
+    console.log("Intervention submitted:", data);
+  };
+
+  const handleInterventionSaveDraft = (data: any) => {
+    console.log("Intervention saved as draft:", data);
+  };
+
   return (
     <div className="p-6 space-y-6">
       <div className="flex justify-between items-center">
