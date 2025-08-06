@@ -79,6 +79,14 @@ const App = () => (
                 </ProtectedRoute>
               }
             />
+            <Route
+              path="/interventions"
+              element={
+                <ProtectedRoute>
+                  <Interventions />
+                </ProtectedRoute>
+              }
+            />
 
             {/* Redirect root to dashboard if authenticated, otherwise to login */}
             <Route path="/" element={<Navigate to="/dashboard" replace />} />
