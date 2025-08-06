@@ -24,6 +24,7 @@ interface PageHeaderProps {
   };
   userRole?: "technicien" | "technicien_sup" | "directeur";
   actions?: React.ReactNode;
+  showProfile?: boolean;
 }
 
 export default function PageHeader({ 
