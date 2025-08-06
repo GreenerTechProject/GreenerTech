@@ -1,107 +1,109 @@
-import React from "react";
-import { useAuth } from "../contexts/AuthContext";
+import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import TechnicianSidebar from "../components/TechnicianSidebar";
 import {
   AlertTriangle,
-  Clock,
   CheckCircle,
-  Thermometer,
-  Droplets,
-  LogOut,
+  Clock,
+  Search,
+  ChevronLeft,
+  ChevronRight,
+  TrendingUp,
+  LogOut
 } from "lucide-react";
-
-interface Alert {
-  id: string;
-  type: "temperature" | "irrigation" | "maintenance" | "security";
-  title: string;
-  description: string;
-  severity: "low" | "medium" | "high" | "critical";
-  timestamp: Date;
-  status: "active" | "acknowledged" | "resolved";
-  serreId: string;
-  serreName: string;
-}
-
-const mockAlerts: Alert[] = [
-  {
-    id: "1",
-    type: "temperature",
-    title: "Température élevée détectée",
-    description: "La température de la Serre Nord A a atteint 32°C",
-    severity: "high",
-    timestamp: new Date(Date.now() - 30 * 60 * 1000),
-    status: "active",
-    serreId: "1",
-    serreName: "Serre Nord A",
-  },
-  {
-    id: "2",
-    type: "irrigation",
-    title: "Système d'irrigation défaillant",
-    description: "Le système d'irrigation de la Serre Sud B ne répond plus",
-    severity: "critical",
-    timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000),
-    status: "acknowledged",
-    serreId: "2",
-    serreName: "Serre Sud B",
-  },
-  {
-    id: "3",
-    type: "maintenance",
-    title: "Maintenance préventive requise",
-    description: "La maintenance programmée de la Serre Est C est due",
-    severity: "medium",
-    timestamp: new Date(Date.now() - 4 * 60 * 60 * 1000),
-    status: "active",
-    serreId: "3",
-    serreName: "Serre Est C",
-  },
-];
+import { cn } from "@/lib/utils";
+import { AlertService } from "@/services/alertService";
+import { Alert, AlertStats } from "@/types/alert";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function AlertsPage() {
   const { user, logout } = useAuth();
+  const [alerts, setAlerts] = useState<Alert[]>([]);
+  const [stats, setStats] = useState<AlertStats | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalAlerts, setTotalAlerts] = useState(0);
+  const alertsPerPage = 7;
 
-  const getSeverityColor = (severity: string) => {
-    switch (severity) {
-      case "critical":
-        return "bg-red-100 text-red-800 border-red-300";
-      case "high":
-        return "bg-orange-100 text-orange-800 border-orange-300";
-      case "medium":
-        return "bg-yellow-100 text-yellow-800 border-yellow-300";
-      case "low":
-        return "bg-blue-100 text-blue-800 border-blue-300";
-      default:
-        return "bg-gray-100 text-gray-800 border-gray-300";
+  useEffect(() => {
+    loadAlerts();
+    loadStats();
+  }, [currentPage, searchTerm]);
+
+  const loadAlerts = async () => {
+    try {
+      setLoading(true);
+      const filters = searchTerm ? { search: searchTerm } : undefined;
+      const response = await AlertService.getAllAlerts(currentPage, alertsPerPage, filters);
+      setAlerts(response.alerts);
+      setTotalAlerts(response.total);
+    } catch (error) {
+      console.error("Error loading alerts:", error);
+    } finally {
+      setLoading(false);
     }
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "active":
+  const loadStats = async () => {
+    try {
+      const statsData = await AlertService.getAlertStats();
+      setStats(statsData);
+    } catch (error) {
+      console.error("Error loading stats:", error);
+    }
+  };
+
+  const handleUpdateAlert = async (alertId: number, status: "résolue" | "non résolue") => {
+    try {
+      await AlertService.updateAlert(alertId, { status });
+      loadAlerts();
+      loadStats();
+    } catch (error) {
+      console.error("Error updating alert:", error);
+    }
+  };
+
+  const getAlertLevel = (statusAlert: number): "High" | "Medium" | "Low" => {
+    if (statusAlert >= 8) return "High";
+    if (statusAlert >= 5) return "Medium";
+    return "Low";
+  };
+
+  const getAlertLevelColor = (level: "High" | "Medium" | "Low"): string => {
+    switch (level) {
+      case "High":
         return "bg-red-100 text-red-800";
-      case "acknowledged":
-        return "bg-yellow-100 text-yellow-800";
-      case "resolved":
+      case "Medium":
+        return "bg-orange-100 text-orange-800";
+      case "Low":
         return "bg-green-100 text-green-800";
       default:
         return "bg-gray-100 text-gray-800";
     }
   };
 
-  const getAlertIcon = (type: string) => {
-    switch (type) {
-      case "temperature":
-        return <Thermometer className="h-5 w-5" />;
-      case "irrigation":
-        return <Droplets className="h-5 w-5" />;
-      default:
-        return <AlertTriangle className="h-5 w-5" />;
-    }
+  const getStatusColor = (status: "résolue" | "non résolue"): string => {
+    return status === "résolue"
+      ? "bg-green-100 text-green-800"
+      : "bg-red-100 text-red-800";
   };
+
+  const formatDate = (dateString: string): string => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString("fr-FR", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  };
+
+  const totalPages = Math.ceil(totalAlerts / alertsPerPage);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -114,7 +116,7 @@ export default function AlertsPage() {
               <div className="flex items-center space-x-2">
                 <AlertTriangle className="h-6 w-6 text-red-500" />
                 <h1 className="text-lg sm:text-xl font-semibold text-gray-900">
-                  Alertes et Notifications
+                  Gestion des Alertes
                 </h1>
               </div>
             </div>
@@ -137,32 +139,180 @@ export default function AlertsPage() {
       </header>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+        {/* Page Description */}
+        <div className="mb-8">
+          <p className="text-gray-600">Surveillez et gérez toutes les alertes de votre système</p>
+        </div>
+
+        {/* Search Bar */}
+        <div className="mb-8">
+          <div className="relative max-w-md">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <Input
+              type="text"
+              placeholder="Rechercher une alerte..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+        </div>
+
+        {/* Alerts Table */}
+        <Card className="mb-8">
+          <div className="overflow-hidden">
+            <table className="w-full">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                    Nom d'anomalie
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                    Niveau
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                    Statut
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                    Localisation
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                    Horodatage
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {loading ? (
+                  <tr>
+                    <td colSpan={5} className="px-6 py-8 text-center text-gray-500">
+                      Chargement...
+                    </td>
+                  </tr>
+                ) : alerts.length === 0 ? (
+                  <tr>
+                    <td colSpan={5} className="px-6 py-8 text-center text-gray-500">
+                      Aucune alerte trouvée
+                    </td>
+                  </tr>
+                ) : (
+                  alerts.map((alert, index) => {
+                    const level = getAlertLevel(alert.status_alert);
+                    return (
+                      <tr
+                        key={alert.id}
+                        className={cn(
+                          "hover:bg-gray-50 transition-colors",
+                          index % 2 === 1 && "bg-gray-50"
+                        )}
+                      >
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm font-medium text-gray-900">
+                            {alert.maladie}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <Badge variant="outline" className={getAlertLevelColor(level)}>
+                            {level}
+                          </Badge>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className={cn(
+                              "flex items-center space-x-1",
+                              getStatusColor(alert.status)
+                            )}
+                            onClick={() => handleUpdateAlert(
+                              alert.id,
+                              alert.status === "résolue" ? "non résolue" : "résolue"
+                            )}
+                          >
+                            {alert.status === "résolue" ? (
+                              <CheckCircle className="h-3 w-3" />
+                            ) : (
+                              <AlertTriangle className="h-3 w-3" />
+                            )}
+                            <span>{alert.status === "résolue" ? "Résolu" : "Non Résolu"}</span>
+                          </Button>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm text-gray-600">
+                            Bilan ID: {alert.id_bilan}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm text-gray-600">
+                            {formatDate(alert.date)}
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
+          </div>
+        </Card>
+
+        {/* Pagination */}
+        <div className="flex items-center justify-between mb-8">
+          <div className="text-sm text-gray-700">
+            Affichage de {((currentPage - 1) * alertsPerPage) + 1} à {Math.min(currentPage * alertsPerPage, totalAlerts)} sur {totalAlerts} alerte{totalAlerts > 1 ? 's' : ''}
+          </div>
+
+          <div className="flex items-center space-x-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+              disabled={currentPage === 1}
+            >
+              <ChevronLeft className="h-4 w-4" />
+              Précédent
+            </Button>
+
+            {[...Array(Math.min(3, totalPages))].map((_, i) => {
+              const pageNum = i + 1;
+              return (
+                <Button
+                  key={pageNum}
+                  variant={currentPage === pageNum ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setCurrentPage(pageNum)}
+                  className="w-8"
+                >
+                  {pageNum}
+                </Button>
+              );
+            })}
+
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+              disabled={currentPage === totalPages}
+            >
+              Suivant
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+
+        {/* Stats Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
           <Card>
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600">Actives</p>
+                  <p className="text-sm font-medium text-gray-600">Alertes Non Résolues</p>
                   <p className="text-2xl font-bold text-red-600">
-                    {mockAlerts.filter((a) => a.status === "active").length}
+                    {stats?.unresolvedAlerts || 0}
                   </p>
                 </div>
-                <AlertTriangle className="h-8 w-8 text-red-600" />
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600">En attente</p>
-                  <p className="text-2xl font-bold text-yellow-600">
-                    {mockAlerts.filter((a) => a.status === "acknowledged").length}
-                  </p>
+                <div className="w-11 h-11 bg-red-100 rounded-full flex items-center justify-center">
+                  <AlertTriangle className="h-5 w-5 text-red-600" />
                 </div>
-                <Clock className="h-8 w-8 text-yellow-600" />
               </div>
             </CardContent>
           </Card>
@@ -171,12 +321,14 @@ export default function AlertsPage() {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600">Résolues</p>
+                  <p className="text-sm font-medium text-gray-600">Alertes Résolues</p>
                   <p className="text-2xl font-bold text-green-600">
-                    {mockAlerts.filter((a) => a.status === "resolved").length}
+                    {stats?.resolvedAlerts || 0}
                   </p>
                 </div>
-                <CheckCircle className="h-8 w-8 text-green-600" />
+                <div className="w-11 h-11 bg-green-100 rounded-full flex items-center justify-center">
+                  <CheckCircle className="h-5 w-5 text-green-600" />
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -185,74 +337,34 @@ export default function AlertsPage() {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600">Total</p>
-                  <p className="text-2xl font-bold text-gray-900">
-                    {mockAlerts.length}
+                  <p className="text-sm font-medium text-gray-600">Temps Moyen de Résolution</p>
+                  <p className="text-2xl font-bold text-orange-600">
+                    {stats?.averageResolutionTime || 0}h
                   </p>
                 </div>
-                <AlertTriangle className="h-8 w-8 text-gray-400" />
+                <div className="w-11 h-11 bg-orange-100 rounded-full flex items-center justify-center">
+                  <Clock className="h-5 w-5 text-orange-600" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600">Total Alertes</p>
+                  <p className="text-2xl font-bold text-blue-600">
+                    {stats?.totalAlerts || 0}
+                  </p>
+                </div>
+                <div className="w-11 h-11 bg-blue-100 rounded-full flex items-center justify-center">
+                  <TrendingUp className="h-5 w-5 text-blue-600" />
+                </div>
               </div>
             </CardContent>
           </Card>
         </div>
-
-        {/* Alerts List */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Toutes les alertes</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {mockAlerts.map((alert) => (
-                <div
-                  key={alert.id}
-                  className="flex items-start space-x-4 p-4 border rounded-lg hover:bg-gray-50 transition-colors"
-                >
-                  <div className="flex-shrink-0">
-                    {getAlertIcon(alert.type)}
-                  </div>
-                  
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <h3 className="text-sm font-medium text-gray-900">
-                          {alert.title}
-                        </h3>
-                        <p className="text-sm text-gray-600 mt-1">
-                          {alert.description}
-                        </p>
-                        <p className="text-xs text-gray-500 mt-2">
-                          {alert.serreName} • {alert.timestamp.toLocaleString("fr-FR")}
-                        </p>
-                      </div>
-                      
-                      <div className="flex flex-col items-end space-y-2">
-                        <Badge
-                          variant="outline"
-                          className={getSeverityColor(alert.severity)}
-                        >
-                          {alert.severity === "critical" && "Critique"}
-                          {alert.severity === "high" && "Élevée"}
-                          {alert.severity === "medium" && "Moyenne"}
-                          {alert.severity === "low" && "Faible"}
-                        </Badge>
-                        
-                        <Badge
-                          variant="outline"
-                          className={getStatusColor(alert.status)}
-                        >
-                          {alert.status === "active" && "Active"}
-                          {alert.status === "acknowledged" && "Prise en compte"}
-                          {alert.status === "resolved" && "Résolue"}
-                        </Badge>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
       </div>
     </div>
   );
