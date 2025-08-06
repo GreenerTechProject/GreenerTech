@@ -38,6 +38,12 @@ import {
   updateMission,
   deleteMission,
 } from "./routes/missions";
+  handleGetAllAlertes,
+  handleGetAlerte,
+  handleUpdateAlerte,
+  handleCreateAlerte,
+  handleDeleteAlerte,
+} from "./routes/alerts";
 
 export function createServer() {
   const app = express();
@@ -88,6 +94,13 @@ export function createServer() {
   app.get("/api/missions/:id", getMission);
   app.put("/api/missions/:id", updateMission);
   app.delete("/api/missions/:id", deleteMission);
+  
+  // Alerts routes
+  app.get("/api/alertes", handleGetAllAlertes);
+  app.get("/api/alertes/:id", handleGetAlerte);
+  app.put("/api/alertes/:id", handleUpdateAlerte);
+  app.post("/api/alertes", handleCreateAlerte);
+  app.delete("/api/alertes/:id", handleDeleteAlerte);
 
   return app;
 }

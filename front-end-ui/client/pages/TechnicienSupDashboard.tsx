@@ -402,11 +402,12 @@ export default function TechnicienSupDashboard() {
               </Badge>
               <Button
                 onClick={() => setIsInterventionFormOpen(true)}
-                className="bg-blue-600 hover:bg-blue-700 text-white"
+                className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white shadow-lg hover:shadow-xl transform transition-all duration-200 hover:scale-105 relative overflow-hidden group"
                 size="sm"
               >
-                <Bell className="h-4 w-4 mr-2" />
-                Nouvelle Intervention
+                <div className="absolute inset-0 bg-white opacity-0 group-hover:opacity-10 transition-opacity duration-200"></div>
+                <Bell className="h-4 w-4 mr-2 relative z-10" />
+                <span className="relative z-10 font-medium">Nouvelle Intervention</span>
               </Button>
             </div>
             <div className="flex items-center space-x-4">
