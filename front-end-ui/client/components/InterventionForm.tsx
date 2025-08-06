@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -18,7 +18,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Calendar, Save, Send, ArrowLeft } from "lucide-react";
+import { Calendar, Save, Send, ArrowLeft, Plus, CheckCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface InterventionFormProps {
@@ -57,10 +57,10 @@ const functionaries = [
 ];
 
 const priorityOptions = [
-  { value: "basse", label: "Basse", color: "text-gray-600" },
-  { value: "moyenne", label: "Moyenne", color: "text-blue-600" },
-  { value: "haute", label: "Haute", color: "text-orange-600" },
-  { value: "urgente", label: "Urgente", color: "text-red-600" },
+  { value: "basse", label: "Basse" },
+  { value: "moyenne", label: "Moyenne" },
+  { value: "haute", label: "Haute" },
+  { value: "urgente", label: "Urgente" },
 ];
 
 export default function InterventionForm({
@@ -80,6 +80,25 @@ export default function InterventionForm({
 
   const [errors, setErrors] = useState<Partial<InterventionData>>({});
   const { toast } = useToast();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isDrafting, setIsDrafting] = useState(false);
+  const [formStep, setFormStep] = useState(0);
+  const [showSuccess, setShowSuccess] = useState(false);
+
+  // Auto-focus first field when form opens
+  useEffect(() => {
+    if (isOpen) {
+      setFormStep(0);
+      setShowSuccess(false);
+      // Focus first field after animation
+      setTimeout(() => {
+        const firstField = document.querySelector('#intervention-type-trigger');
+        if (firstField) {
+          (firstField as HTMLElement).focus();
+        }
+      }, 300);
+    }
+  }, [isOpen]);
 
   const validateForm = () => {
     const newErrors: Partial<InterventionData> = {};
@@ -101,37 +120,84 @@ export default function InterventionForm({
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (validateForm()) {
-      onSubmit?.(formData);
-      toast({
-        title: "Intervention créée",
-        description: "Votre demande d'intervention a été envoyée avec succès.",
-      });
-      handleClose();
+      setIsSubmitting(true);
+      try {
+        // Simulate API call
+        await new Promise(resolve => setTimeout(resolve, 1500));
+
+        onSubmit?.(formData);
+        setShowSuccess(true);
+
+        toast({
+          title: "✅ Intervention créée",
+          description: "Votre demande d'intervention a été envoyée avec succès.",
+          duration: 3000,
+        });
+
+        // Close after showing success
+        setTimeout(() => {
+          handleClose();
+        }, 1500);
+      } catch (error) {
+        toast({
+          title: "❌ Erreur",
+          description: "Une erreur est survenue lors de l'envoi.",
+          variant: "destructive",
+        });
+      } finally {
+        setIsSubmitting(false);
+      }
     }
   };
 
-  const handleSaveDraft = () => {
-    onSaveDraft?.(formData);
-    toast({
-      title: "Brouillon sauvegardé",
-      description: "Votre intervention a été sauvegardée en brouillon.",
-    });
-    handleClose();
+  const handleSaveDraft = async () => {
+    setIsDrafting(true);
+    try {
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 800));
+
+      onSaveDraft?.(formData);
+      toast({
+        title: "💾 Brouillon sauvegardé",
+        description: "Votre intervention a été sauvegardée en brouillon.",
+        duration: 2000,
+      });
+
+      setTimeout(() => {
+        handleClose();
+      }, 500);
+    } catch (error) {
+      toast({
+        title: "❌ Erreur",
+        description: "Erreur lors de la sauvegarde.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsDrafting(false);
+    }
   };
 
   const handleClose = () => {
-    setFormData({
-      interventionType: "",
-      serreId: "",
-      interventionDate: "",
-      functionary: "",
-      description: "",
-      priority: "moyenne",
-    });
-    setErrors({});
-    onClose();
+    // Reset form with animation
+    setFormStep(0);
+    setShowSuccess(false);
+    setIsSubmitting(false);
+    setIsDrafting(false);
+
+    setTimeout(() => {
+      setFormData({
+        interventionType: "",
+        serreId: "",
+        interventionDate: "",
+        functionary: "",
+        description: "",
+        priority: "moyenne",
+      });
+      setErrors({});
+      onClose();
+    }, 150);
   };
 
   const updateFormData = (field: keyof InterventionData, value: string) => {
@@ -140,6 +206,27 @@ export default function InterventionForm({
       setErrors(prev => ({ ...prev, [field]: undefined }));
     }
   };
+
+  if (showSuccess) {
+    return (
+      <Dialog open={isOpen} onOpenChange={handleClose}>
+        <DialogContent className="max-w-md w-[90vw] p-0 bg-white rounded-xl border border-gray-200 shadow-lg">
+          <div className="flex flex-col items-center justify-center py-12 px-8 text-center">
+            <div className="mb-6 relative">
+              <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center animate-pulse">
+                <CheckCircle className="w-10 h-10 text-green-600 animate-bounce" />
+              </div>
+            </div>
+            <h3 className="text-xl font-semibold text-gray-900 mb-2">Intervention créée !</h3>
+            <p className="text-gray-600 mb-6">Votre demande a été envoyée avec succès.</p>
+            <div className="w-full bg-gray-200 rounded-full h-1">
+              <div className="bg-green-600 h-1 rounded-full animate-pulse" style={{width: '100%'}}></div>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
@@ -159,23 +246,24 @@ export default function InterventionForm({
           <div className="flex-1 px-8 py-8 space-y-1">
             <form className="space-y-8 max-w-none">
               {/* Row 1: Type d'intervention & ID Serre */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div className="grid grid-cols-2 gap-8">
                 <div className="space-y-3">
-                  <Label htmlFor="intervention-type" className="text-sm font-semibold text-gray-900">
+                  <label className="block text-sm font-semibold text-gray-900 font-roboto">
                     Type d'intervention demandée
                     <span className="text-red-500 ml-1">*</span>
-                  </Label>
+                  </label>
                   <Select
                     value={formData.interventionType}
                     onValueChange={(value) => updateFormData("interventionType", value)}
                   >
-                    <SelectTrigger 
+                    <SelectTrigger
+                      id="intervention-type-trigger"
                       className={cn(
-                        "h-12 border-gray-300 rounded-lg",
-                        errors.interventionType && "border-red-500 focus:border-red-500"
+                        "h-[47px] w-[567px] border border-gray-300 rounded-lg bg-white px-3 font-roboto text-base transition-all duration-200 hover:border-blue-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-200",
+                        errors.interventionType && "border-red-500 focus:border-red-500 focus:ring-red-200"
                       )}
                     >
-                      <SelectValue placeholder="Sélectionner un type d'intervention" />
+                      <SelectValue placeholder="Sélectionner un type d'intervention" className="text-gray-900" />
                     </SelectTrigger>
                     <SelectContent>
                       {interventionTypes.map((type) => (
@@ -191,19 +279,18 @@ export default function InterventionForm({
                 </div>
 
                 <div className="space-y-3">
-                  <Label htmlFor="serre-id" className="text-sm font-semibold text-gray-900">
+                  <label className="block text-sm font-semibold text-gray-900 font-roboto">
                     ID Serre
                     <span className="text-red-500 ml-1">*</span>
-                  </Label>
+                  </label>
                   <Input
-                    id="serre-id"
                     type="text"
                     value={formData.serreId}
                     onChange={(e) => updateFormData("serreId", e.target.value)}
                     placeholder="Serre / Domaine / Bilan"
                     className={cn(
-                      "h-12 border-gray-300 rounded-lg",
-                      errors.serreId && "border-red-500 focus:border-red-500"
+                      "h-[50px] w-[567px] border border-gray-300 rounded-lg bg-white px-4 font-roboto text-base placeholder-gray-400 transition-all duration-200 hover:border-blue-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-200",
+                      errors.serreId && "border-red-500 focus:border-red-500 focus:ring-red-200"
                     )}
                   />
                   {errors.serreId && (
@@ -213,24 +300,23 @@ export default function InterventionForm({
               </div>
 
               {/* Row 2: Date d'intervention & Fonctionnaire */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div className="grid grid-cols-2 gap-8">
                 <div className="space-y-3">
-                  <Label htmlFor="intervention-date" className="text-sm font-semibold text-gray-900">
+                  <label className="block text-sm font-semibold text-gray-900 font-roboto">
                     Date de l'intervention
                     <span className="text-red-500 ml-1">*</span>
-                  </Label>
+                  </label>
                   <div className="relative">
                     <Input
-                      id="intervention-date"
                       type="date"
                       value={formData.interventionDate}
                       onChange={(e) => updateFormData("interventionDate", e.target.value)}
                       className={cn(
-                        "h-12 border-gray-300 rounded-lg pl-4 pr-12",
-                        errors.interventionDate && "border-red-500 focus:border-red-500"
+                        "h-[52px] w-[567px] border border-gray-300 rounded-lg bg-white px-7 font-inter text-lg text-black transition-all duration-200 hover:border-blue-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-200",
+                        errors.interventionDate && "border-red-500 focus:border-red-500 focus:ring-red-200"
                       )}
                     />
-                    <Calendar className="absolute right-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400 pointer-events-none" />
+                    <Calendar className="absolute right-3 top-1/2 transform -translate-y-1/2 h-6 w-6 text-black pointer-events-none" />
                   </div>
                   {errors.interventionDate && (
                     <p className="text-sm text-red-500">{errors.interventionDate}</p>
@@ -238,21 +324,19 @@ export default function InterventionForm({
                 </div>
 
                 <div className="space-y-3">
-                  <Label htmlFor="functionary" className="text-sm font-semibold text-gray-900">
+                  <label className="block text-sm font-semibold text-gray-900 font-roboto">
                     Fonctionnaire demandé
                     <span className="text-red-500 ml-1">*</span>
-                  </Label>
+                  </label>
                   <Select
                     value={formData.functionary}
                     onValueChange={(value) => updateFormData("functionary", value)}
                   >
-                    <SelectTrigger 
-                      className={cn(
-                        "h-12 border-gray-300 rounded-lg",
-                        errors.functionary && "border-red-500 focus:border-red-500"
-                      )}
-                    >
-                      <SelectValue placeholder="Sélectionner un fonctionnaire" />
+                    <SelectTrigger className={cn(
+                      "h-[47px] w-[567px] border border-gray-300 rounded-lg bg-white px-3 font-roboto text-base transition-all duration-200 hover:border-blue-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-200",
+                      errors.functionary && "border-red-500 focus:border-red-500 focus:ring-red-200"
+                    )}>
+                      <SelectValue placeholder="Sélectionner un fonctionnaire" className="text-gray-900" />
                     </SelectTrigger>
                     <SelectContent>
                       {functionaries.map((functionary) => (
@@ -325,8 +409,6 @@ export default function InterventionForm({
                   </div>
                 </div>
               </div>
-            </form>
-          </div>
 
           {/* Footer Actions */}
           <div className="flex flex-col lg:flex-row justify-between items-stretch lg:items-center gap-4 px-8 py-6 border-t border-gray-200 bg-gradient-to-r from-gray-50 to-blue-50">
