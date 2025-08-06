@@ -139,6 +139,18 @@ const Interventions: React.FC = () => {
             <option value="cancelled">Annulée</option>
           </select>
         </div>
+
+        {(searchTerm || statusFilter !== "all") && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={clearAllFilters}
+            className="flex items-center gap-2"
+          >
+            <X className="h-4 w-4" />
+            Effacer les filtres
+          </Button>
+        )}
       </div>
 
       {/* Interventions List */}
