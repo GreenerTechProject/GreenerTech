@@ -19,9 +19,9 @@ import DirecteurDashboard from "./pages/DirecteurDashboard";
 import TechnicianDashboard from "./pages/TechnicianDashboard";
 import TechnicienSupDashboard from "./pages/TechnicienSupDashboard";
 import TechnicienRegistration from "./pages/TechnicienRegistration";
-import Surveillance from "./pages/Surveillance";
-import Interventions from "./pages/Interventions";
-import Alerts from "./pages/Alerts";
+import AlertsPage from "./pages/AlertsPage";
+import SurveillancePage from "./pages/SurveillancePage";
+import ReportsPage from "./pages/ReportsPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -74,6 +74,14 @@ const App = () => (
               }
             />
             <Route
+              path="/technician-dashboard"
+              element={
+                <ProtectedRoute>
+                  <TechnicianDashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
               path="/technicien-sup"
               element={
                 <ProtectedRoute>
@@ -82,13 +90,46 @@ const App = () => (
               }
             />
             <Route
+              path="/technicien-sup-dashboard"
+              element={
+                <ProtectedRoute>
+                  <TechnicienSupDashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/alerts"
+              element={
+                <ProtectedRoute>
+                  <AlertsPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/surveillance"
+              element={
+                <ProtectedRoute>
+                  <SurveillancePage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/reports"
+              element={
+                <ProtectedRoute>
+                  <ReportsPage />
+                   </ProtectedRoute>
+              }
+            />
+                  
+<!--               <Route
               path="/surveillance"
               element={
                 <ProtectedRoute>
                   <Surveillance />
                 </ProtectedRoute>
               }/>
-                
+                 -->
              <Route
               path="/interventions"
               element={
