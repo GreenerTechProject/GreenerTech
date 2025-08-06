@@ -33,6 +33,7 @@ import {
   LogOut,
   Sprout,
   Calendar,
+  Bell,
 } from "lucide-react";
 import TechnicianSidebar from "../components/TechnicianSidebar";
 import InterventionForm from "../components/InterventionForm";
@@ -482,7 +483,7 @@ export default function TechnicianDashboard() {
                             }
                           >
                             <SelectTrigger>
-                              <SelectValue placeholder="Sélectionnez une variété" />
+                              <SelectValue placeholder="S��lectionnez une variété" />
                             </SelectTrigger>
                             <SelectContent>
                               {cropVarieties.map((variety) => (
