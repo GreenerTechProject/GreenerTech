@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -57,10 +57,10 @@ const functionaries = [
 ];
 
 const priorityOptions = [
-  { value: "basse", label: "Basse", color: "text-gray-600" },
-  { value: "moyenne", label: "Moyenne", color: "text-blue-600" },
-  { value: "haute", label: "Haute", color: "text-orange-600" },
-  { value: "urgente", label: "Urgente", color: "text-red-600" },
+  { value: "basse", label: "Basse" },
+  { value: "moyenne", label: "Moyenne" },
+  { value: "haute", label: "Haute" },
+  { value: "urgente", label: "Urgente" },
 ];
 
 export default function InterventionForm({
@@ -69,6 +69,7 @@ export default function InterventionForm({
   onSubmit,
   onSaveDraft,
 }: InterventionFormProps) {
+  console.log("InterventionForm rendered, isOpen:", isOpen);
   const [formData, setFormData] = useState<InterventionData>({
     interventionType: "",
     serreId: "",
@@ -80,10 +81,27 @@ export default function InterventionForm({
 
   const [errors, setErrors] = useState<Partial<InterventionData>>({});
   const { toast } = useToast();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isDrafting, setIsDrafting] = useState(false);
+  const [formStep, setFormStep] = useState(0);
+  const [showSuccess, setShowSuccess] = useState(false);
+
+  useEffect(() => {
+    if (isOpen) {
+      setFormStep(0);
+      setShowSuccess(false);
+      setTimeout(() => {
+        const firstField = document.querySelector('#intervention-type-trigger');
+        if (firstField) {
+          (firstField as HTMLElement).focus();
+        }
+      }, 300);
+    }
+  }, [isOpen]);
 
   const validateForm = () => {
     const newErrors: Partial<InterventionData> = {};
-    
+
     if (!formData.interventionType) {
       newErrors.interventionType = "Type d'intervention requis";
     }
@@ -101,37 +119,74 @@ export default function InterventionForm({
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (validateForm()) {
-      onSubmit?.(formData);
-      toast({
-        title: "Intervention créée",
-        description: "Votre demande d'intervention a été envoyée avec succès.",
-      });
-      handleClose();
+      setIsSubmitting(true);
+      try {
+        await new Promise(resolve => setTimeout(resolve, 1500));
+        onSubmit?.(formData);
+        setShowSuccess(true);
+        toast({
+          title: "✅ Intervention créée",
+          description: "Votre demande d'intervention a été envoyée avec succès.",
+          duration: 3000,
+        });
+        setTimeout(() => {
+          handleClose();
+        }, 1500);
+      } catch (error) {
+        toast({
+          title: "❌ Erreur",
+          description: "Une erreur est survenue lors de l'envoi.",
+          variant: "destructive",
+        });
+      } finally {
+        setIsSubmitting(false);
+      }
     }
   };
 
-  const handleSaveDraft = () => {
-    onSaveDraft?.(formData);
-    toast({
-      title: "Brouillon sauvegardé",
-      description: "Votre intervention a été sauvegardée en brouillon.",
-    });
-    handleClose();
+  const handleSaveDraft = async () => {
+    setIsDrafting(true);
+    try {
+      await new Promise(resolve => setTimeout(resolve, 800));
+      onSaveDraft?.(formData);
+      toast({
+        title: "💾 Brouillon sauvegardé",
+        description: "Votre intervention a été sauvegardée en brouillon.",
+        duration: 2000,
+      });
+      setTimeout(() => {
+        handleClose();
+      }, 500);
+    } catch (error) {
+      toast({
+        title: "❌ Erreur",
+        description: "Erreur lors de la sauvegarde.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsDrafting(false);
+    }
   };
 
   const handleClose = () => {
-    setFormData({
-      interventionType: "",
-      serreId: "",
-      interventionDate: "",
-      functionary: "",
-      description: "",
-      priority: "moyenne",
-    });
-    setErrors({});
-    onClose();
+    setFormStep(0);
+    setShowSuccess(false);
+    setIsSubmitting(false);
+    setIsDrafting(false);
+    setTimeout(() => {
+      setFormData({
+        interventionType: "",
+        serreId: "",
+        interventionDate: "",
+        functionary: "",
+        description: "",
+        priority: "moyenne",
+      });
+      setErrors({});
+      onClose();
+    }, 150);
   };
 
   const updateFormData = (field: keyof InterventionData, value: string) => {

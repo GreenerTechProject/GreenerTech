@@ -19,6 +19,9 @@ import DirecteurDashboard from "./pages/DirecteurDashboard";
 import TechnicianDashboard from "./pages/TechnicianDashboard";
 import TechnicienSupDashboard from "./pages/TechnicienSupDashboard";
 import TechnicienRegistration from "./pages/TechnicienRegistration";
+import AlertsPage from "./pages/AlertsPage";
+import SurveillancePage from "./pages/SurveillancePage";
+import ReportsPage from "./pages/ReportsPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -71,6 +74,14 @@ const App = () => (
               }
             />
             <Route
+              path="/technician-dashboard"
+              element={
+                <ProtectedRoute>
+                  <TechnicianDashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
               path="/technicien-sup"
               element={
                 <ProtectedRoute>
@@ -78,10 +89,67 @@ const App = () => (
                 </ProtectedRoute>
               }
             />
+            <Route
+              path="/technicien-sup-dashboard"
+              element={
+                <ProtectedRoute>
+                  <TechnicienSupDashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/alerts"
+              element={
+                <ProtectedRoute>
+                  <AlertsPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/surveillance"
+              element={
+                <ProtectedRoute>
+                  <SurveillancePage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/reports"
+              element={
+                <ProtectedRoute>
+                  <ReportsPage />
+                   </ProtectedRoute>
+              }
+            />
+                  
+<!--               <Route
+              path="/surveillance"
+              element={
+                <ProtectedRoute>
+                  <Surveillance />
+                </ProtectedRoute>
+              }/>
+                 -->
+             <Route
+              path="/interventions"
+              element={
+                <ProtectedRoute>
+                  <Interventions />
+              </ProtectedRoute>
+            }/>
+                   
+             <Route
+              path="/alerts"
+              element={
+                <ProtectedRoute>
+                  <Alerts />
+                </ProtectedRoute>
+              }
+            />
 
             {/* Redirect root to dashboard if authenticated, otherwise to login */}
             <Route path="/" element={<Navigate to="/dashboard" replace />} />
-
+     
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
