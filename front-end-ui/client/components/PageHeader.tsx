@@ -27,14 +27,30 @@ interface PageHeaderProps {
   showProfile?: boolean;
 }
 
-export default function PageHeader({ 
-  title, 
-  subtitle, 
-  badge, 
+export default function PageHeader({
+  title,
+  subtitle,
+  badge,
   userRole = "technicien",
-  actions 
+  actions,
+  showProfile = true
 }: PageHeaderProps) {
   const { user, logout } = useAuth();
+  const navigate = useNavigate();
+
+  const getUserInitials = (name?: string) => {
+    if (!name) return "U";
+    return name.split(" ").map(n => n[0]).join("").toUpperCase();
+  };
+
+  const handleProfileClick = () => {
+    navigate("/profile");
+  };
+
+  const handleLogout = () => {
+    logout();
+    navigate("/login");
+  };
 
   return (
     <header className="bg-white shadow-sm border-b sticky top-0 z-10">
