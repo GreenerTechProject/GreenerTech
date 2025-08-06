@@ -391,6 +391,33 @@ export const authService = {
   getStoredUser: (): User | null => {
     return tokenManager.getUser();
   },
+
+  // Update user profile
+  updateProfile: async (profileData: Partial<User & {
+    telephone?: string;
+    birthday?: string;
+    password?: string;
+  }>): Promise<User> => {
+    try {
+      const response = await api.put("/user", profileData);
+      const updatedUser = response.data.user || response.data;
+
+      // Update local storage with new user data
+      const currentUser = tokenManager.getUser();
+      if (currentUser) {
+        const mergedUser = { ...currentUser, ...profileData };
+        delete mergedUser.password; // Don't store password locally
+        tokenManager.setUser(mergedUser);
+      }
+
+      return updatedUser;
+    } catch (error: any) {
+      throw {
+        message: error.response?.data?.message || "Failed to update profile",
+        status: error.response?.status || 500,
+      } as ApiError;
+    }
+  },
 };
 
 export default authService;
