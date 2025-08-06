@@ -169,7 +169,6 @@ const statusOptions = [
 ];
 
 export default function Interventions() {
-  const { user, logout } = useAuth();
   const [interventions] = useState<Intervention[]>(mockInterventions);
   const [searchTerm, setSearchTerm] = useState("");
   const [typeFilter, setTypeFilter] = useState("all");
@@ -501,7 +500,7 @@ export default function Interventions() {
                   Aucune intervention trouvée
                 </h3>
                 <p className="text-gray-600 mb-4">
-                  Aucune intervention ne correspond à vos critères de recherche.
+                  Aucune intervention ne correspond �� vos critères de recherche.
                 </p>
                 <Button 
                   variant="outline" 
