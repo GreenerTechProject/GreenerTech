@@ -24,7 +24,6 @@ import Interventions from "./pages/Interventions";
 import AlertsPage from "./pages/AlertsPage";
 import SurveillancePage from "./pages/SurveillancePage";
 import ReportsPage from "./pages/ReportsPage";
-import Interventions from "./pages/Interventions";
 import Alerts from "./pages/Alerts";
 import Surveillance from "./pages/Surveillance";
 import NotFound from "./pages/NotFound";

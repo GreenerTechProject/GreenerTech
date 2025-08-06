@@ -5,6 +5,8 @@ import InterventionForm from "../components/InterventionForm";
 import TechnicianSidebar from "../components/TechnicianSidebar";
 import { useAuth } from "../contexts/AuthContext";
 import { cn } from "@/lib/utils";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+
 
 export default function Interventions() {
   const [isInterventionFormOpen, setIsInterventionFormOpen] = useState(false);
@@ -95,14 +97,7 @@ export default function Interventions() {
         onSaveDraft={handleInterventionSaveDraft}
       />
 
-      <PageHeader
-        title="Interventions"
-        badge={{
-          text: `${filteredInterventions.length} intervention${filteredInterventions.length !== 1 ? 's' : ''}`,
-          className: "bg-blue-50 border-blue-200 text-blue-700"
-        }}
-        userRole="technicien"
-      />
+      
 
       <div className="container mx-auto p-4 lg:p-6 space-y-6">
         {/* Search and Filters Section */}
