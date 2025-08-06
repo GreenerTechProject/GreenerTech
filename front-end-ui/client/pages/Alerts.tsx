@@ -292,3 +292,76 @@ export default function Alerts() {
     </div>
   );
 }
+
+
+// Mock data for demo purposes
+function getMockAlerts(): Alert[] {
+  return [
+    {
+      id: 1,
+      id_bilan: 1,
+      status_alert: 9,
+      maladie: "Température élevée détectée",
+      lien_image: "",
+      x1: 33.9716,
+      y1: -6.8498,
+      date: "2025-07-15T14:23:00Z",
+      status: "non résolue",
+    },
+    {
+      id: 2,
+      id_bilan: 2,
+      status_alert: 6,
+      maladie: "Humidité faible",
+      lien_image: "",
+      x1: 33.9720,
+      y1: -6.8500,
+      date: "2025-07-15T12:45:00Z",
+      status: "résolue",
+    },
+    {
+      id: 3,
+      id_bilan: 3,
+      status_alert: 8,
+      maladie: "Défaillance capteur CO2",
+      lien_image: "",
+      x1: 33.9712,
+      y1: -6.8495,
+      date: "2025-07-15T11:30:00Z",
+      status: "non résolue",
+    },
+    {
+      id: 4,
+      id_bilan: 4,
+      status_alert: 3,
+      maladie: "Niveau d'eau bas",
+      lien_image: "",
+      x1: 33.9718,
+      y1: -6.8502,
+      date: "2025-07-15T09:15:00Z",
+      status: "résolue",
+    },
+    {
+      id: 5,
+      id_bilan: 5,
+      status_alert: 7,
+      maladie: "Éclairage défectueux",
+      lien_image: "",
+      x1: 33.9714,
+      y1: -6.8497,
+      date: "2025-07-15T08:42:00Z",
+      status: "non résolue",
+    },
+    {
+      id: 6,
+      id_bilan: 6,
+      status_alert: 4,
+      maladie: "Ventilation insuffisante",
+      lien_image: "",
+      x1: 33.9722,
+      y1: -6.8505,
+      date: "2025-07-14T16:28:00Z",
+      status: "résolue",
+    },
+  ];
+}
