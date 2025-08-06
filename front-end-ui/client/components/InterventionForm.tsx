@@ -307,21 +307,21 @@ export default function InterventionForm({
           </div>
 
           {/* Footer Actions */}
-          <div className="flex flex-col sm:flex-row justify-between items-center gap-4 px-8 py-6 border-t border-gray-200 bg-gray-50">
+          <div className="flex flex-col lg:flex-row justify-between items-stretch lg:items-center gap-4 px-4 sm:px-8 py-6 border-t border-gray-200 bg-gray-50">
             <Button
               variant="outline"
               onClick={handleClose}
-              className="w-full sm:w-auto px-6 py-3 border-gray-300 text-gray-600 hover:bg-gray-100"
+              className="order-3 lg:order-1 w-full lg:w-auto px-6 py-3 border-gray-300 text-gray-600 hover:bg-gray-100"
             >
               <ArrowLeft className="h-4 w-4 mr-2" />
               Annuler
             </Button>
 
-            <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+            <div className="order-1 lg:order-2 flex flex-col sm:flex-row gap-3 w-full lg:w-auto">
               <Button
                 variant="outline"
                 onClick={handleSaveDraft}
-                className="w-full sm:w-auto px-6 py-3 border-blue-300 text-blue-600 bg-blue-50 hover:bg-blue-100"
+                className="w-full sm:w-auto px-6 py-3 border-blue-300 text-blue-600 bg-blue-50 hover:bg-blue-100 flex items-center justify-center"
               >
                 <Save className="h-4 w-4 mr-2" />
                 Sauvegarder en brouillon
@@ -329,7 +329,7 @@ export default function InterventionForm({
 
               <Button
                 onClick={handleSubmit}
-                className="w-full sm:w-auto px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white shadow-lg"
+                className="w-full sm:w-auto px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white shadow-lg flex items-center justify-center"
               >
                 <Send className="h-4 w-4 mr-2" />
                 Envoyer la demande
