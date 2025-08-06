@@ -58,6 +58,7 @@ const getSeverityLabel = (statusAlert: number) => {
 };
 
 export default function Alerts() {
+  const navigate = useNavigate();
   const [alerts, setAlerts] = useState<Alert[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<"all" | "resolved" | "unresolved">("all");
