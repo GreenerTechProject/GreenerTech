@@ -32,6 +32,7 @@ export default function TechnicianSidebar({
   userRole,
 }: TechnicianSidebarProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const [isInterventionFormOpen, setIsInterventionFormOpen] = useState(false);
   const { logout } = useAuth();
   const navigate = useNavigate();
 
