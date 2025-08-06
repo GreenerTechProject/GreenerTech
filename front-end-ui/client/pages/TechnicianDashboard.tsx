@@ -362,40 +362,14 @@ export default function TechnicianDashboard() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white shadow-sm border-b sticky top-0 z-10">
-        <div className="max-w-full px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-4">
-            <div className="flex items-center">
-              {/* Sidebar Button */}
-              <TechnicianSidebar userRole="technicien" />
-              <h1 className="text-xl font-semibold text-gray-900 ml-4">
-                Tableau de Bord Technicien
-              </h1>
-              <Badge
-                variant="outline"
-                className="bg-green-50 border-green-200 text-green-700"
-              >
-                {totalBillons} Billons gérés
-              </Badge>
-            </div>
-            <div className="flex items-center space-x-4">
-              <span className="text-sm text-gray-600 hidden sm:block">
-                {user?.name || user?.email}
-              </span>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => logout()}
-                className="flex items-center space-x-1"
-              >
-                <LogOut className="h-4 w-4" />
-                <span className="hidden sm:inline">Déconnexion</span>
-              </Button>
-            </div>
-          </div>
-        </div>
-      </header>
+      <PageHeader
+        title="Tableau de Bord Technicien"
+        badge={{
+          text: `${totalBillons} Billons gérés`,
+          className: "bg-green-50 border-green-200 text-green-700"
+        }}
+        userRole="technicien"
+      />
 
       <div className="flex h-[calc(100vh-73px)]">
         {/* Left Control Panel */}
