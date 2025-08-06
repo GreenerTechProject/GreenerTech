@@ -31,6 +31,8 @@ import {
   Droplets,
   Sun,
   Sprout,
+  Bell,
+  LogOut,
 } from "lucide-react";
 import TechnicianSidebar from "../components/TechnicianSidebar";
 import InterventionForm from "../components/InterventionForm";
