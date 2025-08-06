@@ -85,7 +85,9 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <Interventions />
-
+              </ProtectedRoute>
+            }/>
+            <Route
               path="/alerts"
               element={
                 <ProtectedRoute>
