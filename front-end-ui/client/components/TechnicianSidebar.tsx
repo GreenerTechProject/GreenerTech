@@ -83,6 +83,7 @@ export default function TechnicianSidebar({
         onInterventionClick?.();
       },
 
+
       path: "/interventions",
     },
     {

@@ -20,15 +20,12 @@ import DirecteurDashboard from "./pages/DirecteurDashboard";
 import TechnicianDashboard from "./pages/TechnicianDashboard";
 import TechnicienSupDashboard from "./pages/TechnicienSupDashboard";
 import TechnicienRegistration from "./pages/TechnicienRegistration";
+import Interventions from "./pages/Interventions";
 import AlertsPage from "./pages/AlertsPage";
 import SurveillancePage from "./pages/SurveillancePage";
 import ReportsPage from "./pages/ReportsPage";
-<<<<<<< HEAD
-import Interventions from "./pages/Interventions";
 import Alerts from "./pages/Alerts";
 import Surveillance from "./pages/Surveillance";
-=======
->>>>>>> b646880c84ba7a34cdde440dc1fe98e687dea513
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -139,6 +136,9 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <Interventions />
+                </ProtectedRoute>
+              }
+            />
               </ProtectedRoute>
             }/>
                    

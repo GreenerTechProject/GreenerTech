@@ -1,331 +1,100 @@
-import React, { useState, useMemo } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Separator } from "@/components/ui/separator";
-import {
-  Search,
-  Filter,
-  Calendar,
-  Clock,
-  MapPin,
-  User,
-  Wrench,
-  AlertTriangle,
-  CheckCircle,
-  Pause,
-  Plus,
-  Download,
-  RefreshCw,
-} from "lucide-react";
-import PageHeader from "../components/PageHeader";
+import { Plus } from "lucide-react";
+import InterventionForm from "../components/InterventionForm";
+import TechnicianSidebar from "../components/TechnicianSidebar";
+import { useAuth } from "../contexts/AuthContext";
 import { cn } from "@/lib/utils";
 
-interface Intervention {
-  id: string;
-  title: string;
-  description: string;
-  type: "maintenance" | "repair" | "inspection" | "emergency" | "installation";
-  priority: "low" | "medium" | "high" | "urgent";
-  status: "pending" | "in_progress" | "completed" | "cancelled" | "paused";
-  assignedTo: string;
-  assignedBy: string;
-  serre: string;
-  location: string;
-  scheduledDate: string;
-  completedDate?: string;
-  estimatedDuration: number; // in minutes
-  actualDuration?: number; // in minutes
-  equipment: string[];
-  notes?: string;
-  createdAt: string;
-}
-
-const mockInterventions: Intervention[] = [
-  {
-    id: "int-001",
-    title: "Remplacement système d'irrigation Zone A",
-    description: "Remplacement des tuyaux d'irrigation défaillants dans la zone A de la serre Nord",
-    type: "repair",
-    priority: "high",
-    status: "in_progress",
-    assignedTo: "Jean Dupont",
-    assignedBy: "Marie Martin",
-    serre: "Serre Nord A",
-    location: "Zone A - Secteur irrigation",
-    scheduledDate: "2024-01-15",
-    estimatedDuration: 120,
-    actualDuration: 90,
-    equipment: ["Tuyaux irrigation", "Raccords", "Outils plomberie"],
-    notes: "Attention aux raccords existants",
-    createdAt: "2024-01-10",
-  },
-  {
-    id: "int-002",
-    title: "Inspection mensuelle capteurs température",
-    description: "Vérification et calibrage des capteurs de température de toutes les serres",
-    type: "inspection",
-    priority: "medium",
-    status: "pending",
-    assignedTo: "Pierre Lambert",
-    assignedBy: "Marie Martin",
-    serre: "Toutes les serres",
-    location: "Systèmes de contrôle",
-    scheduledDate: "2024-01-20",
-    estimatedDuration: 180,
-    equipment: ["Multimètre", "Calibreur", "Tablette"],
-    createdAt: "2024-01-12",
-  },
-  {
-    id: "int-003",
-    title: "Installation nouveau système ventilation",
-    description: "Installation d'un système de ventilation automatisé dans la serre Sud B",
-    type: "installation",
-    priority: "medium",
-    status: "completed",
-    assignedTo: "Jean Dupont",
-    assignedBy: "Marie Martin",
-    serre: "Serre Sud B",
-    location: "Toiture - Ventilation",
-    scheduledDate: "2024-01-05",
-    completedDate: "2024-01-06",
-    estimatedDuration: 240,
-    actualDuration: 220,
-    equipment: ["Ventilateurs", "Capteurs", "Câblage", "Contrôleur"],
-    notes: "Installation réussie, tests validés",
-    createdAt: "2024-01-02",
-  },
-  {
-    id: "int-004",
-    title: "Urgence - Panne chauffage Serre Est",
-    description: "Réparation d'urgence du système de chauffage défaillant",
-    type: "emergency",
-    priority: "urgent",
-    status: "completed",
-    assignedTo: "Pierre Lambert",
-    assignedBy: "Service Urgences",
-    serre: "Serre Est C",
-    location: "Chaufferie principale",
-    scheduledDate: "2024-01-08",
-    completedDate: "2024-01-08",
-    estimatedDuration: 180,
-    actualDuration: 240,
-    equipment: ["Pièces chauffage", "Outils spécialisés"],
-    notes: "Intervention urgente réussie",
-    createdAt: "2024-01-08",
-  },
-  {
-    id: "int-005",
-    title: "Maintenance préventive pompes",
-    description: "Maintenance préventive des pompes d'irrigation",
-    type: "maintenance",
-    priority: "low",
-    status: "paused",
-    assignedTo: "Jean Dupont",
-    assignedBy: "Marie Martin",
-    serre: "Serre Nord A",
-    location: "Local technique",
-    scheduledDate: "2024-01-18",
-    estimatedDuration: 90,
-    equipment: ["Huile", "Filtres", "Outils maintenance"],
-    notes: "En attente de pièces de rechange",
-    createdAt: "2024-01-14",
-  },
-];
-
-const interventionTypes = [
-  { value: "all", label: "Tous les types" },
-  { value: "maintenance", label: "Maintenance" },
-  { value: "repair", label: "Réparation" },
-  { value: "inspection", label: "Inspection" },
-  { value: "emergency", label: "Urgence" },
-  { value: "installation", label: "Installation" },
-];
-
-const priorityLevels = [
-  { value: "all", label: "Toutes les priorités" },
-  { value: "urgent", label: "Urgent" },
-  { value: "high", label: "Haute" },
-  { value: "medium", label: "Moyenne" },
-  { value: "low", label: "Basse" },
-];
-
-const statusOptions = [
-  { value: "all", label: "Tous les statuts" },
-  { value: "pending", label: "En attente" },
-  { value: "in_progress", label: "En cours" },
-  { value: "completed", label: "Terminé" },
-  { value: "paused", label: "En pause" },
-  { value: "cancelled", label: "Annulé" },
-];
-
 export default function Interventions() {
-  const [interventions] = useState<Intervention[]>(mockInterventions);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [typeFilter, setTypeFilter] = useState("all");
-  const [priorityFilter, setPriorityFilter] = useState("all");
-  const [statusFilter, setStatusFilter] = useState("all");
-  const [serreFilter, setSerreFilter] = useState("all");
-  const [assignedToFilter, setAssignedToFilter] = useState("all");
+  const [isInterventionFormOpen, setIsInterventionFormOpen] = useState(false);
+  const { user } = useAuth();
 
-  // Get unique values for filters
-  const uniqueSerres = Array.from(new Set(interventions.map(i => i.serre)));
-  const uniqueAssignees = Array.from(new Set(interventions.map(i => i.assignedTo)));
-
-  // Filtered interventions based on search and filters
-  const filteredInterventions = useMemo(() => {
-    return interventions.filter((intervention) => {
-      const matchesSearch = searchTerm === "" || 
-        intervention.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        intervention.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        intervention.serre.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        intervention.assignedTo.toLowerCase().includes(searchTerm.toLowerCase());
-
-      const matchesType = typeFilter === "all" || intervention.type === typeFilter;
-      const matchesPriority = priorityFilter === "all" || intervention.priority === priorityFilter;
-      const matchesStatus = statusFilter === "all" || intervention.status === statusFilter;
-      const matchesSerre = serreFilter === "all" || intervention.serre === serreFilter;
-      const matchesAssignee = assignedToFilter === "all" || intervention.assignedTo === assignedToFilter;
-
-      return matchesSearch && matchesType && matchesPriority && matchesStatus && matchesSerre && matchesAssignee;
-    });
-  }, [interventions, searchTerm, typeFilter, priorityFilter, statusFilter, serreFilter, assignedToFilter]);
-
-  const getTypeColor = (type: string) => {
-    switch (type) {
-      case "maintenance":
-        return "bg-blue-100 text-blue-800 border-blue-300";
-      case "repair":
-        return "bg-orange-100 text-orange-800 border-orange-300";
-      case "inspection":
-        return "bg-purple-100 text-purple-800 border-purple-300";
-      case "emergency":
-        return "bg-red-100 text-red-800 border-red-300";
-      case "installation":
-        return "bg-green-100 text-green-800 border-green-300";
-      default:
-        return "bg-gray-100 text-gray-800 border-gray-300";
-    }
+  const handleInterventionSubmit = (data: any) => {
+    console.log("Intervention submitted:", data);
+    // TODO: Send to backend API
+    setIsInterventionFormOpen(false);
   };
 
-  const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case "urgent":
-        return "bg-red-100 text-red-800 border-red-300";
-      case "high":
-        return "bg-orange-100 text-orange-800 border-orange-300";
-      case "medium":
-        return "bg-yellow-100 text-yellow-800 border-yellow-300";
-      case "low":
-        return "bg-green-100 text-green-800 border-green-300";
-      default:
-        return "bg-gray-100 text-gray-800 border-gray-300";
-    }
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "pending":
-        return "bg-gray-100 text-gray-800 border-gray-300";
-      case "in_progress":
-        return "bg-blue-100 text-blue-800 border-blue-300";
-      case "completed":
-        return "bg-green-100 text-green-800 border-green-300";
-      case "paused":
-        return "bg-yellow-100 text-yellow-800 border-yellow-300";
-      case "cancelled":
-        return "bg-red-100 text-red-800 border-red-300";
-      default:
-        return "bg-gray-100 text-gray-800 border-gray-300";
-    }
-  };
-
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case "pending":
-        return <Clock className="h-4 w-4" />;
-      case "in_progress":
-        return <RefreshCw className="h-4 w-4" />;
-      case "completed":
-        return <CheckCircle className="h-4 w-4" />;
-      case "paused":
-        return <Pause className="h-4 w-4" />;
-      case "cancelled":
-        return <AlertTriangle className="h-4 w-4" />;
-      default:
-        return <Clock className="h-4 w-4" />;
-    }
-  };
-
-  const getTypeLabel = (type: string) => {
-    switch (type) {
-      case "maintenance":
-        return "Maintenance";
-      case "repair":
-        return "Réparation";
-      case "inspection":
-        return "Inspection";
-      case "emergency":
-        return "Urgence";
-      case "installation":
-        return "Installation";
-      default:
-        return type;
-    }
-  };
-
-  const getPriorityLabel = (priority: string) => {
-    switch (priority) {
-      case "urgent":
-        return "Urgent";
-      case "high":
-        return "Haute";
-      case "medium":
-        return "Moyenne";
-      case "low":
-        return "Basse";
-      default:
-        return priority;
-    }
-  };
-
-  const getStatusLabel = (status: string) => {
-    switch (status) {
-      case "pending":
-        return "En attente";
-      case "in_progress":
-        return "En cours";
-      case "completed":
-        return "Terminé";
-      case "paused":
-        return "En pause";
-      case "cancelled":
-        return "Annulé";
-      default:
-        return status;
-    }
-  };
-
-  const clearAllFilters = () => {
-    setSearchTerm("");
-    setTypeFilter("all");
-    setPriorityFilter("all");
-    setStatusFilter("all");
-    setSerreFilter("all");
-    setAssignedToFilter("all");
+  const handleInterventionSaveDraft = (data: any) => {
+    console.log("Intervention saved as draft:", data);
+    // TODO: Save draft to backend or local storage
   };
 
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* Debug info */}
+      <div className="fixed top-0 right-0 bg-red-500 text-white p-2 z-50">
+        Modal Open: {isInterventionFormOpen ? 'Yes' : 'No'}
+      </div>
+      {/* Header */}
+      <div className="bg-white shadow-sm border-b border-gray-200">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center py-4">
+            <div className="flex items-center gap-4">
+              <TechnicianSidebar
+                userRole={(user?.role === "technicien_sup" ? "technicien_sup" : "technicien") as "technicien" | "technicien_sup"}
+                onInterventionClick={() => setIsInterventionFormOpen(true)}
+              />
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900">Interventions</h1>
+                <p className="text-sm text-gray-600">Gérez vos interventions</p>
+              </div>
+            </div>
+            
+            {/* Add Intervention Button */}
+            <Button
+              size="sm"
+              className="bg-[#B4CC5F] hover:bg-[#A3C247] text-white"
+              onClick={() => {
+                console.log("Header button clicked");
+                setIsInterventionFormOpen(true);
+              }}
+            >
+              <Plus className="h-4 w-4 mr-1" />
+              Nouvelle intervention
+            </Button>
+          </div>
+        </div>
+      </div>
+
+      {/* Main Content */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Interventions List Placeholder */}
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+          <div className="text-center py-12">
+            <div className="mx-auto h-12 w-12 text-gray-400">
+              <Plus className="h-12 w-12" />
+            </div>
+            <h3 className="mt-2 text-sm font-medium text-gray-900">Aucune intervention</h3>
+            <p className="mt-1 text-sm text-gray-500">
+              Commencez par créer votre première intervention.
+            </p>
+            <div className="mt-6">
+              <Button
+                size="sm"
+                className="bg-[#B4CC5F] hover:bg-[#A3C247] text-white"
+                onClick={() => {
+                  console.log("Center button clicked");
+                  setIsInterventionFormOpen(true);
+                }}
+              >
+                <Plus className="h-4 w-4 mr-1" />
+                Nouvelle intervention
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Intervention Form Modal */}
+      <InterventionForm
+        isOpen={isInterventionFormOpen}
+        onClose={() => setIsInterventionFormOpen(false)}
+        onSubmit={handleInterventionSubmit}
+        onSaveDraft={handleInterventionSaveDraft}
+      />
+
       <PageHeader
         title="Interventions"
         badge={{
