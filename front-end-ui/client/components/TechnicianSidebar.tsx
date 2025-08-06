@@ -38,8 +38,8 @@ export default function TechnicianSidebar({
 
   const basePath =
     userRole === "technicien_sup"
-      ? "/technicien-sup-dashboard"
-      : "/technician-dashboard";
+      ? "/technicien-sup"
+      : "/technician";
 
   const sidebarItems: SidebarItem[] = [
     {
@@ -79,6 +79,7 @@ export default function TechnicianSidebar({
       label: "Interventions",
       icon: <Bell className="h-5 w-5" />,
       onClick: () => {
+        setIsOpen(false); // Close sidebar first
         onInterventionClick?.();
       },
 

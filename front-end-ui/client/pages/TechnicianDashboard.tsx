@@ -31,6 +31,7 @@ import {
   Droplets,
   Sun,
   Sprout,
+  Calendar,
   Bell,
   LogOut,
 } from "lucide-react";
@@ -489,7 +490,7 @@ export default function TechnicianDashboard() {
                             }
                           >
                             <SelectTrigger>
-                              <SelectValue placeholder="Sélectionnez une variété" />
+                              <SelectValue placeholder="S��lectionnez une variété" />
                             </SelectTrigger>
                             <SelectContent>
                               {cropVarieties.map((variety) => (

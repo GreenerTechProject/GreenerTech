@@ -38,6 +38,7 @@ import {
   Users,
   LogOut,
   Shield,
+  Bell,
 } from "lucide-react";
 import TechnicianSidebar from "../components/TechnicianSidebar";
 import InterventionForm from "../components/InterventionForm";
