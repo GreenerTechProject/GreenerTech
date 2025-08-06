@@ -1,4 +1,5 @@
 # GreenerTech
+<img width="1366" height="641" alt="screencapture-greenertech-mywire-org-3000-login-2025-08-06-01_58_26" src="https://github.com/user-attachments/assets/b463234f-d5e5-4773-942d-7e895381f35d" />
 
 ## 1. Cloner le projet
 
