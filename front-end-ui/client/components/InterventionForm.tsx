@@ -143,8 +143,8 @@ export default function InterventionForm({
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="max-w-5xl w-[95vw] max-h-[90vh] overflow-y-auto p-0 rounded-xl">
-        <div className="flex flex-col h-full">
+      <DialogContent className="max-w-4xl w-[95vw] max-h-[95vh] overflow-y-auto p-0 rounded-xl shadow-2xl border-0">
+        <div className="flex flex-col h-full bg-white">
           {/* Header */}
           <DialogHeader className="px-8 pt-8 pb-6 border-b border-gray-200">
             <DialogTitle className="text-xl font-semibold text-gray-900">
