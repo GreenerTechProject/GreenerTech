@@ -87,7 +87,8 @@ const App = () => (
                   <Interventions />
               </ProtectedRoute>
             }/>
-            <Route
+                   
+             <Route
               path="/alerts"
               element={
                 <ProtectedRoute>
