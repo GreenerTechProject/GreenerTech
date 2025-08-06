@@ -195,33 +195,7 @@ export default function InterventionForm({
       setErrors(prev => ({ ...prev, [field]: undefined }));
     }
   };
-
-<<<<<<< HEAD
-  // ✅ ✅ ✅ Correct placement: now inside the component function body
-  if (showSuccess) {
-    return (
-      <Dialog open={isOpen} onOpenChange={handleClose}>
-        <DialogTitle>Intervention Created</DialogTitle>
-        <DialogContent className="max-w-md w-[90vw] p-0 bg-white rounded-xl border border-gray-200 shadow-lg">
-          <div className="flex flex-col items-center justify-center py-12 px-8 text-center">
-            <div className="mb-6 relative">
-              <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center animate-pulse">
-                <CheckCircle className="w-10 h-10 text-green-600 animate-bounce" />
-              </div>
-            </div>
-            <h3 className="text-xl font-semibold text-gray-900 mb-2">Intervention créée !</h3>
-            <p className="text-gray-600 mb-6">Votre demande a été envoyée avec succès.</p>
-            <div className="w-full bg-gray-200 rounded-full h-1">
-              <div className="bg-green-600 h-1 rounded-full animate-pulse" style={{ width: '100%' }}></div>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
-    );
-  }
-
-=======
->>>>>>> b646880c84ba7a34cdde440dc1fe98e687dea513
+  
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="max-w-[1396px] w-[95vw] max-h-[90vh] overflow-y-auto p-0 rounded-xl border border-gray-200 shadow-sm">
