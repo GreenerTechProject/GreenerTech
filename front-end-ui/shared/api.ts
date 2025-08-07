@@ -16,10 +16,13 @@ export interface DemoResponse {
  */
 export interface GuideDeCulture {
   id: string;
-  variety: string; // variété
-  yield: number; // rendement
-  plantingDate: string; // date de début de saison
-  harvestDate: string; // date de fin de saison
+  nom: string; // nom du guide
+  rendement: number; // rendement en kg/m²
+  variete: string; // variété de culture
+  date_debut_saison: string; // date de début de saison
+  date_fin_saison: string; // date de fin de saison
+  nombre_de_plants: number; // nombre de plants
+  id_serre: string; // foreign key linking to Serre
   irrigationType?: string; // type d'irrigation
   notes?: string; // notes additionnelles
 }
