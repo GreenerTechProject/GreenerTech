@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useAuth } from "../contexts/AuthContext";
 import GoogleMapsWrapper from "../components/GoogleMapsWrapper";
+import PageHeader from "../components/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -29,12 +30,14 @@ import {
   Thermometer,
   Droplets,
   Sun,
-  Users,
-  LogOut,
   Sprout,
   Calendar,
+  Bell,
+  LogOut,
+
 } from "lucide-react";
 import TechnicianSidebar from "../components/TechnicianSidebar";
+import InterventionForm from "../components/InterventionForm";
 import { cn } from "@/lib/utils";
 import { getGoogleMapsAPIKey } from "@/config/maps";
 import { Billon } from "@shared/api";
@@ -174,6 +177,7 @@ export default function TechnicianDashboard() {
     notes: "",
   });
   const [map, setMap] = useState<google.maps.Map | null>(null);
+  const [isInterventionFormOpen, setIsInterventionFormOpen] = useState(false);
   const mapRef = useRef<HTMLDivElement>(null);
 
   // Initialize map
@@ -343,6 +347,17 @@ export default function TechnicianDashboard() {
     }
   };
 
+  const handleInterventionSubmit = (data: any) => {
+    console.log("Intervention submitted:", data);
+    // TODO: Send to backend API
+    // Here you would typically call an API to save the intervention
+  };
+
+  const handleInterventionSaveDraft = (data: any) => {
+    console.log("Intervention saved as draft:", data);
+    // TODO: Save draft to backend or local storage
+  };
+
   const getZoneIcon = (type: string) => {
     switch (type) {
       case "irrigation":
@@ -368,19 +383,35 @@ export default function TechnicianDashboard() {
       {/* Header */}
       <header className="bg-white shadow-sm border-b sticky top-0 z-10">
         <div className="max-w-full px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-4">
-            <div className="flex items-center">
-              {/* Sidebar Button */}
-              <TechnicianSidebar userRole="technicien" />
-              <h1 className="text-xl font-semibold text-gray-900 ml-4">
-                Tableau de Bord Technicien
-              </h1>
-              <Badge
-                variant="outline"
-                className="bg-green-50 border-green-200 text-green-700"
-              >
-                {totalBillons} Billons gérés
-              </Badge>
+          <div className="flex flex-col lg:flex-row lg:justify-between lg:items-center py-4 gap-4">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
+              <div className="flex items-center gap-4">
+                {/* Sidebar Button */}
+                <TechnicianSidebar
+                  userRole="technicien"
+                  onInterventionClick={() => setIsInterventionFormOpen(true)}
+                />
+                <h1 className="text-lg sm:text-xl font-semibold text-gray-900">
+                  Tableau de Bord Technicien
+                </h1>
+              </div>
+              <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+                <Badge
+                  variant="outline"
+                  className="bg-green-50 border-green-200 text-green-700 w-fit"
+                >
+                  {totalBillons} Billons gérés
+                </Badge>
+                <Button
+                  onClick={() => setIsInterventionFormOpen(true)}
+                  className="bg-blue-600 hover:bg-blue-700 text-white w-fit"
+                  size="sm"
+                >
+                  <Bell className="h-4 w-4 mr-2" />
+                  <span className="hidden sm:inline">Nouvelle </span>Intervention
+                </Button>
+              </div>
+
             </div>
             <div className="flex items-center space-x-4">
               <span className="text-sm text-gray-600 hidden sm:block">
@@ -400,9 +431,10 @@ export default function TechnicianDashboard() {
         </div>
       </header>
 
-      <div className="flex h-[calc(100vh-73px)]">
+      <div className="flex flex-col lg:flex-row h-[calc(100vh-73px)]">
+
         {/* Left Control Panel */}
-        <div className="w-full lg:w-96 bg-white shadow-lg">
+        <div className="w-full lg:w-96 bg-white shadow-lg max-h-[50vh] lg:max-h-full">
           <ScrollArea className="h-full">
             <div className="p-6 space-y-6">
               {/* Create New Billon Section */}
@@ -458,7 +490,7 @@ export default function TechnicianDashboard() {
                             }
                           >
                             <SelectTrigger>
-                              <SelectValue placeholder="Sélectionnez une variété" />
+                              <SelectValue placeholder="S��lectionnez une variété" />
                             </SelectTrigger>
                             <SelectContent>
                               {cropVarieties.map((variety) => (
@@ -838,7 +870,7 @@ export default function TechnicianDashboard() {
         </div>
 
         {/* Right Map Section */}
-        <div className="flex-1 relative" data-testid="map-section">
+        <div className="flex-1 relative min-h-[50vh] lg:min-h-full" data-testid="map-section">
           <GoogleMapsWrapper apiKey={GOOGLE_MAPS_API_KEY}>
             <div ref={mapRef} className="w-full h-full" />
           </GoogleMapsWrapper>
@@ -871,6 +903,14 @@ export default function TechnicianDashboard() {
           )}
         </div>
       </div>
+
+      {/* Intervention Form Modal */}
+      <InterventionForm
+        isOpen={isInterventionFormOpen}
+        onClose={() => setIsInterventionFormOpen(false)}
+        onSubmit={handleInterventionSubmit}
+        onSaveDraft={handleInterventionSaveDraft}
+      />
     </div>
   );
 }
