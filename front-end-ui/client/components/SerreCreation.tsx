@@ -25,7 +25,6 @@ import GoogleMapsWrapper from "./GoogleMapsWrapper";
 import MapComponent, { DrawnShape } from "./MapComponent";
 import { getGoogleMapsAPIKey } from "@/config/maps";
 import { ExtendedSerre, ExtendedGuideDeCulture } from "@shared/api";
-import { serreService } from "@/services/serreService";
 import { guideService } from "@/services/guideService";
 import { useToast } from "@/hooks/use-toast";
 
