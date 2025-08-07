@@ -32,12 +32,12 @@ interface Domain {
 
 interface Serre {
   id: string;
-  name: string;
+  nom: string;
   variety: string;
   yield: number;
-  area: number;
+  surface: number;
   domainId: string;
-  path: google.maps.LatLng[];
+  position: google.maps.LatLng[];
   center: google.maps.LatLng;
   additionalData?: {
     plantingDate?: Date;
@@ -109,7 +109,7 @@ export default function FinalOverview({
   const totalSerreArea = domains.reduce(
     (total, domain) =>
       total +
-      domain.serres.reduce((serreTotal, serre) => serreTotal + serre.area, 0),
+      domain.serres.reduce((serreTotal, serre) => serreTotal + serre.surface, 0),
     0,
   );
   const assignedSerres = technicians.reduce(
@@ -158,7 +158,7 @@ export default function FinalOverview({
       // Render serres in this domain
       domain.serres.forEach((serre) => {
         const serrePolygon = new google.maps.Polygon({
-          paths: serre.path,
+          paths: serre.position,
           fillColor: "#FF6B6B",
           fillOpacity: 0.4,
           strokeWeight: 2,
@@ -174,7 +174,7 @@ export default function FinalOverview({
           setSelectedItem({
             type: "serre",
             id: serre.id,
-            name: serre.name,
+            name: serre.nom,
             center: serre.center,
           });
         });
@@ -336,7 +336,7 @@ export default function FinalOverview({
                               handleItemSelect({
                                 type: "serre",
                                 id: serre.id,
-                                name: serre.name,
+                                name: serre.nom,
                                 center: serre.center,
                               })
                             }
@@ -345,7 +345,7 @@ export default function FinalOverview({
                             <div className="flex items-center justify-between">
                               <div className="flex items-center space-x-2">
                                 <Home className="h-3 w-3 text-red-500" />
-                                <span className="text-sm">{serre.name}</span>
+                                <span className="text-sm">{serre.nom}</span>
                                 {selectedItem?.type === "serre" &&
                                   selectedItem.id === serre.id && (
                                     <Eye className="h-3 w-3 text-blue-500" />
@@ -501,7 +501,7 @@ export default function FinalOverview({
                   return serre ? (
                     <div>
                       <div>Variété: {serre.variety}</div>
-                      <div>Surface: {serre.area.toFixed(0)} m²</div>
+                      <div>Surface: {serre.surface.toFixed(0)} m²</div>
                       <div>Rendement: {serre.yield} kg/m²</div>
                       {technician && (
                         <div className="mt-2 p-2 bg-blue-50 rounded">

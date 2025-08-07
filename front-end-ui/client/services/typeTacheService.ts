@@ -1,5 +1,8 @@
 import { z } from 'zod';
+import axios from 'axios';
+import { tokenManager } from "./authService";
 
+// Zod schema for validation
 export const TypeTacheSchema = z.object({
   id: z.number(),
   nom: z.string(),
@@ -7,62 +10,55 @@ export const TypeTacheSchema = z.object({
 
 export type TypeTache = z.infer<typeof TypeTacheSchema>;
 
+// Auth headers helper
+const createAuthenticatedRequest = () => {
+  const token = tokenManager.getToken();
+  return {
+    headers: {
+      "Content-Type": "application/json",
+      ...(token && { Authorization: `Bearer ${token}` }),
+    },
+  };
+};
+
 class TypeTacheService {
-  private baseUrl = '/api';
+  private baseUrl = `${window.location.protocol}//${window.location.hostname}:5000/api`;
 
+  // GET all types
   async getAllTypeTaches(): Promise<TypeTache[]> {
-    const response = await fetch(`${this.baseUrl}/type_tache`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${localStorage.getItem('token')}`,
-      },
-    });
-
-    if (!response.ok) {
-      throw new Error(`Erreur lors de la récupération des types de tâches: ${response.statusText}`);
+    try {
+      const response = await axios.get(`${this.baseUrl}/types-tache`, createAuthenticatedRequest());
+      return response.data;
+    } catch (error: any) {
+      throw new Error(`Erreur lors de la récupération des types de tâches: ${error.message}`);
     }
-
-    const data = await response.json();
-    return data;
   }
 
+  // GET by ID
   async getTypeTache(id: number): Promise<TypeTache> {
-    const response = await fetch(`${this.baseUrl}/type_tache/${id}`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${localStorage.getItem('token')}`,
-      },
-    });
-
-    if (!response.ok) {
-      throw new Error(`Erreur lors de la récupération du type de tâche: ${response.statusText}`);
+    try {
+      const response = await axios.get(`${this.baseUrl}/types-tache/${id}`, createAuthenticatedRequest());
+      return TypeTacheSchema.parse(response.data);
+    } catch (error: any) {
+      throw new Error(`Erreur lors de la récupération du type de tâche: ${error.message}`);
     }
-
-    const data = await response.json();
-    return TypeTacheSchema.parse(data);
   }
 
+  // POST new type
   async createTypeTache(nom: string): Promise<TypeTache> {
-    const response = await fetch(`${this.baseUrl}/type_tache`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${localStorage.getItem('token')}`,
-      },
-      body: JSON.stringify({ nom }),
-    });
-
-    if (!response.ok) {
-      throw new Error(`Erreur lors de la création du type de tâche: ${response.statusText}`);
+    try {
+      const response = await axios.post(
+        `${this.baseUrl}/types-tache`,
+        { nom },
+        createAuthenticatedRequest()
+      );
+      return TypeTacheSchema.parse(response.data);
+    } catch (error: any) {
+      throw new Error(`Erreur lors de la création du type de tâche: ${error.message}`);
     }
-
-    const data = await response.json();
-    return TypeTacheSchema.parse(data);
   }
 
-  // Helper method to get color for type
+  // Style color mapping
   getTypeColor(nom: string): string {
     const colors: Record<string, string> = {
       'Préparation du Sol': 'bg-green-100 text-green-800 border-green-200',
@@ -78,7 +74,7 @@ class TypeTacheService {
     return colors[nom] || 'bg-gray-100 text-gray-800 border-gray-200';
   }
 
-  // Helper method to get icon for type
+  // Emoji icon mapping
   getTypeIcon(nom: string): string {
     const icons: Record<string, string> = {
       'Préparation du Sol': '🌱',

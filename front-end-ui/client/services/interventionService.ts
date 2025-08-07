@@ -1,5 +1,7 @@
 import { z } from 'zod';
 import axios from 'axios';
+import { tokenManager } from "./authService";
+
 
 // Schema matching the backend Intervention model
 export const InterventionSchema = z.object({
@@ -53,76 +55,62 @@ export interface InterventionDisplay extends Intervention {
   };
 }
 
+const createAuthenticatedRequest = () => {
+  const token = tokenManager.getToken();
+  return {
+    headers: {
+      "Content-Type": "application/json",
+      ...(token && { Authorization: `Bearer ${token}` }),
+    },
+  };
+}
+
 class InterventionService {
   private baseUrl = `${window.location.protocol}//${window.location.hostname}:5000/api`;
 
-async getAllInterventions(): Promise<InterventionDisplay[]> {
-  try {
-    const response = await axios.get(`${this.baseUrl}/intervention`, {
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${localStorage.getItem('token')}`,
-      },
-    });
-
-    return response.data;
-  } catch (error: any) {
-    throw new Error(
-      `Erreur lors de la récupération des interventions: ${error.response?.statusText || error.message}`
-    );
+  async getAllInterventions(): Promise<InterventionDisplay[]> {
+    try {
+      const response = await axios.get(`${this.baseUrl}/intervention`, createAuthenticatedRequest());
+      return response.data;
+    } catch (error: any) {
+      throw new Error(
+        `Erreur lors de la récupération des interventions: ${error.response?.statusText || error.message}`
+      );
+    }
   }
-}
 
   async getIntervention(id: number): Promise<InterventionDisplay> {
-    const response = await fetch(`${this.baseUrl}/intervention/${id}`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${localStorage.getItem('token')}`,
-      },
-    });
-
-    if (!response.ok) {
-      throw new Error(`Erreur lors de la récupération de l'intervention: ${response.statusText}`);
+    try {
+      const response = await axios.get(`${this.baseUrl}/intervention/${id}`, createAuthenticatedRequest());
+      return response.data;
+    } catch (error: any) {
+      throw new Error(`Erreur lors de la récupération de l'intervention: ${error.response?.statusText || error.message}`);
     }
-
-    const data = await response.json();
-    return data;
   }
 
   async createIntervention(interventionData: CreateInterventionData): Promise<Intervention> {
-    const response = await fetch(`${this.baseUrl}/intervention`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${localStorage.getItem('token')}`,
-      },
-      body: JSON.stringify(interventionData),
-    });
-
-    if (!response.ok) {
-      throw new Error(`Erreur lors de la création de l'intervention: ${response.statusText}`);
+    try {
+      const response = await axios.post(
+        `${this.baseUrl}/intervention`,
+        interventionData,
+        createAuthenticatedRequest()
+      );
+      return InterventionSchema.parse(response.data);
+    } catch (error: any) {
+      throw new Error(`Erreur lors de la création de l'intervention: ${error.response?.statusText || error.message}`);
     }
-
-    const data = await response.json();
-    return InterventionSchema.parse(data);
   }
 
   async validateIntervention(id: number): Promise<void> {
-    const response = await fetch(`${this.baseUrl}/intervention/${id}`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${localStorage.getItem('token')}`,
-      },
-    });
-
-    if (!response.ok) {
-      throw new Error(`Erreur lors de la validation de l'intervention: ${response.statusText}`);
+    try {
+      await axios.put(`${this.baseUrl}/intervention/${id}`, {}, createAuthenticatedRequest());
+    } catch (error: any) {
+      throw new Error(`Erreur lors de la validation de l'intervention: ${error.response?.statusText || error.message}`);
     }
   }
 
-  // Helper methods for status translation
+  // === Helpers ===
+
   getStatusLabel(status: 'encours' | 'terminé'): string {
     const statusLabels = {
       'encours': 'En cours',
@@ -139,7 +127,6 @@ async getAllInterventions(): Promise<InterventionDisplay[]> {
     return statusColors[status];
   }
 
-  // Helper method to get priority from type
   getTypePriority(typeName: string): 'low' | 'medium' | 'high' | 'urgent' {
     const priorities: Record<string, 'low' | 'medium' | 'high' | 'urgent'> = {
       'Préparation du Sol': 'medium',
@@ -172,3 +159,5 @@ async getAllInterventions(): Promise<InterventionDisplay[]> {
 }
 
 export const interventionService = new InterventionService();
+
+

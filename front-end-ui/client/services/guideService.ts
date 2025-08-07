@@ -3,25 +3,26 @@ import { tokenManager } from "./authService";
 
 export interface GuideDeCulture {
   id: string;
-  variety: string;
-  yield: number;
-  plantingDate: string;
-  harvestDate: string;
-  irrigationType?: string;
-  notes?: string;
+  nom: string;
+  variete: string;
+  rendement: number;
+  nombre_de_plants: number;
+  date_debut_saison: string;
+  date_fin_saison: string;
+  id_serre: string;
 }
 
 export interface CreateGuideRequest {
-  variety: string;
-  yield: number;
-  plantingDate: string;
-  harvestDate: string;
-  irrigationType?: string;
-  notes?: string;
+  nom: string;
+  variete: string;
+  rendement: number;
+  nombre_de_plants: number;
+  date_debut_saison: string;
+  date_fin_saison: string;
+  id_serre: string;
 }
 
 export interface CreateGuideResponse {
-  success: boolean;
   message: string;
   guideId: string;
 }
@@ -32,7 +33,7 @@ export interface ApiError {
 }
 
 // Configure axios base URL
-const API_BASE_URL = "/api";
+const API_BASE_URL = `${window.location.protocol}//${window.location.hostname}:5000/api`;
 
 // Create axios instance with auth headers
 const createAuthenticatedRequest = () => {
@@ -52,7 +53,7 @@ export const guideService = {
   ): Promise<CreateGuideResponse> => {
     try {
       const response = await axios.post<CreateGuideResponse>(
-        `${API_BASE_URL}/guides-culture`,
+        `${API_BASE_URL}/guide_culture`,
         guide,
         createAuthenticatedRequest(),
       );
@@ -74,16 +75,11 @@ export const guideService = {
   // Get guides by user
   getGuides: async (): Promise<GuideDeCulture[]> => {
     try {
-      const response = await axios.get<{
-        success: boolean;
-        guides: GuideDeCulture[];
-      }>(`${API_BASE_URL}/guides-culture`, createAuthenticatedRequest());
-
-      if (response.data.success) {
-        return response.data.guides;
-      } else {
-        throw new Error("Échec de la récupération des guides");
-      }
+      const response = await axios.get<GuideDeCulture[]>(
+        `${API_BASE_URL}/guide_culture`, 
+        createAuthenticatedRequest()
+      );
+      return response.data;
     } catch (error: any) {
       console.error("Erreur lors de la récupération des guides:", error);
 

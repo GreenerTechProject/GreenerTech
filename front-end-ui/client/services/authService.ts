@@ -171,16 +171,16 @@ export const authService = {
     const response = await axios.post(`${API_BASE_URL}/login`, credentials);
     const { user, token } = response.data;
 
-    // Check for unvalidated technician accounts
-    if ((user.role === "technicien" || user.role === "technicien_superieur") && !user.directeur_valide) {
-      tokenManager.clearAll();
-      console.log("this user is not validated by director");
+    // // Check for unvalidated technician accounts
+    // if ((user.role === "technicien" || user.role === "technicien_superieur") && !user.directeur_valide) {
+    //   tokenManager.clearAll();
+    //   console.log("this user is not validated by director");
 
-      throw {
-        message: "Votre compte n'a pas encore été validé par un directeur. Veuillez contacter votre directeur pour activer votre accès.",
-        status: 403
-      } as ApiError;
-    }
+    //   throw {
+    //     message: "Votre compte n'a pas encore été validé par un directeur. Veuillez contacter votre directeur pour activer votre accès.",
+    //     status: 403
+    //   } as ApiError;
+    // }
 
     tokenManager.setToken(token);
     tokenManager.setUser(user);

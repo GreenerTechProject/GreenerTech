@@ -28,18 +28,19 @@ interface Domain {
 
 interface Serre {
   id: string;
-  name: string;
-  area: number;
+  nom: string;
+  surface: number;
   domainId: string;
   guideId: string;
-  path: google.maps.LatLng[];
+  position: google.maps.LatLng[];
   center: google.maps.LatLng;
   guide?: {
     id: string;
-    variety: string;
-    yield: number;
-    plantingDate: Date | string;
-    harvestDate: Date | string;
+    nom: string;
+    variete: string;
+    rendement: number;
+    date_debut_saison: Date | string;
+    date_fin_saison: Date | string;
     irrigationType?: string;
     notes?: string;
   };
@@ -59,7 +60,7 @@ interface CompletedSetupData {
   technicians: Technician[];
 }
 
-export default function DirecteurDashboard() {
+export default function DirecteurSetup() {
   const { user, updateUser, logout } = useAuth();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(true);
@@ -101,7 +102,8 @@ export default function DirecteurDashboard() {
       }));
 
       const domainResponses = await domainService.createDomains(domainRequests);
-
+      console.log("domaines responses:")
+      console.log(domainResponses);
       // Step 3: Create culture guides
       const guideMap = new Map<string, string>(); // Maps old guide id to new guide id
       const uniqueGuides = new Map<string, any>();
@@ -118,16 +120,19 @@ export default function DirecteurDashboard() {
       // Create guides
       for (const [oldGuideId, guide] of uniqueGuides) {
         const guideRequest = {
-          variety: guide.variety,
-          yield: guide.yield,
-          plantingDate:
-            typeof guide.plantingDate === "string"
-              ? guide.plantingDate
-              : guide.plantingDate.toISOString(),
-          harvestDate:
-            typeof guide.harvestDate === "string"
-              ? guide.harvestDate
-              : guide.harvestDate.toISOString(),
+          nom: guide.nom,
+          variete: guide.variete,
+          rendement: guide.rendement,
+          nombre_de_plants: guide.nombre_de_plants,
+          date_debut_saison:
+            typeof guide.date_debut_saison === "string"
+              ? guide.date_debut_saison
+              : guide.date_debut_saison.toISOString(),
+          date_fin_saison:
+            typeof guide.date_fin_saison === "string"
+              ? guide.date_fin_saison
+              : guide.date_fin_saison.toISOString(),
+          id_serre: guide.id_serre,
           irrigationType: guide.irrigationType,
           notes: guide.notes,
         };
@@ -140,18 +145,18 @@ export default function DirecteurDashboard() {
       const allSerres: any[] = [];
       for (let i = 0; i < setupData.domains.length; i++) {
         const domain = setupData.domains[i];
-        const domainId = domainResponses[i].domainId;
+        const domainId = domainResponses[i].id
 
         const serreRequests = domain.serres.map((serre) => ({
-          name: serre.name,
-          area: serre.area,
+          nom: serre.nom,
+          surface: serre.surface,
           domainId,
           guideId: guideMap.get(serre.guideId) || serre.guideId,
           center: {
             lat: serre.center.lat(),
             lng: serre.center.lng(),
           },
-          path: serre.path.map((point) => ({
+          position: serre.position.map((point) => ({
             lat: point.lat(),
             lng: point.lng(),
           })),
@@ -223,7 +228,13 @@ export default function DirecteurDashboard() {
     return <CompanySetupWizard onComplete={handleCompanySetupComplete} />;
   }
 
-  // Show main directeur dashboard
+  // Show main directeur dashboard - redirect to new dashboard
+  useEffect(() => {
+    if (user?.setup_completed) {
+      window.location.href = "/director-dashboard";
+    }
+  }, [user?.setup_completed]);
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}

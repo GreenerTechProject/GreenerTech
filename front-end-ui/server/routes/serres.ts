@@ -2,10 +2,13 @@ import { RequestHandler } from "express";
 import { Serre, GuideDeCulture } from "@shared/api";
 
 export interface CreateGuideDeCultureRequest {
-  variety: string;
-  yield: number;
-  plantingDate: string;
-  harvestDate: string;
+  nom: string;
+  variete: string;
+  rendement: number;
+  nombre_de_plants: number;
+  date_debut_saison: string;
+  date_fin_saison: string;
+  id_serre: string;
   irrigationType?: string;
   notes?: string;
 }
@@ -17,11 +20,11 @@ export interface CreateGuideDeCultureResponse {
 }
 
 export interface CreateSerreRequest {
-  name: string;
-  area: number;
+  nom: string;
+  surface: number;
   domainId: string;
   guideId: string;
-  path: { lat: number; lng: number }[];
+  position: { lat: number; lng: number }[];
   center: { lat: number; lng: number };
 }
 
@@ -35,33 +38,39 @@ export interface CreateSerreResponse {
 export const handleCreateGuideDeCulture: RequestHandler = async (req, res) => {
   try {
     const {
-      variety,
-      yield: guideYield,
-      plantingDate,
-      harvestDate,
+      nom,
+      variete,
+      rendement,
+      nombre_de_plants,
+      date_debut_saison,
+      date_fin_saison,
+      id_serre,
       irrigationType,
       notes,
     } = req.body as CreateGuideDeCultureRequest;
 
     // Validate required fields
     if (
-      !variety ||
-      typeof guideYield !== "number" ||
-      !plantingDate ||
-      !harvestDate
+      !nom ||
+      !variete ||
+      typeof rendement !== "number" ||
+      typeof nombre_de_plants !== "number" ||
+      !date_debut_saison ||
+      !date_fin_saison ||
+      !id_serre
     ) {
       return res.status(400).json({
         success: false,
         message:
-          "Tous les champs requis doivent être fournis (variété, rendement, dates)",
+          "Tous les champs requis doivent être fournis (nom, variété, rendement, nombre de plants, dates, serre)",
       });
     }
 
-    // Validate yield is positive
-    if (guideYield < 0) {
+    // Validate rendement and nombre_de_plants are positive
+    if (rendement < 0 || nombre_de_plants < 0) {
       return res.status(400).json({
         success: false,
-        message: "Le rendement doit être un nombre positif",
+        message: "Le rendement et le nombre de plants doivent être des nombres positifs",
       });
     }
 
@@ -74,10 +83,13 @@ export const handleCreateGuideDeCulture: RequestHandler = async (req, res) => {
     console.log("Création du guide de culture:", {
       userId,
       guideId,
-      variety,
-      yield: guideYield,
-      plantingDate,
-      harvestDate,
+      nom,
+      variete,
+      rendement,
+      nombre_de_plants,
+      date_debut_saison,
+      date_fin_saison,
+      id_serre,
       irrigationType,
       notes,
     });
@@ -101,17 +113,17 @@ export const handleCreateGuideDeCulture: RequestHandler = async (req, res) => {
 // Create serre endpoint
 export const handleCreateSerre: RequestHandler = async (req, res) => {
   try {
-    const { name, area, domainId, guideId, path, center } =
+    const { nom, surface, domainId, guideId, position, center } =
       req.body as CreateSerreRequest;
 
     // Validate required fields
     if (
-      !name ||
-      !area ||
+      !nom ||
+      !surface ||
       !domainId ||
       !guideId ||
-      !path ||
-      !Array.isArray(path) ||
+      !position ||
+      !Array.isArray(position) ||
       !center
     ) {
       return res.status(400).json({
@@ -135,8 +147,8 @@ export const handleCreateSerre: RequestHandler = async (req, res) => {
       });
     }
 
-    // Validate path coordinates
-    const isValidPath = path.every(
+    // Validate position coordinates
+    const isValidPosition = position.every(
       (point) =>
         typeof point.lat === "number" &&
         typeof point.lng === "number" &&
@@ -146,15 +158,15 @@ export const handleCreateSerre: RequestHandler = async (req, res) => {
         point.lng <= 180,
     );
 
-    if (!isValidPath) {
+    if (!isValidPosition) {
       return res.status(400).json({
         success: false,
         message: "Coordonnées du chemin invalides",
       });
     }
 
-    // Validate area is positive
-    if (area <= 0) {
+    // Validate surface is positive
+    if (surface <= 0) {
       return res.status(400).json({
         success: false,
         message: "La superficie doit être un nombre positif",
@@ -171,11 +183,11 @@ export const handleCreateSerre: RequestHandler = async (req, res) => {
     console.log("Création de la serre:", {
       userId,
       serreId,
-      name,
-      area,
+      nom,
+      surface,
       domainId,
       guideId,
-      pathPoints: path.length,
+      positionPoints: position.length,
       center,
     });
 

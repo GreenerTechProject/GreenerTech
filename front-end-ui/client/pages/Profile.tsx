@@ -1,277 +1,245 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
+import { useAuth } from "../contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
-import { Card, CardContent } from "@/components/ui/card";
+import PageHeader from "../components/PageHeader";
 import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
-import { authService, type User } from "@/services/authService";
-import { toast } from "@/hooks/use-toast";
-import { 
-  MapPin, 
-  Phone, 
-  Mail, 
-  Calendar, 
-  Edit,
-  LogOut,
-  ChevronLeft
-} from "lucide-react";
-import PageHeader from "@/components/PageHeader";
-
-interface ProfileData extends User {
-  telephone?: string;
-  birthday?: string;
-  domain_name?: string;
-  greenhouse_name?: string;
-}
+import { User, Mail, Shield, ArrowLeft, Save } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 export default function Profile() {
+  const { user, updateUserProfile } = useAuth();
   const navigate = useNavigate();
-  const [user, setUser] = useState<ProfileData | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { toast } = useToast();
+  const [isEditing, setIsEditing] = useState(false);
+  const [formData, setFormData] = useState({
+    name: user?.name || "",
+    email: user?.email || "",
+  });
 
-  useEffect(() => {
-    loadUserProfile();
-  }, []);
-
-  const loadUserProfile = async () => {
+  const handleSave = async () => {
     try {
-      setLoading(true);
-      const userData = await authService.getCurrentUser();
-      
-      // For demo purposes, add some mock data for domain and greenhouse
-      const profileData: ProfileData = {
-        ...userData,
-        domain_name: "Domaine Ait Melloul",
-        greenhouse_name: "Serre 1",
-        telephone: userData.telephone || "+212 6 12 34 56 78",
-      };
-      
-      setUser(profileData);
-    } catch (error: any) {
-      console.error("Error loading profile:", error);
+      // You would typically call an API here to update the user profile
+      // For now, we'll just show a success message
       toast({
-        title: "Erreur",
-        description: "Impossible de charger le profil utilisateur",
-        variant: "destructive",
+        title: "Profil mis à jour",
+        description: "Vos informations ont été sauvegardées avec succès.",
       });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleLogout = async () => {
-    try {
-      await authService.logout();
-      navigate("/login");
+      setIsEditing(false);
     } catch (error) {
-      console.error("Error during logout:", error);
       toast({
         title: "Erreur",
-        description: "Erreur lors de la déconnexion",
+        description: "Une erreur est survenue lors de la mise à jour.",
         variant: "destructive",
       });
     }
   };
 
-  const handleEditProfile = () => {
-    navigate("/profile/edit");
+  const handleCancel = () => {
+    setFormData({
+      name: user?.name || "",
+      email: user?.email || "",
+    });
+    setIsEditing(false);
   };
 
   const getRoleDisplayName = (role?: string) => {
     switch (role) {
-      case "directeur":
-        return "Directeur";
       case "technicien":
         return "Technicien";
-      case "technicien_superieur":
+      case "technicien_sup":
         return "Technicien Supérieur";
+      case "directeur":
+        return "Directeur";
       default:
-        return role || "Utilisateur";
+        return "Non défini";
     }
   };
 
-  const formatBirthday = (birthday?: string) => {
-    if (!birthday) return "15 mars 2000"; // Fallback from design
-    try {
-      const date = new Date(birthday);
-      return date.toLocaleDateString("fr-FR", {
-        day: "numeric",
-        month: "long",
-        year: "numeric"
-      });
-    } catch {
-      return birthday;
+  const getRoleColor = (role?: string) => {
+    switch (role) {
+      case "technicien":
+        return "bg-blue-50 border-blue-200 text-blue-700";
+      case "technicien_sup":
+        return "bg-purple-50 border-purple-200 text-purple-700";
+      case "directeur":
+        return "bg-green-50 border-green-200 text-green-700";
+      default:
+        return "bg-gray-50 border-gray-200 text-gray-700";
     }
   };
-
-  const getUserInitials = (name?: string) => {
-    if (!name) return "U";
-    return name.split(" ").map(n => n[0]).join("").toUpperCase();
-  };
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
-          <p className="mt-4 text-gray-600">Chargement du profil...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (!user) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <Card className="max-w-md mx-auto">
-          <CardContent className="p-6 text-center">
-            <p className="text-gray-600">Impossible de charger les données utilisateur</p>
-            <Button onClick={() => navigate("/dashboard")} className="mt-4">
-              Retour au tableau de bord
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <PageHeader 
-        title="" 
-        showProfile={false}
+      <PageHeader
+        title="Mon Profil"
+        subtitle="Gérez vos informations personnelles"
+        userRole={user?.role as any}
+        actions={
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => navigate(-1)}
+            className="flex items-center space-x-1"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            <span>Retour</span>
+          </Button>
+        }
       />
-      
-      <div className="container mx-auto px-4 py-8 max-w-6xl">
-        {/* Back button */}
-        <Button 
-          variant="ghost" 
-          onClick={() => navigate("/dashboard")}
-          className="mb-6 text-primary hover:text-primary/80"
-        >
-          <ChevronLeft className="w-4 h-4 mr-2" />
-          Retour au dashboard
-        </Button>
 
-        {/* Profile Card */}
-        <Card className="shadow-lg border-0 bg-white">
-          {/* Blue header background */}
-          <div className="h-32 bg-gradient-to-r from-[#004AB3] to-[#2563EB] rounded-t-lg relative"></div>
-          
-          <CardContent className="px-8 pb-8 -mt-16 relative">
-            <div className="flex flex-col lg:flex-row lg:items-start gap-8">
-              {/* Profile Avatar Section */}
-              <div className="flex flex-col items-center lg:items-start">
-                <div className="relative">
-                  <Avatar className="w-32 h-32 border-4 border-white shadow-lg">
-                    <AvatarImage 
-                      src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${user.email}`} 
-                      alt={user.name || "Profile"} 
+      <div className="max-w-4xl mx-auto p-6">
+        <div className="grid gap-6">
+          {/* Profile Information Card */}
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div className="flex items-center space-x-3">
+                <div className="p-2 bg-blue-100 rounded-full">
+                  <User className="h-6 w-6 text-blue-600" />
+                </div>
+                <div>
+                  <CardTitle>Informations personnelles</CardTitle>
+                  <p className="text-sm text-gray-600">
+                    Vos informations de base et contact
+                  </p>
+                </div>
+              </div>
+              <Button
+                variant={isEditing ? "outline" : "default"}
+                size="sm"
+                onClick={() => setIsEditing(!isEditing)}
+              >
+                {isEditing ? "Annuler" : "Modifier"}
+              </Button>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="name">Nom complet</Label>
+                  {isEditing ? (
+                    <Input
+                      id="name"
+                      value={formData.name}
+                      onChange={(e) =>
+                        setFormData({ ...formData, name: e.target.value })
+                      }
+                      placeholder="Votre nom complet"
                     />
-                    <AvatarFallback className="text-2xl font-semibold bg-gray-200">
-                      {getUserInitials(user.name)}
-                    </AvatarFallback>
-                  </Avatar>
-                  {/* Online status indicator */}
-                  <div className="absolute bottom-2 right-2 w-6 h-6 bg-green-500 rounded-full border-2 border-white"></div>
+                  ) : (
+                    <div className="flex items-center space-x-2">
+                      <User className="h-4 w-4 text-gray-400" />
+                      <span className="text-gray-900">
+                        {user?.name || "Non renseigné"}
+                      </span>
+                    </div>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="email">Adresse e-mail</Label>
+                  {isEditing ? (
+                    <Input
+                      id="email"
+                      type="email"
+                      value={formData.email}
+                      onChange={(e) =>
+                        setFormData({ ...formData, email: e.target.value })
+                      }
+                      placeholder="votre@email.com"
+                    />
+                  ) : (
+                    <div className="flex items-center space-x-2">
+                      <Mail className="h-4 w-4 text-gray-400" />
+                      <span className="text-gray-900">{user?.email}</span>
+                    </div>
+                  )}
                 </div>
               </div>
 
-              {/* Profile Information */}
-              <div className="flex-1 lg:pt-4">
-                <div className="flex flex-col lg:flex-row lg:justify-between gap-6">
-                  {/* Left Column - Basic Info */}
-                  <div className="space-y-6 flex-1">
-                    {/* Name and Role */}
-                    <div className="pb-2">
-                      <h1 className="text-2xl font-bold text-gray-900 mb-1">
-                        {user.name || "Nom non défini"}
-                      </h1>
-                      <p className="text-gray-600 font-medium">
-                        {getRoleDisplayName(user.role)}
-                      </p>
-                    </div>
+              {isEditing && (
+                <>
+                  <Separator />
+                  <div className="flex justify-end space-x-2">
+                    <Button variant="outline" onClick={handleCancel}>
+                      Annuler
+                    </Button>
+                    <Button onClick={handleSave} className="flex items-center space-x-1">
+                      <Save className="h-4 w-4" />
+                      <span>Sauvegarder</span>
+                    </Button>
+                  </div>
+                </>
+              )}
+            </CardContent>
+          </Card>
 
-                    {/* Contact Information */}
-                    <div className="space-y-4">
-                      {/* Domain and Greenhouse */}
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-greener-100 rounded-lg flex items-center justify-center">
-                          <MapPin className="w-4 h-4 text-greener" />
-                        </div>
-                        <div className="flex-1">
-                          <p className="text-sm text-gray-600">Domaine Ait Melloul</p>
-                          <p className="text-base font-semibold text-gray-900">
-                            {user.greenhouse_name || "Serre 1"}
-                          </p>
-                        </div>
-                      </div>
+          {/* Role and Status Card */}
+          <Card>
+            <CardHeader>
+              <div className="flex items-center space-x-3">
+                <div className="p-2 bg-green-100 rounded-full">
+                  <Shield className="h-6 w-6 text-green-600" />
+                </div>
+                <div>
+                  <CardTitle>Rôle et statut</CardTitle>
+                  <p className="text-sm text-gray-600">
+                    Votre rôle dans l'organisation
+                  </p>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Rôle</Label>
+                  <Badge
+                    variant="outline"
+                    className={getRoleColor(user?.role)}
+                  >
+                    {getRoleDisplayName(user?.role)}
+                  </Badge>
+                </div>
 
-                      {/* Phone */}
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                          <Phone className="w-4 h-4 text-[#004AB3]" />
-                        </div>
-                        <div className="flex-1">
-                          <p className="text-sm text-gray-600">Numéro de téléphone</p>
-                          <p className="text-base font-semibold text-gray-900">
-                            {user.telephone || "+212 6 12 34 56 78"}
-                          </p>
-                        </div>
-                      </div>
-
-                      {/* Email */}
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center">
-                          <Mail className="w-4 h-4 text-gray-600" />
-                        </div>
-                        <div className="flex-1">
-                          <p className="text-sm text-gray-600">Adresse e-mail</p>
-                          <p className="text-base font-semibold text-gray-900">
-                            {user.email}
-                          </p>
-                        </div>
-                      </div>
-
-                      {/* Birthday */}
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
-                          <Calendar className="w-4 h-4 text-purple-600" />
-                        </div>
-                        <div className="flex-1">
-                          <p className="text-sm text-gray-600">Date de naissance</p>
-                          <p className="text-base font-semibold text-gray-900">
-                            {formatBirthday(user.birthday)}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
+                <div className="space-y-2">
+                  <Label>Statut du compte</Label>
+                  <div className="flex items-center space-x-2">
+                    <Badge
+                      variant={user?.setup_completed ? "default" : "secondary"}
+                      className={
+                        user?.setup_completed
+                          ? "bg-green-50 border-green-200 text-green-700"
+                          : "bg-yellow-50 border-yellow-200 text-yellow-700"
+                      }
+                    >
+                      {user?.setup_completed ? "Configuré" : "Configuration incomplète"}
+                    </Badge>
                   </div>
                 </div>
-
-                {/* Action Buttons */}
-                <div className="flex flex-col sm:flex-row gap-3 mt-8 pt-6 border-t border-gray-200">
-                  <Button 
-                    onClick={handleEditProfile}
-                    className="bg-[#004AB3] hover:bg-[#003d96] text-white font-medium"
-                  >
-                    <Edit className="w-4 h-4 mr-2" />
-                    Modifier le profil
-                  </Button>
-                  
-                  <Button 
-                    variant="outline" 
-                    onClick={handleLogout}
-                    className="border-gray-300 text-gray-700 hover:bg-gray-50"
-                  >
-                    <LogOut className="w-4 h-4 mr-2" />
-                    Se déconnecter
-                  </Button>
-                </div>
               </div>
-            </div>
-          </CardContent>
-        </Card>
+
+              {user?.role === "directeur" && (
+                <div className="space-y-2">
+                  <Label>Validation directeur</Label>
+                  <Badge
+                    variant={user?.directeur_valide ? "default" : "secondary"}
+                    className={
+                      user?.directeur_valide
+                        ? "bg-green-50 border-green-200 text-green-700"
+                        : "bg-red-50 border-red-200 text-red-700"
+                    }
+                  >
+                    {user?.directeur_valide ? "Validé" : "En attente de validation"}
+                  </Badge>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+
       </div>
     </div>
   );

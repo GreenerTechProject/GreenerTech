@@ -1,32 +1,14 @@
 import axios from "axios";
 import { tokenManager } from "./authService";
-
-export interface Serre {
-  id: string;
-  name: string;
-  area: number;
-  domainId: string;
-  guideId: string;
-  path: { lat: number; lng: number }[];
-  center: { lat: number; lng: number };
-  guide?: {
-    id: string;
-    variety: string;
-    yield: number;
-    plantingDate: string;
-    harvestDate: string;
-    irrigationType?: string;
-    notes?: string;
-  };
-}
+import { ExtendedSerre } from "@shared/api";
 
 export interface CreateSerreRequest {
-  name: string;
-  area: number;
+  nom: string;
+  surface: number;
   domainId: string;
   guideId: string;
-  path: { lat: number; lng: number }[];
-  center: { lat: number; lng: number };
+  position: google.maps.LatLng[];
+  center: google.maps.LatLng;
 }
 
 export interface CreateSerreResponse {
@@ -55,7 +37,30 @@ const createAuthenticatedRequest = () => {
 };
 
 export const serreService = {
-  // Create multiple serres
+  // Create a single serre
+  createSerre: async (serre: CreateSerreRequest): Promise<CreateSerreResponse> => {
+    try {
+      const response = await axios.post<CreateSerreResponse>(
+        `${API_BASE_URL}/serre`,
+        serre,
+        createAuthenticatedRequest(),
+      );
+      return response.data;
+    } catch (error: any) {
+      console.error("Erreur lors de la création de la serre:", error);
+
+      const errorMessage =
+        error.response?.data?.message ||
+        "Erreur lors de la création de la serre";
+
+      throw {
+        message: errorMessage,
+        status: error.response?.status || 500,
+      } as ApiError;
+    }
+  },
+
+  // Create multiple serres (optional - keep if you need bulk creation)
   createSerres: async (
     serres: CreateSerreRequest[],
   ): Promise<CreateSerreResponse[]> => {
@@ -86,11 +91,12 @@ export const serreService = {
     }
   },
 
+
   // Get serres by domain ID
-  getSerresByDomain: async (domainId: string): Promise<Serre[]> => {
+  getSerresByDomain: async (domainId: string): Promise<ExtendedSerre[]> => {
     try {
-      const response = await axios.get<{ success: boolean; serres: Serre[] }>(
-        `${API_BASE_URL}/serres/domain/${domainId}`,
+      const response = await axios.get<{ success: boolean; serres: ExtendedSerre[] }>(
+        `${API_BASE_URL}/domaine/${domainId}/serres`,
         createAuthenticatedRequest(),
       );
 
