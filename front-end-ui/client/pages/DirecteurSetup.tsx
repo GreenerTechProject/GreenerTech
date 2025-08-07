@@ -156,16 +156,11 @@ export default function DirecteurSetup() {
 
         const serreRequests = domain.serres.map((serre) => ({
           nom: serre.nom,
-          surface: serre.surface,
-          domainId: backendDomainId, // Use the actual backend domain ID
-          guideId: guideMap.get(serre.guideId) || serre.guideId,
-          center: {
-            lat: serre.center.lat(),
-            lng: serre.center.lng(),
-          },
-          position: serre.position.map((point) => ({
-            lat: point.lat(),
-            lng: point.lng(),
+          id_domaine: parseInt(backendDomainId), // Use the actual backend domain ID as integer
+          position: serre.position.map((point, index) => ({
+            latitude: point.lat(),
+            longitude: point.lng(),
+            ordre: index + 1,
           })),
         }));
 
