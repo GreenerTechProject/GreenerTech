@@ -266,7 +266,7 @@ export const handleCompleteSetup: RequestHandler = async (req, res) => {
     const totalSerreArea = domains.reduce(
       (total, domain) =>
         total +
-        domain.serres.reduce((serreTotal, serre) => serreTotal + serre.area, 0),
+        domain.serres.reduce((serreTotal, serre) => serreTotal + serre.surface, 0),
       0,
     );
     const assignedSerres = technicians.reduce(
