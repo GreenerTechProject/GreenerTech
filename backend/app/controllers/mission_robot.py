@@ -4,7 +4,7 @@ from database.config import db
 from app.utils.security import token_required, role_required
 
 @token_required
-@role_required("directeur", "technicien_superieur")
+@role_required("directeur", "technicien_superieur", "technicien")
 def create_mission_robot(current_user):
     data = request.get_json()
     try:
@@ -40,7 +40,7 @@ def get_mission_robot(current_user, mission_id):
     
     
 @token_required
-@role_required("directeur", "technicien_superieur")
+@role_required("directeur", "technicien_superieur", "technicien")
 def update_mission_robot(current_user, mission_id):
     mission = MissionRobot.query.get(mission_id)
     if not mission:
@@ -68,7 +68,7 @@ def update_mission_robot(current_user, mission_id):
 
 
 @token_required
-@role_required("directeur", "technicien_superieur")
+@role_required("directeur", "technicien_superieur", "technicien")
 def delete_mission_robot(current_user, mission_id):
     mission = MissionRobot.query.get(mission_id)
     if not mission:
