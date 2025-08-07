@@ -645,6 +645,7 @@ export default function SerreCreation({
                     <Button
                       onClick={handleCreateGuide}
                       disabled={
+                        isCreatingGuide ||
                         !guideForm.nom ||
                         !guideForm.variete ||
                         !guideForm.rendement ||
@@ -654,7 +655,14 @@ export default function SerreCreation({
                       }
                       className="flex-1"
                     >
-                      Créer le guide
+                      {isCreatingGuide ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Création...
+                        </>
+                      ) : (
+                        "Créer le guide"
+                      )}
                     </Button>
                     <Button
                       variant="outline"
