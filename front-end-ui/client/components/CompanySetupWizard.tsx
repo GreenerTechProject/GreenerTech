@@ -215,6 +215,7 @@ export default function CompanySetupWizard({
         domains={domains}
         onComplete={handleSerresComplete}
         onBack={handleBackToDomains}
+        setupMode={true}
       />
     );
   }
