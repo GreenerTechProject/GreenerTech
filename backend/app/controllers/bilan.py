@@ -135,7 +135,7 @@ def generate_bilan_qrcode(bilan_id):
         return abort(404, description="Bilan non trouvé")
 
     # Contenu du QR code (tu peux changer ici selon ton besoin)
-    qr_data = json_str = json.dumps(bilan.to_dict())  # ou bien f"https://greenertech.com/bilan/{bilan.id}"
+    qr_data = json.dumps(bilan.to_dict())  # ou bien f"https://greenertech.com/bilan/{bilan.id}"
     
     # Création du QR code
     qr = qrcode.QRCode(box_size=10, border=4)
