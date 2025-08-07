@@ -2,10 +2,13 @@ import { RequestHandler } from "express";
 import { Serre, GuideDeCulture } from "@shared/api";
 
 export interface CreateGuideDeCultureRequest {
-  variety: string;
-  yield: number;
-  plantingDate: string;
-  harvestDate: string;
+  nom: string;
+  variete: string;
+  rendement: number;
+  nombre_de_plants: number;
+  date_debut_saison: string;
+  date_fin_saison: string;
+  id_serre: string;
   irrigationType?: string;
   notes?: string;
 }
@@ -35,33 +38,39 @@ export interface CreateSerreResponse {
 export const handleCreateGuideDeCulture: RequestHandler = async (req, res) => {
   try {
     const {
-      variety,
-      yield: guideYield,
-      plantingDate,
-      harvestDate,
+      nom,
+      variete,
+      rendement,
+      nombre_de_plants,
+      date_debut_saison,
+      date_fin_saison,
+      id_serre,
       irrigationType,
       notes,
     } = req.body as CreateGuideDeCultureRequest;
 
     // Validate required fields
     if (
-      !variety ||
-      typeof guideYield !== "number" ||
-      !plantingDate ||
-      !harvestDate
+      !nom ||
+      !variete ||
+      typeof rendement !== "number" ||
+      typeof nombre_de_plants !== "number" ||
+      !date_debut_saison ||
+      !date_fin_saison ||
+      !id_serre
     ) {
       return res.status(400).json({
         success: false,
         message:
-          "Tous les champs requis doivent être fournis (variété, rendement, dates)",
+          "Tous les champs requis doivent être fournis (nom, variété, rendement, nombre de plants, dates, serre)",
       });
     }
 
-    // Validate yield is positive
-    if (guideYield < 0) {
+    // Validate rendement and nombre_de_plants are positive
+    if (rendement < 0 || nombre_de_plants < 0) {
       return res.status(400).json({
         success: false,
-        message: "Le rendement doit être un nombre positif",
+        message: "Le rendement et le nombre de plants doivent être des nombres positifs",
       });
     }
 
@@ -74,10 +83,13 @@ export const handleCreateGuideDeCulture: RequestHandler = async (req, res) => {
     console.log("Création du guide de culture:", {
       userId,
       guideId,
-      variety,
-      yield: guideYield,
-      plantingDate,
-      harvestDate,
+      nom,
+      variete,
+      rendement,
+      nombre_de_plants,
+      date_debut_saison,
+      date_fin_saison,
+      id_serre,
       irrigationType,
       notes,
     });
