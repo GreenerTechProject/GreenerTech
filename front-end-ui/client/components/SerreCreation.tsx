@@ -353,6 +353,18 @@ export default function SerreCreation({
                   <h4 className="font-medium">Nouveau guide de culture</h4>
 
                   <div>
+                    <Label htmlFor="guideName">Nom du guide *</Label>
+                    <Input
+                      id="guideName"
+                      value={guideForm.nom}
+                      onChange={(e) =>
+                        setGuideForm((prev) => ({ ...prev, nom: e.target.value }))
+                      }
+                      placeholder="Ex: Guide Tomates Printemps 2024"
+                    />
+                  </div>
+
+                  <div>
                     <Label htmlFor="guideVariety">Variété *</Label>
                     <Select
                       value={guideForm.variety}
