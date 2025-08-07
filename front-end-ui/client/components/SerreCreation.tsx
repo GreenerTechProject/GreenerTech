@@ -312,23 +312,29 @@ export default function SerreCreation({
                 <div className="space-y-2">
                   {guides.map((guide) => (
                     <div key={guide.id} className="p-3 border rounded-lg">
-                      <div className="font-medium">{guide.variety}</div>
+                      <div className="font-medium">{guide.nom}</div>
                       <div className="text-sm text-gray-600">
-                        Rendement: {guide.yield} kg/m²
+                        Variété: {guide.variete}
+                      </div>
+                      <div className="text-sm text-gray-600">
+                        Rendement: {guide.rendement} kg/m²
+                      </div>
+                      <div className="text-sm text-gray-600">
+                        Plants: {guide.nombre_de_plants}
                       </div>
                       <div className="text-sm text-gray-600">
                         Saison:{" "}
-                        {guide.plantingDate instanceof Date
-                          ? format(guide.plantingDate, "dd/MM/yyyy", {
+                        {guide.date_debut_saison instanceof Date
+                          ? format(guide.date_debut_saison, "dd/MM/yyyy", {
                               locale: fr,
                             })
-                          : guide.plantingDate}{" "}
+                          : guide.date_debut_saison}{" "}
                         →{" "}
-                        {guide.harvestDate instanceof Date
-                          ? format(guide.harvestDate, "dd/MM/yyyy", {
+                        {guide.date_fin_saison instanceof Date
+                          ? format(guide.date_fin_saison, "dd/MM/yyyy", {
                               locale: fr,
                             })
-                          : guide.harvestDate}
+                          : guide.date_fin_saison}
                       </div>
                     </div>
                   ))}
@@ -630,7 +636,7 @@ export default function SerreCreation({
                       <SelectContent>
                         {guides.map((guide) => (
                           <SelectItem key={guide.id} value={guide.id}>
-                            {guide.variety} - {guide.yield} kg/m²
+                            {guide.nom} - {guide.variete} ({guide.rendement} kg/m²)
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -681,8 +687,10 @@ export default function SerreCreation({
                           <div className="text-sm text-gray-600 space-y-1">
                             {serre.guide && (
                               <>
-                                <div>Variété: {serre.guide.variety}</div>
-                                <div>Rendement: {serre.guide.yield} kg/m²</div>
+                                <div>Guide: {serre.guide.nom}</div>
+                                <div>Variété: {serre.guide.variete}</div>
+                                <div>Rendement: {serre.guide.rendement} kg/m²</div>
+                                <div>Plants: {serre.guide.nombre_de_plants}</div>
                                 <div>Surface: {serre.surface.toFixed(0)} m²</div>
                                 {serre.guide.irrigationType && (
                                   <Badge variant="outline" className="mt-1">
