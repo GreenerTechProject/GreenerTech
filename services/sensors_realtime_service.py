@@ -8,6 +8,7 @@ import numpy as np
 from datetime import datetime
 import requests
 import asyncio
+import os
 
 
 sensor_clients = set()
@@ -111,6 +112,8 @@ async def sensor_data_handler(request):
                             img_rgb = img_array[:, :, ::-1]
                             pil_img = Image.fromarray(img_rgb)
 
+                            os.makedirs("./images", exist_ok=True)
+                            
                             # Save as JPG to disk
                             timanow = datetime.now().strftime("%Y%m%d%H%M%S")
                             image_filename = f"{qrdata['id']}_{timanow}.jpg"

@@ -92,6 +92,8 @@ async def send_video():
 
 
 
+# Ouvre le port série vers Arduino (adapter le port si besoin)
+#arduino = serial.Serial('/dev/ttyACM0', 9600)
 
 async def receive_controls():
     while True:
@@ -107,8 +109,6 @@ async def receive_controls():
                         print(f"Commande contrôle reçue: {data['control_mode']}")
                         
 
-                        # Ouvre le port série vers Arduino (adapter le port si besoin)
-                        #arduino = serial.Serial('/dev/ttyACM0', 9600)
                         #arduino.write((data['control_mode'] + "\n").encode())
 
 

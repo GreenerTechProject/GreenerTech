@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Contrôle Moteurs</title>
+</head>
+<body>
+  <h1>Contrôle des moteurs</h1>
+  <button onclick="envoyer('u')">Monter</button>
+  <button onclick="envoyer('d')">Descendre</button>
+  <button onclick="envoyer('l')">Gauche</button>
+  <button onclick="envoyer('r')">Droite</button>
+
+  <script>
+    const ws = new WebSocket("ws://192.168.11.190:8765");
+    ws.onopen = () => console.log("Connecté au serveur WebSocket");
+
+    function envoyer(direction) {
+      ws.send(direction);
+    }
+  </script>
+</body>
+</html>
+
