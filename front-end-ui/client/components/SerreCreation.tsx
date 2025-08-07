@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { CalendarIcon, Plus, Trash2, ArrowLeft, BookOpen } from "lucide-react";
+import { CalendarIcon, Plus, Trash2, ArrowLeft, BookOpen, Loader2 } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
 import {
   Popover,
@@ -25,6 +25,8 @@ import GoogleMapsWrapper from "./GoogleMapsWrapper";
 import MapComponent, { DrawnShape } from "./MapComponent";
 import { getGoogleMapsAPIKey } from "@/config/maps";
 import { ExtendedSerre, ExtendedGuideDeCulture } from "@shared/api";
+import { guideService } from "@/services/guideService";
+import { useToast } from "@/hooks/use-toast";
 
 interface Domain {
   id: string;
@@ -95,22 +97,50 @@ export default function SerreCreation({
   });
   const [guides, setGuides] = useState<ExtendedGuideDeCulture[]>([]);
   const [showCreateGuide, setShowCreateGuide] = useState(false);
+  const [isCreatingGuide, setIsCreatingGuide] = useState(false);
+  const [isSavingSerre, setIsSavingSerre] = useState(false);
+  const { toast } = useToast();
 
   const activeDomain = currentDomains.find((d) => d.id === activeDomainId);
 
   // Load existing guides on component mount
   useEffect(() => {
-    // TODO: Load guides from API
-    // For now, we'll use empty array
-    setGuides([]);
-  }, []);
+    const loadGuides = async () => {
+      try {
+        const existingGuides = await guideService.getGuides();
+        // Convert backend guides to ExtendedGuideDeCulture format
+        const convertedGuides: ExtendedGuideDeCulture[] = existingGuides.map(guide => ({
+          id: guide.id,
+          nom: guide.nom,
+          variete: guide.variete,
+          rendement: guide.rendement,
+          nombre_de_plants: guide.nombre_de_plants,
+          date_debut_saison: new Date(guide.date_debut_saison),
+          date_fin_saison: new Date(guide.date_fin_saison),
+          id_serre: guide.id_serre,
+          irrigationType: guide.irrigationType,
+          notes: guide.notes,
+        }));
+        setGuides(convertedGuides);
+      } catch (error) {
+        console.error("Error loading guides:", error);
+        toast({
+          title: "Erreur",
+          description: "Impossible de charger les guides de culture",
+          variant: "destructive",
+        });
+      }
+    };
+
+    loadGuides();
+  }, [toast]);
 
   const handleShapeComplete = (shape: DrawnShape) => {
     setPendingSerre(shape);
     setIsDrawing(false);
   };
 
-  const handleCreateGuide = () => {
+  const handleCreateGuide = async () => {
     if (
       !guideForm.nom ||
       !guideForm.variete ||
@@ -122,36 +152,69 @@ export default function SerreCreation({
       return;
     }
 
-    const newGuide: ExtendedGuideDeCulture = {
-      nom: guideForm.nom,
-      variete: guideForm.variete,
-      rendement: parseFloat(guideForm.rendement),
-      nombre_de_plants: parseInt(guideForm.nombre_de_plants),
-      date_debut_saison: guideForm.date_debut_saison,
-      date_fin_saison: guideForm.date_fin_saison,
-      id_serre: "", // Will be set when serre is created
-      irrigationType: guideForm.irrigationType,
-      notes: guideForm.notes,
-    };
+    setIsCreatingGuide(true);
 
-    setGuides((prev) => [...prev, newGuide]);
-    setSerreForm((prev) => ({ ...prev, selectedGuideId: newGuide.id }));
+    try {
+      const guideRequest = {
+        nom: guideForm.nom,
+        variete: guideForm.variete,
+        rendement: parseFloat(guideForm.rendement),
+        nombre_de_plants: parseInt(guideForm.nombre_de_plants),
+        date_debut_saison: guideForm.date_debut_saison.toISOString(),
+        date_fin_saison: guideForm.date_fin_saison.toISOString(),
+        id_serre: "temp", // Temporary value, will be updated when serre is created
+        irrigationType: guideForm.irrigationType,
+        notes: guideForm.notes,
+      };
 
-    // Reset guide form
-    setGuideForm({
-      nom: "",
-      variete: "",
-      rendement: "",
-      nombre_de_plants: "",
-      irrigationType: "",
-      date_debut_saison: undefined,
-      date_fin_saison: undefined,
-      notes: "",
-    });
-    setShowCreateGuide(false);
+      const response = await guideService.createGuide(guideRequest);
+
+      const newGuide: ExtendedGuideDeCulture = {
+        id: response.guideId,
+        nom: guideForm.nom,
+        variete: guideForm.variete,
+        rendement: parseFloat(guideForm.rendement),
+        nombre_de_plants: parseInt(guideForm.nombre_de_plants),
+        date_debut_saison: guideForm.date_debut_saison,
+        date_fin_saison: guideForm.date_fin_saison,
+        id_serre: "",
+        irrigationType: guideForm.irrigationType,
+        notes: guideForm.notes,
+      };
+
+      setGuides((prev) => [...prev, newGuide]);
+      setSerreForm((prev) => ({ ...prev, selectedGuideId: newGuide.id }));
+
+      // Reset guide form
+      setGuideForm({
+        nom: "",
+        variete: "",
+        rendement: "",
+        nombre_de_plants: "",
+        irrigationType: "",
+        date_debut_saison: undefined,
+        date_fin_saison: undefined,
+        notes: "",
+      });
+      setShowCreateGuide(false);
+
+      toast({
+        title: "Guide créé",
+        description: `Le guide "${guideForm.nom}" a été créé avec succès`,
+      });
+    } catch (error: any) {
+      console.error("Error creating guide:", error);
+      toast({
+        title: "Erreur",
+        description: error.message || "Erreur lors de la création du guide",
+        variant: "destructive",
+      });
+    } finally {
+      setIsCreatingGuide(false);
+    }
   };
 
-  const handleSaveSerre = () => {
+  const handleSaveSerre = async () => {
     if (
       !pendingSerre ||
       !serreForm.nom.trim() ||
@@ -165,31 +228,77 @@ export default function SerreCreation({
     );
     if (!selectedGuide) return;
 
-    const newSerre: ExtendedSerre = {
-      id: pendingSerre.id,
-      nom: serreForm.nom.trim(),
-      surface: pendingSerre.area,
-      domainId: activeDomainId,
-      guideId: serreForm.selectedGuideId,
-      position: pendingSerre.path,
-      center: pendingSerre.center,
-      guide: selectedGuide,
-    };
+    setIsSavingSerre(true);
 
-    setCurrentDomains((prev) =>
-      prev.map((domain) =>
-        domain.id === activeDomainId
-          ? { ...domain, serres: [...domain.serres, newSerre] }
-          : domain,
-      ),
-    );
+    try {
+      // Create serre in backend
+      const serreRequest = {
+        nom: serreForm.nom.trim(),
+        id_domaine: parseInt(activeDomainId),
+        position: pendingSerre.path.map((point, index) => ({
+          latitude: point.lat(),
+          longitude: point.lng(),
+          ordre: index + 1,
+        })),
+      };
 
-    // Reset form
-    setSerreForm({
-      nom: "",
-      selectedGuideId: "",
-    });
-    setPendingSerre(null);
+      // Call backend API directly since createSerres expects different format
+      const response = await fetch('/api/serre', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+        },
+        body: JSON.stringify(serreRequest),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Erreur lors de la création de la serre');
+      }
+
+      const createdSerre = await response.json();
+
+      const newSerre: ExtendedSerre = {
+        id: createdSerre.id.toString(),
+        nom: serreForm.nom.trim(),
+        surface: pendingSerre.area,
+        domainId: activeDomainId,
+        guideId: serreForm.selectedGuideId,
+        position: pendingSerre.path,
+        center: pendingSerre.center,
+        guide: selectedGuide,
+      };
+
+      setCurrentDomains((prev) =>
+        prev.map((domain) =>
+          domain.id === activeDomainId
+            ? { ...domain, serres: [...domain.serres, newSerre] }
+            : domain,
+        ),
+      );
+
+      // Reset form
+      setSerreForm({
+        nom: "",
+        selectedGuideId: "",
+      });
+      setPendingSerre(null);
+
+      toast({
+        title: "Serre créée",
+        description: `La serre "${serreForm.nom}" a été créée avec succès`,
+      });
+    } catch (error: any) {
+      console.error("Error creating serre:", error);
+      toast({
+        title: "Erreur",
+        description: error.message || "Erreur lors de la création de la serre",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSavingSerre(false);
+    }
   };
 
   const handleDeleteSerre = (serreId: string) => {
@@ -541,6 +650,7 @@ export default function SerreCreation({
                     <Button
                       onClick={handleCreateGuide}
                       disabled={
+                        isCreatingGuide ||
                         !guideForm.nom ||
                         !guideForm.variete ||
                         !guideForm.rendement ||
@@ -550,7 +660,14 @@ export default function SerreCreation({
                       }
                       className="flex-1"
                     >
-                      Créer le guide
+                      {isCreatingGuide ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Création...
+                        </>
+                      ) : (
+                        "Créer le guide"
+                      )}
                     </Button>
                     <Button
                       variant="outline"
@@ -651,11 +768,20 @@ export default function SerreCreation({
                     <Button
                       onClick={handleSaveSerre}
                       disabled={
-                        !serreForm.nom.trim() || !serreForm.selectedGuideId
+                        isSavingSerre ||
+                        !serreForm.nom.trim() ||
+                        !serreForm.selectedGuideId
                       }
                       className="flex-1"
                     >
-                      Enregistrer
+                      {isSavingSerre ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Enregistrement...
+                        </>
+                      ) : (
+                        "Enregistrer"
+                      )}
                     </Button>
                     <Button variant="outline" onClick={cancelDrawing}>
                       Annuler
