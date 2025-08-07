@@ -103,42 +103,17 @@ export default function DirecteurSetup() {
 
       const domainResponses = await domainService.createDomains(domainRequests);
 
-      // Step 3: Create culture guides
-      const guideMap = new Map<string, string>(); // Maps old guide id to new guide id
-      const uniqueGuides = new Map<string, any>();
+      // Step 3: Prepare guide data for after serre creation
+      const guideDataMap = new Map<string, any>(); // Maps old guide id to guide data
 
       // Collect unique guides from all serres
       setupData.domains.forEach((domain) => {
         domain.serres.forEach((serre) => {
-          if (serre.guide && !uniqueGuides.has(serre.guideId)) {
-            uniqueGuides.set(serre.guideId, serre.guide);
+          if (serre.guide && !guideDataMap.has(serre.guideId)) {
+            guideDataMap.set(serre.guideId, serre.guide);
           }
         });
       });
-
-      // Create guides
-      for (const [oldGuideId, guide] of uniqueGuides) {
-        const guideRequest = {
-          nom: guide.nom,
-          variete: guide.variete,
-          rendement: guide.rendement,
-          nombre_de_plants: guide.nombre_de_plants,
-          date_debut_saison:
-            typeof guide.date_debut_saison === "string"
-              ? guide.date_debut_saison
-              : guide.date_debut_saison.toISOString(),
-          date_fin_saison:
-            typeof guide.date_fin_saison === "string"
-              ? guide.date_fin_saison
-              : guide.date_fin_saison.toISOString(),
-          id_serre: guide.id_serre,
-          irrigationType: guide.irrigationType,
-          notes: guide.notes,
-        };
-
-        const guideResponse = await guideService.createGuide(guideRequest);
-        guideMap.set(oldGuideId, guideResponse.guideId);
-      }
 
       // Step 4: Create mapping between frontend domain IDs and backend domain IDs
       const domainIdMap = new Map<string, string>();
