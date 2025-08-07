@@ -156,6 +156,37 @@ const App = () => (
               </ProtectedRoute>
             } />
 
+            {/* Director Management Routes */}
+            <Route path="/directeur/techniciens" element={
+              <ProtectedRoute>
+                <TechnicianManagement />
+              </ProtectedRoute>
+            } />
+
+            <Route path="/directeur/affiliations" element={
+              <ProtectedRoute>
+                <AffiliationManagement />
+              </ProtectedRoute>
+            } />
+
+            <Route path="/directeur/interventions" element={
+              <ProtectedRoute>
+                <InterventionManagement />
+              </ProtectedRoute>
+            } />
+
+            <Route path="/directeur/alertes" element={
+              <ProtectedRoute>
+                <AlertManagement />
+              </ProtectedRoute>
+            } />
+
+            <Route path="/directeur/rapports" element={
+              <ProtectedRoute>
+                <ReportManagement />
+              </ProtectedRoute>
+            } />
+
             {/* Redirect root to dashboard */}
             <Route path="/" element={<Navigate to="/dashboard" replace />} />
 
