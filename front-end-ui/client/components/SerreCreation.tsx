@@ -67,6 +67,7 @@ export default function SerreCreation({
   onComplete,
   onBack,
   selectedDomainId,
+  setupMode = false,
 }: SerreCreationProps) {
   const [currentDomains, setCurrentDomains] = useState<Domain[]>(domains);
   const [activeDomainId, setActiveDomainId] = useState<string>(
