@@ -3,19 +3,25 @@ import { tokenManager } from "./authService";
 
 export interface GuideDeCulture {
   id: string;
-  variety: string;
-  yield: number;
-  plantingDate: string;
-  harvestDate: string;
+  nom: string;
+  variete: string;
+  rendement: number;
+  nombre_de_plants: number;
+  date_debut_saison: string;
+  date_fin_saison: string;
+  id_serre: string;
   irrigationType?: string;
   notes?: string;
 }
 
 export interface CreateGuideRequest {
-  variety: string;
-  yield: number;
-  plantingDate: string;
-  harvestDate: string;
+  nom: string;
+  variete: string;
+  rendement: number;
+  nombre_de_plants: number;
+  date_debut_saison: string;
+  date_fin_saison: string;
+  id_serre: string;
   irrigationType?: string;
   notes?: string;
 }
