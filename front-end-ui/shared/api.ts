@@ -54,9 +54,9 @@ export interface ExtendedSerre {
   guide?: ExtendedGuideDeCulture;
 }
 
-export interface ExtendedGuideDeCulture extends Omit<GuideDeCulture, "plantingDate" | "harvestDate"> {
-  plantingDate: Date | string;
-  harvestDate: Date | string;
+export interface ExtendedGuideDeCulture extends Omit<GuideDeCulture, "date_debut_saison" | "date_fin_saison"> {
+  date_debut_saison: Date | string;
+  date_fin_saison: Date | string;
 }
 
 /**
