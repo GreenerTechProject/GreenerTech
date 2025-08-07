@@ -38,10 +38,6 @@ export default function PageHeader({
   const navigate = useNavigate();
   actions,
   showProfile = true
-}: PageHeaderProps) {
-  const { user, logout } = useAuth();
-  const navigate = useNavigate();
-
   const getUserInitials = (name?: string) => {
     if (!name) return "U";
     return name.split(" ").map(n => n[0]).join("").toUpperCase();
