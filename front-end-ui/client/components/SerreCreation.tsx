@@ -145,29 +145,45 @@ export default function SerreCreation({
     setIsCreatingGuide(true);
 
     try {
-      const guideRequest = {
-        nom: guideForm.nom,
-        variete: guideForm.variete,
-        rendement: parseFloat(guideForm.rendement),
-        nombre_de_plants: parseInt(guideForm.nombre_de_plants),
-        date_debut_saison: guideForm.date_debut_saison.toISOString(),
-        date_fin_saison: guideForm.date_fin_saison.toISOString(),
-        id_serre: "temp", // Temporary value, will be updated when serre is created
-      };
+      let newGuide: ExtendedGuideDeCulture;
 
-      const response = await guideService.createGuide(guideRequest);
+      if (setupMode) {
+        // In setup mode, create guide locally without backend call
+        newGuide = {
+          id: `temp-guide-${Date.now()}`, // Temporary ID for frontend use
+          nom: guideForm.nom,
+          variete: guideForm.variete,
+          rendement: parseFloat(guideForm.rendement),
+          nombre_de_plants: parseInt(guideForm.nombre_de_plants),
+          date_debut_saison: guideForm.date_debut_saison,
+          date_fin_saison: guideForm.date_fin_saison,
+          id_serre: "", // Will be set when serre is created
+        };
+      } else {
+        // In standalone mode, call the backend to create the guide
+        const guideRequest = {
+          nom: guideForm.nom,
+          variete: guideForm.variete,
+          rendement: parseFloat(guideForm.rendement),
+          nombre_de_plants: parseInt(guideForm.nombre_de_plants),
+          date_debut_saison: guideForm.date_debut_saison.toISOString(),
+          date_fin_saison: guideForm.date_fin_saison.toISOString(),
+          id_serre: "temp", // Temporary value, will be updated when serre is created
+        };
 
-      const newGuide: ExtendedGuideDeCulture = {
-        id: response.guideId,
-        nom: guideForm.nom,
-        variete: guideForm.variete,
-        rendement: parseFloat(guideForm.rendement),
-        nombre_de_plants: parseInt(guideForm.nombre_de_plants),
-        date_debut_saison: guideForm.date_debut_saison,
-        date_fin_saison: guideForm.date_fin_saison,
-        id_serre: "",
-      
-      };
+        const response = await guideService.createGuide(guideRequest);
+
+        newGuide = {
+          id: response.guideId,
+          nom: guideForm.nom,
+          variete: guideForm.variete,
+          rendement: parseFloat(guideForm.rendement),
+          nombre_de_plants: parseInt(guideForm.nombre_de_plants),
+          date_debut_saison: guideForm.date_debut_saison,
+          date_fin_saison: guideForm.date_fin_saison,
+          id_serre: "",
+        };
+      }
 
       setGuides((prev) => [...prev, newGuide]);
       setSerreForm((prev) => ({ ...prev, selectedGuideId: newGuide.id }));
