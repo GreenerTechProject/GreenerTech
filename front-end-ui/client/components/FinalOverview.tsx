@@ -336,7 +336,7 @@ export default function FinalOverview({
                               handleItemSelect({
                                 type: "serre",
                                 id: serre.id,
-                                name: serre.name,
+                                name: serre.nom,
                                 center: serre.center,
                               })
                             }
