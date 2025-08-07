@@ -106,10 +106,35 @@ export default function SerreCreation({
 
   // Load existing guides on component mount
   useEffect(() => {
-    // TODO: Load guides from API
-    // For now, we'll use empty array
-    setGuides([]);
-  }, []);
+    const loadGuides = async () => {
+      try {
+        const existingGuides = await guideService.getGuides();
+        // Convert backend guides to ExtendedGuideDeCulture format
+        const convertedGuides: ExtendedGuideDeCulture[] = existingGuides.map(guide => ({
+          id: guide.id,
+          nom: guide.nom,
+          variete: guide.variete,
+          rendement: guide.rendement,
+          nombre_de_plants: guide.nombre_de_plants,
+          date_debut_saison: new Date(guide.date_debut_saison),
+          date_fin_saison: new Date(guide.date_fin_saison),
+          id_serre: guide.id_serre,
+          irrigationType: guide.irrigationType,
+          notes: guide.notes,
+        }));
+        setGuides(convertedGuides);
+      } catch (error) {
+        console.error("Error loading guides:", error);
+        toast({
+          title: "Erreur",
+          description: "Impossible de charger les guides de culture",
+          variant: "destructive",
+        });
+      }
+    };
+
+    loadGuides();
+  }, [toast]);
 
   const handleShapeComplete = (shape: DrawnShape) => {
     setPendingSerre(shape);
