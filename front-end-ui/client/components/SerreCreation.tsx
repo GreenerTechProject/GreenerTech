@@ -123,7 +123,6 @@ export default function SerreCreation({
     }
 
     const newGuide: ExtendedGuideDeCulture = {
-      id: `guide-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
       nom: guideForm.nom,
       variete: guideForm.variete,
       rendement: parseFloat(guideForm.rendement),
