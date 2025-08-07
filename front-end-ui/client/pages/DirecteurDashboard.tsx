@@ -28,11 +28,11 @@ interface Domain {
 
 interface Serre {
   id: string;
-  name: string;
-  area: number;
+  nom: string;
+  surface: number;
   domainId: string;
   guideId: string;
-  path: google.maps.LatLng[];
+  position: google.maps.LatLng[];
   center: google.maps.LatLng;
   guide?: {
     id: string;
@@ -143,15 +143,15 @@ export default function DirecteurDashboard() {
         const domainId = domainResponses[i].domainId;
 
         const serreRequests = domain.serres.map((serre) => ({
-          name: serre.name,
-          area: serre.area,
+          nom: serre.nom,
+          surface: serre.surface,
           domainId,
           guideId: guideMap.get(serre.guideId) || serre.guideId,
           center: {
             lat: serre.center.lat(),
             lng: serre.center.lng(),
           },
-          path: serre.path.map((point) => ({
+          position: serre.position.map((point) => ({
             lat: point.lat(),
             lng: point.lng(),
           })),
