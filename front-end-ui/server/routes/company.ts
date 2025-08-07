@@ -88,12 +88,12 @@ interface Domain {
 
 interface Serre {
   id: string;
-  name: string;
+  nom: string;
   variety: string;
   yield: number;
-  area: number;
+  surface: number;
   domainId: string;
-  path: { lat: number; lng: number }[];
+  position: { lat: number; lng: number }[];
   center: { lat: number; lng: number };
   additionalData?: {
     plantingDate?: string;
@@ -266,7 +266,7 @@ export const handleCompleteSetup: RequestHandler = async (req, res) => {
     const totalSerreArea = domains.reduce(
       (total, domain) =>
         total +
-        domain.serres.reduce((serreTotal, serre) => serreTotal + serre.area, 0),
+        domain.serres.reduce((serreTotal, serre) => serreTotal + serre.surface, 0),
       0,
     );
     const assignedSerres = technicians.reduce(

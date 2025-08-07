@@ -21,12 +21,12 @@ interface Domain {
 
 interface Serre {
   id: string;
-  name: string;
+  nom: string;
   variety: string;
   yield: number;
-  area: number;
+  surface: number;
   domainId: string;
-  path: google.maps.LatLng[];
+  position: google.maps.LatLng[];
   center: google.maps.LatLng;
   additionalData?: {
     plantingDate?: string;
@@ -116,9 +116,9 @@ export default function DomainCreation({
         shapes.push({
           id: serre.id,
           type: "serre",
-          name: serre.name,
-          path: serre.path,
-          area: serre.area,
+          name: serre.nom,
+          path: serre.position,
+          area: serre.surface,
           center: serre.center,
           color: "#FF6B6B",
           domainId: domain.id,

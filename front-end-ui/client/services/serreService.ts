@@ -1,32 +1,14 @@
 import axios from "axios";
 import { tokenManager } from "./authService";
-
-export interface Serre {
-  id: string;
-  name: string;
-  area: number;
-  domainId: string;
-  guideId: string;
-  path: { lat: number; lng: number }[];
-  center: { lat: number; lng: number };
-  guide?: {
-    id: string;
-    variety: string;
-    yield: number;
-    plantingDate: string;
-    harvestDate: string;
-    irrigationType?: string;
-    notes?: string;
-  };
-}
+import { ExtendedSerre } from "@shared/api";
 
 export interface CreateSerreRequest {
-  name: string;
-  area: number;
+  nom: string;
+  surface: number;
   domainId: string;
   guideId: string;
-  path: { lat: number; lng: number }[];
-  center: { lat: number; lng: number };
+  position: google.maps.LatLng[];
+  center: google.maps.LatLng;
 }
 
 export interface CreateSerreResponse {
@@ -87,9 +69,9 @@ export const serreService = {
   },
 
   // Get serres by domain ID
-  getSerresByDomain: async (domainId: string): Promise<Serre[]> => {
+  getSerresByDomain: async (domainId: string): Promise<ExtendedSerre[]> => {
     try {
-      const response = await axios.get<{ success: boolean; serres: Serre[] }>(
+      const response = await axios.get<{ success: boolean; serres: ExtendedSerre[] }>(
         `${API_BASE_URL}/domaine/${domainId}/serres`,
         createAuthenticatedRequest(),
       );

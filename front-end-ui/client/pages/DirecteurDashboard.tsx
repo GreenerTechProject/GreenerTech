@@ -28,11 +28,11 @@ interface Domain {
 
 interface Serre {
   id: string;
-  name: string;
-  area: number;
+  nom: string;
+  surface: number;
   domainId: string;
   guideId: string;
-  path: google.maps.LatLng[];
+  position: google.maps.LatLng[];
   center: google.maps.LatLng;
   guide?: {
     id: string;
@@ -118,16 +118,19 @@ export default function DirecteurDashboard() {
       // Create guides
       for (const [oldGuideId, guide] of uniqueGuides) {
         const guideRequest = {
-          variety: guide.variety,
-          yield: guide.yield,
-          plantingDate:
-            typeof guide.plantingDate === "string"
-              ? guide.plantingDate
-              : guide.plantingDate.toISOString(),
-          harvestDate:
-            typeof guide.harvestDate === "string"
-              ? guide.harvestDate
-              : guide.harvestDate.toISOString(),
+          nom: guide.nom,
+          variete: guide.variete,
+          rendement: guide.rendement,
+          nombre_de_plants: guide.nombre_de_plants,
+          date_debut_saison:
+            typeof guide.date_debut_saison === "string"
+              ? guide.date_debut_saison
+              : guide.date_debut_saison.toISOString(),
+          date_fin_saison:
+            typeof guide.date_fin_saison === "string"
+              ? guide.date_fin_saison
+              : guide.date_fin_saison.toISOString(),
+          id_serre: guide.id_serre,
           irrigationType: guide.irrigationType,
           notes: guide.notes,
         };
@@ -143,15 +146,15 @@ export default function DirecteurDashboard() {
         const domainId = domainResponses[i].domainId;
 
         const serreRequests = domain.serres.map((serre) => ({
-          name: serre.name,
-          area: serre.area,
+          nom: serre.nom,
+          surface: serre.surface,
           domainId,
           guideId: guideMap.get(serre.guideId) || serre.guideId,
           center: {
             lat: serre.center.lat(),
             lng: serre.center.lng(),
           },
-          path: serre.path.map((point) => ({
+          position: serre.position.map((point) => ({
             lat: point.lat(),
             lng: point.lng(),
           })),
