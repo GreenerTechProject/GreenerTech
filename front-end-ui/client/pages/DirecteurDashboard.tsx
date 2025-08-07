@@ -223,7 +223,13 @@ export default function DirecteurDashboard() {
     return <CompanySetupWizard onComplete={handleCompanySetupComplete} />;
   }
 
-  // Show main directeur dashboard
+  // Show main directeur dashboard - redirect to new dashboard
+  useEffect(() => {
+    if (user?.setup_completed) {
+      window.location.href = "/director-dashboard";
+    }
+  }, [user?.setup_completed]);
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}

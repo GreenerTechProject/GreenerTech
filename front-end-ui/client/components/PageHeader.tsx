@@ -32,10 +32,6 @@ export default function PageHeader({
   subtitle,
   badge,
   userRole = "technicien",
-  actions
-}: PageHeaderProps) {
-  const { user, logout } = useAuth();
-  const navigate = useNavigate();
   actions,
   showProfile = true
   const getUserInitials = (name?: string) => {
