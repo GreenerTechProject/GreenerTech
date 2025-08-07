@@ -17,11 +17,11 @@ export interface CreateGuideDeCultureResponse {
 }
 
 export interface CreateSerreRequest {
-  name: string;
-  area: number;
+  nom: string;
+  surface: number;
   domainId: string;
   guideId: string;
-  path: { lat: number; lng: number }[];
+  position: { lat: number; lng: number }[];
   center: { lat: number; lng: number };
 }
 
@@ -101,17 +101,17 @@ export const handleCreateGuideDeCulture: RequestHandler = async (req, res) => {
 // Create serre endpoint
 export const handleCreateSerre: RequestHandler = async (req, res) => {
   try {
-    const { name, area, domainId, guideId, path, center } =
+    const { nom, surface, domainId, guideId, position, center } =
       req.body as CreateSerreRequest;
 
     // Validate required fields
     if (
-      !name ||
-      !area ||
+      !nom ||
+      !surface ||
       !domainId ||
       !guideId ||
-      !path ||
-      !Array.isArray(path) ||
+      !position ||
+      !Array.isArray(position) ||
       !center
     ) {
       return res.status(400).json({
@@ -135,8 +135,8 @@ export const handleCreateSerre: RequestHandler = async (req, res) => {
       });
     }
 
-    // Validate path coordinates
-    const isValidPath = path.every(
+    // Validate position coordinates
+    const isValidPosition = position.every(
       (point) =>
         typeof point.lat === "number" &&
         typeof point.lng === "number" &&
@@ -146,15 +146,15 @@ export const handleCreateSerre: RequestHandler = async (req, res) => {
         point.lng <= 180,
     );
 
-    if (!isValidPath) {
+    if (!isValidPosition) {
       return res.status(400).json({
         success: false,
         message: "Coordonnées du chemin invalides",
       });
     }
 
-    // Validate area is positive
-    if (area <= 0) {
+    // Validate surface is positive
+    if (surface <= 0) {
       return res.status(400).json({
         success: false,
         message: "La superficie doit être un nombre positif",
@@ -171,11 +171,11 @@ export const handleCreateSerre: RequestHandler = async (req, res) => {
     console.log("Création de la serre:", {
       userId,
       serreId,
-      name,
-      area,
+      nom,
+      surface,
       domainId,
       guideId,
-      pathPoints: path.length,
+      positionPoints: position.length,
       center,
     });
 
