@@ -84,11 +84,13 @@ export default function SerreCreation({
     selectedGuideId: "",
   });
   const [guideForm, setGuideForm] = useState({
-    variety: "",
-    yield: "",
+    nom: "",
+    variete: "",
+    rendement: "",
+    nombre_de_plants: "",
     irrigationType: "",
-    plantingDate: undefined as Date | undefined,
-    harvestDate: undefined as Date | undefined,
+    date_debut_saison: undefined as Date | undefined,
+    date_fin_saison: undefined as Date | undefined,
     notes: "",
   });
   const [guides, setGuides] = useState<ExtendedGuideDeCulture[]>([]);
@@ -110,20 +112,25 @@ export default function SerreCreation({
 
   const handleCreateGuide = () => {
     if (
-      !guideForm.variety ||
-      !guideForm.yield ||
-      !guideForm.plantingDate ||
-      !guideForm.harvestDate
+      !guideForm.nom ||
+      !guideForm.variete ||
+      !guideForm.rendement ||
+      !guideForm.nombre_de_plants ||
+      !guideForm.date_debut_saison ||
+      !guideForm.date_fin_saison
     ) {
       return;
     }
 
     const newGuide: ExtendedGuideDeCulture = {
       id: `guide-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-      variety: guideForm.variety,
-      yield: parseFloat(guideForm.yield),
-      plantingDate: guideForm.plantingDate,
-      harvestDate: guideForm.harvestDate,
+      nom: guideForm.nom,
+      variete: guideForm.variete,
+      rendement: parseFloat(guideForm.rendement),
+      nombre_de_plants: parseInt(guideForm.nombre_de_plants),
+      date_debut_saison: guideForm.date_debut_saison,
+      date_fin_saison: guideForm.date_fin_saison,
+      id_serre: "", // Will be set when serre is created
       irrigationType: guideForm.irrigationType,
       notes: guideForm.notes,
     };
@@ -133,11 +140,13 @@ export default function SerreCreation({
 
     // Reset guide form
     setGuideForm({
-      variety: "",
-      yield: "",
+      nom: "",
+      variete: "",
+      rendement: "",
+      nombre_de_plants: "",
       irrigationType: "",
-      plantingDate: undefined,
-      harvestDate: undefined,
+      date_debut_saison: undefined,
+      date_fin_saison: undefined,
       notes: "",
     });
     setShowCreateGuide(false);
