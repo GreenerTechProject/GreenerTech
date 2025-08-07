@@ -27,6 +27,11 @@ import ReportsPage from "./pages/ReportsPage";
 import Alerts from "./pages/Alerts";
 import Surveillance from "./pages/Surveillance";
 import Profile from "./pages/Profile";
+import TechnicianManagement from "./pages/TechnicianManagement";
+import AffiliationManagement from "./pages/AffiliationManagement";
+import InterventionManagement from "./pages/InterventionManagement";
+import AlertManagement from "./pages/AlertManagement";
+import ReportManagement from "./pages/ReportManagement";
 import NotFound from "./pages/NotFound";
 const queryClient = new QueryClient();
 
