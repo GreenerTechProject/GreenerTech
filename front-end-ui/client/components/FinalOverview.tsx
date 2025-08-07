@@ -174,7 +174,7 @@ export default function FinalOverview({
           setSelectedItem({
             type: "serre",
             id: serre.id,
-            name: serre.name,
+            name: serre.nom,
             center: serre.center,
           });
         });
