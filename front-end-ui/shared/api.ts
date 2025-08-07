@@ -29,12 +29,31 @@ export interface GuideDeCulture {
  */
 export interface Serre {
   id: string;
-  name: string;
-  area: number;
-  path: { lat: number; lng: number }[];
-  center: { lat: number; lng: number };
+  nom: string;
+  surface: number;
+  position: google.maps.LatLng[];
+  center: google.maps.LatLng;
   guideId: string; // foreign key linking to GuideDeCulture
   domainId: string;
+}
+
+/**
+ * Extended Serre Interface with guide information included
+ */
+export interface ExtendedSerre {
+  id: string;
+  nom: string;
+  surface: number;
+  domainId: string;
+  guideId: string;
+  position: google.maps.LatLng[];
+  center: google.maps.LatLng;
+  guide?: ExtendedGuideDeCulture;
+}
+
+export interface ExtendedGuideDeCulture extends Omit<GuideDeCulture, "plantingDate" | "harvestDate"> {
+  plantingDate: Date | string;
+  harvestDate: Date | string;
 }
 
 /**
