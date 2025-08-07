@@ -24,24 +24,7 @@ import { fr } from "date-fns/locale";
 import GoogleMapsWrapper from "./GoogleMapsWrapper";
 import MapComponent, { DrawnShape } from "./MapComponent";
 import { getGoogleMapsAPIKey } from "@/config/maps";
-import { Serre, GuideDeCulture } from "@shared/api";
-
-interface ExtendedSerre {
-  id: string;
-  name: string;
-  area: number;
-  domainId: string;
-  guideId: string;
-  path: google.maps.LatLng[];
-  center: google.maps.LatLng;
-  guide?: ExtendedGuideDeCulture;
-}
-
-interface ExtendedGuideDeCulture
-  extends Omit<GuideDeCulture, "plantingDate" | "harvestDate"> {
-  plantingDate: Date | string;
-  harvestDate: Date | string;
-}
+import { ExtendedSerre, ExtendedGuideDeCulture } from "@shared/api";
 
 interface Domain {
   id: string;
@@ -97,7 +80,7 @@ export default function SerreCreation({
   const [isDrawing, setIsDrawing] = useState(false);
   const [pendingSerre, setPendingSerre] = useState<DrawnShape | null>(null);
   const [serreForm, setSerreForm] = useState({
-    name: "",
+    nom: "",
     selectedGuideId: "",
   });
   const [guideForm, setGuideForm] = useState({
@@ -163,7 +146,7 @@ export default function SerreCreation({
   const handleSaveSerre = () => {
     if (
       !pendingSerre ||
-      !serreForm.name.trim() ||
+      !serreForm.nom.trim() ||
       !serreForm.selectedGuideId ||
       !activeDomainId
     )
@@ -176,11 +159,11 @@ export default function SerreCreation({
 
     const newSerre: ExtendedSerre = {
       id: pendingSerre.id,
-      name: serreForm.name.trim(),
-      area: pendingSerre.area,
+      nom: serreForm.nom.trim(),
+      surface: pendingSerre.area,
       domainId: activeDomainId,
       guideId: serreForm.selectedGuideId,
-      path: pendingSerre.path,
+      position: pendingSerre.path,
       center: pendingSerre.center,
       guide: selectedGuide,
     };
@@ -195,7 +178,7 @@ export default function SerreCreation({
 
     // Reset form
     setSerreForm({
-      name: "",
+      nom: "",
       selectedGuideId: "",
     });
     setPendingSerre(null);
@@ -219,7 +202,7 @@ export default function SerreCreation({
     setIsDrawing(false);
     setPendingSerre(null);
     setSerreForm({
-      name: "",
+      nom: "",
       selectedGuideId: "",
     });
   };
@@ -244,9 +227,9 @@ export default function SerreCreation({
         shapes.push({
           id: serre.id,
           type: "serre",
-          name: serre.name,
-          path: serre.path,
-          area: serre.area,
+          name: serre.nom,
+          path: serre.position,
+          area: serre.surface,
           center: serre.center,
           color: "#FF6B6B",
           domainId: activeDomain.id,
@@ -578,11 +561,11 @@ export default function SerreCreation({
                     <Label htmlFor="serreName">Nom de la serre *</Label>
                     <Input
                       id="serreName"
-                      value={serreForm.name}
+                      value={serreForm.nom}
                       onChange={(e) =>
                         setSerreForm((prev) => ({
                           ...prev,
-                          name: e.target.value,
+                          nom: e.target.value,
                         }))
                       }
                       placeholder="Ex: Serre Tomates A1"
@@ -622,7 +605,7 @@ export default function SerreCreation({
                     <Button
                       onClick={handleSaveSerre}
                       disabled={
-                        !serreForm.name.trim() || !serreForm.selectedGuideId
+                        !serreForm.nom.trim() || !serreForm.selectedGuideId
                       }
                       className="flex-1"
                     >
@@ -652,14 +635,14 @@ export default function SerreCreation({
                       <div className="flex justify-between items-start">
                         <div className="flex-1">
                           <h4 className="font-medium text-gray-900">
-                            {serre.name}
+                            {serre.nom}
                           </h4>
                           <div className="text-sm text-gray-600 space-y-1">
                             {serre.guide && (
                               <>
                                 <div>Variété: {serre.guide.variety}</div>
                                 <div>Rendement: {serre.guide.yield} kg/m²</div>
-                                <div>Surface: {serre.area.toFixed(0)} m²</div>
+                                <div>Surface: {serre.surface.toFixed(0)} m²</div>
                                 {serre.guide.irrigationType && (
                                   <Badge variant="outline" className="mt-1">
                                     {
