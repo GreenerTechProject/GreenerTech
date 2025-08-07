@@ -88,12 +88,12 @@ interface Domain {
 
 interface Serre {
   id: string;
-  name: string;
+  nom: string;
   variety: string;
   yield: number;
-  area: number;
+  surface: number;
   domainId: string;
-  path: { lat: number; lng: number }[];
+  position: { lat: number; lng: number }[];
   center: { lat: number; lng: number };
   additionalData?: {
     plantingDate?: string;
