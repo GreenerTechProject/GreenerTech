@@ -28,7 +28,7 @@ import { Serre, GuideDeCulture } from "@shared/api";
 
 interface ExtendedSerre {
   id: string;
-  name: string;
+  nam: string;
   area: number;
   domainId: string;
   guideId: string;

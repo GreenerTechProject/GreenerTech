@@ -68,18 +68,18 @@ const App = () => (
             />
             
             {/* Legacy Director Dashboard (for setup) */}
-            <Route
+            {/* <Route
               path="/directeur"
               element={
                 <ProtectedRoute>
-                  <DirecteurDashboard />
+                  <DirectorDashboard />
                 </ProtectedRoute>
               }
-            />
+            /> */}
 
             {/* New Director Dashboard with Sidebar */}
             <Route
-              path="/director-dashboard"
+              path="/directeur"
               element={
                 <ProtectedRoute>
                   <NewDirectorDashboard />
