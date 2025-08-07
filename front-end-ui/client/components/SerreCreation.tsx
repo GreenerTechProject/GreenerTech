@@ -367,9 +367,9 @@ export default function SerreCreation({
                   <div>
                     <Label htmlFor="guideVariety">Variété *</Label>
                     <Select
-                      value={guideForm.variety}
+                      value={guideForm.variete}
                       onValueChange={(value) =>
-                        setGuideForm((prev) => ({ ...prev, variety: value }))
+                        setGuideForm((prev) => ({ ...prev, variete: value }))
                       }
                     >
                       <SelectTrigger>
