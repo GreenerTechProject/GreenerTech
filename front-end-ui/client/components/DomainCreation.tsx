@@ -116,9 +116,9 @@ export default function DomainCreation({
         shapes.push({
           id: serre.id,
           type: "serre",
-          name: serre.name,
-          path: serre.path,
-          area: serre.area,
+          name: serre.nom,
+          path: serre.position,
+          area: serre.surface,
           center: serre.center,
           color: "#FF6B6B",
           domainId: domain.id,
