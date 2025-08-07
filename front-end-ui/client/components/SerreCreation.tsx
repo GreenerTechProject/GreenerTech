@@ -763,11 +763,20 @@ export default function SerreCreation({
                     <Button
                       onClick={handleSaveSerre}
                       disabled={
-                        !serreForm.nom.trim() || !serreForm.selectedGuideId
+                        isSavingSerre ||
+                        !serreForm.nom.trim() ||
+                        !serreForm.selectedGuideId
                       }
                       className="flex-1"
                     >
-                      Enregistrer
+                      {isSavingSerre ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Enregistrement...
+                        </>
+                      ) : (
+                        "Enregistrer"
+                      )}
                     </Button>
                     <Button variant="outline" onClick={cancelDrawing}>
                       Annuler
