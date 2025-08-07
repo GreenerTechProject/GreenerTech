@@ -98,6 +98,9 @@ export default function SerreCreation({
   });
   const [guides, setGuides] = useState<ExtendedGuideDeCulture[]>([]);
   const [showCreateGuide, setShowCreateGuide] = useState(false);
+  const [isCreatingGuide, setIsCreatingGuide] = useState(false);
+  const [isSavingSerre, setIsSavingSerre] = useState(false);
+  const { toast } = useToast();
 
   const activeDomain = currentDomains.find((d) => d.id === activeDomainId);
 
