@@ -506,7 +506,7 @@ export default function SerreCreation({
                             onSelect={(date) =>
                               setGuideForm((prev) => ({
                                 ...prev,
-                                harvestDate: date,
+                                date_fin_saison: date,
                               }))
                             }
                             initialFocus
