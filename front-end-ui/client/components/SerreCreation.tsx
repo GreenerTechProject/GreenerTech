@@ -259,14 +259,7 @@ export default function SerreCreation({
           })),
         };
 
-        const response = await serreService.createSerre(serreRequest);
-
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.message || 'Erreur lors de la création de la serre');
-        }
-
-        const createdSerre = await response.json();
+        const createdSerre = await serreService.createSerre(serreRequest);
 
         newSerre = {
           id: createdSerre.id.toString(),
