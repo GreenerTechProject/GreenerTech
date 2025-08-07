@@ -36,10 +36,11 @@ interface Serre {
   center: google.maps.LatLng;
   guide?: {
     id: string;
-    variety: string;
-    yield: number;
-    plantingDate: Date | string;
-    harvestDate: Date | string;
+    nom: string;
+    variete: string;
+    rendement: number;
+    date_debut_saison: Date | string;
+    date_fin_saison: Date | string;
     irrigationType?: string;
     notes?: string;
   };
@@ -59,7 +60,7 @@ interface CompletedSetupData {
   technicians: Technician[];
 }
 
-export default function DirecteurDashboard() {
+export default function DirecteurSetup() {
   const { user, updateUser, logout } = useAuth();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(true);
@@ -231,7 +232,7 @@ export default function DirecteurDashboard() {
     if (user?.setup_completed) {
       window.location.href = "/director-dashboard";
     }
-  }, [user?.setup_completed]);
+  }, [user?.pleted]);
 
   return (
     <div className="min-h-screen bg-gray-50">

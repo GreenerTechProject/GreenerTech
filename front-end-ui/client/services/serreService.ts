@@ -37,7 +37,30 @@ const createAuthenticatedRequest = () => {
 };
 
 export const serreService = {
-  // Create multiple serres
+  // Create a single serre
+  createSerre: async (serre: CreateSerreRequest): Promise<CreateSerreResponse> => {
+    try {
+      const response = await axios.post<CreateSerreResponse>(
+        `${API_BASE_URL}/serre`,
+        serre,
+        createAuthenticatedRequest(),
+      );
+      return response.data;
+    } catch (error: any) {
+      console.error("Erreur lors de la création de la serre:", error);
+
+      const errorMessage =
+        error.response?.data?.message ||
+        "Erreur lors de la création de la serre";
+
+      throw {
+        message: errorMessage,
+        status: error.response?.status || 500,
+      } as ApiError;
+    }
+  },
+
+  // Create multiple serres (optional - keep if you need bulk creation)
   createSerres: async (
     serres: CreateSerreRequest[],
   ): Promise<CreateSerreResponse[]> => {
@@ -67,6 +90,7 @@ export const serreService = {
       } as ApiError;
     }
   },
+
 
   // Get serres by domain ID
   getSerresByDomain: async (domainId: string): Promise<ExtendedSerre[]> => {

@@ -141,9 +141,11 @@ export default function NewDirectorDashboard() {
     }
   };
 
-  if (!user?.setup_completed) {
-    return <div>Configuration en cours...</div>;
-  }
+   useEffect(() => {
+    if (user?.setup_completed) {
+      window.location.href = "/setup";
+    }
+  }, [user?.pleted]);
 
   return (
     <div className="min-h-screen bg-gray-50 flex">

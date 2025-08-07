@@ -12,9 +12,12 @@ export const useAuthRedirect = (redirectTo: string = "/dashboard") => {
   useEffect(() => {
     if (!isLoading && isAuthenticated) {
       // Redirect users based on their role
-      if (user?.role === "directeur") {
+      if (user?.role === "directeur" && user?.setup_completed) {
         navigate("/directeur", { replace: true });
-      } else if (user?.role === "technicien") {
+      } else  if (user?.role === "directeur" && !user?.setup_completed) {
+        navigate("/setup", { replace: true });
+      }
+      else if (user?.role === "technicien") {
         navigate("/technician", { replace: true });
       } else if (user?.role === "technicien_superieur") {
         navigate("/technicien-sup", { replace: true });

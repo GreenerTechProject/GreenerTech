@@ -16,7 +16,7 @@ import AffiliationRequest from "./pages/AffiliationRequest";
 import EmailVerification from "./pages/EmailVerification";
 import VerifyEmail from "./pages/VerifyEmail";
 import Dashboard from "./pages/Dashboard";
-import DirecteurDashboard from "./pages/DirecteurDashboard";
+import DirecteurSetup from "./pages/DirecteurSetup";
 import TechnicianDashboard from "./pages/TechnicianDashboard";
 import TechnicienSupDashboard from "./pages/TechnicienSupDashboard";
 import TechnicienRegistration from "./pages/TechnicienRegistration";
@@ -68,14 +68,14 @@ const App = () => (
             />
             
             {/* Legacy Director Dashboard (for setup) */}
-            {/* <Route
-              path="/directeur"
+             <Route
+              path="/setup"
               element={
                 <ProtectedRoute>
-                  <DirectorDashboard />
+                  <DirecteurSetup />
                 </ProtectedRoute>
               }
-            /> */}
+            /> 
 
             {/* New Director Dashboard with Sidebar */}
             <Route

@@ -8,7 +8,7 @@ from app.controllers.domaine import create_domaine, get_domaine, get_all_domaine
 from app.controllers.bilan import create_bilan, get_bilan, get_all_bilans, update_bilan, delete_bilan, generate_bilan_qrcode
 from app.controllers.serre import create_serre, get_serre, get_all_serres, update_serre, delete_serre, get_bilans_by_serre
 
-from app.controllers.guide_culture import create_guide_culture , update_guide_culture, delete_guide, get_guide_culture
+from app.controllers.guide_culture import create_guide_culture , update_guide_culture, delete_guide, get_guide_culture, get_all_guides
 
 from app.controllers.intervention import create_intervention, validate_intervention, get_all_interention, get_intervention
 from app.controllers.type_tache import create_type_tache , get_type_tache, get_all_type_taches
@@ -83,7 +83,7 @@ all_bp.route('/guide_culture', methods=['POST'])(create_guide_culture)
 all_bp.route('/guide_culture/<int:id>', methods=['PUT'])(update_guide_culture)
 all_bp.route('/guide_culture/<int:id>', methods=['DELETE'])(delete_guide)
 all_bp.route('/guide_culture/<int:id>', methods=['GET'])(get_guide_culture)
-# all_bp.route('/guide_culture', methods=['GET'])(get_all_guides)g
+all_bp.route('/guide_culture', methods=['GET'])(get_all_guides)
 
 all_bp.route('/types-tache' , methods=['POST'])(create_type_tache)  
 all_bp.route('/types-tache/<int:id>', methods=['GET'])(get_type_tache)

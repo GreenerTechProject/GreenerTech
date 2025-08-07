@@ -27,6 +27,7 @@ import { getGoogleMapsAPIKey } from "@/config/maps";
 import { ExtendedSerre, ExtendedGuideDeCulture } from "@shared/api";
 import { guideService } from "@/services/guideService";
 import { useToast } from "@/hooks/use-toast";
+import {serreService} from "@/services/serreService"
 
 interface Domain {
   id: string;
@@ -60,15 +61,6 @@ const cropVarieties = [
   { value: "autre", label: "Autre" },
 ];
 
-const irrigationTypes = [
-  { value: "goutte-a-goutte", label: "Goutte à goutte" },
-  { value: "aspersion", label: "Aspersion" },
-  { value: "micro-aspersion", label: "Micro-aspersion" },
-  { value: "irrigation-localisee", label: "Irrigation localisée" },
-  { value: "hydroponie", label: "Hydroponie" },
-  { value: "manuel", label: "Manuel" },
-];
-
 export default function SerreCreation({
   domains,
   onComplete,
@@ -90,10 +82,8 @@ export default function SerreCreation({
     variete: "",
     rendement: "",
     nombre_de_plants: "",
-    irrigationType: "",
     date_debut_saison: undefined as Date | undefined,
     date_fin_saison: undefined as Date | undefined,
-    notes: "",
   });
   const [guides, setGuides] = useState<ExtendedGuideDeCulture[]>([]);
   const [showCreateGuide, setShowCreateGuide] = useState(false);
@@ -118,8 +108,6 @@ export default function SerreCreation({
           date_debut_saison: new Date(guide.date_debut_saison),
           date_fin_saison: new Date(guide.date_fin_saison),
           id_serre: guide.id_serre,
-          irrigationType: guide.irrigationType,
-          notes: guide.notes,
         }));
         setGuides(convertedGuides);
       } catch (error) {
@@ -163,8 +151,6 @@ export default function SerreCreation({
         date_debut_saison: guideForm.date_debut_saison.toISOString(),
         date_fin_saison: guideForm.date_fin_saison.toISOString(),
         id_serre: "temp", // Temporary value, will be updated when serre is created
-        irrigationType: guideForm.irrigationType,
-        notes: guideForm.notes,
       };
 
       const response = await guideService.createGuide(guideRequest);
@@ -178,8 +164,7 @@ export default function SerreCreation({
         date_debut_saison: guideForm.date_debut_saison,
         date_fin_saison: guideForm.date_fin_saison,
         id_serre: "",
-        irrigationType: guideForm.irrigationType,
-        notes: guideForm.notes,
+      
       };
 
       setGuides((prev) => [...prev, newGuide]);
@@ -191,7 +176,6 @@ export default function SerreCreation({
         variete: "",
         rendement: "",
         nombre_de_plants: "",
-        irrigationType: "",
         date_debut_saison: undefined,
         date_fin_saison: undefined,
         notes: "",
@@ -243,14 +227,11 @@ export default function SerreCreation({
       };
 
       // Call backend API directly since createSerres expects different format
-      const response = await fetch('/api/serre', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-        },
-        body: JSON.stringify(serreRequest),
-      });
+       console.log(serreRequest);
+       console.log("Initial domains:", domains);
+        console.log("Initial activeDomainId:", activeDomainId);
+        console.log("Current activeDomainId:", activeDomainId);
+        const response = await serreService.createSerre(serreRequest);
 
       if (!response.ok) {
         const errorData = await response.json();
@@ -536,30 +517,6 @@ export default function SerreCreation({
                     />
                   </div>
 
-                  <div>
-                    <Label htmlFor="guideIrrigation">Type d'irrigation</Label>
-                    <Select
-                      value={guideForm.irrigationType}
-                      onValueChange={(value) =>
-                        setGuideForm((prev) => ({
-                          ...prev,
-                          irrigationType: value,
-                        }))
-                      }
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Sélectionnez le type d'irrigation" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {irrigationTypes.map((type) => (
-                          <SelectItem key={type.value} value={type.value}>
-                            {type.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
                   <div className="grid grid-cols-2 gap-3">
                     <div>
                       <Label>Date de début de saison *</Label>
@@ -817,17 +774,6 @@ export default function SerreCreation({
                                 <div>Rendement: {serre.guide.rendement} kg/m²</div>
                                 <div>Plants: {serre.guide.nombre_de_plants}</div>
                                 <div>Surface: {serre.surface.toFixed(0)} m²</div>
-                                {serre.guide.irrigationType && (
-                                  <Badge variant="outline" className="mt-1">
-                                    {
-                                      irrigationTypes.find(
-                                        (t) =>
-                                          t.value ===
-                                          serre.guide?.irrigationType,
-                                      )?.label
-                                    }
-                                  </Badge>
-                                )}
                               </>
                             )}
                           </div>
