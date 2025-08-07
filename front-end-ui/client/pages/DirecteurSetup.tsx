@@ -115,19 +115,16 @@ export default function DirecteurSetup() {
         });
       });
 
-      // Step 4: Create serres for each domain using correct backend domain IDs
+      // Step 4: Create serres and guides in order
       const allSerres: any[] = [];
-      const serreToGuideMap = new Map<string, string>(); // Maps frontend serre id to guide id
 
       for (let i = 0; i < setupData.domains.length; i++) {
         const domain = setupData.domains[i];
         const backendDomainId = domainResponses[i].domainId;
 
-        const serreRequests = domain.serres.map((serre) => {
-          // Store the mapping between frontend serre id and guide id for later
-          serreToGuideMap.set(serre.id, serre.guideId);
-
-          return {
+        // Create serres for this domain
+        for (const serre of domain.serres) {
+          const serreRequest = {
             nom: serre.nom,
             id_domaine: parseInt(backendDomainId), // Use the actual backend domain ID as integer
             position: serre.position.map((point, index) => ({
@@ -136,40 +133,34 @@ export default function DirecteurSetup() {
               ordre: index + 1,
             })),
           };
-        });
 
-        const serreResponses = await serreService.createSerres(serreRequests);
-        allSerres.push(...serreResponses);
-      }
+          const createdSerre = await serreService.createSerre(serreRequest);
+          allSerres.push(createdSerre);
 
-      // Step 5: Create guides for each serre now that serres exist
-      for (let i = 0; i < allSerres.length; i++) {
-        const createdSerre = allSerres[i];
-        const frontendSerreId = Object.keys(serreToGuideMap)[i]; // Get corresponding frontend serre id
-        const guideId = serreToGuideMap.get(frontendSerreId);
+          // Create guide for this serre if it has one
+          if (serre.guide && guideDataMap.has(serre.guideId)) {
+            const guide = guideDataMap.get(serre.guideId);
 
-        if (guideId && guideDataMap.has(guideId)) {
-          const guide = guideDataMap.get(guideId);
+            const guideRequest = {
+              nom: guide.nom,
+              variete: guide.variete,
+              rendement: guide.rendement,
+              nombre_de_plants: guide.nombre_de_plants,
+              date_debut_saison:
+                typeof guide.date_debut_saison === "string"
+                  ? guide.date_debut_saison
+                  : guide.date_debut_saison.toISOString(),
+              date_fin_saison:
+                typeof guide.date_fin_saison === "string"
+                  ? guide.date_fin_saison
+                  : guide.date_fin_saison.toISOString(),
+              id_serre: createdSerre.id.toString(), // Link to the actual created serre
+              irrigationType: guide.irrigationType,
+              notes: guide.notes,
+            };
 
-          const guideRequest = {
-            nom: guide.nom,
-            variete: guide.variete,
-            rendement: guide.rendement,
-            nombre_de_plants: guide.nombre_de_plants,
-            date_debut_saison:
-              typeof guide.date_debut_saison === "string"
-                ? guide.date_debut_saison
-                : guide.date_debut_saison.toISOString(),
-            date_fin_saison:
-              typeof guide.date_fin_saison === "string"
-                ? guide.date_fin_saison
-                : guide.date_fin_saison.toISOString(),
-            id_serre: createdSerre.id.toString(), // Link to the actual created serre
-            irrigationType: guide.irrigationType,
-            notes: guide.notes,
-          };
-
-          await guideService.createGuide(guideRequest);
+            await guideService.createGuide(guideRequest);
+          }
         }
       }
 
