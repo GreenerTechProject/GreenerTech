@@ -393,11 +393,11 @@ export default function SerreCreation({
                       id="guideYield"
                       type="number"
                       step="0.1"
-                      value={guideForm.yield}
+                      value={guideForm.rendement}
                       onChange={(e) =>
                         setGuideForm((prev) => ({
                           ...prev,
-                          yield: e.target.value,
+                          rendement: e.target.value,
                         }))
                       }
                       placeholder="Ex: 25.5"
