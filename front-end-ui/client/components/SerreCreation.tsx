@@ -163,7 +163,7 @@ export default function SerreCreation({
         nombre_de_plants: parseInt(guideForm.nombre_de_plants),
         date_debut_saison: guideForm.date_debut_saison.toISOString(),
         date_fin_saison: guideForm.date_fin_saison.toISOString(),
-        id_serre: "", // Will be updated when serre is created
+        id_serre: "temp", // Temporary value, will be updated when serre is created
         irrigationType: guideForm.irrigationType,
         notes: guideForm.notes,
       };
