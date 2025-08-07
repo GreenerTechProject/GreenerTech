@@ -138,11 +138,10 @@ export default function SerreCreation({
       !guideForm.date_fin_saison
     ) {
       return;
-    }
+    }y
 
     setIsCreatingGuide(true);
 
-    try {
       const guideRequest = {
         nom: guideForm.nom,
         variete: guideForm.variete,
@@ -150,22 +149,21 @@ export default function SerreCreation({
         nombre_de_plants: parseInt(guideForm.nombre_de_plants),
         date_debut_saison: guideForm.date_debut_saison.toISOString(),
         date_fin_saison: guideForm.date_fin_saison.toISOString(),
-        id_serre: "temp", // Temporary value, will be updated when serre is created
       };
 
-      const response = await guideService.createGuide(guideRequest);
+      // const response = await guideService.createGuide(guideRequest);
 
-      const newGuide: ExtendedGuideDeCulture = {
-        id: response.guideId,
-        nom: guideForm.nom,
-        variete: guideForm.variete,
-        rendement: parseFloat(guideForm.rendement),
-        nombre_de_plants: parseInt(guideForm.nombre_de_plants),
-        date_debut_saison: guideForm.date_debut_saison,
-        date_fin_saison: guideForm.date_fin_saison,
-        id_serre: "",
+      // const newGuide: ExtendedGuideDeCulture = {
+      //   id: response.guideId,
+      //   nom: guideForm.nom,
+      //   variete: guideForm.variete,
+      //   rendement: parseFloat(guideForm.rendement),
+      //   nombre_de_plants: parseInt(guideForm.nombre_de_plants),
+      //   date_debut_saison: guideForm.date_debut_saison,
+      //   date_fin_saison: guideForm.date_fin_saison,
+      //   id_serre: "",
       
-      };
+      // };
 
       setGuides((prev) => [...prev, newGuide]);
       setSerreForm((prev) => ({ ...prev, selectedGuideId: newGuide.id }));
@@ -186,17 +184,9 @@ export default function SerreCreation({
         title: "Guide créé",
         description: `Le guide "${guideForm.nom}" a été créé avec succès`,
       });
-    } catch (error: any) {
-      console.error("Error creating guide:", error);
-      toast({
-        title: "Erreur",
-        description: error.message || "Erreur lors de la création du guide",
-        variant: "destructive",
-      });
-    } finally {
-      setIsCreatingGuide(false);
-    }
+   
   };
+
 
   const handleSaveSerre = async () => {
     if (
@@ -214,31 +204,6 @@ export default function SerreCreation({
 
     setIsSavingSerre(true);
 
-    try {
-      // Create serre in backend
-      const serreRequest = {
-        nom: serreForm.nom.trim(),
-        id_domaine: parseInt(activeDomainId),
-        position: pendingSerre.path.map((point, index) => ({
-          latitude: point.lat(),
-          longitude: point.lng(),
-          ordre: index + 1,
-        })),
-      };
-
-      // Call backend API directly since createSerres expects different format
-       console.log(serreRequest);
-       console.log("Initial domains:", domains);
-        console.log("Initial activeDomainId:", activeDomainId);
-        console.log("Current activeDomainId:", activeDomainId);
-        const response = await serreService.createSerre(serreRequest);
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Erreur lors de la création de la serre');
-      }
-
-      const createdSerre = await response.json();
 
       const newSerre: ExtendedSerre = {
         id: createdSerre.id.toString(),
@@ -270,16 +235,7 @@ export default function SerreCreation({
         title: "Serre créée",
         description: `La serre "${serreForm.nom}" a été créée avec succès`,
       });
-    } catch (error: any) {
-      console.error("Error creating serre:", error);
-      toast({
-        title: "Erreur",
-        description: error.message || "Erreur lors de la création de la serre",
-        variant: "destructive",
-      });
-    } finally {
-      setIsSavingSerre(false);
-    }
+   
   };
 
   const handleDeleteSerre = (serreId: string) => {

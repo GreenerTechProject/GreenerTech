@@ -102,7 +102,8 @@ export default function DirecteurSetup() {
       }));
 
       const domainResponses = await domainService.createDomains(domainRequests);
-
+      console.log("domaines responses:")
+      console.log(domainResponses);
       // Step 3: Create culture guides
       const guideMap = new Map<string, string>(); // Maps old guide id to new guide id
       const uniqueGuides = new Map<string, any>();
@@ -144,7 +145,7 @@ export default function DirecteurSetup() {
       const allSerres: any[] = [];
       for (let i = 0; i < setupData.domains.length; i++) {
         const domain = setupData.domains[i];
-        const domainId = domainResponses[i].domainId;
+        const domainId = domainResponses[i].id
 
         const serreRequests = domain.serres.map((serre) => ({
           nom: serre.nom,
@@ -232,7 +233,7 @@ export default function DirecteurSetup() {
     if (user?.setup_completed) {
       window.location.href = "/director-dashboard";
     }
-  }, [user?.pleted]);
+  }, [user?.setup_completed]);
 
   return (
     <div className="min-h-screen bg-gray-50">
