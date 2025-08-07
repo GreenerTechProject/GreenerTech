@@ -536,10 +536,12 @@ export default function SerreCreation({
                     <Button
                       onClick={handleCreateGuide}
                       disabled={
-                        !guideForm.variety ||
-                        !guideForm.yield ||
-                        !guideForm.plantingDate ||
-                        !guideForm.harvestDate
+                        !guideForm.nom ||
+                        !guideForm.variete ||
+                        !guideForm.rendement ||
+                        !guideForm.nombre_de_plants ||
+                        !guideForm.date_debut_saison ||
+                        !guideForm.date_fin_saison
                       }
                       className="flex-1"
                     >
