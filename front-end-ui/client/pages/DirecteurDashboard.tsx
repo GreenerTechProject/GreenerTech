@@ -118,16 +118,19 @@ export default function DirecteurDashboard() {
       // Create guides
       for (const [oldGuideId, guide] of uniqueGuides) {
         const guideRequest = {
-          variety: guide.variety,
-          yield: guide.yield,
-          plantingDate:
-            typeof guide.plantingDate === "string"
-              ? guide.plantingDate
-              : guide.plantingDate.toISOString(),
-          harvestDate:
-            typeof guide.harvestDate === "string"
-              ? guide.harvestDate
-              : guide.harvestDate.toISOString(),
+          nom: guide.nom,
+          variete: guide.variete,
+          rendement: guide.rendement,
+          nombre_de_plants: guide.nombre_de_plants,
+          date_debut_saison:
+            typeof guide.date_debut_saison === "string"
+              ? guide.date_debut_saison
+              : guide.date_debut_saison.toISOString(),
+          date_fin_saison:
+            typeof guide.date_fin_saison === "string"
+              ? guide.date_fin_saison
+              : guide.date_fin_saison.toISOString(),
+          id_serre: guide.id_serre,
           irrigationType: guide.irrigationType,
           notes: guide.notes,
         };
