@@ -13,9 +13,15 @@ export interface CreateSerreRequest {
 }
 
 export interface CreateSerreResponse {
-  success: boolean;
-  message: string;
-  serreId: string;
+  id: number;
+  nom: string;
+  id_domaine: number;
+  position: {
+    id: number;
+    lat: number;
+    lng: number;
+    ordre: number;
+  }[];
 }
 
 export interface ApiError {
