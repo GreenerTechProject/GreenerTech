@@ -140,16 +140,24 @@ export default function DirecteurSetup() {
         guideMap.set(oldGuideId, guideResponse.guideId);
       }
 
-      // Step 4: Create serres for each domain
+      // Step 4: Create mapping between frontend domain IDs and backend domain IDs
+      const domainIdMap = new Map<string, string>();
+      for (let i = 0; i < setupData.domains.length; i++) {
+        const frontendDomainId = setupData.domains[i].id;
+        const backendDomainId = domainResponses[i].domainId;
+        domainIdMap.set(frontendDomainId, backendDomainId);
+      }
+
+      // Step 5: Create serres for each domain using correct backend domain IDs
       const allSerres: any[] = [];
       for (let i = 0; i < setupData.domains.length; i++) {
         const domain = setupData.domains[i];
-        const domainId = domainResponses[i].domainId;
+        const backendDomainId = domainResponses[i].domainId;
 
         const serreRequests = domain.serres.map((serre) => ({
           nom: serre.nom,
           surface: serre.surface,
-          domainId,
+          domainId: backendDomainId, // Use the actual backend domain ID
           guideId: guideMap.get(serre.guideId) || serre.guideId,
           center: {
             lat: serre.center.lat(),
