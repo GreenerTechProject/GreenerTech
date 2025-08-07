@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { CalendarIcon, Plus, Trash2, ArrowLeft, BookOpen } from "lucide-react";
+import { CalendarIcon, Plus, Trash2, ArrowLeft, BookOpen, Loader2 } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
 import {
   Popover,
@@ -25,6 +25,9 @@ import GoogleMapsWrapper from "./GoogleMapsWrapper";
 import MapComponent, { DrawnShape } from "./MapComponent";
 import { getGoogleMapsAPIKey } from "@/config/maps";
 import { ExtendedSerre, ExtendedGuideDeCulture } from "@shared/api";
+import { serreService } from "@/services/serreService";
+import { guideService } from "@/services/guideService";
+import { useToast } from "@/hooks/use-toast";
 
 interface Domain {
   id: string;
