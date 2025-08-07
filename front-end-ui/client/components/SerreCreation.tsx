@@ -243,42 +243,53 @@ export default function SerreCreation({
         })),
       };
 
-      const serreResponses = await serreService.createSerres([serreRequest]);
+      // Call backend API directly since createSerres expects different format
+      const response = await fetch('/api/serre', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+        },
+        body: JSON.stringify(serreRequest),
+      });
 
-      if (serreResponses.length > 0 && serreResponses[0].success) {
-        const newSerre: ExtendedSerre = {
-          id: serreResponses[0].serreId,
-          nom: serreForm.nom.trim(),
-          surface: pendingSerre.area,
-          domainId: activeDomainId,
-          guideId: serreForm.selectedGuideId,
-          position: pendingSerre.path,
-          center: pendingSerre.center,
-          guide: selectedGuide,
-        };
-
-        setCurrentDomains((prev) =>
-          prev.map((domain) =>
-            domain.id === activeDomainId
-              ? { ...domain, serres: [...domain.serres, newSerre] }
-              : domain,
-          ),
-        );
-
-        // Reset form
-        setSerreForm({
-          nom: "",
-          selectedGuideId: "",
-        });
-        setPendingSerre(null);
-
-        toast({
-          title: "Serre créée",
-          description: `La serre "${serreForm.nom}" a été créée avec succès`,
-        });
-      } else {
-        throw new Error(serreResponses[0]?.message || "Erreur lors de la création de la serre");
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Erreur lors de la création de la serre');
       }
+
+      const createdSerre = await response.json();
+
+      const newSerre: ExtendedSerre = {
+        id: createdSerre.id.toString(),
+        nom: serreForm.nom.trim(),
+        surface: pendingSerre.area,
+        domainId: activeDomainId,
+        guideId: serreForm.selectedGuideId,
+        position: pendingSerre.path,
+        center: pendingSerre.center,
+        guide: selectedGuide,
+      };
+
+      setCurrentDomains((prev) =>
+        prev.map((domain) =>
+          domain.id === activeDomainId
+            ? { ...domain, serres: [...domain.serres, newSerre] }
+            : domain,
+        ),
+      );
+
+      // Reset form
+      setSerreForm({
+        nom: "",
+        selectedGuideId: "",
+      });
+      setPendingSerre(null);
+
+      toast({
+        title: "Serre créée",
+        description: `La serre "${serreForm.nom}" a été créée avec succès`,
+      });
     } catch (error: any) {
       console.error("Error creating serre:", error);
       toast({
