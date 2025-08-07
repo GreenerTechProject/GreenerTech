@@ -217,41 +217,52 @@ export default function SerreCreation({
     setIsSavingSerre(true);
 
     try {
-      // Create serre in backend
-      const serreRequest = {
-        nom: serreForm.nom.trim(),
-        id_domaine: parseInt(activeDomainId),
-        position: pendingSerre.path.map((point, index) => ({
-          latitude: point.lat(),
-          longitude: point.lng(),
-          ordre: index + 1,
-        })),
-      };
+      let newSerre: ExtendedSerre;
 
-      // Call backend API directly since createSerres expects different format
-       console.log(serreRequest);
-       console.log("Initial domains:", domains);
-        console.log("Initial activeDomainId:", activeDomainId);
-        console.log("Current activeDomainId:", activeDomainId);
+      if (setupMode) {
+        // In setup mode, just create the serre object locally (no backend call)
+        newSerre = {
+          id: `temp-serre-${Date.now()}`, // Temporary ID for frontend use
+          nom: serreForm.nom.trim(),
+          surface: pendingSerre.area,
+          domainId: activeDomainId,
+          guideId: serreForm.selectedGuideId,
+          position: pendingSerre.path,
+          center: pendingSerre.center,
+          guide: selectedGuide,
+        };
+      } else {
+        // In standalone mode, call the backend to create the serre
+        const serreRequest = {
+          nom: serreForm.nom.trim(),
+          id_domaine: parseInt(activeDomainId),
+          position: pendingSerre.path.map((point, index) => ({
+            latitude: point.lat(),
+            longitude: point.lng(),
+            ordre: index + 1,
+          })),
+        };
+
         const response = await serreService.createSerre(serreRequest);
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Erreur lors de la création de la serre');
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.message || 'Erreur lors de la création de la serre');
+        }
+
+        const createdSerre = await response.json();
+
+        newSerre = {
+          id: createdSerre.id.toString(),
+          nom: serreForm.nom.trim(),
+          surface: pendingSerre.area,
+          domainId: activeDomainId,
+          guideId: serreForm.selectedGuideId,
+          position: pendingSerre.path,
+          center: pendingSerre.center,
+          guide: selectedGuide,
+        };
       }
-
-      const createdSerre = await response.json();
-
-      const newSerre: ExtendedSerre = {
-        id: createdSerre.id.toString(),
-        nom: serreForm.nom.trim(),
-        surface: pendingSerre.area,
-        domainId: activeDomainId,
-        guideId: serreForm.selectedGuideId,
-        position: pendingSerre.path,
-        center: pendingSerre.center,
-        guide: selectedGuide,
-      };
 
       setCurrentDomains((prev) =>
         prev.map((domain) =>
