@@ -405,6 +405,24 @@ export default function SerreCreation({
                   </div>
 
                   <div>
+                    <Label htmlFor="guidePlants">
+                      Nombre de plants *
+                    </Label>
+                    <Input
+                      id="guidePlants"
+                      type="number"
+                      value={guideForm.nombre_de_plants}
+                      onChange={(e) =>
+                        setGuideForm((prev) => ({
+                          ...prev,
+                          nombre_de_plants: e.target.value,
+                        }))
+                      }
+                      placeholder="Ex: 100"
+                    />
+                  </div>
+
+                  <div>
                     <Label htmlFor="guideIrrigation">Type d'irrigation</Label>
                     <Select
                       value={guideForm.irrigationType}
