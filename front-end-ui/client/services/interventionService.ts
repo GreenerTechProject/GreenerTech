@@ -1,106 +1,174 @@
-// Service for handling intervention-related API calls
+import { z } from 'zod';
 import axios from 'axios';
 
-const API_BASE_URL = '/api';
+// Schema matching the backend Intervention model
+export const InterventionSchema = z.object({
+  id: z.number(),
+  description: z.string(),
+  status: z.enum(['encours', 'terminé']),
+  date_debut: z.string().nullable(),
+  date_fin: z.string().nullable(),
+  total_charges: z.number(),
+  id_user: z.number(),
+  id_serre: z.number(),
+  id_type_tache: z.number(),
+  valid: z.boolean(),
+});
 
-export interface Intervention {
-  id: number;
-  description: string;
-  status: 'encours' | 'terminé';
-  date_debut: string | null;
-  date_fin: string | null;
-  total_charges: number;
-  id_user: number;
-  id_serre: number;
-  id_type_tache: number;
-  valid: boolean;
+export const CreateInterventionSchema = z.object({
+  description: z.string().min(1, "La description est requise"),
+  id_serre: z.number(),
+  id_type_tache: z.number(),
+  total_charges: z.number().optional(),
+  date_debut: z.string().optional(),
+  date_fin: z.string().optional(),
+});
+
+export type Intervention = z.infer<typeof InterventionSchema>;
+export type CreateInterventionData = z.infer<typeof CreateInterventionSchema>;
+
+// Extended interface for UI display (includes related data)
+export interface InterventionDisplay extends Intervention {
+  user_name?: string;
+  serre_name?: string;
+  type_tache_nom?: string;
+  user?: {
+    id: number;
+    nom: string;
+    prenom: string;
+    email: string;
+    role: string;
+  };
+  serre?: {
+    id: number;
+    nom: string;
+    domaine?: {
+      id: number;
+      nom: string;
+    };
+  };
+  type_tache?: {
+    id: number;
+    nom: string;
+  };
 }
 
-export interface CreateInterventionData {
-  description: string;
-  id_serre: number;
-  id_type_tache: number;
-  total_charges?: number;
-  date_debut?: string;
-  date_fin?: string;
+class InterventionService {
+  private baseUrl = `${window.location.protocol}//${window.location.hostname}:5000/api`;
+
+async getAllInterventions(): Promise<InterventionDisplay[]> {
+  try {
+    const response = await axios.get(`${this.baseUrl}/intervention`, {
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem('token')}`,
+      },
+    });
+
+    return response.data;
+  } catch (error: any) {
+    throw new Error(
+      `Erreur lors de la récupération des interventions: ${error.response?.statusText || error.message}`
+    );
+  }
 }
 
-// Get authorization header with token
-const getAuthHeaders = () => {
-  const token = localStorage.getItem('authToken');
-  return {
-    headers: {
-      'Authorization': `Bearer ${token}`,
-      'Content-Type': 'application/json',
-    },
-  };
-};
+  async getIntervention(id: number): Promise<InterventionDisplay> {
+    const response = await fetch(`${this.baseUrl}/intervention/${id}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem('token')}`,
+      },
+    });
 
-// Get all interventions
-export const getAllInterventions = async (): Promise<Intervention[]> => {
-  try {
-    const response = await axios.get(`${API_BASE_URL}/interventions`, getAuthHeaders());
-    return response.data;
-  } catch (error) {
-    console.error('Error fetching interventions:', error);
-    throw error;
+    if (!response.ok) {
+      throw new Error(`Erreur lors de la récupération de l'intervention: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    return data;
   }
-};
 
-// Get single intervention by ID
-export const getIntervention = async (id: number): Promise<Intervention> => {
-  try {
-    const response = await axios.get(`${API_BASE_URL}/interventions/${id}`, getAuthHeaders());
-    return response.data;
-  } catch (error) {
-    console.error('Error fetching intervention:', error);
-    throw error;
+  async createIntervention(interventionData: CreateInterventionData): Promise<Intervention> {
+    const response = await fetch(`${this.baseUrl}/intervention`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem('token')}`,
+      },
+      body: JSON.stringify(interventionData),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Erreur lors de la création de l'intervention: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    return InterventionSchema.parse(data);
   }
-};
 
-// Create new intervention
-export const createIntervention = async (data: CreateInterventionData): Promise<Intervention> => {
-  try {
-    const response = await axios.post(`${API_BASE_URL}/interventions`, data, getAuthHeaders());
-    return response.data;
-  } catch (error) {
-    console.error('Error creating intervention:', error);
-    throw error;
+  async validateIntervention(id: number): Promise<void> {
+    const response = await fetch(`${this.baseUrl}/intervention/${id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem('token')}`,
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`Erreur lors de la validation de l'intervention: ${response.statusText}`);
+    }
   }
-};
 
-// Validate intervention (for directeur/technicien_superieur)
-export const validateIntervention = async (id: number): Promise<void> => {
-  try {
-    await axios.put(`${API_BASE_URL}/interventions/${id}/validate`, {}, getAuthHeaders());
-  } catch (error) {
-    console.error('Error validating intervention:', error);
-    throw error;
+  // Helper methods for status translation
+  getStatusLabel(status: 'encours' | 'terminé'): string {
+    const statusLabels = {
+      'encours': 'En cours',
+      'terminé': 'Terminé',
+    };
+    return statusLabels[status];
   }
-};
 
-// Helper function to get status display text and color
-export const getStatusDisplay = (status: string) => {
-  switch (status) {
-    case 'encours':
-      return { text: 'En cours', color: 'bg-red-500' };
-    case 'terminé':
-      return { text: 'Terminé', color: 'bg-green-500' };
-    default:
-      return { text: status, color: 'bg-gray-500' };
+  getStatusColor(status: 'encours' | 'terminé'): string {
+    const statusColors = {
+      'encours': 'bg-yellow-100 text-yellow-800 border-yellow-200',
+      'terminé': 'bg-green-100 text-green-800 border-green-200',
+    };
+    return statusColors[status];
   }
-};
 
-// Helper function to get intervention type icon and color
-export const getInterventionTypeDisplay = (type: string) => {
-  const typeMap: Record<string, { icon: string; color: string }> = {
-    'Préparation du Sol': { icon: '🌱', color: 'bg-greener-500' },
-    'Plantation': { icon: '🌲', color: 'bg-blue-600' },
-    'Palissage': { icon: '📏', color: 'bg-yellow-500' },
-    'Ébourgeonnage': { icon: '✂️', color: 'bg-purple-500' },
-    'Effeuillage': { icon: '🍃', color: 'bg-green-600' },
-    'Éclaircissage': { icon: '✂️', color: 'bg-orange-500' },
-  };
-  
-  return typeMap[type] || { icon: '⚙️', color: 'bg-gray-500' };
-};
+  // Helper method to get priority from type
+  getTypePriority(typeName: string): 'low' | 'medium' | 'high' | 'urgent' {
+    const priorities: Record<string, 'low' | 'medium' | 'high' | 'urgent'> = {
+      'Préparation du Sol': 'medium',
+      'Plantation': 'high',
+      'Palissage': 'medium',
+      'Ébourgeonnage': 'low',
+      'Effeuillage': 'medium',
+      'Éclaircissage': 'low',
+      'Maintenance': 'high',
+      'Réparation': 'urgent',
+      'Contrôle': 'medium',
+    };
+    return priorities[typeName] || 'medium';
+  }
+
+  getTypeIcon(typeName: string): string {
+    const typeIcons: Record<string, string> = {
+      'Préparation du Sol': '🌱',
+      'Plantation': '🌲',
+      'Palissage': '📏',
+      'Ébourgeonnage': '✂️',
+      'Effeuillage': '🍃',
+      'Éclaircissage': '🔍',
+      'Maintenance': '🔧',
+      'Réparation': '⚡',
+      'Contrôle': '📊',
+    };
+    return typeIcons[typeName] || '📋';
+  }
+}
+
+export const interventionService = new InterventionService();

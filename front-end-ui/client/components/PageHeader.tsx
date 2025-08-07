@@ -1,8 +1,17 @@
 import React from "react";
 import { useAuth } from "../contexts/AuthContext";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { LogOut } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { LogOut, User, Settings, ChevronDown } from "lucide-react";
 import TechnicianSidebar from "./TechnicianSidebar";
 
 interface PageHeaderProps {
@@ -15,16 +24,33 @@ interface PageHeaderProps {
   };
   userRole?: "technicien" | "technicien_sup" | "directeur";
   actions?: React.ReactNode;
+  showProfile?: boolean;
 }
 
-export default function PageHeader({ 
-  title, 
-  subtitle, 
-  badge, 
+export default function PageHeader({
+  title,
+  subtitle,
+  badge,
   userRole = "technicien",
-  actions 
+  actions,
+  showProfile = true
 }: PageHeaderProps) {
   const { user, logout } = useAuth();
+  const navigate = useNavigate();
+
+  const getUserInitials = (name?: string) => {
+    if (!name) return "U";
+    return name.split(" ").map(n => n[0]).join("").toUpperCase();
+  };
+
+  const handleProfileClick = () => {
+    navigate("/profile");
+  };
+
+  const handleLogout = () => {
+    logout();
+    navigate("/login");
+  };
 
   return (
     <header className="bg-white shadow-sm border-b sticky top-0 z-10">
@@ -68,21 +94,67 @@ export default function PageHeader({
               </div>
             )}
             
-            {/* User Info */}
-            <span className="text-sm text-gray-600 hidden sm:block">
-              {user?.name || user?.email}
-            </span>
-            
-            {/* Logout Button */}
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => logout()}
-              className="flex items-center space-x-1"
-            >
-              <LogOut className="h-4 w-4" />
-              <span className="hidden sm:inline">Déconnexion</span>
-            </Button>
+            {/* Profile Dropdown */}
+            {showProfile ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    className="flex items-center space-x-2 hover:bg-gray-50"
+                  >
+                    <Avatar className="h-8 w-8">
+                      <AvatarImage
+                        src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.email}`}
+                        alt={user?.name || "Profile"}
+                      />
+                      <AvatarFallback className="text-sm">
+                        {getUserInitials(user?.name)}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="hidden sm:block text-left">
+                      <p className="text-sm font-medium text-gray-900">
+                        {user?.name || "Utilisateur"}
+                      </p>
+                      <p className="text-xs text-gray-600 capitalize">
+                        {user?.role === "technicien_superieur" ? "Tech. Sup" : user?.role}
+                      </p>
+                    </div>
+                    <ChevronDown className="h-4 w-4 text-gray-400" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  <div className="px-2 py-1.5">
+                    <p className="text-sm font-medium">{user?.name}</p>
+                    <p className="text-xs text-gray-500">{user?.email}</p>
+                  </div>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={handleProfileClick}>
+                    <User className="mr-2 h-4 w-4" />
+                    <span>Mon profil</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => navigate("/profile/edit")}>
+                    <Settings className="mr-2 h-4 w-4" />
+                    <span>Paramètres</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={handleLogout} className="text-red-600">
+                    <LogOut className="mr-2 h-4 w-4" />
+                    <span>Se déconnecter</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : (
+              /* Simple Logout Button for profile pages */
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleLogout}
+                className="flex items-center space-x-1"
+              >
+                <LogOut className="h-4 w-4" />
+                <span className="hidden sm:inline">Déconnexion</span>
+              </Button>
+            )}
           </div>
         </div>
       </div>

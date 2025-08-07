@@ -26,6 +26,8 @@ import SurveillancePage from "./pages/SurveillancePage";
 import ReportsPage from "./pages/ReportsPage";
 import Alerts from "./pages/Alerts";
 import Surveillance from "./pages/Surveillance";
+import Profile from "./pages/Profile";
+import ProfileEdit from "./pages/ProfileEdit";
 import NotFound from "./pages/NotFound";
 const queryClient = new QueryClient();
 
@@ -81,7 +83,7 @@ const App = () => (
                 </ProtectedRoute>
               }
             />
-          
+
             <Route
               path="/alerts"
               element={
@@ -141,6 +143,19 @@ const App = () => (
             <Route path="/surveillance-view" element={
               <ProtectedRoute>
                 <Surveillance />
+              </ProtectedRoute>
+            } />
+
+            {/* Profile Routes */}
+            <Route path="/profile" element={
+              <ProtectedRoute>
+                <Profile />
+              </ProtectedRoute>
+            } />
+
+            <Route path="/profile/edit" element={
+              <ProtectedRoute>
+                <ProfileEdit />
               </ProtectedRoute>
             } />
 
