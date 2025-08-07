@@ -468,11 +468,11 @@ export default function SerreCreation({
                         <PopoverContent className="w-auto p-0">
                           <Calendar
                             mode="single"
-                            selected={guideForm.plantingDate}
+                            selected={guideForm.date_debut_saison}
                             onSelect={(date) =>
                               setGuideForm((prev) => ({
                                 ...prev,
-                                plantingDate: date,
+                                date_debut_saison: date,
                               }))
                             }
                             initialFocus
