@@ -235,17 +235,12 @@ export default function SerreCreation({
       // Create serre in backend
       const serreRequest = {
         nom: serreForm.nom.trim(),
-        surface: pendingSerre.area,
-        domainId: activeDomainId,
-        guideId: serreForm.selectedGuideId,
-        position: pendingSerre.path.map((point) => ({
-          lat: point.lat(),
-          lng: point.lng(),
+        id_domaine: parseInt(activeDomainId),
+        position: pendingSerre.path.map((point, index) => ({
+          latitude: point.lat(),
+          longitude: point.lng(),
+          ordre: index + 1,
         })),
-        center: {
-          lat: pendingSerre.center.lat(),
-          lng: pendingSerre.center.lng(),
-        },
       };
 
       const serreResponses = await serreService.createSerres([serreRequest]);
