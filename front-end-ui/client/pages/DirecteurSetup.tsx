@@ -164,7 +164,7 @@ export default function DirecteurSetup() {
         }
       }
 
-      // Step 6: Create technicians
+      // Step 5: Create technicians
       const technicianRequests = setupData.technicians.map((technician) => ({
         fullName: technician.fullName,
         email: technician.email,
