@@ -1,3 +1,4 @@
+import axios from "axios";
 import {
   Alert,
   CreateAlertRequest,
@@ -6,7 +7,7 @@ import {
   AlertStats,
 } from "@/types/alert";
 
-const API_BASE_URL = "/api";
+const API_BASE_URL = `${window.location.protocol}//${window.location.hostname}:5000/api`;
 
 export class AlertService {
   static async getAllAlerts(
@@ -15,23 +16,20 @@ export class AlertService {
     filters?: AlertFilters
   ): Promise<{ alerts: Alert[]; total: number }> {
     try {
-      const params = new URLSearchParams({
-        page: page.toString(),
-        limit: limit.toString(),
-      });
+      const params: any = {
+        page,
+        limit,
+      };
 
-      if (filters?.search) params.append("search", filters.search);
-      if (filters?.status) params.append("status", filters.status);
-      if (filters?.level) params.append("level", filters.level);
-      if (filters?.dateFrom) params.append("dateFrom", filters.dateFrom);
-      if (filters?.dateTo) params.append("dateTo", filters.dateTo);
+      if (filters?.search) params.search = filters.search;
+      if (filters?.status) params.status = filters.status;
+      if (filters?.level) params.level = filters.level;
+      if (filters?.dateFrom) params.dateFrom = filters.dateFrom;
+      if (filters?.dateTo) params.dateTo = filters.dateTo;
 
-      const response = await fetch(`${API_BASE_URL}/alertes?${params}`);
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      
-      const data = await response.json();
+      const response = await axios.get(`${API_BASE_URL}/alerte`, { params });
+
+      const data = response.data;
       return {
         alerts: Array.isArray(data) ? data : data.alerts || [],
         total: Array.isArray(data) ? data.length : data.total || 0,
@@ -44,11 +42,8 @@ export class AlertService {
 
   static async getAlert(id: number): Promise<Alert> {
     try {
-      const response = await fetch(`${API_BASE_URL}/alertes/${id}`);
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      return await response.json();
+      const response = await axios.get(`${API_BASE_URL}/alerte/${id}`);
+      return response.data;
     } catch (error) {
       console.error("Error fetching alert:", error);
       throw error;
@@ -57,19 +52,8 @@ export class AlertService {
 
   static async createAlert(alert: CreateAlertRequest): Promise<Alert> {
     try {
-      const response = await fetch(`${API_BASE_URL}/alertes`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(alert),
-      });
-      
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      
-      return await response.json();
+      const response = await axios.post(`${API_BASE_URL}/alerte`, alert);
+      return response.data;
     } catch (error) {
       console.error("Error creating alert:", error);
       throw error;
@@ -81,19 +65,8 @@ export class AlertService {
     alert: UpdateAlertRequest
   ): Promise<Alert> {
     try {
-      const response = await fetch(`${API_BASE_URL}/alertes/${id}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(alert),
-      });
-      
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      
-      return await response.json();
+      const response = await axios.put(`${API_BASE_URL}/alerte/${id}`, alert);
+      return response.data;
     } catch (error) {
       console.error("Error updating alert:", error);
       throw error;
@@ -102,13 +75,7 @@ export class AlertService {
 
   static async deleteAlert(id: number): Promise<void> {
     try {
-      const response = await fetch(`${API_BASE_URL}/alertes/${id}`, {
-        method: "DELETE",
-      });
-      
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
+      await axios.delete(`${API_BASE_URL}/alerte/${id}`);
     } catch (error) {
       console.error("Error deleting alert:", error);
       throw error;
@@ -117,18 +84,15 @@ export class AlertService {
 
   static async getAlertStats(): Promise<AlertStats> {
     try {
-      const { alerts } = await this.getAllAlerts(1, 1000); // Get all alerts for stats
-      
+      const { alerts } = await this.getAllAlerts(1, 1000);
+
       const totalAlerts = alerts.length;
       const resolvedAlerts = alerts.filter(
         (alert) => alert.status === "résolue"
       ).length;
       const unresolvedAlerts = totalAlerts - resolvedAlerts;
-      
-      // Calculate average resolution time (mock calculation for now)
-      // In a real scenario, you'd need resolution timestamps
-      const averageResolutionTime = 2.5; // hours
-      
+      const averageResolutionTime = 2.5; // mock
+
       return {
         totalAlerts,
         resolvedAlerts,

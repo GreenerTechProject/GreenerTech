@@ -90,7 +90,7 @@ export const serreService = {
   getSerresByDomain: async (domainId: string): Promise<Serre[]> => {
     try {
       const response = await axios.get<{ success: boolean; serres: Serre[] }>(
-        `${API_BASE_URL}/serres/domain/${domainId}`,
+        `${API_BASE_URL}/domaine/${domainId}/serres`,
         createAuthenticatedRequest(),
       );
 
