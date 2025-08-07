@@ -141,7 +141,7 @@ export default function SerreCreation({
     setIsDrawing(false);
   };
 
-  const handleCreateGuide = () => {
+  const handleCreateGuide = async () => {
     if (
       !guideForm.nom ||
       !guideForm.variete ||
@@ -153,34 +153,66 @@ export default function SerreCreation({
       return;
     }
 
-    const newGuide: ExtendedGuideDeCulture = {
-      id: `guide-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-      nom: guideForm.nom,
-      variete: guideForm.variete,
-      rendement: parseFloat(guideForm.rendement),
-      nombre_de_plants: parseInt(guideForm.nombre_de_plants),
-      date_debut_saison: guideForm.date_debut_saison,
-      date_fin_saison: guideForm.date_fin_saison,
-      id_serre: "", // Will be set when serre is created
-      irrigationType: guideForm.irrigationType,
-      notes: guideForm.notes,
-    };
+    setIsCreatingGuide(true);
 
-    setGuides((prev) => [...prev, newGuide]);
-    setSerreForm((prev) => ({ ...prev, selectedGuideId: newGuide.id }));
+    try {
+      const guideRequest = {
+        nom: guideForm.nom,
+        variete: guideForm.variete,
+        rendement: parseFloat(guideForm.rendement),
+        nombre_de_plants: parseInt(guideForm.nombre_de_plants),
+        date_debut_saison: guideForm.date_debut_saison.toISOString(),
+        date_fin_saison: guideForm.date_fin_saison.toISOString(),
+        id_serre: "", // Will be updated when serre is created
+        irrigationType: guideForm.irrigationType,
+        notes: guideForm.notes,
+      };
 
-    // Reset guide form
-    setGuideForm({
-      nom: "",
-      variete: "",
-      rendement: "",
-      nombre_de_plants: "",
-      irrigationType: "",
-      date_debut_saison: undefined,
-      date_fin_saison: undefined,
-      notes: "",
-    });
-    setShowCreateGuide(false);
+      const response = await guideService.createGuide(guideRequest);
+
+      const newGuide: ExtendedGuideDeCulture = {
+        id: response.guideId,
+        nom: guideForm.nom,
+        variete: guideForm.variete,
+        rendement: parseFloat(guideForm.rendement),
+        nombre_de_plants: parseInt(guideForm.nombre_de_plants),
+        date_debut_saison: guideForm.date_debut_saison,
+        date_fin_saison: guideForm.date_fin_saison,
+        id_serre: "",
+        irrigationType: guideForm.irrigationType,
+        notes: guideForm.notes,
+      };
+
+      setGuides((prev) => [...prev, newGuide]);
+      setSerreForm((prev) => ({ ...prev, selectedGuideId: newGuide.id }));
+
+      // Reset guide form
+      setGuideForm({
+        nom: "",
+        variete: "",
+        rendement: "",
+        nombre_de_plants: "",
+        irrigationType: "",
+        date_debut_saison: undefined,
+        date_fin_saison: undefined,
+        notes: "",
+      });
+      setShowCreateGuide(false);
+
+      toast({
+        title: "Guide créé",
+        description: `Le guide "${guideForm.nom}" a été créé avec succès`,
+      });
+    } catch (error: any) {
+      console.error("Error creating guide:", error);
+      toast({
+        title: "Erreur",
+        description: error.message || "Erreur lors de la création du guide",
+        variant: "destructive",
+      });
+    } finally {
+      setIsCreatingGuide(false);
+    }
   };
 
   const handleSaveSerre = () => {
