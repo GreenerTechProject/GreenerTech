@@ -3,7 +3,7 @@ import { useAuth } from "../contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { LogOut, User, ChevronDown } from "lucide-react";
+import { LogOut, User, ChevronDown, Settings } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -11,6 +11,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import TechnicianSidebar from "./TechnicianSidebar";
 
 interface PageHeaderProps {
@@ -23,6 +24,7 @@ interface PageHeaderProps {
   };
   userRole?: "technicien" | "technicien_sup" | "directeur";
   actions?: React.ReactNode;
+  showProfile?: boolean;
 }
 
 export default function PageHeader({
@@ -34,6 +36,25 @@ export default function PageHeader({
 }: PageHeaderProps) {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  actions,
+  showProfile = true
+}: PageHeaderProps) {
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
+
+  const getUserInitials = (name?: string) => {
+    if (!name) return "U";
+    return name.split(" ").map(n => n[0]).join("").toUpperCase();
+  };
+
+  const handleProfileClick = () => {
+    navigate("/profile");
+  };
+
+  const handleLogout = () => {
+    logout();
+    navigate("/login");
+  };
 
   return (
     <header className="bg-white shadow-sm border-b sticky top-0 z-10">

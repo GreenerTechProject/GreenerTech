@@ -32,6 +32,7 @@ import AffiliationManagement from "./pages/AffiliationManagement";
 import InterventionManagement from "./pages/InterventionManagement";
 import AlertManagement from "./pages/AlertManagement";
 import ReportManagement from "./pages/ReportManagement";
+import ProfileEdit from "./pages/ProfileEdit";
 import NotFound from "./pages/NotFound";
 const queryClient = new QueryClient();
 
@@ -87,7 +88,7 @@ const App = () => (
                 </ProtectedRoute>
               }
             />
-          
+
             <Route
               path="/alerts"
               element={
@@ -150,6 +151,8 @@ const App = () => (
               </ProtectedRoute>
             } />
 
+
+            {/* Profile Routes */}
             <Route path="/profile" element={
               <ProtectedRoute>
                 <Profile />
@@ -184,7 +187,13 @@ const App = () => (
             <Route path="/directeur/rapports" element={
               <ProtectedRoute>
                 <ReportManagement />
-              </ProtectedRoute>
+                     </ProtectedRoute>
+            } />
+            
+            <Route path="/profile/edit" element={
+              <ProtectedRoute>
+                <ProfileEdit />
+                </ProtectedRoute>
             } />
 
             {/* Redirect root to dashboard */}

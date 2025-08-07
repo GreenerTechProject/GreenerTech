@@ -22,11 +22,13 @@
   },
   "dependencies": {
     "@googlemaps/react-wrapper": "^1.2.0",
+    "@heroicons/react": "^2.2.0",
     "@react-google-maps/api": "^2.20.7",
     "@types/google.maps": "^3.58.1",
     "axios": "^1.11.0",
     "dotenv": "^17.2.0",
     "express": "^4.18.2",
+    "react-icons": "^5.5.0",
     "zod": "^3.23.8"
   },
   "devDependencies": {
