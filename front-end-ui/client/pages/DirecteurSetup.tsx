@@ -173,7 +173,7 @@ export default function DirecteurSetup() {
         allSerres.push(...serreResponses);
       }
 
-      // Step 5: Create technicians
+      // Step 6: Create technicians
       const technicianRequests = setupData.technicians.map((technician) => ({
         fullName: technician.fullName,
         email: technician.email,
