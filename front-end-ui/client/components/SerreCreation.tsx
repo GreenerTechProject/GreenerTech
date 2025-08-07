@@ -456,8 +456,8 @@ export default function SerreCreation({
                             className="w-full justify-start text-left font-normal"
                           >
                             <CalendarIcon className="mr-2 h-4 w-4" />
-                            {guideForm.plantingDate ? (
-                              format(guideForm.plantingDate, "dd/MM/yyyy", {
+                            {guideForm.date_debut_saison ? (
+                              format(guideForm.date_debut_saison, "dd/MM/yyyy", {
                                 locale: fr,
                               })
                             ) : (
