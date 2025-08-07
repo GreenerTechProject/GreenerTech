@@ -27,6 +27,11 @@ import ReportsPage from "./pages/ReportsPage";
 import Alerts from "./pages/Alerts";
 import Surveillance from "./pages/Surveillance";
 import Profile from "./pages/Profile";
+import TechnicianManagement from "./pages/TechnicianManagement";
+import AffiliationManagement from "./pages/AffiliationManagement";
+import InterventionManagement from "./pages/InterventionManagement";
+import AlertManagement from "./pages/AlertManagement";
+import ReportManagement from "./pages/ReportManagement";
 import ProfileEdit from "./pages/ProfileEdit";
 import NotFound from "./pages/NotFound";
 const queryClient = new QueryClient();
@@ -146,6 +151,7 @@ const App = () => (
               </ProtectedRoute>
             } />
 
+
             {/* Profile Routes */}
             <Route path="/profile" element={
               <ProtectedRoute>
@@ -153,10 +159,41 @@ const App = () => (
               </ProtectedRoute>
             } />
 
+            {/* Director Management Routes */}
+            <Route path="/directeur/techniciens" element={
+              <ProtectedRoute>
+                <TechnicianManagement />
+              </ProtectedRoute>
+            } />
+
+            <Route path="/directeur/affiliations" element={
+              <ProtectedRoute>
+                <AffiliationManagement />
+              </ProtectedRoute>
+            } />
+
+            <Route path="/directeur/interventions" element={
+              <ProtectedRoute>
+                <InterventionManagement />
+              </ProtectedRoute>
+            } />
+
+            <Route path="/directeur/alertes" element={
+              <ProtectedRoute>
+                <AlertManagement />
+              </ProtectedRoute>
+            } />
+
+            <Route path="/directeur/rapports" element={
+              <ProtectedRoute>
+                <ReportManagement />
+                     </ProtectedRoute>
+            } />
+            
             <Route path="/profile/edit" element={
               <ProtectedRoute>
                 <ProfileEdit />
-              </ProtectedRoute>
+                </ProtectedRoute>
             } />
 
             {/* Redirect root to dashboard */}
