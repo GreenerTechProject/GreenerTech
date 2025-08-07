@@ -43,6 +43,7 @@ interface SerreCreationProps {
   onComplete: (domains: Domain[]) => void;
   onBack: () => void;
   selectedDomainId?: string;
+  setupMode?: boolean; // If true, don't call backend APIs, just store locally
 }
 
 const GOOGLE_MAPS_API_KEY = getGoogleMapsAPIKey();
