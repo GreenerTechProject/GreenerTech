@@ -47,9 +47,9 @@ import { getGoogleMapsAPIKey } from "@/config/maps";
 
 interface Serre {
   id: string;
-  name: string;
+  nom: string;
   variety: string;
-  area: number;
+  surface: number;
   location: {
     lat: number;
     lng: number;
@@ -239,7 +239,7 @@ export default function TechnicienSupDashboard() {
       const marker = new google.maps.Marker({
         position: serre.location,
         map: newMap,
-        title: serre.name,
+        title: serre.nom,
         icon: {
           path: google.maps.SymbolPath.CIRCLE,
           scale: 8,
@@ -517,7 +517,7 @@ export default function TechnicienSupDashboard() {
                       <div className="flex items-start justify-between mb-3">
                         <div>
                           <h4 className="font-semibold text-gray-900">
-                            {serre.name}
+                            {serre.nom}
                           </h4>
                           <p className="text-sm text-gray-600">
                             {serre.variety}
@@ -540,7 +540,7 @@ export default function TechnicienSupDashboard() {
 
                       <div className="space-y-2 text-sm text-gray-500">
                         <div className="flex items-center justify-between">
-                          <span>{serre.area} m²</span>
+                          <span>{serre.surface} m²</span>
                           <span>{serre.zones.length} zones</span>
                         </div>
                         {serre.supervisedBy && (
@@ -588,7 +588,7 @@ export default function TechnicienSupDashboard() {
                   <CardHeader className="pb-3">
                     <CardTitle className="text-lg text-[#B4CC5F] flex items-center space-x-2">
                       <Layers className="h-5 w-5" />
-                      <span>{selectedSerre.name} - Supervision</span>
+                      <span>{selectedSerre.nom} - Supervision</span>
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
@@ -600,7 +600,7 @@ export default function TechnicienSupDashboard() {
                         </div>
                         <div>
                           <span className="text-gray-600">Surface:</span>
-                          <p className="font-medium">{selectedSerre.area} m²</p>
+                          <p className="font-medium">{selectedSerre.surface} m²</p>
                         </div>
                       </div>
 
@@ -806,14 +806,14 @@ export default function TechnicienSupDashboard() {
                   )}
                 />
                 <h4 className="font-semibold text-gray-900">
-                  {selectedSerre.name}
+                  {selectedSerre.nom}
                 </h4>
               </div>
               <p className="text-sm text-gray-600 mb-1">
                 {selectedSerre.variety}
               </p>
               <p className="text-xs text-gray-500">
-                {selectedSerre.area} m² • {selectedSerre.zones.length} zones
+                {selectedSerre.surface} m² • {selectedSerre.zones.length} zones
               </p>
               {selectedSerre.supervisedBy && (
                 <p className="text-xs text-blue-600 mt-1">
