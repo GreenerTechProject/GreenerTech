@@ -19,9 +19,10 @@ export interface CreateDomainRequest {
 }
 
 export interface CreateDomainResponse {
-  success: boolean;
-  message: string;
-  domainId: string;
+  success?: boolean;
+  message?: string;
+  domainId?: string;
+  id?: string;
 }
 
 export interface ApiError {
@@ -52,11 +53,13 @@ export const domainService = {
       const results: CreateDomainResponse[] = [];
 
       for (const domain of domains) {
+        console.log("Creating domain:", domain);
         const response = await axios.post<CreateDomainResponse>(
           `${API_BASE_URL}/domaine`,
           domain,
           createAuthenticatedRequest(),
         );
+        console.log("Domain creation response:", response.data);
         results.push(response.data);
       }
 

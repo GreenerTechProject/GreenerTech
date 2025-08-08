@@ -51,11 +51,18 @@ export const technicianService = {
       const results: CreateTechnicianResponse[] = [];
 
       for (const technician of technicians) {
+        console.log("Creating technician:", technician);
         const response = await axios.post<CreateTechnicianResponse>(
           `${API_BASE_URL}/technicien`,
-          technician,
+          {
+            email: technician.email,
+            fullName: technician.fullName,
+            role: technician.role,
+            // The backend will automatically associate with the current user's company
+          },
           createAuthenticatedRequest(),
         );
+        console.log("Technician creation response:", response.data);
         results.push(response.data);
       }
 

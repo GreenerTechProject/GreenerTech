@@ -5,18 +5,24 @@ import { ExtendedSerre } from "@shared/api";
 export interface CreateSerreRequest {
   nom: string;
   id_domaine: number;
-  position: {
+  position?: {
     latitude: number;
     longitude: number;
     ordre: number;
   }[];
+  surface?: number;
+  center?: {
+    lat: number;
+    lng: number;
+  };
 }
 
 export interface CreateSerreResponse {
-  id: number;
+  id?: number;
+  serreId?: string;
   nom: string;
   id_domaine: number;
-  position: {
+  position?: {
     id: number;
     lat: number;
     lng: number;
@@ -47,11 +53,13 @@ export const serreService = {
   // Create a single serre
   createSerre: async (serre: CreateSerreRequest): Promise<CreateSerreResponse> => {
     try {
+      console.log("Creating serre:", serre);
       const response = await axios.post<CreateSerreResponse>(
         `${API_BASE_URL}/serre`,
         serre,
         createAuthenticatedRequest(),
       );
+      console.log("Serre creation response:", response.data);
       return response.data;
     } catch (error: any) {
       console.error("Erreur lors de la création de la serre:", error);

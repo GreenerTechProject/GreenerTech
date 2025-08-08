@@ -1,7 +1,6 @@
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import {
   GoogleMap,
-  useJsApiLoader,
   DrawingManager,
   Polygon,
   Marker,
@@ -74,62 +73,64 @@ export default function MapComponent({
     (map: google.maps.Map) => {
       setMap(map);
 
-      // Initialize drawing manager
-      const newDrawingManager = new google.maps.drawing.DrawingManager({
-        drawingMode: null,
-        drawingControl: false,
-        polygonOptions: {
-          fillColor: "#B4CC5F",
-          fillOpacity: 0.3,
-          strokeWeight: 2,
-          strokeColor: "#8FA53A",
-          clickable: true,
-          editable: true,
-          zIndex: 1,
-        },
-      });
+      // Initialize drawing manager only if Google Maps is loaded
+      if (typeof google !== 'undefined' && google.maps && google.maps.drawing) {
+        const newDrawingManager = new google.maps.drawing.DrawingManager({
+          drawingMode: null,
+          drawingControl: false,
+          polygonOptions: {
+            fillColor: "#B4CC5F",
+            fillOpacity: 0.3,
+            strokeWeight: 2,
+            strokeColor: "#8FA53A",
+            clickable: true,
+            editable: true,
+            zIndex: 1,
+          },
+        });
 
-      newDrawingManager.setMap(map);
-      setDrawingManager(newDrawingManager);
+        newDrawingManager.setMap(map);
+        setDrawingManager(newDrawingManager);
 
-      // Handle polygon completion
-      google.maps.event.addListener(
-        newDrawingManager,
-        "polygoncomplete",
-        (polygon: google.maps.Polygon) => {
-          const path = polygon.getPath();
-          const pathArray: google.maps.LatLng[] = [];
+        // Handle polygon completion
+        google.maps.event.addListener(
+          newDrawingManager,
+          "polygoncomplete",
+          (polygon: google.maps.Polygon) => {
+            const path = polygon.getPath();
+            const pathArray: google.maps.LatLng[] = [];
 
-          for (let i = 0; i < path.getLength(); i++) {
-            pathArray.push(path.getAt(i));
-          }
+            for (let i = 0; i < path.getLength(); i++) {
+              pathArray.push(path.getAt(i));
+            }
 
-          // Calculate area using Google Maps geometry library
-          const area = google.maps.geometry.spherical.computeArea(path);
+            // Calculate area using Google Maps geometry library
+            const area = google.maps.geometry.spherical.computeArea(path);
 
-          // Calculate center point
-          const bounds = new google.maps.LatLngBounds();
-          pathArray.forEach((point) => bounds.extend(point));
-          const center = bounds.getCenter();
+            // Calculate center point
+            const bounds = new google.maps.LatLngBounds();
+            pathArray.forEach((point) => bounds.extend(point));
+            const center = bounds.getCenter();
 
-          const shape: DrawnShape = {
-            id: Date.now().toString(),
-            type: drawingMode || "domain",
-            name: "",
-            path: pathArray,
-            area,
-            center,
-            color: drawingMode === "serre" ? "#FF6B6B" : "#B4CC5F",
-            domainId: drawingMode === "serre" ? selectedDomainId : undefined,
-          };
+            const shape: DrawnShape = {
+              id: Date.now().toString(),
+              type: drawingMode || "domain",
+              name: "",
+              path: pathArray,
+              area,
+              center,
+              color: drawingMode === "serre" ? "#FF6B6B" : "#B4CC5F",
+              domainId: drawingMode === "serre" ? selectedDomainId : undefined,
+            };
 
-          onShapeComplete(shape);
+            onShapeComplete(shape);
 
-          // Remove the drawing
-          polygon.setMap(null);
-          newDrawingManager.setDrawingMode(null);
-        },
-      );
+            // Remove the drawing
+            polygon.setMap(null);
+            newDrawingManager.setDrawingMode(null);
+          },
+        );
+      }
     },
     [drawingMode, selectedDomainId, onShapeComplete],
   );
@@ -141,7 +142,7 @@ export default function MapComponent({
 
   // Search functionality
   const handleSearch = (query: string) => {
-    if (!map || !query.trim()) return;
+    if (!map || !query.trim() || typeof google === 'undefined') return;
 
     const service = new google.maps.places.PlacesService(map);
     const request: google.maps.places.TextSearchRequest = {
@@ -197,7 +198,7 @@ export default function MapComponent({
   };
 
   const goToCurrentLocation = () => {
-    if (navigator.geolocation && map) {
+    if (navigator.geolocation && map && typeof google !== 'undefined') {
       navigator.geolocation.getCurrentPosition(
         (position) => {
           const location = {
@@ -240,7 +241,7 @@ export default function MapComponent({
 
   // Update drawing mode
   useEffect(() => {
-    if (!drawingManager) return;
+    if (!drawingManager || typeof google === 'undefined') return;
 
     if (drawingMode) {
       drawingManager.setDrawingMode(google.maps.drawing.OverlayType.POLYGON);
@@ -317,8 +318,8 @@ export default function MapComponent({
           fullscreenControl: true,
         }}
       >
-        {/* Render existing shapes */}
-        {shapesToDisplay.map((shape) => (
+        {/* Render existing shapes only if Google Maps is loaded */}
+        {typeof google !== 'undefined' && shapesToDisplay.map((shape) => (
           <Polygon
             key={shape.id}
             paths={shape.path.map((point) => ({
@@ -335,7 +336,7 @@ export default function MapComponent({
               zIndex: shape.type === "serre" ? 2 : 1,
             }}
             onClick={() => {
-              if (shape.name && map) {
+              if (shape.name && map && typeof google !== 'undefined') {
                 const infoWindow = new google.maps.InfoWindow({
                   content: `<div><strong>${shape.name}</strong><br/>Type: ${shape.type}<br/>Surface: ${(shape.area / 10000).toFixed(2)} hectares</div>`,
                   position: {

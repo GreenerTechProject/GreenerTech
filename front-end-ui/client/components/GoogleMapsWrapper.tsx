@@ -23,11 +23,17 @@ export default function GoogleMapsWrapper({
       libraries={libraries}
       loadingElement={
         <div className="flex items-center justify-center h-full">
-          <Loader2 className="h-8 w-8 animate-spin" />
+          <div className="text-center">
+            <Loader2 className="h-8 w-8 animate-spin mx-auto mb-2" />
+            <p className="text-sm text-gray-600">Chargement de la carte...</p>
+          </div>
         </div>
       }
       onError={(error) => {
         console.error("Error loading Google Maps:", error);
+      }}
+      onLoad={() => {
+        console.log("Google Maps loaded successfully");
       }}
     >
       {children}
