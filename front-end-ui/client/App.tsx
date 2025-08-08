@@ -28,6 +28,7 @@ import Alerts from "./pages/Alerts";
 import Surveillance from "./pages/Surveillance";
 import Profile from "./pages/Profile";
 import ProfileEdit from "./pages/ProfileEdit";
+import SurveillanceCamera from "./pages/SurveillanceCamera";
 import NotFound from "./pages/NotFound";
 
 // New Director Pages
