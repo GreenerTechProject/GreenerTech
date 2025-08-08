@@ -43,6 +43,7 @@ interface SerreCreationProps {
   onComplete: (domains: Domain[]) => void;
   onBack: () => void;
   selectedDomainId?: string;
+  setupMode?: boolean; // If true, don't call backend APIs, just store locally
 }
 
 const GOOGLE_MAPS_API_KEY = getGoogleMapsAPIKey();
@@ -66,6 +67,7 @@ export default function SerreCreation({
   onComplete,
   onBack,
   selectedDomainId,
+  setupMode = false,
 }: SerreCreationProps) {
   const [currentDomains, setCurrentDomains] = useState<Domain[]>(domains);
   const [activeDomainId, setActiveDomainId] = useState<string>(
@@ -142,29 +144,46 @@ export default function SerreCreation({
 
     setIsCreatingGuide(true);
 
-      const guideRequest = {
-        nom: guideForm.nom,
-        variete: guideForm.variete,
-        rendement: parseFloat(guideForm.rendement),
-        nombre_de_plants: parseInt(guideForm.nombre_de_plants),
-        date_debut_saison: guideForm.date_debut_saison.toISOString(),
-        date_fin_saison: guideForm.date_fin_saison.toISOString(),
-      };
+    try {
+      let newGuide: ExtendedGuideDeCulture;
 
-      // const response = await guideService.createGuide(guideRequest);
+      if (setupMode) {
+        // In setup mode, create guide locally without backend call
+        newGuide = {
+          id: `temp-guide-${Date.now()}`, // Temporary ID for frontend use
+          nom: guideForm.nom,
+          variete: guideForm.variete,
+          rendement: parseFloat(guideForm.rendement),
+          nombre_de_plants: parseInt(guideForm.nombre_de_plants),
+          date_debut_saison: guideForm.date_debut_saison,
+          date_fin_saison: guideForm.date_fin_saison,
+          id_serre: "", // Will be set when serre is created
+        };
+      } else {
+        // In standalone mode, call the backend to create the guide
+        const guideRequest = {
+          nom: guideForm.nom,
+          variete: guideForm.variete,
+          rendement: parseFloat(guideForm.rendement),
+          nombre_de_plants: parseInt(guideForm.nombre_de_plants),
+          date_debut_saison: guideForm.date_debut_saison.toISOString(),
+          date_fin_saison: guideForm.date_fin_saison.toISOString(),
+          id_serre: "temp", // Temporary value, will be updated when serre is created
+        };
 
-      // const newGuide: ExtendedGuideDeCulture = {
-      //   id: response.guideId,
-      //   nom: guideForm.nom,
-      //   variete: guideForm.variete,
-      //   rendement: parseFloat(guideForm.rendement),
-      //   nombre_de_plants: parseInt(guideForm.nombre_de_plants),
-      //   date_debut_saison: guideForm.date_debut_saison,
-      //   date_fin_saison: guideForm.date_fin_saison,
-      //   id_serre: "",
-      
-      // };
+        const response = await guideService.createGuide(guideRequest);
 
+        newGuide = {
+          id: response.guideId,
+          nom: guideForm.nom,
+          variete: guideForm.variete,
+          rendement: parseFloat(guideForm.rendement),
+          nombre_de_plants: parseInt(guideForm.nombre_de_plants),
+          date_debut_saison: guideForm.date_debut_saison,
+          date_fin_saison: guideForm.date_fin_saison,
+          id_serre: "",
+        };
+      }
       setGuides((prev) => [...prev, newGuide]);
       setSerreForm((prev) => ({ ...prev, selectedGuideId: newGuide.id }));
 
@@ -203,16 +222,46 @@ export default function SerreCreation({
     if (!selectedGuide) return;
 
     setIsSavingSerre(true);
-    
-      const newSerre: ExtendedSerre = {
-        nom: serreForm.nom.trim(),
-        surface: pendingSerre.area,
-        domainId: activeDomainId,
-        guideId: serreForm.selectedGuideId,
-        position: pendingSerre.path,
-        center: pendingSerre.center,
-        guide: selectedGuide,
-      };
+
+    try {
+      let newSerre: ExtendedSerre;
+
+      if (setupMode) {
+        // In setup mode, just create the serre object locally (no backend call)
+        newSerre = {
+          id: `temp-serre-${Date.now()}`, // Temporary ID for frontend use
+          nom: serreForm.nom.trim(),
+          surface: pendingSerre.area,
+          domainId: activeDomainId,
+          guideId: serreForm.selectedGuideId,
+          position: pendingSerre.path,
+          center: pendingSerre.center,
+          guide: selectedGuide,
+        };
+      } else {
+        // In standalone mode, call the backend to create the serre
+        const serreRequest = {
+          nom: serreForm.nom.trim(),
+          id_domaine: parseInt(activeDomainId),
+          position: pendingSerre.path.map((point, index) => ({
+            latitude: point.lat(),
+            longitude: point.lng(),
+            ordre: index + 1,
+          })),
+        };
+
+        const createdSerre = await serreService.createSerre(serreRequest);
+
+        newSerre = {
+          id: createdSerre.id.toString(),
+          nom: serreForm.nom.trim(),
+          surface: pendingSerre.area,
+          domainId: activeDomainId,
+          guideId: serreForm.selectedGuideId,
+          position: pendingSerre.path,
+          center: pendingSerre.center,
+          guide: selectedGuide,
+        };
 
       setCurrentDomains((prev) =>
         prev.map((domain) =>

@@ -4,17 +4,24 @@ import { ExtendedSerre } from "@shared/api";
 
 export interface CreateSerreRequest {
   nom: string;
-  surface: number;
-  domainId: string;
-  guideId: string;
-  position: google.maps.LatLng[];
-  center: google.maps.LatLng;
+  id_domaine: number;
+  position: {
+    latitude: number;
+    longitude: number;
+    ordre: number;
+  }[];
 }
 
 export interface CreateSerreResponse {
-  success: boolean;
-  message: string;
-  serreId: string;
+  id: number;
+  nom: string;
+  id_domaine: number;
+  position: {
+    id: number;
+    lat: number;
+    lng: number;
+    ordre: number;
+  }[];
 }
 
 export interface ApiError {
