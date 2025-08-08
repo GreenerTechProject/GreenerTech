@@ -93,22 +93,22 @@ def update_serre(current_user, id):
 
     data = request.get_json()
 
-    serre.nom = data.get('name', serre.nom)
-    serre.surface = data.get('area', serre.surface)
+    serre.nom = data.get('nom', serre.nom)
+    serre.surface = data.get('surface', serre.surface)
 
     center = data.get('center')
     if center:
-        serre.center_lat = center.get('lat', serre.center_lat)
-        serre.center_lng = center.get('lng', serre.center_lng)
+        serre.center_lat = center.get('latitude', serre.center_lat)
+        serre.center_lng = center.get('longitude', serre.center_lng)
         
-    gps_points = data.get('path')
+    gps_points = data.get('position')
     if gps_points:
         GroupCor.query.filter_by(id_group_cor=serre.id_group_cor).delete()
         for point in gps_points:
             new_point = GroupCor(
                 id_group_cor=serre.id_group_cor,
-                point_x=point['lat'],
-                point_y=point['lng'],
+                point_x=point['latitude'],
+                point_y=point['longitude'],
                 ordre=point.get('ordre', 0)
             )
             db.session.add(new_point)
