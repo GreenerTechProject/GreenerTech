@@ -57,20 +57,32 @@ interface CompletedSetupData {
 }
 
 export default function DirecteurSetup() {
-  const { user, updateUser, logout } = useAuth();
+  const { user, logout } = useAuth();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(true);
-  const [isSubmittingCompanyInfo, setIsSubmittingCompanyInfo] = useState(false);
+  const navigate = useNavigate();
 
-  // Check if user has the correct role
+  // Flow Logic: On Director Login
   useEffect(() => {
-    if (user && user.role !== "directeur") {
-      // Redirect non-directeur users back to general dashboard
-      window.location.href = "/dashboard";
-      return;
+    if (user) {
+      // Check if user has the correct role
+      if (user.role !== "directeur") {
+        // Redirect non-directeur users back to general dashboard
+        navigate("/dashboard");
+        return;
+      }
+
+      // Check setup_completed
+      if (user.setup_completed === true) {
+        // If true → redirect to newDirectorDashboard
+        navigate("/directeur");
+        return;
+      } else {
+        // If false → start the setup wizard
+        setIsLoading(false);
+      }
     }
-    setIsLoading(false);
-  }, [user]);
+  }, [user, navigate]);
 
   const handleCompanySetupComplete = async (setupData: CompletedSetupData) => {
     try {
