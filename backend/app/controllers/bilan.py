@@ -32,7 +32,7 @@ def create_bilan(current_user):
     id_group_cor = last_id_group_cor + 1
 
 
-    gps_points = data.get('position', [])
+    gps_points = data.get('path', [])
     if not gps_points:
         return jsonify({"message": "Veuillez fournir une liste de points GPS"}), 400
 
@@ -40,15 +40,17 @@ def create_bilan(current_user):
     for point in gps_points:
         gc = GroupCor(
             id_group_cor=id_group_cor,
-            point_x=point['latitude'],
-            point_y=point['longitude'],
+            point_x=point['lat'],
+            point_y=point['lng'],
             ordre=point.get('ordre', 0)
         )
         db.session.add(gc)
 
     # Créer le bilan
     bilan = Bilan(
-        nom=data['nom'],
+        nom=data['name'],
+        surface = data.get('area'),
+        center = data.get('center'),
         id_group_cor=id_group_cor,
         id_serre=serre.id,
         #id_entreprise=entreprise.id
@@ -93,6 +95,12 @@ def update_bilan(current_user, id):
 
     data = request.get_json()
     bilan.nom = data.get('nom', bilan.nom)
+    serre.surface = data.get('surface', serre.surface)
+
+    center = data.get('center')
+    if center:
+        bilan.center_lat = center.get('latitude', bilan.center_lat)
+        bilan.center_lng = center.get('longitude', bilan.center_lng)
 
     gps_points = data.get('gps_points')
     if gps_points:
@@ -102,8 +110,8 @@ def update_bilan(current_user, id):
         for point in gps_points:
             new_point = GroupCor(
                 id_group_cor=bilan.id_group_cor,
-                point_x=point['point_x'],
-                point_y=point['point_y'],
+                point_x=point['latitude'],
+                point_y=point['longitude'],
                 ordre=point.get('ordre', 0)
             )
             db.session.add(new_point)
@@ -135,7 +143,7 @@ def generate_bilan_qrcode(bilan_id):
         return abort(404, description="Bilan non trouvé")
 
     # Contenu du QR code (tu peux changer ici selon ton besoin)
-    qr_data = json_str = json.dumps(bilan.to_dict())  # ou bien f"https://greenertech.com/bilan/{bilan.id}"
+    qr_data = json.dumps(bilan.to_dict())  # ou bien f"https://greenertech.com/bilan/{bilan.id}"
     
     # Création du QR code
     qr = qrcode.QRCode(box_size=10, border=4)

@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { CalendarIcon, Plus, Trash2, ArrowLeft, BookOpen } from "lucide-react";
+import { CalendarIcon, Plus, Trash2, ArrowLeft, BookOpen, Loader2 } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
 import {
   Popover,
@@ -24,24 +24,10 @@ import { fr } from "date-fns/locale";
 import GoogleMapsWrapper from "./GoogleMapsWrapper";
 import MapComponent, { DrawnShape } from "./MapComponent";
 import { getGoogleMapsAPIKey } from "@/config/maps";
-import { Serre, GuideDeCulture } from "@shared/api";
-
-interface ExtendedSerre {
-  id: string;
-  name: string;
-  area: number;
-  domainId: string;
-  guideId: string;
-  path: google.maps.LatLng[];
-  center: google.maps.LatLng;
-  guide?: ExtendedGuideDeCulture;
-}
-
-interface ExtendedGuideDeCulture
-  extends Omit<GuideDeCulture, "plantingDate" | "harvestDate"> {
-  plantingDate: Date | string;
-  harvestDate: Date | string;
-}
+import { ExtendedSerre, ExtendedGuideDeCulture } from "@shared/api";
+import { guideService } from "@/services/guideService";
+import { useToast } from "@/hooks/use-toast";
+import {serreService} from "@/services/serreService"
 
 interface Domain {
   id: string;
@@ -75,15 +61,6 @@ const cropVarieties = [
   { value: "autre", label: "Autre" },
 ];
 
-const irrigationTypes = [
-  { value: "goutte-a-goutte", label: "Goutte à goutte" },
-  { value: "aspersion", label: "Aspersion" },
-  { value: "micro-aspersion", label: "Micro-aspersion" },
-  { value: "irrigation-localisee", label: "Irrigation localisée" },
-  { value: "hydroponie", label: "Hydroponie" },
-  { value: "manuel", label: "Manuel" },
-];
-
 export default function SerreCreation({
   domains,
   onComplete,
@@ -97,73 +74,124 @@ export default function SerreCreation({
   const [isDrawing, setIsDrawing] = useState(false);
   const [pendingSerre, setPendingSerre] = useState<DrawnShape | null>(null);
   const [serreForm, setSerreForm] = useState({
-    name: "",
+    nom: "",
     selectedGuideId: "",
   });
   const [guideForm, setGuideForm] = useState({
-    variety: "",
-    yield: "",
-    irrigationType: "",
-    plantingDate: undefined as Date | undefined,
-    harvestDate: undefined as Date | undefined,
-    notes: "",
+    nom: "",
+    variete: "",
+    rendement: "",
+    nombre_de_plants: "",
+    date_debut_saison: undefined as Date | undefined,
+    date_fin_saison: undefined as Date | undefined,
   });
   const [guides, setGuides] = useState<ExtendedGuideDeCulture[]>([]);
   const [showCreateGuide, setShowCreateGuide] = useState(false);
+  const [isCreatingGuide, setIsCreatingGuide] = useState(false);
+  const [isSavingSerre, setIsSavingSerre] = useState(false);
+  const { toast } = useToast();
 
   const activeDomain = currentDomains.find((d) => d.id === activeDomainId);
 
   // Load existing guides on component mount
   useEffect(() => {
-    // TODO: Load guides from API
-    // For now, we'll use empty array
-    setGuides([]);
-  }, []);
+    const loadGuides = async () => {
+      try {
+        const existingGuides = await guideService.getGuides();
+        // Convert backend guides to ExtendedGuideDeCulture format
+        const convertedGuides: ExtendedGuideDeCulture[] = existingGuides.map(guide => ({
+          id: guide.id,
+          nom: guide.nom,
+          variete: guide.variete,
+          rendement: guide.rendement,
+          nombre_de_plants: guide.nombre_de_plants,
+          date_debut_saison: new Date(guide.date_debut_saison),
+          date_fin_saison: new Date(guide.date_fin_saison),
+          id_serre: guide.id_serre,
+        }));
+        setGuides(convertedGuides);
+      } catch (error) {
+        console.error("Error loading guides:", error);
+        toast({
+          title: "Erreur",
+          description: "Impossible de charger les guides de culture",
+          variant: "destructive",
+        });
+      }
+    };
+
+    loadGuides();
+  }, [toast]);
 
   const handleShapeComplete = (shape: DrawnShape) => {
     setPendingSerre(shape);
     setIsDrawing(false);
   };
 
-  const handleCreateGuide = () => {
+  const handleCreateGuide = async () => {
     if (
-      !guideForm.variety ||
-      !guideForm.yield ||
-      !guideForm.plantingDate ||
-      !guideForm.harvestDate
+      !guideForm.nom ||
+      !guideForm.variete ||
+      !guideForm.rendement ||
+      !guideForm.nombre_de_plants ||
+      !guideForm.date_debut_saison ||
+      !guideForm.date_fin_saison
     ) {
       return;
-    }
+    }y
 
-    const newGuide: ExtendedGuideDeCulture = {
-      id: `guide-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-      variety: guideForm.variety,
-      yield: parseFloat(guideForm.yield),
-      plantingDate: guideForm.plantingDate,
-      harvestDate: guideForm.harvestDate,
-      irrigationType: guideForm.irrigationType,
-      notes: guideForm.notes,
-    };
+    setIsCreatingGuide(true);
 
-    setGuides((prev) => [...prev, newGuide]);
-    setSerreForm((prev) => ({ ...prev, selectedGuideId: newGuide.id }));
+      const guideRequest = {
+        nom: guideForm.nom,
+        variete: guideForm.variete,
+        rendement: parseFloat(guideForm.rendement),
+        nombre_de_plants: parseInt(guideForm.nombre_de_plants),
+        date_debut_saison: guideForm.date_debut_saison.toISOString(),
+        date_fin_saison: guideForm.date_fin_saison.toISOString(),
+      };
 
-    // Reset guide form
-    setGuideForm({
-      variety: "",
-      yield: "",
-      irrigationType: "",
-      plantingDate: undefined,
-      harvestDate: undefined,
-      notes: "",
-    });
-    setShowCreateGuide(false);
+      // const response = await guideService.createGuide(guideRequest);
+
+      // const newGuide: ExtendedGuideDeCulture = {
+      //   id: response.guideId,
+      //   nom: guideForm.nom,
+      //   variete: guideForm.variete,
+      //   rendement: parseFloat(guideForm.rendement),
+      //   nombre_de_plants: parseInt(guideForm.nombre_de_plants),
+      //   date_debut_saison: guideForm.date_debut_saison,
+      //   date_fin_saison: guideForm.date_fin_saison,
+      //   id_serre: "",
+      
+      // };
+
+      setGuides((prev) => [...prev, newGuide]);
+      setSerreForm((prev) => ({ ...prev, selectedGuideId: newGuide.id }));
+
+      // Reset guide form
+      setGuideForm({
+        nom: "",
+        variete: "",
+        rendement: "",
+        nombre_de_plants: "",
+        date_debut_saison: undefined,
+        date_fin_saison: undefined,
+        notes: "",
+      });
+      setShowCreateGuide(false);
+
+      toast({
+        title: "Guide créé",
+        description: `Le guide "${guideForm.nom}" a été créé avec succès`,
+      });
+   
   };
 
-  const handleSaveSerre = () => {
+
+  const handleSaveSerre = async () => {
     if (
       !pendingSerre ||
-      !serreForm.name.trim() ||
+      !serreForm.nom.trim() ||
       !serreForm.selectedGuideId ||
       !activeDomainId
     )
@@ -174,31 +202,40 @@ export default function SerreCreation({
     );
     if (!selectedGuide) return;
 
-    const newSerre: ExtendedSerre = {
-      id: pendingSerre.id,
-      name: serreForm.name.trim(),
-      area: pendingSerre.area,
-      domainId: activeDomainId,
-      guideId: serreForm.selectedGuideId,
-      path: pendingSerre.path,
-      center: pendingSerre.center,
-      guide: selectedGuide,
-    };
+    setIsSavingSerre(true);
 
-    setCurrentDomains((prev) =>
-      prev.map((domain) =>
-        domain.id === activeDomainId
-          ? { ...domain, serres: [...domain.serres, newSerre] }
-          : domain,
-      ),
-    );
 
-    // Reset form
-    setSerreForm({
-      name: "",
-      selectedGuideId: "",
-    });
-    setPendingSerre(null);
+      const newSerre: ExtendedSerre = {
+        id: createdSerre.id.toString(),
+        nom: serreForm.nom.trim(),
+        surface: pendingSerre.area,
+        domainId: activeDomainId,
+        guideId: serreForm.selectedGuideId,
+        position: pendingSerre.path,
+        center: pendingSerre.center,
+        guide: selectedGuide,
+      };
+
+      setCurrentDomains((prev) =>
+        prev.map((domain) =>
+          domain.id === activeDomainId
+            ? { ...domain, serres: [...domain.serres, newSerre] }
+            : domain,
+        ),
+      );
+
+      // Reset form
+      setSerreForm({
+        nom: "",
+        selectedGuideId: "",
+      });
+      setPendingSerre(null);
+
+      toast({
+        title: "Serre créée",
+        description: `La serre "${serreForm.nom}" a été créée avec succès`,
+      });
+   
   };
 
   const handleDeleteSerre = (serreId: string) => {
@@ -219,7 +256,7 @@ export default function SerreCreation({
     setIsDrawing(false);
     setPendingSerre(null);
     setSerreForm({
-      name: "",
+      nom: "",
       selectedGuideId: "",
     });
   };
@@ -244,9 +281,9 @@ export default function SerreCreation({
         shapes.push({
           id: serre.id,
           type: "serre",
-          name: serre.name,
-          path: serre.path,
-          area: serre.area,
+          name: serre.nom,
+          path: serre.position,
+          area: serre.surface,
           center: serre.center,
           color: "#FF6B6B",
           domainId: activeDomain.id,
@@ -320,23 +357,29 @@ export default function SerreCreation({
                 <div className="space-y-2">
                   {guides.map((guide) => (
                     <div key={guide.id} className="p-3 border rounded-lg">
-                      <div className="font-medium">{guide.variety}</div>
+                      <div className="font-medium">{guide.nom}</div>
                       <div className="text-sm text-gray-600">
-                        Rendement: {guide.yield} kg/m²
+                        Variété: {guide.variete}
+                      </div>
+                      <div className="text-sm text-gray-600">
+                        Rendement: {guide.rendement} kg/m²
+                      </div>
+                      <div className="text-sm text-gray-600">
+                        Plants: {guide.nombre_de_plants}
                       </div>
                       <div className="text-sm text-gray-600">
                         Saison:{" "}
-                        {guide.plantingDate instanceof Date
-                          ? format(guide.plantingDate, "dd/MM/yyyy", {
+                        {guide.date_debut_saison instanceof Date
+                          ? format(guide.date_debut_saison, "dd/MM/yyyy", {
                               locale: fr,
                             })
-                          : guide.plantingDate}{" "}
+                          : guide.date_debut_saison}{" "}
                         →{" "}
-                        {guide.harvestDate instanceof Date
-                          ? format(guide.harvestDate, "dd/MM/yyyy", {
+                        {guide.date_fin_saison instanceof Date
+                          ? format(guide.date_fin_saison, "dd/MM/yyyy", {
                               locale: fr,
                             })
-                          : guide.harvestDate}
+                          : guide.date_fin_saison}
                       </div>
                     </div>
                   ))}
@@ -361,11 +404,23 @@ export default function SerreCreation({
                   <h4 className="font-medium">Nouveau guide de culture</h4>
 
                   <div>
+                    <Label htmlFor="guideName">Nom du guide *</Label>
+                    <Input
+                      id="guideName"
+                      value={guideForm.nom}
+                      onChange={(e) =>
+                        setGuideForm((prev) => ({ ...prev, nom: e.target.value }))
+                      }
+                      placeholder="Ex: Guide Tomates Printemps 2024"
+                    />
+                  </div>
+
+                  <div>
                     <Label htmlFor="guideVariety">Variété *</Label>
                     <Select
-                      value={guideForm.variety}
+                      value={guideForm.variete}
                       onValueChange={(value) =>
-                        setGuideForm((prev) => ({ ...prev, variety: value }))
+                        setGuideForm((prev) => ({ ...prev, variete: value }))
                       }
                     >
                       <SelectTrigger>
@@ -389,11 +444,11 @@ export default function SerreCreation({
                       id="guideYield"
                       type="number"
                       step="0.1"
-                      value={guideForm.yield}
+                      value={guideForm.rendement}
                       onChange={(e) =>
                         setGuideForm((prev) => ({
                           ...prev,
-                          yield: e.target.value,
+                          rendement: e.target.value,
                         }))
                       }
                       placeholder="Ex: 25.5"
@@ -401,27 +456,21 @@ export default function SerreCreation({
                   </div>
 
                   <div>
-                    <Label htmlFor="guideIrrigation">Type d'irrigation</Label>
-                    <Select
-                      value={guideForm.irrigationType}
-                      onValueChange={(value) =>
+                    <Label htmlFor="guidePlants">
+                      Nombre de plants *
+                    </Label>
+                    <Input
+                      id="guidePlants"
+                      type="number"
+                      value={guideForm.nombre_de_plants}
+                      onChange={(e) =>
                         setGuideForm((prev) => ({
                           ...prev,
-                          irrigationType: value,
+                          nombre_de_plants: e.target.value,
                         }))
                       }
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Sélectionnez le type d'irrigation" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {irrigationTypes.map((type) => (
-                          <SelectItem key={type.value} value={type.value}>
-                            {type.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                      placeholder="Ex: 100"
+                    />
                   </div>
 
                   <div className="grid grid-cols-2 gap-3">
@@ -434,8 +483,8 @@ export default function SerreCreation({
                             className="w-full justify-start text-left font-normal"
                           >
                             <CalendarIcon className="mr-2 h-4 w-4" />
-                            {guideForm.plantingDate ? (
-                              format(guideForm.plantingDate, "dd/MM/yyyy", {
+                            {guideForm.date_debut_saison ? (
+                              format(guideForm.date_debut_saison, "dd/MM/yyyy", {
                                 locale: fr,
                               })
                             ) : (
@@ -446,11 +495,11 @@ export default function SerreCreation({
                         <PopoverContent className="w-auto p-0">
                           <Calendar
                             mode="single"
-                            selected={guideForm.plantingDate}
+                            selected={guideForm.date_debut_saison}
                             onSelect={(date) =>
                               setGuideForm((prev) => ({
                                 ...prev,
-                                plantingDate: date,
+                                date_debut_saison: date,
                               }))
                             }
                             initialFocus
@@ -468,8 +517,8 @@ export default function SerreCreation({
                             className="w-full justify-start text-left font-normal"
                           >
                             <CalendarIcon className="mr-2 h-4 w-4" />
-                            {guideForm.harvestDate ? (
-                              format(guideForm.harvestDate, "dd/MM/yyyy", {
+                            {guideForm.date_fin_saison ? (
+                              format(guideForm.date_fin_saison, "dd/MM/yyyy", {
                                 locale: fr,
                               })
                             ) : (
@@ -484,7 +533,7 @@ export default function SerreCreation({
                             onSelect={(date) =>
                               setGuideForm((prev) => ({
                                 ...prev,
-                                harvestDate: date,
+                                date_fin_saison: date,
                               }))
                             }
                             initialFocus
@@ -514,14 +563,24 @@ export default function SerreCreation({
                     <Button
                       onClick={handleCreateGuide}
                       disabled={
-                        !guideForm.variety ||
-                        !guideForm.yield ||
-                        !guideForm.plantingDate ||
-                        !guideForm.harvestDate
+                        isCreatingGuide ||
+                        !guideForm.nom ||
+                        !guideForm.variete ||
+                        !guideForm.rendement ||
+                        !guideForm.nombre_de_plants ||
+                        !guideForm.date_debut_saison ||
+                        !guideForm.date_fin_saison
                       }
                       className="flex-1"
                     >
-                      Créer le guide
+                      {isCreatingGuide ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Création...
+                        </>
+                      ) : (
+                        "Créer le guide"
+                      )}
                     </Button>
                     <Button
                       variant="outline"
@@ -578,11 +637,11 @@ export default function SerreCreation({
                     <Label htmlFor="serreName">Nom de la serre *</Label>
                     <Input
                       id="serreName"
-                      value={serreForm.name}
+                      value={serreForm.nom}
                       onChange={(e) =>
                         setSerreForm((prev) => ({
                           ...prev,
-                          name: e.target.value,
+                          nom: e.target.value,
                         }))
                       }
                       placeholder="Ex: Serre Tomates A1"
@@ -606,7 +665,7 @@ export default function SerreCreation({
                       <SelectContent>
                         {guides.map((guide) => (
                           <SelectItem key={guide.id} value={guide.id}>
-                            {guide.variety} - {guide.yield} kg/m²
+                            {guide.nom} - {guide.variete} ({guide.rendement} kg/m²)
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -622,11 +681,20 @@ export default function SerreCreation({
                     <Button
                       onClick={handleSaveSerre}
                       disabled={
-                        !serreForm.name.trim() || !serreForm.selectedGuideId
+                        isSavingSerre ||
+                        !serreForm.nom.trim() ||
+                        !serreForm.selectedGuideId
                       }
                       className="flex-1"
                     >
-                      Enregistrer
+                      {isSavingSerre ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Enregistrement...
+                        </>
+                      ) : (
+                        "Enregistrer"
+                      )}
                     </Button>
                     <Button variant="outline" onClick={cancelDrawing}>
                       Annuler
@@ -652,25 +720,16 @@ export default function SerreCreation({
                       <div className="flex justify-between items-start">
                         <div className="flex-1">
                           <h4 className="font-medium text-gray-900">
-                            {serre.name}
+                            {serre.nom}
                           </h4>
                           <div className="text-sm text-gray-600 space-y-1">
                             {serre.guide && (
                               <>
-                                <div>Variété: {serre.guide.variety}</div>
-                                <div>Rendement: {serre.guide.yield} kg/m²</div>
-                                <div>Surface: {serre.area.toFixed(0)} m²</div>
-                                {serre.guide.irrigationType && (
-                                  <Badge variant="outline" className="mt-1">
-                                    {
-                                      irrigationTypes.find(
-                                        (t) =>
-                                          t.value ===
-                                          serre.guide?.irrigationType,
-                                      )?.label
-                                    }
-                                  </Badge>
-                                )}
+                                <div>Guide: {serre.guide.nom}</div>
+                                <div>Variété: {serre.guide.variete}</div>
+                                <div>Rendement: {serre.guide.rendement} kg/m²</div>
+                                <div>Plants: {serre.guide.nombre_de_plants}</div>
+                                <div>Surface: {serre.surface.toFixed(0)} m²</div>
                               </>
                             )}
                           </div>
