@@ -1,13 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { useAuth } from "../contexts/AuthContext";
-import CompanySetupWizard from "../components/CompanySetupWizard";
+import DirectorSetupFlow from "../components/DirectorSetupFlow";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
-import { companyService } from "../services/companyService";
-import { domainService } from "../services/domainService";
-import { serreService } from "../services/serreService";
-import { technicianService } from "../services/technicianService";
-import { guideService } from "../services/guideService";
+import { useNavigate } from "react-router-dom";
 
 interface CompanyInfo {
   nom: string;
