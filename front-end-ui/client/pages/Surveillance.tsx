@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Select,
   SelectContent,
@@ -25,8 +26,10 @@ import {
   Download,
   Calendar,
   Filter,
+  Bot,
 } from "lucide-react";
 import TechnicianSidebar from "../components/TechnicianSidebar";
+import WebRTCViewer from "../components/WebRTCViewer";
 import { cn } from "@/lib/utils";
 
 interface CameraFeed {
@@ -244,7 +247,7 @@ export default function Surveillance() {
               <div className="space-y-3">
                 <h3 className="text-lg font-semibold text-gray-900 flex items-center space-x-2">
                   <Camera className="h-5 w-5" />
-                  <span>Caméras ({filteredCameras.length})</span>
+                  <span>Cam��ras ({filteredCameras.length})</span>
                 </h3>
                 
                 <Select value={filterStatus} onValueChange={setFilterStatus}>
