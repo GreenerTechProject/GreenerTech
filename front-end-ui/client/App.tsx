@@ -236,6 +236,15 @@ const App = () => (
             />
 
             <Route
+              path="/surveillance-camera"
+              element={
+                <ProtectedRoute>
+                  <SurveillanceCamera />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
               path="/reports"
               element={
                 <ProtectedRoute>
