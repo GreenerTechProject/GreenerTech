@@ -238,9 +238,23 @@ export default function Surveillance() {
         </div>
       </header>
 
-      <div className="flex h-[calc(100vh-73px)]">
-        {/* Left Panel - Camera List & Controls */}
-        <div className="w-full lg:w-96 bg-white shadow-lg">
+      <div className="h-[calc(100vh-73px)] p-4">
+        <Tabs defaultValue="static" className="h-full">
+          <TabsList className="grid w-full grid-cols-2 mb-4">
+            <TabsTrigger value="static" className="flex items-center gap-2">
+              <Camera className="h-4 w-4" />
+              Caméras Statiques
+            </TabsTrigger>
+            <TabsTrigger value="robot" className="flex items-center gap-2">
+              <Bot className="h-4 w-4" />
+              Robot Live View
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="static" className="h-[calc(100%-60px)]">
+            <div className="flex h-full">
+              {/* Left Panel - Camera List & Controls */}
+              <div className="w-full lg:w-96 bg-white shadow-lg">
           <ScrollArea className="h-full">
             <div className="p-6 space-y-6">
               {/* Camera Filters */}
@@ -390,13 +404,13 @@ export default function Surveillance() {
                     </Card>
                   ))}
                 </div>
-              </div>
+                  </div>
+                </div>
+              </ScrollArea>
             </div>
-          </ScrollArea>
-        </div>
 
-        {/* Right Panel - Video Feed */}
-        <div className="flex-1 bg-black relative">
+              {/* Right Panel - Video Feed */}
+              <div className="flex-1 bg-black relative">
           {selectedCamera ? (
             <div className="h-full flex flex-col">
               {/* Video Feed Header */}
@@ -511,10 +525,17 @@ export default function Surveillance() {
                   Sélectionnez une caméra dans la liste pour voir le flux vidéo
                 </p>
               </div>
-            </div>
-          )}
+              </div>
+            )}
+          </div>
         </div>
-      </div>
+      </TabsContent>
+
+      <TabsContent value="robot" className="h-[calc(100%-60px)]">
+        <WebRTCViewer className="h-full" />
+      </TabsContent>
+    </Tabs>
+  </div>
     </div>
   );
 }
