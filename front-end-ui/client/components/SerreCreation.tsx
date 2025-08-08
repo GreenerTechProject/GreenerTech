@@ -853,5 +853,3 @@ export default function SerreCreation({
     </div>
   );
 }
-
-export default SerreCreation;
