@@ -75,6 +75,7 @@ interface LocalCompletedSetupData {
 
 interface CompanySetupWizardProps {
   onComplete: (data: LocalCompletedSetupData) => Promise<void>;
+  showStepsOnly?: "company" | "all"; // New prop to control which steps to show
 }
 
 type WizardStep = "company" | "domains" | "serres" | "technicians" | "overview";
