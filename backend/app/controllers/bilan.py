@@ -94,13 +94,13 @@ def update_bilan(current_user, id):
     #    return jsonify({"message": "Non autorisé"}), 403
 
     data = request.get_json()
-    bilan.nom = data.get('name', bilan.nom)
-    serre.surface = data.get('area', serre.surface)
+    bilan.nom = data.get('nom', bilan.nom)
+    serre.surface = data.get('surface', serre.surface)
 
     center = data.get('center')
     if center:
-        bilan.center_lat = center.get('lat', bilan.center_lat)
-        bilan.center_lng = center.get('lng', bilan.center_lng)
+        bilan.center_lat = center.get('latitude', bilan.center_lat)
+        bilan.center_lng = center.get('longitude', bilan.center_lng)
 
     gps_points = data.get('gps_points')
     if gps_points:
@@ -110,8 +110,8 @@ def update_bilan(current_user, id):
         for point in gps_points:
             new_point = GroupCor(
                 id_group_cor=bilan.id_group_cor,
-                point_x=point['point_x'],
-                point_y=point['point_y'],
+                point_x=point['latitude'],
+                point_y=point['longitude'],
                 ordre=point.get('ordre', 0)
             )
             db.session.add(new_point)
