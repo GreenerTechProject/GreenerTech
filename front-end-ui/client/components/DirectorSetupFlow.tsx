@@ -27,49 +27,10 @@ import {
   ExtendedGuideDeCulture
 } from "@shared/api";
 
-interface CompanyInfo {
-  nom: string;
-  adresse: string;
-  cie: string;
-  status_juridique: string;
-  email: string;
-}
-
-interface Domain {
-  id: string;
-  name: string;
-  area: number;
-  center: google.maps.LatLng;
-  path: google.maps.LatLng[];
-  serres: ExtendedSerre[];
-}
-
-interface ExtendedSerre {
-  id: string;
-  nom: string;
-  surface: number;
-  domainId: string;
-  guideId: string;
-  position: google.maps.LatLng[];
-  center: google.maps.LatLng;
-  guide?: {
-    id: string;
-    nom: string;
-    variete: string;
-    rendement: number;
-    nombre_de_plants: number;
-    date_debut_saison: Date | string;
-    date_fin_saison: Date | string;
-  };
-}
-
-interface Technician {
-  id: string;
-  fullName: string;
-  email: string;
-  role: "technicien_superieur" | "technicien";
-  assignedSerres: string[];
-}
+// Using shared types
+type CompanyInfo = CompanyInfoSetup;
+type Domain = DomainSetup;
+type Technician = TechnicianSetup;
 
 type SetupStep = "company" | "domain" | "serre" | "technician" | "complete";
 
