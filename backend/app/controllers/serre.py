@@ -27,21 +27,23 @@ def create_serre(current_user):
     last_id_group_cor = db.session.query(func.max(GroupCor.id_group_cor)).scalar() or 0
     id_group_cor = last_id_group_cor + 1
 
-    gps_points = data.get('position', [])
+    gps_points = data.get('path', [])
     if not gps_points:
         return jsonify({"message": "Points GPS requis"}), 400
 
     for point in gps_points:
         gc = GroupCor(
             id_group_cor=id_group_cor,
-            point_x=point['latitude'],
-            point_y=point['longitude'],
+            point_x=point['lat'],
+            point_y=point['lng'],
             ordre=point.get('ordre', 0)
         )
         db.session.add(gc)
 
     serre = Serre(
-        nom=data['nom'],
+        nom=data['name'],
+        surface = data.get('area'),
+        center = data.get('center'),
         id_group_cor=id_group_cor,
         id_domaine=domaine.id
     )
@@ -91,15 +93,22 @@ def update_serre(current_user, id):
 
     data = request.get_json()
 
-    serre.nom = data.get('nom', serre.nom)
-    gps_points = data.get('position')
+    serre.nom = data.get('name', serre.nom)
+    serre.surface = data.get('area', serre.surface)
+
+    center = data.get('center')
+    if center:
+        serre.center_lat = center.get('lat', serre.center_lat)
+        serre.center_lng = center.get('lng', serre.center_lng)
+        
+    gps_points = data.get('path')
     if gps_points:
         GroupCor.query.filter_by(id_group_cor=serre.id_group_cor).delete()
         for point in gps_points:
             new_point = GroupCor(
                 id_group_cor=serre.id_group_cor,
-                point_x=point['latitude'],
-                point_y=point['longitude'],
+                point_x=point['lat'],
+                point_y=point['lng'],
                 ordre=point.get('ordre', 0)
             )
             db.session.add(new_point)
