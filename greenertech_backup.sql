@@ -1081,7 +1081,7 @@ SELECT pg_catalog.setval('public.autorisations_serre_id_seq', 1, true);
 -- Name: bilans_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.bilans_id_seq', 1, true);
+SELECT pg_catalog.setval('public.bilans_id_seq', 2, true);
 
 
 --
@@ -1109,7 +1109,7 @@ SELECT pg_catalog.setval('public.etat_bilans_id_seq', 1, true);
 -- Name: group_cor_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.group_cor_id_seq', 9, true);
+SELECT pg_catalog.setval('public.group_cor_id_seq', 12, true);
 
 
 --
