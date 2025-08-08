@@ -196,6 +196,9 @@ ALTER SEQUENCE public.autorisations_serre_id_seq OWNED BY public.autorisations_s
 CREATE TABLE public.bilans (
     id integer NOT NULL,
     nom character varying NOT NULL,
+    surface integer NOT NULL,
+    center_lat double precision NOT NULL,
+    center_lng double precision NOT NULL,
     id_group_cor integer NOT NULL,
     id_serre integer NOT NULL
 );
@@ -626,6 +629,9 @@ ALTER SEQUENCE public.robots_id_seq OWNED BY public.robots.id;
 CREATE TABLE public.serres (
     id integer NOT NULL,
     nom character varying NOT NULL,
+    surface integer NOT NULL,
+    center_lat double precision NOT NULL,
+    center_lng double precision NOT NULL,
     id_group_cor integer NOT NULL,
     id_domaine integer NOT NULL
 );
@@ -912,8 +918,9 @@ COPY public.autorisations_serre (id, id_user, id_serre) FROM stdin;
 -- Data for Name: bilans; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.bilans (id, nom, id_group_cor, id_serre) FROM stdin;
-1	Bilan1	3	1
+COPY public.bilans (id, nom, surface, center_lat, center_lng, id_group_cor, id_serre) FROM stdin;
+1	Bilan1	4	34.123	-6.789	3	1
+2	Bilan2	4	34.123	-6.789	4	1
 \.
 
 
@@ -958,6 +965,9 @@ COPY public.group_cor (id, id_group_cor, point_x, point_y, ordre) FROM stdin;
 7	3	34.123	-6.789	1
 8	3	34.124	-6.79	2
 9	3	34.125	-6.791	3
+10	4	34.123	-6.789	1
+11	4	34.124	-6.79	2
+12	4	34.125	-6.791	3
 \.
 
 
@@ -1020,8 +1030,8 @@ COPY public.robots (id, nom, referance) FROM stdin;
 -- Data for Name: serres; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.serres (id, nom, id_group_cor, id_domaine) FROM stdin;
-1	Serre Central	2	1
+COPY public.serres (id, nom, surface, center_lat, center_lng, id_group_cor, id_domaine) FROM stdin;
+1	Serre Central	4	34.123	-6.789	2	1
 \.
 
 
@@ -1039,9 +1049,9 @@ COPY public.type_tache (id, nom) FROM stdin;
 --
 
 COPY public.users (id, name, email, password, role, birthday, telephone, cin, id_assigned, setup_completed, created_at, updated_at, directeur_valide, email_valide, verification_token, id_entreprise) FROM stdin;
-1	directeur	directeur@gmail.com	scrypt:32768:8:1$rcVxsphM7L5kueeB$19b24046cbdd06eb5de2e87138567b1a8d1cf3bdb2e84d50a98ce555bb1a0a9b5c0f923577344fb6eb3198d942563df97143cf983bcead85782c9a3bc64243a6	directeur	\N	\N	\N	\N	f	2025-08-03 00:33:30.761993	2025-08-03 00:34:33.48069	t	t	\N	1
-2	technicien_superieur	technicien_superieur@gmail.com	scrypt:32768:8:1$rcVxsphM7L5kueeB$19b24046cbdd06eb5de2e87138567b1a8d1cf3bdb2e84d50a98ce555bb1a0a9b5c0f923577344fb6eb3198d942563df97143cf983bcead85782c9a3bc64243a6	technicien_superieur	\N	\N	\N	1	f	2025-08-03 00:52:12.750209	2025-08-03 01:17:18.380698	t	t	\N	1
-3	technicien	technicien@gmail.com	scrypt:32768:8:1$rcVxsphM7L5kueeB$19b24046cbdd06eb5de2e87138567b1a8d1cf3bdb2e84d50a98ce555bb1a0a9b5c0f923577344fb6eb3198d942563df97143cf983bcead85782c9a3bc64243a6	technicien	\N	\N	\N	2	f	2025-08-03 00:55:31.168334	2025-08-03 01:17:31.852935	t	t	\N	1
+1	directeur	directeur@gmail.com	scrypt:32768:8:1$rcVxsphM7L5kueeB$19b24046cbdd06eb5de2e87138567b1a8d1cf3bdb2e84d50a98ce555bb1a0a9b5c0f923577344fb6eb3198d942563df97143cf983bcead85782c9a3bc64243a6	directeur	\N	\N	\N	\N	t	2025-08-03 00:33:30.761993	2025-08-03 00:34:33.48069	t	t	\N	1
+2	technicien_superieur	technicien_superieur@gmail.com	scrypt:32768:8:1$rcVxsphM7L5kueeB$19b24046cbdd06eb5de2e87138567b1a8d1cf3bdb2e84d50a98ce555bb1a0a9b5c0f923577344fb6eb3198d942563df97143cf983bcead85782c9a3bc64243a6	technicien_superieur	\N	\N	\N	1	t	2025-08-03 00:52:12.750209	2025-08-03 01:17:18.380698	t	t	\N	1
+3	technicien	technicien@gmail.com	scrypt:32768:8:1$rcVxsphM7L5kueeB$19b24046cbdd06eb5de2e87138567b1a8d1cf3bdb2e84d50a98ce555bb1a0a9b5c0f923577344fb6eb3198d942563df97143cf983bcead85782c9a3bc64243a6	technicien	\N	\N	\N	2	t	2025-08-03 00:55:31.168334	2025-08-03 01:17:31.852935	t	t	\N	1
 \.
 
 
@@ -1077,7 +1087,7 @@ SELECT pg_catalog.setval('public.autorisations_serre_id_seq', 1, true);
 -- Name: bilans_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.bilans_id_seq', 1, true);
+SELECT pg_catalog.setval('public.bilans_id_seq', 2, true);
 
 
 --
@@ -1105,7 +1115,7 @@ SELECT pg_catalog.setval('public.etat_bilans_id_seq', 1, true);
 -- Name: group_cor_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.group_cor_id_seq', 9, true);
+SELECT pg_catalog.setval('public.group_cor_id_seq', 12, true);
 
 
 --

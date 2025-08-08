@@ -140,7 +140,7 @@ export default function SerreCreation({
       !guideForm.date_fin_saison
     ) {
       return;
-    }
+    }y
 
     setIsCreatingGuide(true);
 
@@ -184,7 +184,6 @@ export default function SerreCreation({
           id_serre: "",
         };
       }
-
       setGuides((prev) => [...prev, newGuide]);
       setSerreForm((prev) => ({ ...prev, selectedGuideId: newGuide.id }));
 
@@ -204,17 +203,9 @@ export default function SerreCreation({
         title: "Guide créé",
         description: `Le guide "${guideForm.nom}" a été créé avec succès`,
       });
-    } catch (error: any) {
-      console.error("Error creating guide:", error);
-      toast({
-        title: "Erreur",
-        description: error.message || "Erreur lors de la création du guide",
-        variant: "destructive",
-      });
-    } finally {
-      setIsCreatingGuide(false);
-    }
+   
   };
+
 
   const handleSaveSerre = async () => {
     if (
@@ -271,7 +262,6 @@ export default function SerreCreation({
           center: pendingSerre.center,
           guide: selectedGuide,
         };
-      }
 
       setCurrentDomains((prev) =>
         prev.map((domain) =>
@@ -292,16 +282,7 @@ export default function SerreCreation({
         title: "Serre créée",
         description: `La serre "${serreForm.nom}" a été créée avec succès`,
       });
-    } catch (error: any) {
-      console.error("Error creating serre:", error);
-      toast({
-        title: "Erreur",
-        description: error.message || "Erreur lors de la création de la serre",
-        variant: "destructive",
-      });
-    } finally {
-      setIsSavingSerre(false);
-    }
+   
   };
 
   const handleDeleteSerre = (serreId: string) => {

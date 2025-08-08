@@ -10,8 +10,6 @@ export interface GuideDeCulture {
   date_debut_saison: string;
   date_fin_saison: string;
   id_serre: string;
-  irrigationType?: string;
-  notes?: string;
 }
 
 export interface CreateGuideRequest {
@@ -22,8 +20,6 @@ export interface CreateGuideRequest {
   date_debut_saison: string;
   date_fin_saison: string;
   id_serre: string;
-  irrigationType?: string;
-  notes?: string;
 }
 
 export interface CreateGuideResponse {
@@ -83,8 +79,6 @@ export const guideService = {
         `${API_BASE_URL}/guide_culture`, 
         createAuthenticatedRequest()
       );
-
-      // La réponse est directement le tableau, pas besoin de response.data.guides
       return response.data;
     } catch (error: any) {
       console.error("Erreur lors de la récupération des guides:", error);

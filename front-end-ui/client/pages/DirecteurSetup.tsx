@@ -106,6 +106,7 @@ export default function DirecteurSetup() {
       // Step 3: Prepare guide data for after serre creation
       const guideDataMap = new Map<string, any>(); // Maps old guide id to guide data
 
+
       // Collect unique guides from all serres
       setupData.domains.forEach((domain) => {
         domain.serres.forEach((serre) => {
@@ -231,7 +232,7 @@ export default function DirecteurSetup() {
     if (user?.setup_completed) {
       window.location.href = "/director-dashboard";
     }
-  }, [user?.pleted]);
+  }, [user?.setup_completed]);
 
   return (
     <div className="min-h-screen bg-gray-50">
