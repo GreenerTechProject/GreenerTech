@@ -27,7 +27,7 @@ import { getGoogleMapsAPIKey } from "@/config/maps";
 import { ExtendedSerre, ExtendedGuideDeCulture } from "@shared/api";
 import { guideService } from "@/services/guideService";
 import { useToast } from "@/hooks/use-toast";
-import {serreService} from "@/services/serreService"
+import { serreService } from "@/services/serreService";
 
 interface Domain {
   id: string;
@@ -43,7 +43,7 @@ interface SerreCreationProps {
   onComplete: (domains: Domain[]) => void;
   onBack: () => void;
   selectedDomainId?: string;
-  setupMode?: boolean; // If true, don't call backend APIs, just store locally
+  setupMode?: boolean;
 }
 
 const GOOGLE_MAPS_API_KEY = getGoogleMapsAPIKey();
@@ -71,7 +71,7 @@ export default function SerreCreation({
 }: SerreCreationProps) {
   const [currentDomains, setCurrentDomains] = useState<Domain[]>(domains);
   const [activeDomainId, setActiveDomainId] = useState<string>(
-    selectedDomainId || domains[0]?.id || "",
+    selectedDomainId || domains[0]?.id || ""
   );
   const [isDrawing, setIsDrawing] = useState(false);
   const [pendingSerre, setPendingSerre] = useState<DrawnShape | null>(null);
@@ -86,6 +86,7 @@ export default function SerreCreation({
     nombre_de_plants: "",
     date_debut_saison: undefined as Date | undefined,
     date_fin_saison: undefined as Date | undefined,
+    notes: "",
   });
   const [guides, setGuides] = useState<ExtendedGuideDeCulture[]>([]);
   const [showCreateGuide, setShowCreateGuide] = useState(false);
@@ -95,12 +96,10 @@ export default function SerreCreation({
 
   const activeDomain = currentDomains.find((d) => d.id === activeDomainId);
 
-  // Load existing guides on component mount
   useEffect(() => {
     const loadGuides = async () => {
       try {
         const existingGuides = await guideService.getGuides();
-        // Convert backend guides to ExtendedGuideDeCulture format
         const convertedGuides: ExtendedGuideDeCulture[] = existingGuides.map(guide => ({
           id: guide.id,
           nom: guide.nom,
@@ -148,19 +147,17 @@ export default function SerreCreation({
       let newGuide: ExtendedGuideDeCulture;
 
       if (setupMode) {
-        // In setup mode, create guide locally without backend call
         newGuide = {
-          id: `temp-guide-${Date.now()}`, // Temporary ID for frontend use
+          id: `temp-guide-${Date.now()}`,
           nom: guideForm.nom,
           variete: guideForm.variete,
           rendement: parseFloat(guideForm.rendement),
           nombre_de_plants: parseInt(guideForm.nombre_de_plants),
           date_debut_saison: guideForm.date_debut_saison,
           date_fin_saison: guideForm.date_fin_saison,
-          id_serre: "", // Will be set when serre is created
+          id_serre: "",
         };
       } else {
-        // In standalone mode, call the backend to create the guide
         const guideRequest = {
           nom: guideForm.nom,
           variete: guideForm.variete,
@@ -168,7 +165,7 @@ export default function SerreCreation({
           nombre_de_plants: parseInt(guideForm.nombre_de_plants),
           date_debut_saison: guideForm.date_debut_saison.toISOString(),
           date_fin_saison: guideForm.date_fin_saison.toISOString(),
-          id_serre: "temp", // Temporary value, will be updated when serre is created
+          id_serre: "temp",
         };
 
         const response = await guideService.createGuide(guideRequest);
@@ -184,10 +181,9 @@ export default function SerreCreation({
           id_serre: "",
         };
       }
+
       setGuides((prev) => [...prev, newGuide]);
       setSerreForm((prev) => ({ ...prev, selectedGuideId: newGuide.id }));
-
-      // Reset guide form
       setGuideForm({
         nom: "",
         variete: "",
@@ -206,7 +202,7 @@ export default function SerreCreation({
       console.error("Error creating guide:", error);
       toast({
         title: "Erreur",
-        description: "Impossible de créer le guide de culture",
+        description: "Échec de la création du guide",
         variant: "destructive",
       });
     } finally {
@@ -214,19 +210,17 @@ export default function SerreCreation({
     }
   };
 
-
   const handleSaveSerre = async () => {
     if (
       !pendingSerre ||
       !serreForm.nom.trim() ||
       !serreForm.selectedGuideId ||
       !activeDomainId
-    )
+    ) {
       return;
+    }
 
-    const selectedGuide = guides.find(
-      (g) => g.id === serreForm.selectedGuideId,
-    );
+    const selectedGuide = guides.find((g) => g.id === serreForm.selectedGuideId);
     if (!selectedGuide) return;
 
     setIsSavingSerre(true);
@@ -235,9 +229,8 @@ export default function SerreCreation({
       let newSerre: ExtendedSerre;
 
       if (setupMode) {
-        // In setup mode, just create the serre object locally (no backend call)
         newSerre = {
-          id: `temp-serre-${Date.now()}`, // Temporary ID for frontend use
+          id: `temp-serre-${Date.now()}`,
           nom: serreForm.nom.trim(),
           surface: pendingSerre.area,
           domainId: activeDomainId,
@@ -247,7 +240,6 @@ export default function SerreCreation({
           guide: selectedGuide,
         };
       } else {
-        // In standalone mode, call the backend to create the serre
         const serreRequest = {
           nom: serreForm.nom.trim(),
           id_domaine: parseInt(activeDomainId),
@@ -276,15 +268,10 @@ export default function SerreCreation({
         prev.map((domain) =>
           domain.id === activeDomainId
             ? { ...domain, serres: [...domain.serres, newSerre] }
-            : domain,
-        ),
+            : domain
+        )
       );
-
-      // Reset form
-      setSerreForm({
-        nom: "",
-        selectedGuideId: "",
-      });
+      setSerreForm({ nom: "", selectedGuideId: "" });
       setPendingSerre(null);
 
       toast({
@@ -292,10 +279,10 @@ export default function SerreCreation({
         description: `La serre "${serreForm.nom}" a été créée avec succès`,
       });
     } catch (error) {
-      console.error("Error creating serre:", error);
+      console.error("Error saving serre:", error);
       toast({
         title: "Erreur",
-        description: "Impossible de créer la serre",
+        description: "Échec de la création de la serre",
         variant: "destructive",
       });
     } finally {
@@ -308,7 +295,7 @@ export default function SerreCreation({
       prev.map((domain) => ({
         ...domain,
         serres: domain.serres.filter((s) => s.id !== serreId),
-      })),
+      }))
     );
   };
 
@@ -329,7 +316,6 @@ export default function SerreCreation({
   const getAllShapes = (): DrawnShape[] => {
     const shapes: DrawnShape[] = [];
 
-    // Add current active domain
     if (activeDomain) {
       shapes.push({
         id: activeDomain.id,
@@ -341,7 +327,6 @@ export default function SerreCreation({
         color: "#B4CC5F",
       });
 
-      // Add all serres in this domain
       activeDomain.serres.forEach((serre) => {
         shapes.push({
           id: serre.id,
@@ -356,7 +341,6 @@ export default function SerreCreation({
       });
     }
 
-    // Add pending serre
     if (pendingSerre) {
       shapes.push(pendingSerre);
     }
@@ -366,7 +350,7 @@ export default function SerreCreation({
 
   const totalSerres = currentDomains.reduce(
     (total, domain) => total + domain.serres.length,
-    0,
+    0
   );
 
   return (
@@ -836,6 +820,7 @@ export default function SerreCreation({
             </Button>
           </div>
         </div>
+
       </div>
 
       {/* Right Panel - Map */}
