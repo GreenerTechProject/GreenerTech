@@ -20,7 +20,6 @@ import DirecteurSetup from "./pages/DirecteurSetup";
 import TechnicianDashboard from "./pages/TechnicianDashboard";
 import TechnicienSupDashboard from "./pages/TechnicienSupDashboard";
 import TechnicienRegistration from "./pages/TechnicienRegistration";
-import Interventions from "./pages/Interventions";
 import AlertsPage from "./pages/AlertsPage";
 import SurveillancePage from "./pages/SurveillancePage";
 import ReportsPage from "./pages/ReportsPage";
@@ -189,14 +188,7 @@ const App = () => (
             />
 
             {/* General Feature Routes */}
-            <Route
-              path="/interventions"
-              element={
-                <ProtectedRoute>
-                  <Interventions />
-                </ProtectedRoute>
-              }
-            />
+            
 
             <Route
               path="/alerts"

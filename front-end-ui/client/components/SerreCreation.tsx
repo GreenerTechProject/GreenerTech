@@ -203,10 +203,8 @@ export default function SerreCreation({
     if (!selectedGuide) return;
 
     setIsSavingSerre(true);
-
-
+    
       const newSerre: ExtendedSerre = {
-        id: createdSerre.id.toString(),
         nom: serreForm.nom.trim(),
         surface: pendingSerre.area,
         domainId: activeDomainId,

@@ -190,6 +190,7 @@ export default function DirecteurSetup() {
         title: "Configuration terminée !",
         description: `Votre entreprise, ${setupData.domains.length} domaine(s), ${totalSerres} serre(s) et ${totalTechnicians} technicien(s) ont été configurés avec succès.`,
       });
+       
     } catch (error) {
       console.error("Erreur lors de la configuration:", error);
       toast({
@@ -231,7 +232,7 @@ export default function DirecteurSetup() {
   // Show main directeur dashboard - redirect to new dashboard
   useEffect(() => {
     if (user?.setup_completed) {
-      window.location.href = "/director-dashboard";
+      window.location.href = "/directeur";
     }
   }, [user?.setup_completed]);
 

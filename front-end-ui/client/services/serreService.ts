@@ -118,6 +118,28 @@ export const serreService = {
       } as ApiError;
     }
   },
+
+  // Add this to your serreService.ts
+getAllSerres: async (): Promise<ExtendedSerre[]> => {
+    try {
+        const response = await axios.get<ExtendedSerre[]>(
+            `${API_BASE_URL}/serre`,
+            createAuthenticatedRequest()
+        );
+        
+        return response.data;
+    } catch (error: any) {
+        console.error("Error fetching all serres:", error);
+
+        const errorMessage = error.response?.data?.message || 
+            "Failed to fetch serres";
+        
+        throw {
+            message: errorMessage,
+            status: error.response?.status || 500
+        } as ApiError;
+    }
+},
 };
 
 export default serreService;
