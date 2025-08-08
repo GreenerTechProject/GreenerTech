@@ -914,6 +914,7 @@ COPY public.autorisations_serre (id, id_user, id_serre) FROM stdin;
 
 COPY public.bilans (id, nom, id_group_cor, id_serre) FROM stdin;
 1	Bilan1	3	1
+2	Bilan2	4	1
 \.
 
 
@@ -958,6 +959,9 @@ COPY public.group_cor (id, id_group_cor, point_x, point_y, ordre) FROM stdin;
 7	3	34.123	-6.789	1
 8	3	34.124	-6.79	2
 9	3	34.125	-6.791	3
+10	4	34.123	-6.789	1
+11	4	34.124	-6.79	2
+12	4	34.125	-6.791	3
 \.
 
 
