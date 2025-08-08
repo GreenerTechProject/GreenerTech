@@ -181,14 +181,14 @@ def delete_rapport(id):
 
 
 
-def generer_pdf_rapport(description, nom, id_serre, output_path, etats_bilan, alertes):
+def generer_pdf_rapport(description, nom, id_serre, output_path, etat_bilan, alertes):
     html = render_template(
         "rapport_template.html",
         description=description,
         user_name=nom,
         id_serre=id_serre,
         date=datetime.now().strftime('%Y-%m-%d %H:%M'),
-        etats_bilan=etats_bilan,
+        etat_bilan=etat_bilan,
         alertes=alertes
     )
     HTML(string=html).write_pdf(output_path)
