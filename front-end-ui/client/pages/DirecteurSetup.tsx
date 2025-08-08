@@ -5,56 +5,6 @@ import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
-interface CompanyInfo {
-  nom: string;
-  adresse: string;
-  cie: string;
-  status_juridique: string;
-  email: string;
-}
-
-interface Domain {
-  id: string;
-  name: string;
-  area: number;
-  center: google.maps.LatLng;
-  path: google.maps.LatLng[];
-  serres: Serre[];
-}
-
-interface Serre {
-  id: string;
-  nom: string;
-  surface: number;
-  domainId: string;
-  guideId: string;
-  position: google.maps.LatLng[];
-  center: google.maps.LatLng;
-  guide?: {
-    id: string;
-    nom: string;
-    variete: string;
-    rendement: number;
-    date_debut_saison: Date | string;
-    date_fin_saison: Date | string;
-    irrigationType?: string;
-    notes?: string;
-  };
-}
-
-interface Technician {
-  id: string;
-  fullName: string;
-  email: string;
-  role: "technicien_superieur" | "technicien";
-  assignedSerres: string[];
-}
-
-interface CompletedSetupData {
-  companyInfo: CompanyInfo;
-  domains: Domain[];
-  technicians: Technician[];
-}
 
 export default function DirecteurSetup() {
   const { user, logout } = useAuth();
