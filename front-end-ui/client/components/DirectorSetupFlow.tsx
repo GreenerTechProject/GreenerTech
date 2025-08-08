@@ -21,16 +21,35 @@ import { guideService } from "../services/guideService";
 
 // Import setup types
 import {
-  CompanyInfoSetup,
-  DomainSetup,
-  TechnicianSetup,
+  ExtendedSerre,
   ExtendedGuideDeCulture
 } from "@shared/api";
 
-// Using shared types
-type CompanyInfo = CompanyInfoSetup;
-type Domain = DomainSetup;
-type Technician = TechnicianSetup;
+// Local types for the setup flow
+interface CompanyInfo {
+  nom: string;
+  adresse: string;
+  cie: string;
+  status_juridique: string;
+  email: string;
+}
+
+interface Domain {
+  id: string;
+  name: string;
+  area: number;
+  center: google.maps.LatLng;
+  path: google.maps.LatLng[];
+  serres: ExtendedSerre[];
+}
+
+interface Technician {
+  id: string;
+  fullName: string;
+  email: string;
+  role: "technicien_superieur" | "technicien";
+  assignedSerres: string[];
+}
 
 type SetupStep = "company" | "domain" | "serre" | "technician" | "complete";
 
