@@ -19,6 +19,14 @@ import { serreService } from "../services/serreService";
 import { technicianService } from "../services/technicianService";
 import { guideService } from "../services/guideService";
 
+// Import setup types
+import {
+  CompanyInfoSetup,
+  DomainSetup,
+  TechnicianSetup,
+  ExtendedGuideDeCulture
+} from "@shared/api";
+
 interface CompanyInfo {
   nom: string;
   adresse: string;
