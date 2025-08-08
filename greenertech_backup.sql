@@ -196,6 +196,9 @@ ALTER SEQUENCE public.autorisations_serre_id_seq OWNED BY public.autorisations_s
 CREATE TABLE public.bilans (
     id integer NOT NULL,
     nom character varying NOT NULL,
+    surface integer NOT NULL,
+    center_lat double precision NOT NULL,
+    center_lng double precision NOT NULL,
     id_group_cor integer NOT NULL,
     id_serre integer NOT NULL
 );
@@ -626,6 +629,9 @@ ALTER SEQUENCE public.robots_id_seq OWNED BY public.robots.id;
 CREATE TABLE public.serres (
     id integer NOT NULL,
     nom character varying NOT NULL,
+    surface integer NOT NULL,
+    center_lat double precision NOT NULL,
+    center_lng double precision NOT NULL,
     id_group_cor integer NOT NULL,
     id_domaine integer NOT NULL
 );
