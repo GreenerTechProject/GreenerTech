@@ -399,10 +399,6 @@ export default function DirectorSetupFlow({ onComplete }: DirectorSetupFlowProps
           <DomainCreation
             onContinue={handleDomainComplete}
             onBack={() => setCurrentStep("company")}
-            createDomain={async (domainData) => {
-              // This is handled in handleDomainComplete
-              return { id: "temp" };
-            }}
           />
         )}
 
