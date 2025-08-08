@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Date, ForeignKey
+from sqlalchemy import Column, Integer, String, Float, Date, ForeignKey
 from sqlalchemy.orm import relationship
 from database.config import db
 
@@ -8,6 +8,9 @@ class Serre(db.Model):
     id = Column(Integer, primary_key=True)
     nom = Column(String, nullable=False)
     id_group_cor = Column(Integer, nullable=False)
+    surface = Column(Float, nullable=True)  # corresponds to 'area'
+    center_lat = Column(Float, nullable=True)
+    center_lng = Column(Float, nullable=True)
     id_domaine = Column(Integer, ForeignKey("domaines.id"), nullable=False)
 
     group_coords = relationship(

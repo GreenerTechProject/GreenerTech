@@ -32,7 +32,7 @@ def create_bilan(current_user):
     id_group_cor = last_id_group_cor + 1
 
 
-    gps_points = data.get('position', [])
+    gps_points = data.get('path', [])
     if not gps_points:
         return jsonify({"message": "Veuillez fournir une liste de points GPS"}), 400
 
@@ -40,15 +40,17 @@ def create_bilan(current_user):
     for point in gps_points:
         gc = GroupCor(
             id_group_cor=id_group_cor,
-            point_x=point['latitude'],
-            point_y=point['longitude'],
+            point_x=point['lat'],
+            point_y=point['lng'],
             ordre=point.get('ordre', 0)
         )
         db.session.add(gc)
 
     # Créer le bilan
     bilan = Bilan(
-        nom=data['nom'],
+        nom=data['name'],
+        surface = data.get('area'),
+        center = data.get('center'),
         id_group_cor=id_group_cor,
         id_serre=serre.id,
         #id_entreprise=entreprise.id
@@ -92,7 +94,13 @@ def update_bilan(current_user, id):
     #    return jsonify({"message": "Non autorisé"}), 403
 
     data = request.get_json()
-    bilan.nom = data.get('nom', bilan.nom)
+    bilan.nom = data.get('name', bilan.nom)
+    serre.surface = data.get('area', serre.surface)
+
+    center = data.get('center')
+    if center:
+        bilan.center_lat = center.get('lat', bilan.center_lat)
+        bilan.center_lng = center.get('lng', bilan.center_lng)
 
     gps_points = data.get('gps_points')
     if gps_points:

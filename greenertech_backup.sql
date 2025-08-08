@@ -912,9 +912,9 @@ COPY public.autorisations_serre (id, id_user, id_serre) FROM stdin;
 -- Data for Name: bilans; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.bilans (id, nom, id_group_cor, id_serre) FROM stdin;
-1	Bilan1	3	1
-2	Bilan2	4	1
+COPY public.bilans (id, nom, surface, center_lat, center_lng, id_group_cor, id_serre) FROM stdin;
+1	Bilan1	4	34.123	-6.789	3	1
+2	Bilan2	4	34.123	-6.789	4	1
 \.
 
 
@@ -1024,8 +1024,8 @@ COPY public.robots (id, nom, referance) FROM stdin;
 -- Data for Name: serres; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.serres (id, nom, id_group_cor, id_domaine) FROM stdin;
-1	Serre Central	2	1
+COPY public.serres (id, nom, surface, center_lat, center_lng, id_group_cor, id_domaine) FROM stdin;
+1	Serre Central	4	34.123	-6.789	2	1
 \.
 
 

@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, ForeignKey
+from sqlalchemy import Column, Integer, String, Float, ForeignKey
 from sqlalchemy.orm import relationship
 from database.config import db
 
@@ -7,7 +7,10 @@ class Bilan(db.Model):
 
     id = Column(Integer, primary_key=True)
     nom = Column(String, nullable=False)
-    id_group_cor = Column(Integer, nullable=False) 
+    id_group_cor = Column(Integer, nullable=False)
+    surface = Column(Float, nullable=True)  # corresponds to 'area'
+    center_lat = Column(Float, nullable=True)
+    center_lng = Column(Float, nullable=True)
     #id_entreprise = Column(Integer, ForeignKey("entreprises.id"), nullable=False)
     id_serre = Column(Integer, ForeignKey("serres.id"), nullable=False)
 
