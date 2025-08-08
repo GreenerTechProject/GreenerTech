@@ -82,6 +82,7 @@ type WizardStep = "company" | "domains" | "serres" | "technicians" | "overview";
 
 export default function CompanySetupWizard({
   onComplete,
+  showStepsOnly = "all",
 }: CompanySetupWizardProps) {
   const [currentStep, setCurrentStep] = useState<WizardStep>("company");
   const [isSubmitting, setIsSubmitting] = useState(false);
