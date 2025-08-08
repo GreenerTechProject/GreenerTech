@@ -33,12 +33,6 @@ interface DomainCreationProps {
   onContinue: (domains: Domain[]) => void;
   onBack?: () => void;
   initialDomains?: Domain[];
-   createDomain: (domainData: {
-    name: string;
-    area: number;
-    center : number;
-    path: Array<{ lat: number; lng: number }>;
-  }) => Promise<{ id: string }>; // Add this prop
 }
 
 const GOOGLE_MAPS_API_KEY = getGoogleMapsAPIKey();
