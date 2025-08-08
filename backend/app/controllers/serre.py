@@ -12,7 +12,6 @@ from app.models.guide_culture import GuideCulture
 
 @token_required
 @role_required("directeur" , "technicien_superieur")
-@access_domaine_required
 def create_serre(current_user):
     data = request.get_json()
 
@@ -27,7 +26,7 @@ def create_serre(current_user):
     last_id_group_cor = db.session.query(func.max(GroupCor.id_group_cor)).scalar() or 0
     id_group_cor = last_id_group_cor + 1
 
-    gps_points = data.get('path', [])
+    gps_points = data.get('position', [])
     if not gps_points:
         return jsonify({"message": "Points GPS requis"}), 400
 
@@ -41,9 +40,10 @@ def create_serre(current_user):
         db.session.add(gc)
 
     serre = Serre(
-        nom=data['name'],
-        surface = data.get('area'),
-        center = data.get('center'),
+        nom=data['nom'],
+        surface = data.get('surface'),
+        center_lat=data['center']['lat'] if data.get('center') else None,
+        center_lng=data['center']['lng'] if data.get('center') else None,
         id_group_cor=id_group_cor,
         id_domaine=domaine.id
     )
