@@ -103,7 +103,19 @@ export default function CompanySetupWizard({
 
   const handleCompanyInfoSubmit = async (data: CompanyInfoForm) => {
     setCompanyInfo(data);
-    setCurrentStep("domains");
+
+    // If showing only company step, complete immediately with company data
+    if (showStepsOnly === "company") {
+      const completedData: LocalCompletedSetupData = {
+        companyInfo: data,
+        domains: [],
+        technicians: [],
+      };
+      await onComplete(completedData);
+    } else {
+      // Continue to domains step in normal flow
+      setCurrentStep("domains");
+    }
   };
 
   const handleDomainsComplete = (domainsData: Domain[]) => {
