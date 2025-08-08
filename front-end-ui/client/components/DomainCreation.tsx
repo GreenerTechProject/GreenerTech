@@ -21,25 +21,24 @@ interface Domain {
 
 interface Serre {
   id: string;
-  name: string;
-  variety: string;
-  yield: number;
-  area: number;
+  nom: string;
+  surface: number;
   domainId: string;
-  path: google.maps.LatLng[];
+  guideId : string;
+  position: google.maps.LatLng[];
   center: google.maps.LatLng;
-  additionalData?: {
-    plantingDate?: string;
-    harvestDate?: string;
-    irrigationType?: string;
-    notes?: string;
-  };
 }
 
 interface DomainCreationProps {
   onContinue: (domains: Domain[]) => void;
   onBack?: () => void;
   initialDomains?: Domain[];
+   createDomain: (domainData: {
+    name: string;
+    area: number;
+    center : number;
+    path: Array<{ lat: number; lng: number }>;
+  }) => Promise<{ id: string }>; // Add this prop
 }
 
 const GOOGLE_MAPS_API_KEY = getGoogleMapsAPIKey();
@@ -64,7 +63,6 @@ export default function DomainCreation({
     if (!pendingShape || !newDomainName.trim()) return;
 
     const newDomain: Domain = {
-      id: pendingShape.id,
       name: newDomainName.trim(),
       area: pendingShape.area,
       center: pendingShape.center,
@@ -102,7 +100,6 @@ export default function DomainCreation({
     // Add existing domains
     domains.forEach((domain) => {
       shapes.push({
-        id: domain.id,
         type: "domain",
         name: domain.name,
         path: domain.path,
@@ -114,11 +111,10 @@ export default function DomainCreation({
       // Add serres for this domain
       domain.serres.forEach((serre) => {
         shapes.push({
-          id: serre.id,
           type: "serre",
-          name: serre.name,
-          path: serre.path,
-          area: serre.area,
+          name: serre.nom,
+          path: serre.position,
+          area: serre.surface,
           center: serre.center,
           color: "#FF6B6B",
           domainId: domain.id,

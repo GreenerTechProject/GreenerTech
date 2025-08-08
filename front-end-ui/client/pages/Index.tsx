@@ -89,10 +89,9 @@ export default function Index() {
                 </div>
                 <div className="ml-3">
                   <h3 className="text-sm font-medium text-red-800 mb-1">
-                    {error.includes("validé par un directeur") ? "Compte en attente de validation" : "Erreur de connexion"}
+                    {error.includes("director") ? "Compte en attente de validation" : "Erreur de connexion"}
                   </h3>
-                  <p className="text-sm">{error}</p>
-                  {error.includes("validé par un directeur") && (
+                  {error.includes("director") && (
                     <p className="text-xs text-red-600 mt-2">
                       💡 Contactez votre directeur pour obtenir l'accès à votre compte.
                     </p>

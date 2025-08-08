@@ -16,7 +16,7 @@ import AffiliationRequest from "./pages/AffiliationRequest";
 import EmailVerification from "./pages/EmailVerification";
 import VerifyEmail from "./pages/VerifyEmail";
 import Dashboard from "./pages/Dashboard";
-import DirecteurDashboard from "./pages/DirecteurDashboard";
+import DirecteurSetup from "./pages/DirecteurSetup";
 import TechnicianDashboard from "./pages/TechnicianDashboard";
 import TechnicienSupDashboard from "./pages/TechnicienSupDashboard";
 import TechnicienRegistration from "./pages/TechnicienRegistration";
@@ -29,6 +29,15 @@ import Surveillance from "./pages/Surveillance";
 import Profile from "./pages/Profile";
 import ProfileEdit from "./pages/ProfileEdit";
 import NotFound from "./pages/NotFound";
+
+// New Director Pages
+import NewDirectorDashboard from "./pages/NewDirectorDashboard";
+import TechnicianManagement from "./pages/TechnicianManagement";
+import DirectorAffiliationManagement from "./pages/DirectorAffiliationManagement";
+import DirectorInterventionManagement from "./pages/DirectorInterventionManagement";
+import DirectorAlertManagement from "./pages/DirectorAlertManagement";
+import DirectorReportManagement from "./pages/DirectorReportManagement";
+
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -46,11 +55,9 @@ const App = () => (
             <Route path="/affiliation-request" element={<AffiliationRequest />} />
             <Route path="/email-verification" element={<EmailVerification />} />
             <Route path="/verify-email" element={<VerifyEmail />} />
-            <Route
-              path="/technicien-registration"
-              element={<TechnicienRegistration />}
-            />
-            {/* Protected Routes */}
+            <Route path="/technicien-registration" element={<TechnicienRegistration />} />
+
+            {/* Main Dashboard Routes */}
             <Route
               path="/dashboard"
               element={
@@ -59,14 +66,92 @@ const App = () => (
                 </ProtectedRoute>
               }
             />
+            
+            {/* Legacy Director Dashboard (for setup) */}
+             <Route
+              path="/setup"
+              element={
+                <ProtectedRoute>
+                  <DirecteurSetup />
+                </ProtectedRoute>
+              }
+            /> 
+
+            {/* New Director Dashboard with Sidebar */}
             <Route
               path="/directeur"
               element={
                 <ProtectedRoute>
-                  <DirecteurDashboard />
+                  <NewDirectorDashboard />
                 </ProtectedRoute>
               }
             />
+
+            {/* Director Management Routes */}
+            <Route
+              path="/director/technicians"
+              element={
+                <ProtectedRoute>
+                  <TechnicianManagement />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/director/affiliations"
+              element={
+                <ProtectedRoute>
+                  <DirectorAffiliationManagement />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/director/interventions"
+              element={
+                <ProtectedRoute>
+                  <DirectorInterventionManagement />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/director/alerts"
+              element={
+                <ProtectedRoute>
+                  <DirectorAlertManagement />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/director/reports"
+              element={
+                <ProtectedRoute>
+                  <DirectorReportManagement />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/director/analytics"
+              element={
+                <ProtectedRoute>
+                  <NewDirectorDashboard />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/director/locations"
+              element={
+                <ProtectedRoute>
+                  <NewDirectorDashboard />
+                </ProtectedRoute>
+              }
+            />
+
+            {/* Technician Routes */}
             <Route
               path="/technician"
               element={
@@ -75,11 +160,40 @@ const App = () => (
                 </ProtectedRoute>
               }
             />
+
             <Route
               path="/technician-dashboard"
               element={
                 <ProtectedRoute>
                   <TechnicianDashboard />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/technicien-sup"
+              element={
+                <ProtectedRoute>
+                  <TechnicienSupDashboard />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/technicien-sup-dashboard"
+              element={
+                <ProtectedRoute>
+                  <TechnicienSupDashboard />
+                </ProtectedRoute>
+              }
+            />
+
+            {/* General Feature Routes */}
+            <Route
+              path="/interventions"
+              element={
+                <ProtectedRoute>
+                  <Interventions />
                 </ProtectedRoute>
               }
             />
@@ -92,72 +206,61 @@ const App = () => (
                 </ProtectedRoute>
               }
             />
-        
 
-            {/* Protected Routes */}
-            <Route path="/dashboard" element={
-              <ProtectedRoute>
-                <Dashboard />
-              </ProtectedRoute>
-            } />
+            <Route
+              path="/alerts-view"
+              element={
+                <ProtectedRoute>
+                  <Alerts />
+                </ProtectedRoute>
+              }
+            />
 
+            <Route
+              path="/surveillance"
+              element={
+                <ProtectedRoute>
+                  <SurveillancePage />
+                </ProtectedRoute>
+              }
+            />
 
-            <Route path="/technicien-sup" element={
-              <ProtectedRoute>
-                <TechnicienSupDashboard />
-              </ProtectedRoute>
-            } />
+            <Route
+              path="/surveillance-view"
+              element={
+                <ProtectedRoute>
+                  <Surveillance />
+                </ProtectedRoute>
+              }
+            />
 
-            <Route path="/technicien-sup-dashboard" element={
-              <ProtectedRoute>
-                <TechnicienSupDashboard />
-              </ProtectedRoute>
-            } />
-
-        
-            <Route path="/surveillance" element={
-              <ProtectedRoute>
-                <SurveillancePage />
-              </ProtectedRoute>
-            } />
-
-            <Route path="/reports" element={
-              <ProtectedRoute>
-                <ReportsPage />
-              </ProtectedRoute>
-            } />
-
-            {/* Additional Protected Routes */}
-            <Route path="/interventions" element={
-              <ProtectedRoute>
-                <Interventions />
-              </ProtectedRoute>
-            } />
-
-            <Route path="/alerts-view" element={
-              <ProtectedRoute>
-                <Alerts />
-              </ProtectedRoute>
-            } />
-
-            <Route path="/surveillance-view" element={
-              <ProtectedRoute>
-                <Surveillance />
-              </ProtectedRoute>
-            } />
+            <Route
+              path="/reports"
+              element={
+                <ProtectedRoute>
+                  <ReportsPage />
+                </ProtectedRoute>
+              }
+            />
 
             {/* Profile Routes */}
-            <Route path="/profile" element={
-              <ProtectedRoute>
-                <Profile />
-              </ProtectedRoute>
-            } />
+            <Route
+              path="/profile"
+              element={
+                <ProtectedRoute>
+                  <Profile />
+                </ProtectedRoute>
+              }
+            />
 
-            <Route path="/profile/edit" element={
-              <ProtectedRoute>
-                <ProfileEdit />
-              </ProtectedRoute>
-            } />
+            <Route
+              path="/profile/edit"
+              element={
+                <ProtectedRoute>
+                  <ProfileEdit />
+                </ProtectedRoute>
+              }
+            />
 
             {/* Redirect root to dashboard */}
             <Route path="/" element={<Navigate to="/dashboard" replace />} />

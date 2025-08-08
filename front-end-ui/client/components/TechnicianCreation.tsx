@@ -38,12 +38,12 @@ interface Domain {
 
 interface Serre {
   id: string;
-  name: string;
+  nom: string;
   variety: string;
   yield: number;
-  area: number;
+  surface: number;
   domainId: string;
-  path: google.maps.LatLng[];
+  position: google.maps.LatLng[];
   center: google.maps.LatLng;
   additionalData?: {
     plantingDate?: Date;

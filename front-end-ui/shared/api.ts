@@ -16,10 +16,13 @@ export interface DemoResponse {
  */
 export interface GuideDeCulture {
   id: string;
-  variety: string; // variété
-  yield: number; // rendement
-  plantingDate: string; // date de début de saison
-  harvestDate: string; // date de fin de saison
+  nom: string; // nom du guide
+  rendement: number; // rendement en kg/m²
+  variete: string; // variété de culture
+  date_debut_saison: string; // date de début de saison
+  date_fin_saison: string; // date de fin de saison
+  nombre_de_plants: number; // nombre de plants
+  id_serre: string; // foreign key linking to Serre
   irrigationType?: string; // type d'irrigation
   notes?: string; // notes additionnelles
 }
@@ -29,12 +32,31 @@ export interface GuideDeCulture {
  */
 export interface Serre {
   id: string;
-  name: string;
-  area: number;
-  path: { lat: number; lng: number }[];
-  center: { lat: number; lng: number };
+  nom: string;
+  surface: number;
+  position: google.maps.LatLng[];
+  center: google.maps.LatLng;
   guideId: string; // foreign key linking to GuideDeCulture
   domainId: string;
+}
+
+/**
+ * Extended Serre Interface with guide information included
+ */
+export interface ExtendedSerre {
+  id: string;
+  nom: string;
+  surface: number;
+  domainId: string;
+  guideId: string;
+  position: google.maps.LatLng[];
+  center: google.maps.LatLng;
+  guide?: ExtendedGuideDeCulture;
+}
+
+export interface ExtendedGuideDeCulture extends Omit<GuideDeCulture, "date_debut_saison" | "date_fin_saison"> {
+  date_debut_saison: Date | string;
+  date_fin_saison: Date | string;
 }
 
 /**

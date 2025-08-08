@@ -44,9 +44,9 @@ import { Billon } from "@shared/api";
 
 interface Serre {
   id: string;
-  name: string;
+  nom: string;
   variety: string;
-  area: number;
+  surface: number;
   location: {
     lat: number;
     lng: number;
@@ -204,7 +204,7 @@ export default function TechnicianDashboard() {
       const marker = new google.maps.Marker({
         position: serre.location,
         map: newMap,
-        title: serre.name,
+        title: serre.nom,
         icon: {
           path: google.maps.SymbolPath.CIRCLE,
           scale: 8,
@@ -453,14 +453,14 @@ export default function TechnicianDashboard() {
                             Créer un nouveau billon
                           </span>
                           <span className="text-xs text-gray-500">
-                            dans {selectedSerre.name}
+                            dans {selectedSerre.nom}
                           </span>
                         </div>
                       </Button>
                     ) : (
                       <div className="space-y-3">
                         <h4 className="font-medium text-gray-900">
-                          Nouveau billon - {selectedSerre.name}
+                          Nouveau billon - {selectedSerre.nom}
                         </h4>
 
                         <div>
@@ -628,7 +628,7 @@ export default function TechnicianDashboard() {
                       <div className="flex items-start justify-between mb-3">
                         <div>
                           <h4 className="font-semibold text-gray-900">
-                            {serre.name}
+                            {serre.nom}
                           </h4>
                           <p className="text-sm text-gray-600">
                             {serre.variety}
@@ -650,7 +650,7 @@ export default function TechnicianDashboard() {
                       </div>
 
                       <div className="flex items-center justify-between text-sm text-gray-500">
-                        <span>{serre.area} m²</span>
+                        <span>{serre.surface} m²</span>
                         <span>{serre.billons.length} billons</span>
                       </div>
 
@@ -686,7 +686,7 @@ export default function TechnicianDashboard() {
                   <CardHeader className="pb-3">
                     <CardTitle className="text-lg text-[#B4CC5F] flex items-center space-x-2">
                       <Layers className="h-5 w-5" />
-                      <span>{selectedSerre.name} - Détails</span>
+                      <span>{selectedSerre.nom} - Détails</span>
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
@@ -698,7 +698,7 @@ export default function TechnicianDashboard() {
                         </div>
                         <div>
                           <span className="text-gray-600">Surface:</span>
-                          <p className="font-medium">{selectedSerre.area} m²</p>
+                          <p className="font-medium">{selectedSerre.surface} m²</p>
                         </div>
                       </div>
 
@@ -890,14 +890,14 @@ export default function TechnicianDashboard() {
                   )}
                 />
                 <h4 className="font-semibold text-gray-900">
-                  {selectedSerre.name}
+                  {selectedSerre.nom}
                 </h4>
               </div>
               <p className="text-sm text-gray-600 mb-1">
                 {selectedSerre.variety}
               </p>
               <p className="text-xs text-gray-500">
-                {selectedSerre.area} m² • {selectedSerre.billons.length} billons
+                {selectedSerre.surface} m² • {selectedSerre.billons.length} billons
               </p>
             </div>
           )}
