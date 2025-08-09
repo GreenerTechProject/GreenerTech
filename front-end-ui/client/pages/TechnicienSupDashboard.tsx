@@ -201,7 +201,7 @@ const mockSerres: Serre[] = [
 export default function TechnicienSupDashboard(): JSX.Element {
   const { user, logout } = useAuth();
   const { toast } = useToast();
-  const [serres, setSerres] = useState<Serre[]>(mockSerres);
+  const [serres, setSerres] = useState<Serre[]>([]);
   const [selectedSerre, setSelectedSerre] = useState<Serre | null>(null);
   const [isCreatingNew, setIsCreatingNew] = useState(false);
   const [newSerreName, setNewSerreName] = useState("");
@@ -387,53 +387,87 @@ export default function TechnicienSupDashboard(): JSX.Element {
     { id: "tech4", name: "Sophie Durand", email: "sophie.durand@example.com" },
   ];
 
-  // Initialize map
+  // Initialize map (wait until Google Maps script is loaded)
   useEffect(() => {
-    if (!mapRef.current || map) return;
+    if (map || !mapRef.current) return;
 
-    const newMap = new google.maps.Map(mapRef.current, {
-      center: { lat: 46.7051, lng: 1.7291 },
-      zoom: 13,
-      mapTypeId: google.maps.MapTypeId.SATELLITE,
-      styles: [
-        {
-          featureType: "poi",
-          elementType: "labels",
-          stylers: [{ visibility: "off" }],
-        },
-      ],
-    });
-
-    setMap(newMap);
-
-    // Add markers for all serres
-    serres.forEach((serre) => {
-      const title = serre.nom || "Serre";
-      const marker = new google.maps.Marker({
-        position: serre.location,
-        map: newMap,
-        title,
-        icon: {
-          path: google.maps.SymbolPath.CIRCLE,
-          scale: 8,
-          fillColor:
-            serre.status === "active"
-              ? "#B4CC5F"
-              : serre.status === "maintenance"
-                ? "#f59e0b"
-                : "#ef4444",
-          fillOpacity: 1,
-          strokeWeight: 2,
-          strokeColor: "#ffffff",
-        },
+    const tryInit = () => {
+      // @ts-ignore
+      if (typeof google === 'undefined' || !google.maps) {
+        return false;
+      }
+      // @ts-ignore
+      const newMap = new google.maps.Map(mapRef.current!, {
+        center: { lat: 46.7051, lng: 1.7291 },
+        // @ts-ignore
+        mapTypeId: google.maps.MapTypeId.SATELLITE,
+        zoom: 13,
+        styles: [
+          { featureType: "poi", elementType: "labels", stylers: [{ visibility: "off" }] },
+        ],
       });
+      setMap(newMap);
+      // eslint-disable-next-line no-console
+      console.debug('[TechSup] Map initialized');
+      return true;
+    };
 
-      marker.addListener("click", () => {
-        setSelectedSerre(serre);
-        smoothZoomToLocation(newMap, serre.location, 16);
-      });
-    });
-  }, [mapRef.current]);
+    if (!tryInit()) {
+      const id = window.setInterval(() => {
+        if (tryInit()) {
+          window.clearInterval(id);
+        }
+      }, 150);
+      return () => window.clearInterval(id);
+    }
+  }, [map, mapRef.current]);
+
+  // Load only serres assigned to the logged-in technicien_sup and draw polygons
+  useEffect(() => {
+    if (!map || !user?.id) return;
+    // eslint-disable-next-line no-console
+    console.debug('[TechSup] Loading assigned serres for user', user.id);
+    (async () => {
+      try {
+        const userIdNum = typeof user.id === "string" ? parseInt(user.id, 10) : (user.id as unknown as number);
+        const list: any[] = await serreService.getSerresAssignedToUser(userIdNum);
+        // eslint-disable-next-line no-console
+        console.debug('[TechSup] Assigned serres count', list.length);
+        const uiSerres: Serre[] = [];
+        list.forEach((s: any) => {
+          const points = (s.position || []).map((p: any) => ({ lat: p.lat, lng: p.lng }));
+          if (points.length === 0) return;
+          const polygon = new google.maps.Polygon({
+            paths: points,
+            strokeColor: "#FF6B6B",
+            strokeOpacity: 1,
+            strokeWeight: 2,
+            fillColor: "#FF6B6B",
+            fillOpacity: 0.25,
+          });
+          polygon.setMap(map);
+          const center = points[0];
+          uiSerres.push({
+            id: String(s.id),
+            nom: s.nom,
+            variety: "",
+            surface: 0,
+            location: center,
+            status: "inactive",
+            zones: [],
+            lastUpdate: new Date(),
+          });
+        });
+        setSerres(uiSerres);
+        if (uiSerres[0]) {
+          smoothZoomToLocation(map, uiSerres[0].location, 15);
+        }
+      } catch (e) {
+        // eslint-disable-next-line no-console
+        console.error('[TechSup] Failed to load assigned serres', e);
+      }
+    })();
+  }, [map, user?.id]);
 
   // Setup DrawingManager and load guides
   useEffect(() => {
@@ -757,9 +791,6 @@ export default function TechnicienSupDashboard(): JSX.Element {
           <div className="w-full lg:w-96 bg-white shadow-lg max-h-[50vh] lg:max-h-full">
             <ScrollArea className="h-full">
               <div className="p-6 space-y-6">
-              {/* Create New Serre Section */}
-                {renderCreateSerreCard()}
-
               {/* Serres List */}
               <div className="space-y-3">
                 <h3 className="text-lg font-semibold text-gray-900 flex items-center space-x-2">

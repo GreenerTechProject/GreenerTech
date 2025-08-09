@@ -81,6 +81,41 @@ export const serreService = {
     }
   },
 
+  // Get serres assigned to a given user (by autorisations)
+  getSerresAssignedToUser: async (userId: number): Promise<any[]> => {
+    try {
+      // Fetch autorisations for this user
+      const authzResp = await axios.get(
+        `${API_BASE_URL}/autorisation_serre`,
+        {
+          ...createAuthenticatedRequest(),
+          params: { id_user: userId },
+        },
+      );
+
+      const autorisations = authzResp.data?.data || [];
+      const serreIds: number[] = autorisations.map((a: any) => a.id_serre);
+      if (serreIds.length === 0) return [];
+
+      // Fetch details for each serre (position needed to draw polygon)
+      const results: any[] = [];
+      for (const id of serreIds) {
+        try {
+          const r = await axios.get(`${API_BASE_URL}/serre/${id}`, createAuthenticatedRequest());
+          results.push(r.data);
+        } catch (_) {}
+      }
+      return results;
+    } catch (error: any) {
+      const errorMessage = error.response?.data?.message ||
+        "Erreur lors de la récupération des serres assignées";
+      throw {
+        message: errorMessage,
+        status: error.response?.status || 500,
+      } as ApiError;
+    }
+  },
+
   // Create multiple serres (optional - keep if you need bulk creation)
   createSerres: async (
     serres: CreateSerreRequest[],
