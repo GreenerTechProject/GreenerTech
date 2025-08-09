@@ -166,7 +166,10 @@ def create_technicien(current_user):
     db.session.add(new_user)
     db.session.commit()
 
-    return jsonify({"message": "Technicien préinscrit. En attente de complétion de compte."}), 201
+    return jsonify({
+        "message": "Technicien préinscrit. En attente de complétion de compte.",
+        "id": new_user.id
+    }), 201
 
 # # === CHECK EMAIL ===
 # @token_unrequired

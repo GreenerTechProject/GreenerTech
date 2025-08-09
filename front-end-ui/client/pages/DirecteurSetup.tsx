@@ -128,6 +128,7 @@ export default function DirecteurSetup() {
 
       // Step 4: Create serres and guides in order
       const allSerres: any[] = [];
+      const serreIdMap = new Map<string, number>(); // map temp UI serre id -> backend serre id
 
       for (let i = 0; i < setupData.domains.length; i++) {
         const domain = setupData.domains[i];
@@ -159,6 +160,11 @@ export default function DirecteurSetup() {
           console.log("Creating serre:", serreRequest);
           const createdSerre = await serreService.createSerre(serreRequest);
           allSerres.push(createdSerre);
+          // record mapping from temp id to backend id
+          const backendSerreId = (createdSerre.id || createdSerre.serreId) as number;
+          if (backendSerreId) {
+            serreIdMap.set(serre.id, parseInt(backendSerreId.toString(), 10));
+          }
 
           // Create guide for this serre if it has one
           if (serre.guide && guideDataMap.has(serre.guideId)) {
@@ -193,6 +199,7 @@ export default function DirecteurSetup() {
       }
 
       // Step 5: Create technicians
+      let createdTechnicians: { id: number; email: string; role: Technician["role"]; assignedSerres: string[] }[] = [];
       if (setupData.technicians.length > 0) {
         const technicianRequests = setupData.technicians.map((technician) => ({
           fullName: technician.fullName,
@@ -203,7 +210,31 @@ export default function DirecteurSetup() {
         }));
 
         console.log("Creating technicians:", technicianRequests);
-        await technicianService.createTechnicians(technicianRequests);
+        const responses = await technicianService.createTechnicians(technicianRequests);
+        createdTechnicians = responses.map((res, idx) => ({
+          id: res.id,
+          email: technicianRequests[idx].email,
+          role: technicianRequests[idx].role,
+          assignedSerres: technicianRequests[idx].assignedSerres,
+        }));
+      }
+
+      // Step 6: Create autorisations_serre for each technician assigned to serres
+      if (createdTechnicians.length > 0) {
+        for (const tech of createdTechnicians) {
+          for (const assignedTempId of tech.assignedSerres) {
+            const targetSerreId = serreIdMap.get(assignedTempId) ?? parseInt(assignedTempId, 10);
+            if (!targetSerreId || Number.isNaN(targetSerreId)) continue;
+            try {
+              await serreService.createAutorisationSerre({
+                id_user: tech.id,
+                id_serre: targetSerreId,
+              });
+            } catch (e) {
+              console.warn("Failed to create autorisation_serre for", tech.email, assignedTempId, e);
+            }
+          }
+        }
       }
 
       // Update user context with setup_completed = true

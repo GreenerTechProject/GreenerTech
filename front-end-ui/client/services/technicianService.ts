@@ -18,9 +18,8 @@ export interface CreateTechnicianRequest {
 }
 
 export interface CreateTechnicianResponse {
-  success: boolean;
   message: string;
-  technicianId: string;
+  id: number;
 }
 
 export interface ApiError {
@@ -52,7 +51,7 @@ export const technicianService = {
 
       for (const technician of technicians) {
         console.log("Creating technician:", technician);
-        const response = await axios.post<CreateTechnicianResponse>(
+        const response = await axios.post<any>(
           `${API_BASE_URL}/technicien`,
           {
             email: technician.email,
@@ -63,7 +62,11 @@ export const technicianService = {
           createAuthenticatedRequest(),
         );
         console.log("Technician creation response:", response.data);
-        results.push(response.data);
+        // Normalize backend response { message, id }
+        results.push({
+          message: response.data?.message ?? "",
+          id: response.data?.id ?? 0,
+        });
       }
 
       return results;

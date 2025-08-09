@@ -4,7 +4,7 @@ import { useAuth } from "../contexts/AuthContext";
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
-  requiredRole?: string;
+  requiredRole?: string | string[];
   redirectTo?: string;
 }
 
@@ -30,26 +30,28 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     return <Navigate to={redirectTo} state={{ from: location }} replace />;
   }
 
+  // Helper to compute the default home path for a user's role
+  const getHomePathForRole = (): string => {
+    if (user?.role === "directeur") {
+      return user?.setup_completed ? "/directeur" : "/setup";
+    }
+    if (user?.role === "technicien") {
+      return "/technician";
+    }
+    if (user?.role === "technicien_superieur") {
+      return "/technicien-sup";
+    }
+    return "/dashboard";
+  };
+
   // Check role-based access if required
-  if (requiredRole && user?.role !== requiredRole) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-gray-900 mb-4">
-            Access Denied
-          </h1>
-          <p className="text-gray-600 mb-4">
-            You don't have permission to access this page.
-          </p>
-          <button
-            onClick={() => window.history.back()}
-            className="px-4 py-2 bg-[#B4CC5F] text-white rounded-md hover:bg-[#A3C247] transition-colors"
-          >
-            Go Back
-          </button>
-        </div>
-      </div>
-    );
+  if (requiredRole) {
+    const allowed = Array.isArray(requiredRole)
+      ? requiredRole.includes(user?.role || "")
+      : user?.role === requiredRole;
+    if (!allowed) {
+      return <Navigate to={getHomePathForRole()} replace />;
+    }
   }
 
   return <>{children}</>;

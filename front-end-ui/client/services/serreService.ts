@@ -35,6 +35,12 @@ export interface ApiError {
   status: number;
 }
 
+export interface AutorisationSerre {
+  id: number;
+  id_user: number;
+  id_serre: number;
+}
+
 // Configure axios base URL
 const API_BASE_URL = `${window.location.protocol}//${window.location.hostname}:5000/api`;
 
@@ -155,6 +161,29 @@ getAllSerres: async (): Promise<ExtendedSerre[]> => {
         } as ApiError;
     }
 },
+  
+  // Create an autorisation for a user to access a serre
+  createAutorisationSerre: async (
+    payload: { id_user: number; id_serre: number }
+  ): Promise<AutorisationSerre> => {
+    try {
+      const response = await axios.post<AutorisationSerre>(
+        `${API_BASE_URL}/autorisation_serre`,
+        payload,
+        createAuthenticatedRequest()
+      );
+      return response.data;
+    } catch (error: any) {
+      console.error("Erreur lors de la création d'autorisation serre:", error);
+      const errorMessage =
+        error.response?.data?.message ||
+        "Erreur lors de la création d'autorisation serre";
+      throw {
+        message: errorMessage,
+        status: error.response?.status || 500,
+      } as ApiError;
+    }
+  },
 };
 
 export default serreService;

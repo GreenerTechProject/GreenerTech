@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { createRoot } from "react-dom/client";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { useAuth } from "./contexts/AuthContext";
 import { AuthProvider } from "./contexts/AuthContext";
 
 import ProtectedRoute from "./components/ProtectedRoute";
@@ -39,6 +40,25 @@ import DirectorReportManagement from "./pages/DirectorReportManagement";
 
 const queryClient = new QueryClient();
 
+const RoleHomeRedirect = () => {
+  const { user, isLoading } = useAuth();
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#B4CC5F]"></div>
+      </div>
+    );
+  }
+  const target = user?.role === "directeur"
+    ? (user?.setup_completed ? "/directeur" : "/setup")
+    : user?.role === "technicien"
+      ? "/technician"
+      : user?.role === "technicien_superieur"
+        ? "/technicien-sup"
+        : "/login";
+  return <Navigate to={target} replace />;
+};
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
@@ -56,12 +76,12 @@ const App = () => (
             <Route path="/verify-email" element={<VerifyEmail />} />
             <Route path="/technicien-registration" element={<TechnicienRegistration />} />
 
-            {/* Main Dashboard Routes */}
+            {/* Dashboard alias -> role home redirect */}
             <Route
               path="/dashboard"
               element={
                 <ProtectedRoute>
-                  <Dashboard />
+                  <RoleHomeRedirect />
                 </ProtectedRoute>
               }
             />
@@ -70,7 +90,7 @@ const App = () => (
              <Route
               path="/setup"
               element={
-                <ProtectedRoute>
+                <ProtectedRoute requiredRole="directeur">
                   <DirecteurSetup />
                 </ProtectedRoute>
               }
@@ -80,7 +100,7 @@ const App = () => (
             <Route
               path="/directeur"
               element={
-                <ProtectedRoute>
+                <ProtectedRoute requiredRole="directeur">
                   <NewDirectorDashboard />
                 </ProtectedRoute>
               }
@@ -90,7 +110,7 @@ const App = () => (
             <Route
               path="/director/technicians"
               element={
-                <ProtectedRoute>
+                <ProtectedRoute requiredRole="directeur">
                   <TechnicianManagement />
                 </ProtectedRoute>
               }
@@ -99,7 +119,7 @@ const App = () => (
             <Route
               path="/director/affiliations"
               element={
-                <ProtectedRoute>
+                <ProtectedRoute requiredRole="directeur">
                   <DirectorAffiliationManagement />
                 </ProtectedRoute>
               }
@@ -108,7 +128,7 @@ const App = () => (
             <Route
               path="/director/interventions"
               element={
-                <ProtectedRoute>
+                <ProtectedRoute requiredRole="directeur">
                   <DirectorInterventionManagement />
                 </ProtectedRoute>
               }
@@ -117,7 +137,7 @@ const App = () => (
             <Route
               path="/director/alerts"
               element={
-                <ProtectedRoute>
+                <ProtectedRoute requiredRole="directeur">
                   <DirectorAlertManagement />
                 </ProtectedRoute>
               }
@@ -126,7 +146,7 @@ const App = () => (
             <Route
               path="/director/reports"
               element={
-                <ProtectedRoute>
+                <ProtectedRoute requiredRole="directeur">
                   <DirectorReportManagement />
                 </ProtectedRoute>
               }
@@ -135,7 +155,7 @@ const App = () => (
             <Route
               path="/director/analytics"
               element={
-                <ProtectedRoute>
+                <ProtectedRoute requiredRole="directeur">
                   <NewDirectorDashboard />
                 </ProtectedRoute>
               }
@@ -144,7 +164,7 @@ const App = () => (
             <Route
               path="/director/locations"
               element={
-                <ProtectedRoute>
+                <ProtectedRoute requiredRole="directeur">
                   <NewDirectorDashboard />
                 </ProtectedRoute>
               }
@@ -154,7 +174,7 @@ const App = () => (
             <Route
               path="/technician"
               element={
-                <ProtectedRoute>
+                <ProtectedRoute requiredRole="technicien">
                   <TechnicianDashboard />
                 </ProtectedRoute>
               }
@@ -163,7 +183,7 @@ const App = () => (
             <Route
               path="/technician-dashboard"
               element={
-                <ProtectedRoute>
+                <ProtectedRoute requiredRole="technicien">
                   <TechnicianDashboard />
                 </ProtectedRoute>
               }
@@ -172,7 +192,7 @@ const App = () => (
             <Route
               path="/technicien-sup"
               element={
-                <ProtectedRoute>
+                <ProtectedRoute requiredRole="technicien_superieur">
                   <TechnicienSupDashboard />
                 </ProtectedRoute>
               }
@@ -181,7 +201,7 @@ const App = () => (
             <Route
               path="/technicien-sup-dashboard"
               element={
-                <ProtectedRoute>
+                <ProtectedRoute requiredRole="technicien_superieur">
                   <TechnicienSupDashboard />
                 </ProtectedRoute>
               }
@@ -254,8 +274,15 @@ const App = () => (
               }
             />
 
-            {/* Redirect root to dashboard */}
-            <Route path="/" element={<Navigate to="/dashboard" replace />} />
+            {/* Redirect root based on role */}
+            <Route
+              path="/"
+              element={
+                <ProtectedRoute>
+                  <RoleHomeRedirect />
+                </ProtectedRoute>
+              }
+            />
 
             {/* Catch-all */}
             <Route path="*" element={<NotFound />} />

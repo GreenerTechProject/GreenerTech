@@ -44,6 +44,9 @@ import TechnicianSidebar from "../components/TechnicianSidebar";
 import InterventionForm from "../components/InterventionForm";
 import { cn } from "@/lib/utils";
 import { getGoogleMapsAPIKey } from "@/config/maps";
+import { useToast } from "@/hooks/use-toast";
+import { serreService } from "../services/serreService";
+import { guideService } from "../services/guideService";
 
 interface Serre {
   id: string;
@@ -75,9 +78,9 @@ const GOOGLE_MAPS_API_KEY = getGoogleMapsAPIKey();
 const mockSerres: Serre[] = [
   {
     id: "1",
-    name: "Serre Nord A",
+    nom: "Serre Nord A",
     variety: "Tomates",
-    area: 450,
+    surface: 450,
     location: { lat: 46.7111, lng: 1.7191 },
     status: "active",
     lastUpdate: new Date(),
@@ -114,9 +117,9 @@ const mockSerres: Serre[] = [
   },
   {
     id: "2",
-    name: "Serre Sud B",
+    nom: "Serre Sud B",
     variety: "Concombres",
-    area: 320,
+    surface: 320,
     location: { lat: 46.6991, lng: 1.7341 },
     status: "active",
     lastUpdate: new Date(),
@@ -144,9 +147,9 @@ const mockSerres: Serre[] = [
   },
   {
     id: "3",
-    name: "Serre Est C",
+    nom: "Serre Est C",
     variety: "Laitues",
-    area: 280,
+    surface: 280,
     location: { lat: 46.7051, lng: 1.7441 },
     status: "maintenance",
     lastUpdate: new Date(),
@@ -165,9 +168,9 @@ const mockSerres: Serre[] = [
   },
   {
     id: "4",
-    name: "Serre Ouest D",
+    nom: "Serre Ouest D",
     variety: "Poivrons",
-    area: 380,
+    surface: 380,
     location: { lat: 46.7121, lng: 1.7141 },
     status: "active",
     lastUpdate: new Date(),
@@ -195,17 +198,186 @@ const mockSerres: Serre[] = [
   },
 ];
 
-export default function TechnicienSupDashboard() {
+export default function TechnicienSupDashboard(): JSX.Element {
   const { user, logout } = useAuth();
+  const { toast } = useToast();
   const [serres, setSerres] = useState<Serre[]>(mockSerres);
   const [selectedSerre, setSelectedSerre] = useState<Serre | null>(null);
   const [isCreatingNew, setIsCreatingNew] = useState(false);
   const [newSerreName, setNewSerreName] = useState("");
   const [map, setMap] = useState<google.maps.Map | null>(null);
+  const drawingManagerRef = useRef<google.maps.drawing.DrawingManager | null>(null);
+  const drawnPolygonRef = useRef<google.maps.Polygon | null>(null);
+  const [pendingSerrePath, setPendingSerrePath] = useState<google.maps.LatLng[]>([]);
+  const [pendingSerreArea, setPendingSerreArea] = useState<number>(0);
+  const [serreNom, setSerreNom] = useState("");
+  const [serreDomaineId, setSerreDomaineId] = useState<string>("");
+  const [selectedGuideId, setSelectedGuideId] = useState<string>("");
+  const [guides, setGuides] = useState<any[]>([]);
+  const [showCreateGuide, setShowCreateGuide] = useState(false);
+  const [createGuideForm, setCreateGuideForm] = useState({
+    nom: "",
+    variete: "",
+    rendement: "",
+    nombre_de_plants: "",
+    date_debut_saison: "",
+    date_fin_saison: "",
+  });
+  const [assignToSelf, setAssignToSelf] = useState(true);
   const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false);
   const [selectedTechnician, setSelectedTechnician] = useState("");
   const [isInterventionFormOpen, setIsInterventionFormOpen] = useState(false);
   const mapRef = useRef<HTMLDivElement>(null);
+
+  // Floating panel state
+  const [isPanelFloating, setIsPanelFloating] = useState<boolean>(false);
+  const [panelPos, setPanelPos] = useState<{ x: number; y: number }>({ x: 16, y: 80 });
+  const [isDraggingPanel, setIsDraggingPanel] = useState<boolean>(false);
+  const dragStartRef = useRef<{ offsetX: number; offsetY: number }>({ offsetX: 0, offsetY: 0 });
+
+  // Render create serre card (uses captured state)
+  const renderCreateSerreCard = () => (
+    <Card className="border-dashed border-2 border-gray-200 hover:border-[#B4CC5F] transition-colors">
+      <CardContent className="p-4 space-y-3">
+        {!isCreatingNew ? (
+          <Button
+            onClick={() => setIsCreatingNew(true)}
+            variant="ghost"
+            className="w-full h-16 border-0 text-gray-600 hover:text-[#B4CC5F] hover:bg-[#B4CC5F]/5"
+          >
+            <div className="flex flex-col items-center space-y-2">
+              <Plus className="h-6 w-6" />
+              <span className="text-sm font-medium">Créer une nouvelle serre</span>
+            </div>
+          </Button>
+        ) : (
+          <div className="space-y-3">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div>
+                <Label htmlFor="serre-nom">Nom de la serre</Label>
+                <Input id="serre-nom" value={serreNom} onChange={(e) => setSerreNom(e.target.value)} placeholder="Ex: Serre Ouest D" />
+              </div>
+              <div>
+                <Label htmlFor="serre-domaine">ID Domaine</Label>
+                <Input id="serre-domaine" value={serreDomaineId} onChange={(e) => setSerreDomaineId(e.target.value)} placeholder="ex: 1" />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div className="flex items-center justify-between border rounded-md px-3 py-2">
+                <span className="text-sm text-gray-600">M'assigner automatiquement</span>
+                <input type="checkbox" checked={assignToSelf} onChange={(e) => setAssignToSelf(e.target.checked)} />
+              </div>
+              <div>
+                <Label>Assigner un technicien (optionnel)</Label>
+                <Select value={selectedTechnician} onValueChange={setSelectedTechnician}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Sélectionner" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {mockTechnicians.map((t) => (
+                      <SelectItem key={t.id} value={t.id}>{t.name} ({t.email})</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            {/* Guides */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div>
+                <Label>Guide de culture (optionnel)</Label>
+                <Select value={selectedGuideId} onValueChange={setSelectedGuideId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Choisir un guide" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {guides.map((g: any) => (
+                      <SelectItem key={g.id} value={g.id}>{g.nom}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex items-end">
+                <Button variant="outline" className="w-full" onClick={() => setShowCreateGuide((v) => !v)}>
+                  {showCreateGuide ? "Annuler guide" : "Créer un guide"}
+                </Button>
+              </div>
+            </div>
+
+            {showCreateGuide && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div>
+                  <Label>Nom du guide</Label>
+                  <Input value={createGuideForm.nom} onChange={(e) => setCreateGuideForm({ ...createGuideForm, nom: e.target.value })} />
+                </div>
+                <div>
+                  <Label>Variété</Label>
+                  <Input value={createGuideForm.variete} onChange={(e) => setCreateGuideForm({ ...createGuideForm, variete: e.target.value })} />
+                </div>
+                <div>
+                  <Label>Rendement</Label>
+                  <Input type="number" value={createGuideForm.rendement} onChange={(e) => setCreateGuideForm({ ...createGuideForm, rendement: e.target.value })} />
+                </div>
+                <div>
+                  <Label>Nombre de plants</Label>
+                  <Input type="number" value={createGuideForm.nombre_de_plants} onChange={(e) => setCreateGuideForm({ ...createGuideForm, nombre_de_plants: e.target.value })} />
+                </div>
+                <div>
+                  <Label>Début saison (YYYY-MM-DD)</Label>
+                  <Input value={createGuideForm.date_debut_saison} onChange={(e) => setCreateGuideForm({ ...createGuideForm, date_debut_saison: e.target.value })} />
+                </div>
+                <div>
+                  <Label>Fin saison (YYYY-MM-DD)</Label>
+                  <Input value={createGuideForm.date_fin_saison} onChange={(e) => setCreateGuideForm({ ...createGuideForm, date_fin_saison: e.target.value })} />
+                </div>
+              </div>
+            )}
+
+            {/* Drawing controls */}
+            <div className="space-y-2">
+              <div className="flex gap-2">
+                <Button onClick={handleCreateNewSerre} className="flex-1" variant="default">
+                  Dessiner la serre
+                </Button>
+                {pendingSerrePath.length > 0 && (
+                  <Button onClick={cancelPendingSerre} variant="outline">Effacer</Button>
+                )}
+              </div>
+              {pendingSerrePath.length > 0 && (
+                <div className="text-xs text-gray-600">Points: {pendingSerrePath.length} • Surface estimée: {Math.round(pendingSerreArea)} m²</div>
+              )}
+            </div>
+
+            <div className="flex space-x-2">
+              <Button
+                onClick={handleSaveSerreToBackend}
+                className="flex-1 bg-[#B4CC5F] hover:bg-[#A3C247]"
+                disabled={!serreNom.trim() || !serreDomaineId || pendingSerrePath.length === 0}
+              >
+                Sauvegarder la serre
+              </Button>
+              <Button
+                onClick={() => {
+                  setIsCreatingNew(false);
+                  setSerreNom("");
+                  setSerreDomaineId("");
+                  setSelectedGuideId("");
+                  setShowCreateGuide(false);
+                  cancelPendingSerre();
+                }}
+                variant="outline"
+                className="flex-1"
+              >
+                Annuler
+              </Button>
+            </div>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+  
 
   // Mock technicians list
   const mockTechnicians = [
@@ -236,10 +408,11 @@ export default function TechnicienSupDashboard() {
 
     // Add markers for all serres
     serres.forEach((serre) => {
+      const title = serre.nom || "Serre";
       const marker = new google.maps.Marker({
         position: serre.location,
         map: newMap,
-        title: serre.nom,
+        title,
         icon: {
           path: google.maps.SymbolPath.CIRCLE,
           scale: 8,
@@ -261,6 +434,64 @@ export default function TechnicienSupDashboard() {
       });
     });
   }, [mapRef.current]);
+
+  // Setup DrawingManager and load guides
+  useEffect(() => {
+    if (!map) return;
+    // Initialize DrawingManager
+    const drawingManager = new google.maps.drawing.DrawingManager({
+      drawingMode: null,
+      drawingControl: false,
+      polygonOptions: {
+        fillColor: "#FF6B6B",
+        fillOpacity: 0.3,
+        strokeColor: "#FF6B6B",
+        strokeWeight: 2,
+        editable: true,
+      },
+    });
+    drawingManager.setMap(map);
+    drawingManagerRef.current = drawingManager;
+
+    const overlayListener = google.maps.event.addListener(
+      drawingManager,
+      "overlaycomplete",
+      (event: google.maps.drawing.OverlayCompleteEvent) => {
+        if (event.type === google.maps.drawing.OverlayType.POLYGON) {
+          const polygon = event.overlay as google.maps.Polygon;
+          if (drawnPolygonRef.current) {
+            drawnPolygonRef.current.setMap(null);
+          }
+          drawnPolygonRef.current = polygon;
+          const path = polygon.getPath().getArray();
+          setPendingSerrePath(path);
+          try {
+            const area = google.maps.geometry.spherical.computeArea(path);
+            setPendingSerreArea(area);
+          } catch (_) {
+            setPendingSerreArea(0);
+          }
+          drawingManager.setDrawingMode(null);
+        }
+      }
+    );
+
+    // Load available guides for selection
+    (async () => {
+      try {
+        const list = await guideService.getGuides();
+        setGuides(list);
+      } catch (e) {
+        // non-blocking
+      }
+    })();
+
+    return () => {
+      google.maps.event.removeListener(overlayListener);
+      drawingManager.setMap(null);
+      drawingManagerRef.current = null;
+    };
+  }, [map]);
 
   const smoothZoomToLocation = (
     map: google.maps.Map,
@@ -290,23 +521,98 @@ export default function TechnicienSupDashboard() {
   };
 
   const handleCreateNewSerre = () => {
-    if (newSerreName.trim()) {
+    // Start drawing mode
+    if (!drawingManagerRef.current) return;
+    drawingManagerRef.current.setDrawingMode(google.maps.drawing.OverlayType.POLYGON);
+    setPendingSerrePath([]);
+    setPendingSerreArea(0);
+  };
+
+  const cancelPendingSerre = () => {
+    if (drawnPolygonRef.current) {
+      drawnPolygonRef.current.setMap(null);
+      drawnPolygonRef.current = null;
+    }
+    setPendingSerrePath([]);
+    setPendingSerreArea(0);
+  };
+
+  const handleSaveSerreToBackend = async () => {
+    if (!user) return;
+    if (!serreNom.trim() || !serreDomaineId || pendingSerrePath.length === 0) {
+      toast({ title: "Champs manquants", description: "Nom, domaine et dessin requis", variant: "destructive" });
+      return;
+    }
+    try {
+      const positionPayload = pendingSerrePath.map((p, idx) => ({
+        latitude: p.lat(),
+        longitude: p.lng(),
+        ordre: idx + 1,
+      }));
+      const created = await serreService.createSerre({
+        nom: serreNom.trim(),
+        id_domaine: parseInt(serreDomaineId, 10),
+        position: positionPayload,
+        surface: pendingSerreArea,
+      });
+      const serreId = (typeof created.id === "number"
+        ? created.id
+        : typeof created.serreId === "string"
+          ? parseInt(created.serreId, 10)
+          : undefined) as number;
+
+      // Assign to self if requested
+      if (assignToSelf && serreId) {
+        try {
+          const userIdNum = typeof user.id === "string" ? parseInt(user.id, 10) : (user.id as unknown as number);
+          await serreService.createAutorisationSerre({ id_user: userIdNum, id_serre: serreId });
+        } catch (_) {}
+      }
+
+      // Create guide if selected or requested to create new
+      if (selectedGuideId) {
+        // nothing to do now; selecting an existing guide association would be backend-specific
+      } else if (showCreateGuide && serreId) {
+        try {
+          const req = {
+            nom: createGuideForm.nom,
+            variete: createGuideForm.variete,
+            rendement: parseFloat(createGuideForm.rendement),
+            nombre_de_plants: parseInt(createGuideForm.nombre_de_plants),
+            date_debut_saison: createGuideForm.date_debut_saison,
+            date_fin_saison: createGuideForm.date_fin_saison,
+            id_serre: serreId.toString(),
+          } as any;
+          await guideService.createGuide(req);
+        } catch (_) {}
+      }
+
+      toast({ title: "Serre créée", description: `La serre "${serreNom}" a été créée.` });
+      // Update local UI
+      const center = pendingSerrePath[0];
       const newSerre: Serre = {
-        id: Date.now().toString(),
-        name: newSerreName,
-        variety: "Non défini",
-        area: 0,
-        location: { lat: 46.7051, lng: 1.7291 },
+        id: serreId?.toString() || Date.now().toString(),
+        nom: serreNom.trim(),
+        variety: createGuideForm.variete || "",
+        surface: Math.round(pendingSerreArea),
+        location: { lat: center.lat(), lng: center.lng() },
         status: "inactive",
         zones: [],
         lastUpdate: new Date(),
-        supervisedBy: "À assigner",
+        supervisedBy: assignToSelf ? (user.name || user.email || "Moi") : undefined,
       };
-
-      setSerres([...serres, newSerre]);
-      setNewSerreName("");
-      setIsCreatingNew(false);
+      setSerres((prev) => [newSerre, ...prev]);
       setSelectedSerre(newSerre);
+      // reset form
+      setSerreNom("");
+      setSerreDomaineId("");
+      setSelectedGuideId("");
+      setShowCreateGuide(false);
+      setCreateGuideForm({ nom: "", variete: "", rendement: "", nombre_de_plants: "", date_debut_saison: "", date_fin_saison: "" });
+      cancelPendingSerre();
+      setIsCreatingNew(false);
+    } catch (e: any) {
+      toast({ title: "Erreur", description: e?.message || "Impossible de créer la serre", variant: "destructive" });
     }
   };
 
@@ -412,6 +718,13 @@ export default function TechnicienSupDashboard() {
                   <Bell className="h-4 w-4 mr-2" />
                   <span className="hidden sm:inline">Nouvelle </span>Intervention
                 </Button>
+                <Button
+                  onClick={() => setIsPanelFloating((v) => !v)}
+                  variant="outline"
+                  size="sm"
+                >
+                  {isPanelFloating ? "Ancrer le panneau" : "Déplacer le panneau"}
+                </Button>
               </div>
             </div>
             <div className="flex items-center space-x-4">
@@ -439,61 +752,13 @@ export default function TechnicienSupDashboard() {
       </header>
 
       <div className="flex flex-col lg:flex-row h-[calc(100vh-73px)]">
-        {/* Left Control Panel */}
-        <div className="w-full lg:w-96 bg-white shadow-lg max-h-[50vh] lg:max-h-full">
-          <ScrollArea className="h-full">
-            <div className="p-6 space-y-6">
+        {/* Left Control Panel (docked) */}
+        {!isPanelFloating && (
+          <div className="w-full lg:w-96 bg-white shadow-lg max-h-[50vh] lg:max-h-full">
+            <ScrollArea className="h-full">
+              <div className="p-6 space-y-6">
               {/* Create New Serre Section */}
-              <Card className="border-dashed border-2 border-gray-200 hover:border-[#B4CC5F] transition-colors">
-                <CardContent className="p-4">
-                  {!isCreatingNew ? (
-                    <Button
-                      onClick={() => setIsCreatingNew(true)}
-                      variant="ghost"
-                      className="w-full h-16 border-0 text-gray-600 hover:text-[#B4CC5F] hover:bg-[#B4CC5F]/5"
-                    >
-                      <div className="flex flex-col items-center space-y-2">
-                        <Plus className="h-6 w-6" />
-                        <span className="text-sm font-medium">
-                          Créer une nouvelle serre
-                        </span>
-                      </div>
-                    </Button>
-                  ) : (
-                    <div className="space-y-3">
-                      <Label htmlFor="serre-name">Nom de la serre</Label>
-                      <Input
-                        id="serre-name"
-                        value={newSerreName}
-                        onChange={(e) => setNewSerreName(e.target.value)}
-                        placeholder="Ex: Serre Ouest D"
-                        onKeyDown={(e) =>
-                          e.key === "Enter" && handleCreateNewSerre()
-                        }
-                      />
-                      <div className="flex space-x-2">
-                        <Button
-                          onClick={handleCreateNewSerre}
-                          className="flex-1 bg-[#B4CC5F] hover:bg-[#A3C247]"
-                          disabled={!newSerreName.trim()}
-                        >
-                          Créer
-                        </Button>
-                        <Button
-                          onClick={() => {
-                            setIsCreatingNew(false);
-                            setNewSerreName("");
-                          }}
-                          variant="outline"
-                          className="flex-1"
-                        >
-                          Annuler
-                        </Button>
-                      </div>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
+                {renderCreateSerreCard()}
 
               {/* Serres List */}
               <div className="space-y-3">
@@ -709,7 +974,7 @@ export default function TechnicienSupDashboard() {
                                           <div>
                                             <Label>Serre sélectionnée</Label>
                                             <p className="text-sm text-gray-600">
-                                              {selectedSerre?.name}
+                                              {selectedSerre?.nom}
                                             </p>
                                           </div>
                                           <div>
@@ -781,9 +1046,10 @@ export default function TechnicienSupDashboard() {
                   </CardContent>
                 </Card>
               )}
-            </div>
-          </ScrollArea>
-        </div>
+              </div>
+            </ScrollArea>
+          </div>
+        )}
 
         {/* Right Map Section */}
         <div className="flex-1 relative min-h-[50vh] lg:min-h-full" data-testid="map-section">
@@ -820,6 +1086,44 @@ export default function TechnicienSupDashboard() {
                   {selectedSerre.supervisedBy}
                 </p>
               )}
+            </div>
+          )}
+
+          {/* Floating Control Panel */}
+          {isPanelFloating && (
+            <div
+              className="absolute z-20 w-80 max-w-[90vw] bg-white shadow-xl rounded-lg border"
+              style={{ left: panelPos.x, top: panelPos.y }}
+            >
+              <div
+                className="cursor-move px-3 py-2 border-b bg-gray-50 rounded-t-lg text-sm text-gray-600"
+                onPointerDown={(e) => {
+                  setIsDraggingPanel(true);
+                  const rect = (e.currentTarget.parentElement as HTMLDivElement).getBoundingClientRect();
+                  dragStartRef.current = { offsetX: e.clientX - rect.left, offsetY: e.clientY - rect.top };
+                }}
+                onPointerUp={() => setIsDraggingPanel(false)}
+                onPointerMove={(e) => {
+                  if (!isDraggingPanel) return;
+                  const parent = (e.currentTarget.parentElement?.parentElement as HTMLDivElement);
+                  const bounds = parent.getBoundingClientRect();
+                  const newX = e.clientX - dragStartRef.current.offsetX - bounds.left;
+                  const newY = e.clientY - dragStartRef.current.offsetY - bounds.top;
+                  setPanelPos({ x: Math.max(8, Math.min(newX, bounds.width - 8 - 320)), y: Math.max(8, Math.min(newY, bounds.height - 8 - 400)) });
+                }}
+              >
+                Panneau de contrôle
+              </div>
+              <div className="max-h-[70vh] overflow-y-auto">
+                <div className="p-4 space-y-4">{renderCreateSerreCard()}</div>
+                <div className="p-4 pt-0">
+                  {/* Serres list condensed when floating */}
+                  <h3 className="text-sm font-semibold text-gray-900 flex items-center space-x-2">
+                    <MapPin className="h-4 w-4" />
+                    <span>Serres ({serres.length})</span>
+                  </h3>
+                </div>
+              </div>
             </div>
           )}
         </div>
