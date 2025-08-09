@@ -8,7 +8,12 @@ import numpy as np
 from datetime import datetime
 import requests
 import asyncio
+
 import os
+from dotenv import load_dotenv
+
+# Load variables from .env into environment
+load_dotenv()
 
 
 sensor_clients = set()
@@ -112,12 +117,12 @@ async def sensor_data_handler(request):
                             img_rgb = img_array[:, :, ::-1]
                             pil_img = Image.fromarray(img_rgb)
 
-                            os.makedirs("./images", exist_ok=True)
+                            os.makedirs("../backend/static/images", exist_ok=True)
                             
                             # Save as JPG to disk
                             timanow = datetime.now().strftime("%Y%m%d%H%M%S")
                             image_filename = f"{qrdata['id']}_{timanow}.jpg"
-                            image_path = f"./images/{image_filename}"
+                            image_path = f"../backend/static/images/{image_filename}"
                             pil_img.save(image_path, format="JPEG", quality=95)  # You can adjust quality if needed
 
                             # Send alert
@@ -125,14 +130,14 @@ async def sensor_data_handler(request):
                                 "id_bilan": qrdata["id"],
                                 "status_alert": 1,
                                 "maladie": "M1",
-                                "lien_image": f"http://greenertech.com/{image_filename}",
+                                "lien_image": f"/static/images/{image_filename}",
                                 "x1": x,
                                 "y1": y,
                                 "status": "résolue"
                             }
 
                             try:
-                                response = requests.post("http://greenertech.mywire.org:5000/api/alerte", json=data)
+                                response = requests.post(os.getenv("BACKTEND_URL", "http://localhost:3000")+"/api/alerte", json=data)
                                 print("✅ Alert sent:", response.status_code, response.text)
                             except Exception as e:
                                 print("❌ Failed to send alert:", e)
