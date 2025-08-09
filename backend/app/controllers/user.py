@@ -34,7 +34,7 @@ def register():
     new_user.verification_token = generate_token(new_user.id)
     db.session.commit()
     # Envoi de l'email de vérification
-    send_verification_email(new_user)
+    #send_verification_email(new_user)
     return jsonify({
         "message": "User registered successfully. Please check your email to verify your account.",
     }), 201
@@ -155,11 +155,11 @@ def create_technicien(current_user):
         return jsonify({"message": "Email déjà utilisé"}), 409
 
     new_user = User(
-        #name = data.get('fullName'),
         email=email,
         name=name,
         role=role,
         id_assigned=current_user.id,
+        id_entreprise=current_user.id_entreprise,  # associate to director's company
         directeur_valide=True,
         email_valide=False
     )

@@ -95,6 +95,21 @@ export default function DirecteurSetup() {
 
       console.log("Company created with ID:", companyId);
 
+      // Immediately update the director's id_entreprise in the backend and context
+      try {
+        await fetch(`${window.location.protocol}//${window.location.hostname}:5000/api/user`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${localStorage.getItem('auth_token') || ''}`,
+          },
+          body: JSON.stringify({ id_entreprise: parseInt(companyId.toString(), 10) }),
+        });
+        updateUser({ ...(user as any), id_entreprise: parseInt(companyId.toString(), 10) });
+      } catch (e) {
+        console.warn('Failed to set director company id on user', e);
+      }
+
       // Step 2: Create domains
       const domainRequests = setupData.domains.map((domain) => ({
         name: domain.name,
@@ -146,8 +161,8 @@ export default function DirecteurSetup() {
             nom: serre.nom,
             id_domaine: parseInt(backendDomainId.toString()), // Use the actual backend domain ID as integer
             position: serre.position.map((point, index) => ({
-              lat: point.lat(),
-              lng: point.lng(),
+              latitude: point.lat(),
+              longitude: point.lng(),
               ordre: index + 1,
             })),
             surface: serre.surface,

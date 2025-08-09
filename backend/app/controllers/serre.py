@@ -6,7 +6,6 @@ from app.models.entreprise import Entreprise
 from database.config import db
 from sqlalchemy import func
 from app.utils.security import token_required, role_required, access_domaine_required
-from app.models.autorisation_serre import Autorisation_serre
 from app.models.bilan import Bilan
 from app.models.guide_culture import GuideCulture
 
@@ -32,10 +31,16 @@ def create_serre(current_user):
         return jsonify({"message": "Points GPS requis"}), 400
 
     for point in gps_points:
+        # Accept both {lat,lng} and {latitude,longitude}
+        lat = point.get('lat', point.get('latitude'))
+        lng = point.get('lng', point.get('longitude'))
+        if lat is None or lng is None:
+            return jsonify({"message": "Chaque point doit contenir lat/lng ou latitude/longitude"}), 400
+
         gc = GroupCor(
             id_group_cor=id_group_cor,
-            point_x=point['lat'],
-            point_y=point['lng'],
+            point_x=lat,
+            point_y=lng,
             ordre=point.get('ordre', 0)
         )
         db.session.add(gc)
@@ -76,10 +81,11 @@ def get_serre(current_user, id):
     serre = Serre.query.get_or_404(id)
     domaine = Domaine.query.get(serre.id_domaine)
     entreprise = Entreprise.query.filter_by(id=current_user.id_entreprise).first()
-    # Allow technicien_superieur to access if they have an explicit autorisation on this serre
+    # Allow technicien_superieur if explicit autorisation exists
+    from app.models.autorisation_serre import Autorisation_serre
     if getattr(current_user, "role", None) == "technicien_superieur":
-        autorisation = Autorisation_serre.query.filter_by(id_user=current_user.id, id_serre=serre.id).first()
-        if autorisation:
+        auth = Autorisation_serre.query.filter_by(id_user=current_user.id, id_serre=serre.id).first()
+        if auth:
             return jsonify(serre.to_dict()), 200
 
     if not entreprise or domaine.id_entreprise != entreprise.id:

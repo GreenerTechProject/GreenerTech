@@ -47,6 +47,7 @@ import { getGoogleMapsAPIKey } from "@/config/maps";
 import { useToast } from "@/hooks/use-toast";
 import { serreService } from "../services/serreService";
 import { guideService } from "../services/guideService";
+import { domainService, Domain as BackendDomain } from "../services/domainService";
 
 interface Serre {
   id: string;
@@ -228,6 +229,8 @@ export default function TechnicienSupDashboard(): JSX.Element {
   const [selectedTechnician, setSelectedTechnician] = useState("");
   const [isInterventionFormOpen, setIsInterventionFormOpen] = useState(false);
   const mapRef = useRef<HTMLDivElement>(null);
+  const [assignedSerresRaw, setAssignedSerresRaw] = useState<any[]>([]);
+  const [domainsRaw, setDomainsRaw] = useState<BackendDomain[]>([]);
 
   // Floating panel state
   const [isPanelFloating, setIsPanelFloating] = useState<boolean>(false);
@@ -422,52 +425,84 @@ export default function TechnicienSupDashboard(): JSX.Element {
     }
   }, [map, mapRef.current]);
 
-  // Load only serres assigned to the logged-in technicien_sup and draw polygons
+  // Fetch assigned serres as soon as user is known
   useEffect(() => {
-    if (!map || !user?.id) return;
-    // eslint-disable-next-line no-console
-    console.debug('[TechSup] Loading assigned serres for user', user.id);
+    if (!user?.id) return;
+    console.log('[TechSup] Fetching assigned serres for user', user.id);
     (async () => {
       try {
-        const userIdNum = typeof user.id === "string" ? parseInt(user.id, 10) : (user.id as unknown as number);
+        const userIdNum = typeof user.id === 'string' ? parseInt(user.id, 10) : (user.id as unknown as number);
         const list: any[] = await serreService.getSerresAssignedToUser(userIdNum);
-        // eslint-disable-next-line no-console
-        console.debug('[TechSup] Assigned serres count', list.length);
-        const uiSerres: Serre[] = [];
-        list.forEach((s: any) => {
-          const points = (s.position || []).map((p: any) => ({ lat: p.lat, lng: p.lng }));
-          if (points.length === 0) return;
-          const polygon = new google.maps.Polygon({
-            paths: points,
-            strokeColor: "#FF6B6B",
-            strokeOpacity: 1,
-            strokeWeight: 2,
-            fillColor: "#FF6B6B",
-            fillOpacity: 0.25,
-          });
-          polygon.setMap(map);
-          const center = points[0];
-          uiSerres.push({
-            id: String(s.id),
-            nom: s.nom,
-            variety: "",
-            surface: 0,
-            location: center,
-            status: "inactive",
-            zones: [],
-            lastUpdate: new Date(),
-          });
-        });
-        setSerres(uiSerres);
-        if (uiSerres[0]) {
-          smoothZoomToLocation(map, uiSerres[0].location, 15);
-        }
+        console.log('[TechSup] Assigned serres count', list.length);
+        setAssignedSerresRaw(list);
       } catch (e) {
-        // eslint-disable-next-line no-console
-        console.error('[TechSup] Failed to load assigned serres', e);
+        console.error('[TechSup] Failed to fetch assigned serres', e);
       }
     })();
-  }, [map, user?.id]);
+    (async () => {
+      try {
+        const domains = await domainService.getMyCompanyDomains();
+        console.log('[TechSup] Domains count', domains.length);
+        setDomainsRaw(domains);
+      } catch (e) {
+        console.error('[TechSup] Failed to fetch domains', e);
+      }
+    })();
+  }, [user?.id]);
+
+  // When map is ready, draw polygons from assignedSerresRaw and populate UI list
+  useEffect(() => {
+    if (!map) return;
+    // Draw domains first
+    domainsRaw.forEach((d) => {
+      const pts = (d.path || []).map((p) => ({ lat: p.lat, lng: p.lng }));
+      if (pts.length === 0) return;
+      const poly = new google.maps.Polygon({
+        paths: pts,
+        strokeColor: '#8FA53A',
+        strokeOpacity: 1,
+        strokeWeight: 2,
+        fillColor: '#B4CC5F',
+        fillOpacity: 0.22,
+      });
+      poly.setMap(map);
+    });
+
+    if (domainsRaw[0]?.center) {
+      smoothZoomToLocation(map, domainsRaw[0].center, 14);
+    }
+
+    if (assignedSerresRaw.length === 0) return;
+    const uiSerres: Serre[] = [];
+    assignedSerresRaw.forEach((s: any) => {
+      const points = (s.position || []).map((p: any) => ({ lat: p.lat, lng: p.lng }));
+      if (points.length === 0) return;
+      const polygon = new google.maps.Polygon({
+        paths: points,
+        strokeColor: '#FF6B6B',
+        strokeOpacity: 1,
+        strokeWeight: 2,
+        fillColor: '#FF6B6B',
+        fillOpacity: 0.25,
+      });
+      polygon.setMap(map);
+      const center = points[0];
+      uiSerres.push({
+        id: String(s.id),
+        nom: s.nom,
+        variety: '',
+        surface: 0,
+        location: center,
+        status: 'inactive',
+        zones: [],
+        lastUpdate: new Date(),
+      });
+    });
+    setSerres(uiSerres);
+    if (!domainsRaw[0] && uiSerres[0]) {
+      smoothZoomToLocation(map, uiSerres[0].location, 15);
+    }
+  }, [map, assignedSerresRaw, domainsRaw]);
 
   // Setup DrawingManager and load guides
   useEffect(() => {
