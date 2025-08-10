@@ -102,68 +102,67 @@ export default function DirecteurSetup() {
       }));
 
       const domainResponses = await domainService.createDomains(domainRequests);
-      console.log("domaines responses:")
-      console.log(domainResponses);
-      // Step 3: Create culture guides
-      const guideMap = new Map<string, string>(); // Maps old guide id to new guide id
-      const uniqueGuides = new Map<string, any>();
+
+      // Step 3: Prepare guide data for after serre creation
+      const guideDataMap = new Map<string, any>(); // Maps old guide id to guide data
+
 
       // Collect unique guides from all serres
       setupData.domains.forEach((domain) => {
         domain.serres.forEach((serre) => {
-          if (serre.guide && !uniqueGuides.has(serre.guideId)) {
-            uniqueGuides.set(serre.guideId, serre.guide);
+          if (serre.guide && !guideDataMap.has(serre.guideId)) {
+            guideDataMap.set(serre.guideId, serre.guide);
           }
         });
       });
 
-      // Create guides
-      for (const [oldGuideId, guide] of uniqueGuides) {
-        const guideRequest = {
-          nom: guide.nom,
-          variete: guide.variete,
-          rendement: guide.rendement,
-          nombre_de_plants: guide.nombre_de_plants,
-          date_debut_saison:
-            typeof guide.date_debut_saison === "string"
-              ? guide.date_debut_saison
-              : guide.date_debut_saison.toISOString(),
-          date_fin_saison:
-            typeof guide.date_fin_saison === "string"
-              ? guide.date_fin_saison
-              : guide.date_fin_saison.toISOString(),
-          id_serre: guide.id_serre,
-          irrigationType: guide.irrigationType,
-          notes: guide.notes,
-        };
-
-        const guideResponse = await guideService.createGuide(guideRequest);
-        guideMap.set(oldGuideId, guideResponse.guideId);
-      }
-
-      // Step 4: Create serres for each domain
+      // Step 4: Create serres and guides in order
       const allSerres: any[] = [];
+
       for (let i = 0; i < setupData.domains.length; i++) {
         const domain = setupData.domains[i];
-        const domainId = domainResponses[i].id
+        const backendDomainId = domainResponses[i].domainId;
 
-        const serreRequests = domain.serres.map((serre) => ({
-          nom: serre.nom,
-          surface: serre.surface,
-          domainId,
-          guideId: guideMap.get(serre.guideId) || serre.guideId,
-          center: {
-            lat: serre.center.lat(),
-            lng: serre.center.lng(),
-          },
-          position: serre.position.map((point) => ({
-            lat: point.lat(),
-            lng: point.lng(),
-          })),
-        }));
+        // Create serres for this domain
+        for (const serre of domain.serres) {
+          const serreRequest = {
+            nom: serre.nom,
+            id_domaine: parseInt(backendDomainId), // Use the actual backend domain ID as integer
+            position: serre.position.map((point, index) => ({
+              latitude: point.lat(),
+              longitude: point.lng(),
+              ordre: index + 1,
+            })),
+          };
 
-        const serreResponses = await serreService.createSerres(serreRequests);
-        allSerres.push(...serreResponses);
+          const createdSerre = await serreService.createSerre(serreRequest);
+          allSerres.push(createdSerre);
+
+          // Create guide for this serre if it has one
+          if (serre.guide && guideDataMap.has(serre.guideId)) {
+            const guide = guideDataMap.get(serre.guideId);
+
+            const guideRequest = {
+              nom: guide.nom,
+              variete: guide.variete,
+              rendement: guide.rendement,
+              nombre_de_plants: guide.nombre_de_plants,
+              date_debut_saison:
+                typeof guide.date_debut_saison === "string"
+                  ? guide.date_debut_saison
+                  : guide.date_debut_saison.toISOString(),
+              date_fin_saison:
+                typeof guide.date_fin_saison === "string"
+                  ? guide.date_fin_saison
+                  : guide.date_fin_saison.toISOString(),
+              id_serre: createdSerre.id.toString(), // Link to the actual created serre
+              irrigationType: guide.irrigationType,
+              notes: guide.notes,
+            };
+
+            await guideService.createGuide(guideRequest);
+          }
+        }
       }
 
       // Step 5: Create technicians
