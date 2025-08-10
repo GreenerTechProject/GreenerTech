@@ -6,11 +6,11 @@ import json
 #import serial
 
 
-host = "localhost"
+host = "greenertech2.mywire.org"
 
 
 async def send_video():
-    cap = cv2.VideoCapture(0)
+    cap = cv2.VideoCapture(1)
 
     while True:
         try:
@@ -197,8 +197,10 @@ async def listen_missions(robot_referance):
                 print(f"Connected to mission websocket for robot '{robot_referance}'")
                 async for msg in websocket:
 
-                    data = json.loads(msg)
-                    mission = data.get("mission")
+                    #data = json.loads(msg)
+                    data = msg
+                    #mission = data.get("mission")
+                    mission = data
                     if mission:
                         print("Received mission:", mission)
                         # Here you can add code to handle the mission (e.g., start tasks)

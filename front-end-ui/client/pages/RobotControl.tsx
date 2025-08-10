@@ -73,7 +73,7 @@ export default function RobotControl() {
       const offer = await pc.createOffer();
       await pc.setLocalDescription(offer);
 
-      const response = await fetch("/service/video_stream_service", {
+      const response = await fetch(`${protocol}://${hostname}:${port}/service/video_stream_service`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ offer: pc.localDescription })
