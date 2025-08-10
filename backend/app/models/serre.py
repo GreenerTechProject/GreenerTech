@@ -27,8 +27,8 @@ class Serre(db.Model):
             "id_domaine": self.id_domaine,
             "surface": self.surface,
             "center": {
-                "center_lat": self.center_lat,
-                "center_lng": self.center_lng
+                "lat": self.center_lat,
+                "lng": self.center_lng
             },
             "position": [g.to_dict() for g in self.group_coords] if self.group_coords else []
         }
