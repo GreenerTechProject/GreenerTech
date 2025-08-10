@@ -1,3 +1,6 @@
+import logging
+logging.basicConfig(level=logging.DEBUG)
+
 import asyncio
 import cv2
 import numpy as np
@@ -197,6 +200,8 @@ async def offer(request):
         )
         answer = await pc.createAnswer()
         await pc.setLocalDescription(answer)
+        
+        await asyncio.sleep(0.5)
 
         return set_cors_headers(web.json_response({
             "sdp": pc.localDescription.sdp,
