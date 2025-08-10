@@ -90,16 +90,11 @@ export const technicianService = {
       const response = await axios.get<{
         success: boolean;
         technicians: Technician[];
-      }>(
-        `${API_BASE_URL}/technicien/company/${companyId}`,
-        createAuthenticatedRequest(),
-      );
+      }>(`${API_BASE_URL}/technicien/company/${companyId}`,
+        createAuthenticatedRequest());
 
-      if (response.data.success) {
-        return response.data.technicians;
-      } else {
-        throw new Error("Échec de la récupération des techniciens");
-      }
+      if (response.data?.success) return response.data.technicians;
+      return [];
     } catch (error: any) {
       console.error("Erreur lors de la récupération des techniciens:", error);
 

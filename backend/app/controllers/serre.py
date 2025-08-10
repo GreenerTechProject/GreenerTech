@@ -180,3 +180,35 @@ def get_guides_by_serre(current_user, id_serre):
     return jsonify([g.to_dict() for g in guides]), 200
 
 
+@token_required
+@role_required("technicien", "technicien_superieur", "directeur")
+def get_serres_by_user(current_user):
+    """
+    Get all serres assigned to the current user through autorisation_serre
+    """
+    from app.models.autorisation_serre import Autorisation_serre
+    
+    # Get all autorisations for the current user
+    autorisations = Autorisation_serre.query.filter_by(id_user=current_user.id).all()
+    
+    if not autorisations:
+        return jsonify([]), 200
+    
+    # Get serre IDs from autorisations
+    serre_ids = [auth.id_serre for auth in autorisations]
+    
+    # Get serre details
+    serres = Serre.query.filter(Serre.id.in_(serre_ids)).all()
+    
+    # Get domain information for each serre
+    serres_data = []
+    for serre in serres:
+        domaine = Domaine.query.get(serre.id_domaine)
+        serre_dict = serre.to_dict()
+        if domaine:
+            serre_dict['domaine_nom'] = domaine.nom
+        serres_data.append(serre_dict)
+    
+    return jsonify(serres_data), 200
+
+

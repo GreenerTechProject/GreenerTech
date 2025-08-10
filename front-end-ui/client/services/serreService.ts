@@ -116,6 +116,32 @@ export const serreService = {
     }
   },
 
+  // Get serres assigned to the current user
+  getSerresByUser: async (): Promise<any[]> => {
+    try {
+      // Get current user's ID from localStorage or context
+      const token = tokenManager.getToken();
+      if (!token) {
+        throw new Error("Token non trouvé");
+      }
+
+      // Decode token to get user ID (you might need to adjust this based on your token structure)
+      // For now, we'll use a different approach - get user info from the backend
+      const userResponse = await axios.get(`${API_BASE_URL}/user`, createAuthenticatedRequest());
+      const userId = userResponse.data.id;
+
+      // Use the existing method to get assigned serres
+      return await serreService.getSerresAssignedToUser(userId);
+    } catch (error: any) {
+      const errorMessage = error.response?.data?.message ||
+        "Erreur lors de la récupération des serres de l'utilisateur";
+      throw {
+        message: errorMessage,
+        status: error.response?.status || 500,
+      } as ApiError;
+    }
+  },
+
   // Create multiple serres (optional - keep if you need bulk creation)
   createSerres: async (
     serres: CreateSerreRequest[],
@@ -213,6 +239,78 @@ getAllSerres: async (): Promise<ExtendedSerre[]> => {
       const errorMessage =
         error.response?.data?.message ||
         "Erreur lors de la création d'autorisation serre";
+      throw {
+        message: errorMessage,
+        status: error.response?.status || 500,
+      } as ApiError;
+    }
+  },
+  
+  // Get bilans by serre
+  getBilansBySerre: async (serreId: number): Promise<any[]> => {
+    try {
+      const response = await axios.get(
+        `${API_BASE_URL}/serre/${serreId}/bilans`,
+        createAuthenticatedRequest()
+      );
+      return response.data as any[];
+    } catch (error: any) {
+      const errorMessage = error.response?.data?.message || "Erreur lors de la récupération des bilans";
+      throw { message: errorMessage, status: error.response?.status || 500 } as ApiError;
+    }
+  },
+
+  // Get guides by serre to extract 'variete'
+  getGuidesBySerre: async (serreId: number): Promise<any[]> => {
+    try {
+      const response = await axios.get(
+        `${API_BASE_URL}/serre/${serreId}/guides`,
+        createAuthenticatedRequest()
+      );
+      return response.data as any[];
+    } catch (error: any) {
+      const errorMessage = error.response?.data?.message || "Erreur lors de la récupération des guides";
+      throw { message: errorMessage, status: error.response?.status || 500 } as ApiError;
+    }
+  },
+
+  // Get autorisations for serres filtered by user or serre
+  getAutorisationSerre: async (
+    params: { id_user?: number; id_serre?: number }
+  ): Promise<AutorisationSerre[]> => {
+    try {
+      const response = await axios.get(
+        `${API_BASE_URL}/autorisation_serre`,
+        {
+          ...createAuthenticatedRequest(),
+          params,
+        }
+      );
+      const list = (response.data?.data ?? []) as AutorisationSerre[];
+      return list;
+    } catch (error: any) {
+      const errorMessage =
+        error.response?.data?.message ||
+        "Erreur lors de la récupération des autorisations serre";
+      throw {
+        message: errorMessage,
+        status: error.response?.status || 500,
+      } as ApiError;
+    }
+  },
+
+  // Get serres assigned to the current user using the new backend endpoint
+  getSerresByCurrentUser: async (): Promise<any[]> => {
+    try {
+      const response = await axios.get(
+        `${API_BASE_URL}/serre/user`,
+        createAuthenticatedRequest()
+      );
+      return response.data as any[];
+    } catch (error: any) {
+      const errorMessage =
+        error.response?.data?.message ||
+        "Erreur lors de la récupération des serres de l'utilisateur";
       throw {
         message: errorMessage,
         status: error.response?.status || 500,

@@ -8,7 +8,10 @@ export interface User {
   role?: string;
   setup_completed?: boolean;
   directeur_valide?: boolean;
-
+  id_entreprise?: number;
+  telephone?: string;
+  birthday?: string;
+  cin?: string;
 }
 
 export interface LoginRequest {

@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
 import {
   Select,
   SelectContent,
@@ -46,8 +47,12 @@ import { cn } from "@/lib/utils";
 import { getGoogleMapsAPIKey } from "@/config/maps";
 import { useToast } from "@/hooks/use-toast";
 import { serreService } from "../services/serreService";
+import { technicianService } from "../services/technicianService";
+import type { Technician as ApiTechnician } from "../services/technicianService";
 import { guideService } from "../services/guideService";
 import { domainService, Domain as BackendDomain } from "../services/domainService";
+import { AlertService } from "@/services/alertService";
+import axios from "axios";
 
 interface Serre {
   id: string;
@@ -62,6 +67,7 @@ interface Serre {
   zones: Zone[];
   lastUpdate: Date;
   supervisedBy?: string;
+  bilansCount?: number;
 }
 
 interface Zone {
@@ -227,159 +233,29 @@ export default function TechnicienSupDashboard(): JSX.Element {
   const [assignToSelf, setAssignToSelf] = useState(true);
   const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false);
   const [selectedTechnician, setSelectedTechnician] = useState("");
+  const [companyTechnicians, setCompanyTechnicians] = useState<ApiTechnician[]>([]);
   const [isInterventionFormOpen, setIsInterventionFormOpen] = useState(false);
   const mapRef = useRef<HTMLDivElement>(null);
   const [assignedSerresRaw, setAssignedSerresRaw] = useState<any[]>([]);
   const [domainsRaw, setDomainsRaw] = useState<BackendDomain[]>([]);
 
-  // Floating panel state
-  const [isPanelFloating, setIsPanelFloating] = useState<boolean>(false);
-  const [panelPos, setPanelPos] = useState<{ x: number; y: number }>({ x: 16, y: 80 });
-  const [isDraggingPanel, setIsDraggingPanel] = useState<boolean>(false);
-  const dragStartRef = useRef<{ offsetX: number; offsetY: number }>({ offsetX: 0, offsetY: 0 });
+  // Alerts / heatmap state
+  const [showHeatmap, setShowHeatmap] = useState<boolean>(true);
+  const heatmapRef = useRef<google.maps.visualization.HeatmapLayer | null>(null);
+  const [alertsSummary, setAlertsSummary] = useState<{ low: number; medium: number; high: number }>({ low: 0, medium: 0, high: 0 });
+  const alertMarkersRef = useRef<google.maps.Marker[]>([]);
 
-  // Render create serre card (uses captured state)
-  const renderCreateSerreCard = () => (
-    <Card className="border-dashed border-2 border-gray-200 hover:border-[#B4CC5F] transition-colors">
-      <CardContent className="p-4 space-y-3">
-        {!isCreatingNew ? (
-          <Button
-            onClick={() => setIsCreatingNew(true)}
-            variant="ghost"
-            className="w-full h-16 border-0 text-gray-600 hover:text-[#B4CC5F] hover:bg-[#B4CC5F]/5"
-          >
-            <div className="flex flex-col items-center space-y-2">
-              <Plus className="h-6 w-6" />
-              <span className="text-sm font-medium">Créer une nouvelle serre</span>
-            </div>
-          </Button>
-        ) : (
-          <div className="space-y-3">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              <div>
-                <Label htmlFor="serre-nom">Nom de la serre</Label>
-                <Input id="serre-nom" value={serreNom} onChange={(e) => setSerreNom(e.target.value)} placeholder="Ex: Serre Ouest D" />
-              </div>
-              <div>
-                <Label htmlFor="serre-domaine">ID Domaine</Label>
-                <Input id="serre-domaine" value={serreDomaineId} onChange={(e) => setSerreDomaineId(e.target.value)} placeholder="ex: 1" />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              <div className="flex items-center justify-between border rounded-md px-3 py-2">
-                <span className="text-sm text-gray-600">M'assigner automatiquement</span>
-                <input type="checkbox" checked={assignToSelf} onChange={(e) => setAssignToSelf(e.target.checked)} />
-              </div>
-              <div>
-                <Label>Assigner un technicien (optionnel)</Label>
-                <Select value={selectedTechnician} onValueChange={setSelectedTechnician}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Sélectionner" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {mockTechnicians.map((t) => (
-                      <SelectItem key={t.id} value={t.id}>{t.name} ({t.email})</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            {/* Guides */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              <div>
-                <Label>Guide de culture (optionnel)</Label>
-                <Select value={selectedGuideId} onValueChange={setSelectedGuideId}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Choisir un guide" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {guides.map((g: any) => (
-                      <SelectItem key={g.id} value={g.id}>{g.nom}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="flex items-end">
-                <Button variant="outline" className="w-full" onClick={() => setShowCreateGuide((v) => !v)}>
-                  {showCreateGuide ? "Annuler guide" : "Créer un guide"}
-                </Button>
-              </div>
-            </div>
-
-            {showCreateGuide && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <div>
-                  <Label>Nom du guide</Label>
-                  <Input value={createGuideForm.nom} onChange={(e) => setCreateGuideForm({ ...createGuideForm, nom: e.target.value })} />
-                </div>
-                <div>
-                  <Label>Variété</Label>
-                  <Input value={createGuideForm.variete} onChange={(e) => setCreateGuideForm({ ...createGuideForm, variete: e.target.value })} />
-                </div>
-                <div>
-                  <Label>Rendement</Label>
-                  <Input type="number" value={createGuideForm.rendement} onChange={(e) => setCreateGuideForm({ ...createGuideForm, rendement: e.target.value })} />
-                </div>
-                <div>
-                  <Label>Nombre de plants</Label>
-                  <Input type="number" value={createGuideForm.nombre_de_plants} onChange={(e) => setCreateGuideForm({ ...createGuideForm, nombre_de_plants: e.target.value })} />
-                </div>
-                <div>
-                  <Label>Début saison (YYYY-MM-DD)</Label>
-                  <Input value={createGuideForm.date_debut_saison} onChange={(e) => setCreateGuideForm({ ...createGuideForm, date_debut_saison: e.target.value })} />
-                </div>
-                <div>
-                  <Label>Fin saison (YYYY-MM-DD)</Label>
-                  <Input value={createGuideForm.date_fin_saison} onChange={(e) => setCreateGuideForm({ ...createGuideForm, date_fin_saison: e.target.value })} />
-                </div>
-              </div>
-            )}
-
-            {/* Drawing controls */}
-            <div className="space-y-2">
-              <div className="flex gap-2">
-                <Button onClick={handleCreateNewSerre} className="flex-1" variant="default">
-                  Dessiner la serre
-                </Button>
-                {pendingSerrePath.length > 0 && (
-                  <Button onClick={cancelPendingSerre} variant="outline">Effacer</Button>
-                )}
-              </div>
-              {pendingSerrePath.length > 0 && (
-                <div className="text-xs text-gray-600">Points: {pendingSerrePath.length} • Surface estimée: {Math.round(pendingSerreArea)} m²</div>
-              )}
-            </div>
-
-            <div className="flex space-x-2">
-              <Button
-                onClick={handleSaveSerreToBackend}
-                className="flex-1 bg-[#B4CC5F] hover:bg-[#A3C247]"
-                disabled={!serreNom.trim() || !serreDomaineId || pendingSerrePath.length === 0}
-              >
-                Sauvegarder la serre
-              </Button>
-              <Button
-                onClick={() => {
-                  setIsCreatingNew(false);
-                  setSerreNom("");
-                  setSerreDomaineId("");
-                  setSelectedGuideId("");
-                  setShowCreateGuide(false);
-                  cancelPendingSerre();
-                }}
-                variant="outline"
-                className="flex-1"
-              >
-                Annuler
-              </Button>
-            </div>
-          </div>
-        )}
-      </CardContent>
-    </Card>
-  );
+  // Helpers for alerts severity mapping
+  const getAlertLevelFromInt = (n: number): "low" | "medium" | "high" => {
+    if (n === 2) return "high";
+    if (n === 1) return "medium";
+    return "low";
+  };
+  const getWeightFromLevel = (lvl: "low" | "medium" | "high"): number => {
+    if (lvl === "high") return 6;
+    if (lvl === "medium") return 3;
+    return 1;
+  };
   
 
   // Mock technicians list
@@ -405,6 +281,9 @@ export default function TechnicienSupDashboard(): JSX.Element {
         // @ts-ignore
         mapTypeId: google.maps.MapTypeId.SATELLITE,
         zoom: 13,
+        mapTypeControl: false,
+        streetViewControl: false,
+        fullscreenControl: false,
         styles: [
           { featureType: "poi", elementType: "labels", stylers: [{ visibility: "off" }] },
         ],
@@ -412,6 +291,89 @@ export default function TechnicienSupDashboard(): JSX.Element {
       setMap(newMap);
       // eslint-disable-next-line no-console
       console.debug('[TechSup] Map initialized');
+      // Once map exists, load alerts and build heatmap
+      (async () => {
+        try {
+          const { alerts } = await AlertService.getAllAlerts(1, 1000);
+          // Build weighted points from alerts. We need coordinates: try alerte.x1/y1 (if represent lat/lng); fallback to related serre center by bilan
+          const weights: google.maps.visualization.WeightedLocation[] = [];
+          let low = 0, med = 0, high = 0;
+          const createdMarkers: google.maps.Marker[] = [];
+          for (const a of alerts as any[]) {
+            const lvl = getAlertLevelFromInt(a.status_alert);
+            if (lvl === 'low') low++; else if (lvl === 'medium') med++; else high++;
+            let lat = a.x1; // assuming y1 ~ lat
+            let lng = a.y1; // assuming x1 ~ lng
+            if (typeof lat !== 'number' || typeof lng !== 'number') {
+              // Try fetch bilan -> serre center
+              try {
+                const bilanResp = await axios.get(`${window.location.protocol}//${window.location.hostname}:5000/api/bilan/${a.id_bilan}`);
+                const id_serre = bilanResp.data?.id_serre;
+                if (id_serre) {
+                  const serreResp = await axios.get(`${window.location.protocol}//${window.location.hostname}:5000/api/serre/${id_serre}`);
+                  lat = serreResp.data?.center?.lat;
+                  lng = serreResp.data?.center?.lng;
+                  if ((typeof lat !== 'number' || typeof lng !== 'number') && Array.isArray(serreResp.data?.position) && serreResp.data.position.length > 0) {
+                    lat = serreResp.data.position[0]?.lat;
+                    lng = serreResp.data.position[0]?.lng;
+                  }
+                }
+              } catch {}
+            }
+            if (typeof lat === 'number' && typeof lng === 'number') {
+              weights.push({ location: new google.maps.LatLng(lat, lng), weight: getWeightFromLevel(lvl) });
+              // Create alert marker with severity color
+              const color = lvl === 'high' ? '#ef4444' : lvl === 'medium' ? '#f59e0b' : '#22c55e';
+              const marker = new google.maps.Marker({
+                position: { lat, lng },
+                map: newMap,
+                title: `${a.maladie} (${lvl})`,
+                icon: {
+                  path: google.maps.SymbolPath.CIRCLE,
+                  scale: 8,
+                  fillColor: color,
+                  fillOpacity: 0.9,
+                  strokeWeight: 1,
+                  strokeColor: '#ffffff',
+                },
+              });
+              createdMarkers.push(marker);
+            }
+          }
+          setAlertsSummary({ low, medium: med, high });
+          // Create or update heatmap
+          if (weights.length > 0) {
+            if (heatmapRef.current) {
+              heatmapRef.current.setData(weights as any);
+            } else if ((google.maps.visualization as any)?.HeatmapLayer) {
+              const hm = new google.maps.visualization.HeatmapLayer({ data: weights as any, dissipating: true, radius: 35 });
+              hm.setMap(newMap);
+              heatmapRef.current = hm;
+            }
+          }
+          // Place markers and adjust viewport
+          if (createdMarkers.length > 0) {
+            alertMarkersRef.current.forEach((m) => m.setMap(null));
+            alertMarkersRef.current = createdMarkers;
+            if (createdMarkers.length === 1) {
+              const pos = createdMarkers[0].getPosition();
+              if (pos) {
+                newMap.panTo(pos);
+                newMap.setZoom(16);
+              }
+            } else {
+              const bounds = new google.maps.LatLngBounds();
+              createdMarkers.forEach((m) => {
+                const p = m.getPosition();
+                if (p) bounds.extend(p);
+              });
+              newMap.fitBounds(bounds);
+            }
+          }
+        } catch (e) {
+          // non-blocking if alerts fail
+        }
+      })();
       return true;
     };
 
@@ -446,6 +408,18 @@ export default function TechnicienSupDashboard(): JSX.Element {
         setDomainsRaw(domains);
       } catch (e) {
         console.error('[TechSup] Failed to fetch domains', e);
+      }
+    })();
+    (async () => {
+      try {
+        // Load technicians of same entreprise for assignment
+        const companyId = (user as any)?.id_entreprise?.toString();
+        if (companyId) {
+          const list = await technicianService.getTechniciansByCompany(companyId);
+          setCompanyTechnicians(list);
+        }
+      } catch (e) {
+        // non-blocking
       }
     })();
   }, [user?.id]);
@@ -486,23 +460,75 @@ export default function TechnicienSupDashboard(): JSX.Element {
         fillOpacity: 0.25,
       });
       polygon.setMap(map);
-      const center = points[0];
+      const center = s.center && s.center.lat != null && s.center.lng != null ? s.center : points[0];
       uiSerres.push({
         id: String(s.id),
         nom: s.nom,
         variety: '',
-        surface: 0,
+        surface: Math.round(s.surface || 0),
         location: center,
         status: 'inactive',
         zones: [],
         lastUpdate: new Date(),
+        supervisedBy: user?.name || user?.email || undefined,
+        bilansCount: 0,
       });
     });
     setSerres(uiSerres);
+
+    // Fetch bilans count per serre
+    (async () => {
+      try {
+        const withCounts = await Promise.all(uiSerres.map(async (sr) => {
+          try {
+            const bilans = await serreService.getBilansBySerre(parseInt(sr.id, 10));
+            return { ...sr, bilansCount: Array.isArray(bilans) ? bilans.length : 0 };
+          } catch {
+            return { ...sr, bilansCount: 0 };
+          }
+        }));
+        // Fetch guide variete per serre
+        const withVarieties = await Promise.all(withCounts.map(async (sr) => {
+          try {
+            const guides = await serreService.getGuidesBySerre(parseInt(sr.id, 10));
+            const first = Array.isArray(guides) && guides.length > 0 ? guides[0] : null;
+            return { ...sr, variety: first?.variete || '' };
+          } catch {
+            return sr;
+          }
+        }));
+        setSerres(withVarieties);
+      } catch {}
+    })();
     if (!domainsRaw[0] && uiSerres[0]) {
       smoothZoomToLocation(map, uiSerres[0].location, 15);
     }
   }, [map, assignedSerresRaw, domainsRaw]);
+
+  // Resolve assigned technician names for displayed serres
+  useEffect(() => {
+    (async () => {
+      if (serres.length === 0 || companyTechnicians.length === 0) return;
+      try {
+        const updated = await Promise.all(
+          serres.map(async (s) => {
+            try {
+              const auths = await serreService.getAutorisationSerre({ id_serre: parseInt(s.id, 10) });
+              if (auths.length > 0) {
+                const techId = String(auths[0].id_user);
+                const tech = companyTechnicians.find((t) => String(t.id) === techId);
+                return { ...s, supervisedBy: tech ? (tech as any).fullName || tech?.email : `Technicien #${techId}` };
+              }
+            } catch (_e) {}
+            return s;
+          })
+        );
+        setSerres(updated);
+      } catch (_e) {
+        // ignore
+      }
+    })();
+  }, [serres.length, companyTechnicians]);
 
   // Setup DrawingManager and load guides
   useEffect(() => {
@@ -686,26 +712,35 @@ export default function TechnicienSupDashboard(): JSX.Element {
   };
 
   const handleAssignTechnician = () => {
-    if (selectedTechnician && selectedSerre) {
-      const technicianName =
-        mockTechnicians.find((t) => t.id === selectedTechnician)?.name ||
-        selectedTechnician;
+    (async () => {
+      if (selectedTechnician && selectedSerre) {
+        try {
+          await serreService.createAutorisationSerre({
+            id_user: parseInt(selectedTechnician, 10),
+            id_serre: parseInt(selectedSerre.id, 10),
+          });
+          const tech = companyTechnicians.find((t) => String(t.id) === String(selectedTechnician));
+          const technicianName = (tech as any)?.fullName || tech?.email || selectedTechnician;
 
-      setSerres((prev) =>
-        prev.map((serre) =>
-          serre.id === selectedSerre.id
-            ? { ...serre, supervisedBy: `Technicien ${technicianName}` }
-            : serre,
-        ),
-      );
-
-      setSelectedSerre((prev) =>
-        prev ? { ...prev, supervisedBy: `Technicien ${technicianName}` } : prev,
-      );
-
-      setIsAssignDialogOpen(false);
-      setSelectedTechnician("");
-    }
+          setSerres((prev) =>
+            prev.map((serre) =>
+              serre.id === selectedSerre.id
+                ? { ...serre, supervisedBy: `Technicien ${technicianName}` }
+                : serre,
+            ),
+          );
+  
+          setSelectedSerre((prev) =>
+            prev ? { ...prev, supervisedBy: `Technicien ${technicianName}` } : prev,
+          );
+        } catch (_e) {
+          // ignore UI failure
+        } finally {
+          setIsAssignDialogOpen(false);
+          setSelectedTechnician("");
+        }
+      }
+    })();
   };
 
   const handleInterventionSubmit = (data: any) => {
@@ -752,448 +787,150 @@ export default function TechnicienSupDashboard(): JSX.Element {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white shadow-sm border-b sticky top-0 z-10">
-        <div className="max-w-full px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col lg:flex-row lg:justify-between lg:items-center py-4 gap-4">
-            <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
-              <div className="flex items-center gap-4">
-                {/* Sidebar Button */}
-                <TechnicianSidebar
-                  userRole="technicien_sup"
-                  onInterventionClick={() => setIsInterventionFormOpen(true)}
-                />
-                <div className="flex items-center space-x-2">
-                  <Shield className="h-5 w-5 sm:h-6 sm:w-6 text-[#B4CC5F]" />
-                  <h1 className="text-lg sm:text-xl font-semibold text-gray-900">
-                    <span className="hidden sm:inline">Tableau de Bord </span>Technicien Supérieur
-                  </h1>
-                </div>
-              </div>
-              <div className="flex flex-col sm:flex-row sm:items-center gap-2">
-                <Badge
-                  variant="outline"
-                  className="bg-blue-50 border-blue-200 text-blue-700 w-fit"
-                >
-                  {serres.filter((s) => s.status === "active").length} Serres
-                  Supervisées
-                </Badge>
-                <Button
-                  onClick={() => setIsInterventionFormOpen(true)}
-                  className="bg-blue-600 hover:bg-blue-700 text-white w-fit"
-                  size="sm"
-                >
-                  <Bell className="h-4 w-4 mr-2" />
-                  <span className="hidden sm:inline">Nouvelle </span>Intervention
-                </Button>
-                <Button
-                  onClick={() => setIsPanelFloating((v) => !v)}
-                  variant="outline"
-                  size="sm"
-                >
-                  {isPanelFloating ? "Ancrer le panneau" : "Déplacer le panneau"}
-                </Button>
-              </div>
-            </div>
-            <div className="flex items-center space-x-4">
-              <span className="text-sm text-gray-600 hidden sm:block">
-                {user?.name || user?.email}
-              </span>
-              <Badge
-                variant="outline"
-                className="bg-purple-50 border-purple-200 text-purple-700"
-              >
-                Technicien Supérieur
-              </Badge>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => logout()}
-                className="flex items-center space-x-1"
-              >
-                <LogOut className="h-4 w-4" />
-                <span className="hidden sm:inline">Déconnexion</span>
-              </Button>
-            </div>
-          </div>
-        </div>
-      </header>
-
-      <div className="flex flex-col lg:flex-row h-[calc(100vh-73px)]">
-        {/* Left Control Panel (docked) */}
-        {!isPanelFloating && (
-          <div className="w-full lg:w-96 bg-white shadow-lg max-h-[50vh] lg:max-h-full">
-            <ScrollArea className="h-full">
-              <div className="p-6 space-y-6">
-              {/* Serres List */}
-              <div className="space-y-3">
-                <h3 className="text-lg font-semibold text-gray-900 flex items-center space-x-2">
+    <div className="h-[calc(100vh-73px)]">
+        <ResizablePanelGroup direction="horizontal">
+          {/* Left Panel: Serres list */}
+          <ResizablePanel defaultSize={28} minSize={20} maxSize={45} className="bg-white shadow-lg">
+            <div className="h-full flex flex-col">
+              <div className="p-4 border-b flex items-center justify-between">
+                <h3 className="text-base sm:text-lg font-semibold text-gray-900 flex items-center space-x-2">
                   <MapPin className="h-5 w-5" />
                   <span>Serres Supervisées ({serres.length})</span>
                 </h3>
-
-                {serres.map((serre) => (
-                  <Card
-                    key={serre.id}
-                    className={cn(
-                      "cursor-pointer transition-all duration-200 hover:shadow-md border",
-                      selectedSerre?.id === serre.id
-                        ? "ring-2 ring-[#B4CC5F] border-[#B4CC5F] shadow-md"
-                        : "border-gray-200 hover:border-[#B4CC5F]/50",
-                    )}
-                    onClick={() => handleSelectSerre(serre)}
-                  >
-                    <CardContent className="p-4">
-                      <div className="flex items-start justify-between mb-3">
-                        <div>
-                          <h4 className="font-semibold text-gray-900">
-                            {serre.nom}
-                          </h4>
-                          <p className="text-sm text-gray-600">
-                            {serre.variety}
-                          </p>
-                        </div>
-                        <Badge
-                          variant="outline"
-                          className={cn(
-                            "text-xs",
-                            getStatusColor(serre.status),
-                          )}
-                        >
-                          {serre.status === "active"
-                            ? "Actif"
-                            : serre.status === "maintenance"
-                              ? "Maintenance"
-                              : "Inactif"}
-                        </Badge>
-                      </div>
-
-                      <div className="space-y-2 text-sm text-gray-500">
-                        <div className="flex items-center justify-between">
-                          <span>{serre.surface} m²</span>
-                          <span>{serre.zones.length} zones</span>
-                        </div>
-                        {serre.supervisedBy && (
-                          <div className="flex items-center space-x-1">
-                            <Users className="h-3 w-3" />
-                            <span className="text-xs">
-                              {serre.supervisedBy}
-                            </span>
+              </div>
+              {/* Ajout de serre désactivé pour le moment */}
+              <ScrollArea className="flex-1">
+                <div className="p-4 space-y-3">
+                  {serres.map((serre) => (
+                    <Card key={serre.id} className={cn("cursor-pointer transition-all duration-200 hover:shadow-md border", selectedSerre?.id === serre.id ? "ring-2 ring-[#B4CC5F] border-[#B4CC5F] shadow-md" : "border-gray-200 hover:border-[#B4CC5F]/50")} onClick={() => handleSelectSerre(serre)}>
+                      <CardContent className="p-4">
+                        <div className="flex items-start justify-between mb-2">
+                          <div>
+                            <h4 className="font-semibold text-gray-900">{serre.nom}</h4>
+                            <p className="text-xs text-gray-600">Variété: {serre.variety || "—"}</p>
                           </div>
-                        )}
-                      </div>
-
-                      {serre.zones.length > 0 && (
-                        <div className="mt-3 flex flex-wrap gap-1">
-                          {serre.zones.slice(0, 3).map((zone) => (
-                            <div
-                              key={zone.id}
-                              className={cn(
-                                "flex items-center space-x-1 px-2 py-1 rounded-full text-xs border",
-                                getStatusColor(zone.status),
-                              )}
-                            >
-                              {getZoneIcon(zone.type)}
-                              <span>
-                                {zone.value}
-                                {zone.unit}
-                              </span>
-                            </div>
-                          ))}
-                          {serre.zones.length > 3 && (
-                            <div className="px-2 py-1 bg-gray-100 text-gray-600 rounded-full text-xs">
-                              +{serre.zones.length - 3}
-                            </div>
-                          )}
                         </div>
-                      )}
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-
-              {/* Selected Serre Details */}
-              {selectedSerre && (
-                <Card className="border-[#B4CC5F]">
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-lg text-[#B4CC5F] flex items-center space-x-2">
-                      <Layers className="h-5 w-5" />
-                      <span>{selectedSerre.nom} - Supervision</span>
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-4">
-                      <div className="grid grid-cols-2 gap-4 text-sm">
-                        <div>
-                          <span className="text-gray-600">Variété:</span>
-                          <p className="font-medium">{selectedSerre.variety}</p>
+                        <div className="flex items-center justify-between text-xs text-gray-500">
+                          <span>{serre.surface} m²</span>
+                          <span>Bilans: {serre.bilansCount ?? 0}</span>
                         </div>
-                        <div>
-                          <span className="text-gray-600">Surface:</span>
-                          <p className="font-medium">{selectedSerre.surface} m²</p>
-                        </div>
-                      </div>
-
-                      {selectedSerre.supervisedBy && (
-                        <div className="text-sm">
-                          <span className="text-gray-600">Supervisé par:</span>
-                          <p className="font-medium">
-                            {selectedSerre.supervisedBy}
-                          </p>
-                        </div>
-                      )}
-
-                      <Separator />
-
-                      {selectedSerre.zones.length > 0 ? (
-                        <Accordion
-                          type="single"
-                          collapsible
-                          className="space-y-2"
-                        >
-                          {selectedSerre.zones.map((zone) => (
-                            <AccordionItem
-                              key={zone.id}
-                              value={zone.id}
-                              className="border rounded-lg"
-                            >
-                              <AccordionTrigger className="px-3 py-2 hover:no-underline">
-                                <div className="flex items-center justify-between w-full pr-2">
-                                  <div className="flex items-center space-x-2">
-                                    {getZoneIcon(zone.type)}
-                                    <span className="font-medium">
-                                      {zone.name}
-                                    </span>
-                                  </div>
-                                  <Badge
-                                    variant="outline"
-                                    className={cn(
-                                      "text-xs",
-                                      getStatusColor(zone.status),
-                                    )}
-                                  >
-                                    {zone.value}
-                                    {zone.unit}
-                                  </Badge>
-                                </div>
-                              </AccordionTrigger>
-                              <AccordionContent className="px-3 pb-3">
-                                <div className="space-y-2 text-sm">
-                                  <div className="flex justify-between">
-                                    <span className="text-gray-600">
-                                      Statut:
-                                    </span>
-                                    <span
-                                      className={cn(
-                                        "font-medium",
-                                        zone.status === "optimal"
-                                          ? "text-green-600"
-                                          : zone.status === "warning"
-                                            ? "text-yellow-600"
-                                            : "text-red-600",
-                                      )}
-                                    >
-                                      {zone.status === "optimal"
-                                        ? "Optimal"
-                                        : zone.status === "warning"
-                                          ? "Attention"
-                                          : "Critique"}
-                                    </span>
-                                  </div>
-                                  <div className="flex justify-between">
-                                    <span className="text-gray-600">
-                                      Dernière lecture:
-                                    </span>
-                                    <span className="font-medium">
-                                      {zone.lastReading.toLocaleTimeString()}
-                                    </span>
-                                  </div>
-                                  <div className="flex space-x-2 mt-2">
-                                    <Button
-                                      size="sm"
-                                      variant="outline"
-                                      className="flex-1 text-[#B4CC5F] border-[#B4CC5F] hover:bg-[#B4CC5F] hover:text-white"
-                                    >
-                                      Ajuster
-                                    </Button>
-                                    <Dialog
-                                      open={isAssignDialogOpen}
-                                      onOpenChange={setIsAssignDialogOpen}
-                                    >
-                                      <DialogTrigger asChild>
-                                        <Button
-                                          size="sm"
-                                          variant="outline"
-                                          className="flex-1 text-blue-600 border-blue-300 hover:bg-blue-50"
-                                        >
-                                          Assigner Tech.
-                                        </Button>
-                                      </DialogTrigger>
-                                      <DialogContent>
-                                        <DialogHeader>
-                                          <DialogTitle>
-                                            Assigner un technicien
-                                          </DialogTitle>
-                                        </DialogHeader>
-                                        <div className="space-y-4">
-                                          <div>
-                                            <Label>Serre sélectionnée</Label>
-                                            <p className="text-sm text-gray-600">
-                                              {selectedSerre?.nom}
-                                            </p>
-                                          </div>
-                                          <div>
-                                            <Label htmlFor="technician-select">
-                                              Technicien
-                                            </Label>
-                                            <Select
-                                              value={selectedTechnician}
-                                              onValueChange={
-                                                setSelectedTechnician
-                                              }
-                                            >
-                                              <SelectTrigger>
-                                                <SelectValue placeholder="Sélectionnez un technicien" />
-                                              </SelectTrigger>
-                                              <SelectContent>
-                                                {mockTechnicians.map((tech) => (
-                                                  <SelectItem
-                                                    key={tech.id}
-                                                    value={tech.id}
-                                                  >
-                                                    {tech.name} ({tech.email})
-                                                  </SelectItem>
-                                                ))}
-                                              </SelectContent>
-                                            </Select>
-                                          </div>
-                                          <div className="flex space-x-2">
-                                            <Button
-                                              onClick={handleAssignTechnician}
-                                              disabled={!selectedTechnician}
-                                              className="flex-1"
-                                            >
-                                              Assigner
-                                            </Button>
-                                            <Button
-                                              variant="outline"
-                                              onClick={() => {
-                                                setIsAssignDialogOpen(false);
-                                                setSelectedTechnician("");
-                                              }}
-                                              className="flex-1"
-                                            >
-                                              Annuler
-                                            </Button>
-                                          </div>
-                                        </div>
-                                      </DialogContent>
-                                    </Dialog>
-                                  </div>
-                                </div>
-                              </AccordionContent>
-                            </AccordionItem>
-                          ))}
-                        </Accordion>
-                      ) : (
-                        <div className="text-center py-8 text-gray-500">
-                          <Layers className="h-12 w-12 mx-auto mb-3 opacity-50" />
-                          <p>Aucune zone configurée</p>
-                          <Button
-                            size="sm"
-                            className="mt-3 bg-[#B4CC5F] hover:bg-[#A3C247]"
-                          >
-                            Ajouter une zone
-                          </Button>
-                        </div>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-              </div>
-            </ScrollArea>
-          </div>
-        )}
-
-        {/* Right Map Section */}
-        <div className="flex-1 relative min-h-[50vh] lg:min-h-full" data-testid="map-section">
-          <GoogleMapsWrapper apiKey={GOOGLE_MAPS_API_KEY}>
-            <div ref={mapRef} className="w-full h-full" />
-          </GoogleMapsWrapper>
-
-          {/* Map Overlay Info */}
-          {selectedSerre && (
-            <div className="absolute top-4 right-4 bg-white rounded-lg shadow-lg p-4 max-w-xs">
-              <div className="flex items-center space-x-2 mb-2">
-                <div
-                  className={cn(
-                    "w-3 h-3 rounded-full",
-                    selectedSerre.status === "active"
-                      ? "bg-green-500"
-                      : selectedSerre.status === "maintenance"
-                        ? "bg-yellow-500"
-                        : "bg-red-500",
-                  )}
-                />
-                <h4 className="font-semibold text-gray-900">
-                  {selectedSerre.nom}
-                </h4>
-              </div>
-              <p className="text-sm text-gray-600 mb-1">
-                {selectedSerre.variety}
-              </p>
-              <p className="text-xs text-gray-500">
-                {selectedSerre.surface} m² • {selectedSerre.zones.length} zones
-              </p>
-              {selectedSerre.supervisedBy && (
-                <p className="text-xs text-blue-600 mt-1">
-                  {selectedSerre.supervisedBy}
-                </p>
-              )}
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              </ScrollArea>
             </div>
-          )}
+          </ResizablePanel>
+          <ResizableHandle withHandle />
+          {/* Right Panel: Map */}
+          <ResizablePanel defaultSize={72} minSize={55}>
+            <div className="h-full relative" data-testid="map-section">
+              <GoogleMapsWrapper apiKey={GOOGLE_MAPS_API_KEY}>
+                <div ref={mapRef} className="w-full h-full" />
+              </GoogleMapsWrapper>
 
-          {/* Floating Control Panel */}
-          {isPanelFloating && (
-            <div
-              className="absolute z-20 w-80 max-w-[90vw] bg-white shadow-xl rounded-lg border"
-              style={{ left: panelPos.x, top: panelPos.y }}
-            >
-              <div
-                className="cursor-move px-3 py-2 border-b bg-gray-50 rounded-t-lg text-sm text-gray-600"
-                onPointerDown={(e) => {
-                  setIsDraggingPanel(true);
-                  const rect = (e.currentTarget.parentElement as HTMLDivElement).getBoundingClientRect();
-                  dragStartRef.current = { offsetX: e.clientX - rect.left, offsetY: e.clientY - rect.top };
-                }}
-                onPointerUp={() => setIsDraggingPanel(false)}
-                onPointerMove={(e) => {
-                  if (!isDraggingPanel) return;
-                  const parent = (e.currentTarget.parentElement?.parentElement as HTMLDivElement);
-                  const bounds = parent.getBoundingClientRect();
-                  const newX = e.clientX - dragStartRef.current.offsetX - bounds.left;
-                  const newY = e.clientY - dragStartRef.current.offsetY - bounds.top;
-                  setPanelPos({ x: Math.max(8, Math.min(newX, bounds.width - 8 - 320)), y: Math.max(8, Math.min(newY, bounds.height - 8 - 400)) });
-                }}
-              >
-                Panneau de contrôle
-              </div>
-              <div className="max-h-[70vh] overflow-y-auto">
-                <div className="p-4 space-y-4">{renderCreateSerreCard()}</div>
-                <div className="p-4 pt-0">
-                  {/* Serres list condensed when floating */}
-                  <h3 className="text-sm font-semibold text-gray-900 flex items-center space-x-2">
-                    <MapPin className="h-4 w-4" />
-                    <span>Serres ({serres.length})</span>
-                  </h3>
+              {/* Map Overlay Info */}
+              {selectedSerre && (
+                <div className="absolute top-4 right-4 bg-white rounded-lg shadow-lg p-4 max-w-xs">
+                  <div className="flex items-center space-x-2 mb-2">
+                    <div
+                      className={cn(
+                        "w-3 h-3 rounded-full",
+                        selectedSerre.status === "active"
+                          ? "bg-green-500"
+                          : selectedSerre.status === "maintenance"
+                            ? "bg-yellow-500"
+                            : "bg-red-500",
+                      )}
+                    />
+                    <h4 className="font-semibold text-gray-900">
+                      {selectedSerre.nom}
+                    </h4>
+                  </div>
+                  <p className="text-sm text-gray-600 mb-1">
+                    {selectedSerre.variety}
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    {selectedSerre.surface} m² • {selectedSerre.zones.length} zones
+                  </p>
+                  {selectedSerre.supervisedBy && (
+                    <p className="text-xs text-blue-600 mt-1">
+                      {selectedSerre.supervisedBy}
+                    </p>
+                  )}
+
+                  <div className="mt-3">
+                    <Dialog open={isAssignDialogOpen} onOpenChange={setIsAssignDialogOpen}>
+                      <DialogTrigger asChild>
+                        <Button size="sm" variant="outline" className="w-full">
+                          Assigner un technicien
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent>
+                        <DialogHeader>
+                          <DialogTitle>Assigner un technicien</DialogTitle>
+                        </DialogHeader>
+                        <div className="space-y-4">
+                          <div>
+                            <Label>Serre sélectionnée</Label>
+                            <p className="text-sm text-gray-600">{selectedSerre?.nom}</p>
+                          </div>
+                          <div>
+                            <Label htmlFor="technician-select">Technicien</Label>
+                            <Select value={selectedTechnician} onValueChange={setSelectedTechnician}>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Sélectionnez un technicien" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {companyTechnicians.length === 0 ? (
+                                  <SelectItem value="no-tech" disabled>Aucun technicien trouvé</SelectItem>
+                                ) : (
+                                  companyTechnicians.map((tech) => (
+                                    <SelectItem key={tech.id} value={tech.id}>
+                                      {(tech as any).fullName || tech.email} ({tech.email})
+                                    </SelectItem>
+                                  ))
+                                )}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div className="flex space-x-2">
+                            <Button onClick={handleAssignTechnician} disabled={!selectedTechnician || companyTechnicians.length === 0} className="flex-1">Assigner</Button>
+                            <Button variant="outline" onClick={() => { setIsAssignDialogOpen(false); setSelectedTechnician(""); }} className="flex-1">Annuler</Button>
+                          </div>
+                        </div>
+                      </DialogContent>
+                    </Dialog>
+                  </div>
+                </div>
+              )}
+
+              {/* Alerts Overlay Panel on Map */}
+              <div className="absolute top-4 left-4 z-10 bg-white/95 backdrop-blur rounded-lg shadow p-3 sm:p-4 border">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-2">
+                    <Bell className="h-4 w-4 text-red-500" />
+                    <span className="font-semibold text-sm">Alertes</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-xs">
+                    <span className="px-1.5 py-0.5 rounded bg-green-100 text-green-700">Faible: {alertsSummary.low}</span>
+                    <span className="px-1.5 py-0.5 rounded bg-yellow-100 text-yellow-700">Moyen: {alertsSummary.medium}</span>
+                    <span className="px-1.5 py-0.5 rounded bg-red-100 text-red-700">Élevé: {alertsSummary.high}</span>
+                  </div>
+                </div>
+                <div className="mt-2 flex items-center justify-between gap-3">
+                  <label className="text-xs text-gray-600">Heatmap</label>
+                  <input type="checkbox" checked={showHeatmap} onChange={(e) => {
+                    setShowHeatmap(e.target.checked);
+                    if (heatmapRef.current) {
+                      heatmapRef.current.setMap(e.target.checked ? map! : null);
+                    }
+                  }} />
                 </div>
               </div>
             </div>
-          )}
-        </div>
-      </div>
+          </ResizablePanel>
+        </ResizablePanelGroup>
 
       {/* Intervention Form Modal */}
       <InterventionForm

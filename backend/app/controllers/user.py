@@ -154,12 +154,18 @@ def create_technicien(current_user):
     if User.query.filter_by(email=email).first():
         return jsonify({"message": "Email déjà utilisé"}), 409
 
+    # Determine entreprise id from director account
+    entreprise = Entreprise.query.filter_by(id_user=current_user.id).first()
+    entreprise_id = entreprise.id if entreprise else current_user.id_entreprise
+    if not entreprise_id:
+        return jsonify({"message": "Le directeur n'est associé à aucune entreprise"}), 400
+
     new_user = User(
         email=email,
         name=name,
         role=role,
         id_assigned=current_user.id,
-        id_entreprise=current_user.id_entreprise,  # associate to director's company
+        id_entreprise=entreprise_id,
         directeur_valide=True,
         email_valide=False
     )
@@ -170,6 +176,35 @@ def create_technicien(current_user):
         "message": "Technicien préinscrit. En attente de complétion de compte.",
         "id": new_user.id
     }), 201
+
+
+@token_required
+@role_required('directeur', 'technicien_superieur')
+def get_techniciens_by_company(current_user, company_id):
+    """Return technicians (both roles) belonging to a given entreprise (company)."""
+    try:
+        # Tech sup can only query their own company
+        if current_user.role == 'technicien_superieur' and current_user.id_entreprise != company_id:
+            return jsonify({"message": "Non autorisé"}), 403
+
+        technicians = (
+            User.query
+            .filter(User.id_entreprise == company_id)
+            .filter(User.role.in_(["technicien", "technicien_superieur"]))
+            .all()
+        )
+        data = [
+            {
+                "id": tech.id,
+                "name": tech.name,
+                "email": tech.email,
+                "role": tech.role,
+            }
+            for tech in technicians
+        ]
+        return jsonify({"success": True, "technicians": data}), 200
+    except Exception as e:
+        return jsonify({"success": False, "message": str(e)}), 400
 
 # # === CHECK EMAIL ===
 # @token_unrequired

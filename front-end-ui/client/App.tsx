@@ -16,11 +16,15 @@ import RoleSelection from "./pages/RoleSelection";
 import AffiliationRequest from "./pages/AffiliationRequest";
 import EmailVerification from "./pages/EmailVerification";
 import VerifyEmail from "./pages/VerifyEmail";
+import TechnicienRegistration from "./pages/TechnicienRegistration";
 import Dashboard from "./pages/Dashboard";
 import DirecteurSetup from "./pages/DirecteurSetup";
 import TechnicianDashboard from "./pages/TechnicianDashboard";
 import TechnicienSupDashboard from "./pages/TechnicienSupDashboard";
-import TechnicienRegistration from "./pages/TechnicienRegistration";
+import TechnicienSupAlerts from "./pages/TechnicienSupAlerts";
+import TechnicienSupInterventions from "./pages/TechnicienSupInterventions";
+import TechnicienSupLayout from "./components/TechnicienSupLayout";
+import Accueil from "./pages/Accueil";
 import AlertsPage from "./pages/AlertsPage";
 import SurveillancePage from "./pages/SurveillancePage";
 import ReportsPage from "./pages/ReportsPage";
@@ -54,7 +58,7 @@ const RoleHomeRedirect = () => {
     : user?.role === "technicien"
       ? "/technician"
       : user?.role === "technicien_superieur"
-        ? "/technicien-sup"
+        ? "/technicien-sup/map"
         : "/login";
   return <Navigate to={target} replace />;
 };
@@ -189,49 +193,39 @@ const App = () => (
               }
             />
 
+            {/* Technicien Sup Routes with Persistent Header */}
             <Route
               path="/technicien-sup"
               element={
                 <ProtectedRoute requiredRole="technicien_superieur">
-                  <TechnicienSupDashboard />
+                  <TechnicienSupLayout />
                 </ProtectedRoute>
               }
-            />
+            >
+              <Route index element={<TechnicienSupDashboard />} />
+              <Route path="map" element={<TechnicienSupDashboard />} />
+              <Route path="home" element={<Accueil />} />
+              <Route path="dashboard" element={<TechnicienSupDashboard />} />
+              <Route path="alerts" element={<TechnicienSupAlerts />} />
+              <Route path="interventions" element={<TechnicienSupInterventions />} />
+              <Route path="reports" element={<ReportsPage />} />
+            </Route>
 
             <Route
               path="/technicien-sup-dashboard"
               element={
                 <ProtectedRoute requiredRole="technicien_superieur">
-                  <TechnicienSupDashboard />
+                  <Navigate to="/technicien-sup" replace />
                 </ProtectedRoute>
               }
             />
 
             {/* General Feature Routes */}
-            
-
-            <Route
-              path="/alerts"
-              element={
-                <ProtectedRoute>
-                  <AlertsPage />
-                </ProtectedRoute>
-              }
-            />
-
-            <Route
-              path="/alerts-view"
-              element={
-                <ProtectedRoute>
-                  <Alerts />
-                </ProtectedRoute>
-              }
-            />
 
             <Route
               path="/surveillance"
               element={
-                <ProtectedRoute>
+                <ProtectedRoute requiredRole={["directeur", "technicien"]}>
                   <SurveillancePage />
                 </ProtectedRoute>
               }
@@ -240,7 +234,7 @@ const App = () => (
             <Route
               path="/surveillance-view"
               element={
-                <ProtectedRoute>
+                <ProtectedRoute requiredRole={["directeur", "technicien"]}>
                   <Surveillance />
                 </ProtectedRoute>
               }
@@ -249,7 +243,7 @@ const App = () => (
             <Route
               path="/reports"
               element={
-                <ProtectedRoute>
+                <ProtectedRoute requiredRole="technicien_superieur">
                   <ReportsPage />
                 </ProtectedRoute>
               }
@@ -257,7 +251,7 @@ const App = () => (
 
             {/* Profile Routes */}
             <Route
-              path="/profile"
+              path="/technicien/profile"
               element={
                 <ProtectedRoute>
                   <Profile />
@@ -266,7 +260,7 @@ const App = () => (
             />
 
             <Route
-              path="/profile/edit"
+              path="/technicien/profile/edit"
               element={
                 <ProtectedRoute>
                   <ProfileEdit />

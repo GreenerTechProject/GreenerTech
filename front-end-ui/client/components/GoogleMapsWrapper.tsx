@@ -2,10 +2,11 @@ import React from "react";
 import { LoadScript } from "@react-google-maps/api";
 import { Loader2 } from "lucide-react";
 
-const libraries: ("drawing" | "geometry" | "places")[] = [
+const libraries: ("drawing" | "geometry" | "places" | "visualization")[] = [
   "drawing",
   "geometry",
   "places",
+  "visualization",
 ];
 
 interface GoogleMapsWrapperProps {

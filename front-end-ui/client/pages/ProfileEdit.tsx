@@ -14,7 +14,7 @@ import {
   Eye,
   EyeOff
 } from "lucide-react";
-import PageHeader from "@/components/PageHeader";
+import TechHeader from "@/components/TechHeader";
 
 interface ProfileFormData {
   name: string;
@@ -121,7 +121,7 @@ export default function ProfileEdit() {
         description: "Profil mis à jour avec succès",
       });
 
-      navigate("/profile");
+      navigate("/technicien/profile");
     } catch (error: any) {
       console.error("Error updating profile:", error);
       toast({
@@ -135,7 +135,7 @@ export default function ProfileEdit() {
   };
 
   const handleCancel = () => {
-    navigate("/profile");
+    navigate("/technicien/profile");
   };
 
   if (loading) {
@@ -155,7 +155,7 @@ export default function ProfileEdit() {
         <Card className="max-w-md mx-auto">
           <CardContent className="p-6 text-center">
             <p className="text-gray-600">Impossible de charger les données utilisateur</p>
-            <Button onClick={() => navigate("/profile")} className="mt-4">
+            <Button onClick={() => navigate("/technicien/profile")} className="mt-4">
               Retour au profil
             </Button>
           </CardContent>
@@ -166,16 +166,16 @@ export default function ProfileEdit() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <PageHeader 
-        title="" 
-        showProfile={false}
-      />
+      {/* Show TechHeader for technician superior users */}
+      {user?.role === "technicien_superieur" && (
+        <TechHeader role="technicien_sup" />
+      )}
       
       <div className="container mx-auto px-4 py-8 max-w-4xl">
         {/* Back button */}
         <Button 
           variant="ghost" 
-          onClick={() => navigate("/profile")}
+          onClick={() => navigate("/technicien/profile")}
           className="mb-6 text-primary hover:text-primary/80"
         >
           <ChevronLeft className="w-4 h-4 mr-2" />

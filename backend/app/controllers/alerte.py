@@ -28,6 +28,34 @@ def get_all_alertes():
     alertes = Alerte.query.all()
     return jsonify([a.to_dict() for a in alertes]), 200
 
+# Get alerts by assigned serres for a user
+def get_alertes_by_assigned_serres(current_user):
+    try:
+        # Get serres assigned to the current user
+        from app.models.autorisation_serre import Autorisation_serre
+        from app.models.bilan import Bilan
+        
+        # Get user's assigned serres
+        autorisations = Autorisation_serre.query.filter_by(id_user=current_user.id).all()
+        assigned_serre_ids = [auth.id_serre for auth in autorisations]
+        
+        if not assigned_serre_ids:
+            return jsonify([]), 200
+        
+        # Get bilans from assigned serres
+        bilans = Bilan.query.filter(Bilan.id_serre.in_(assigned_serre_ids)).all()
+        bilan_ids = [bilan.id for bilan in bilans]
+        
+        if not bilan_ids:
+            return jsonify([]), 200
+        
+        # Get alerts from those bilans
+        alertes = Alerte.query.filter(Alerte.id_bilan.in_(bilan_ids)).all()
+        
+        return jsonify([a.to_dict() for a in alertes]), 200
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
 # Get alert by ID
 def get_alerte(alert_id):
     alerte = Alerte.query.get(alert_id)
