@@ -1,12 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { 
-  Play, 
-  Pause, 
-  ArrowRight, 
-  ArrowLeft, 
-  ArrowUp, 
+import PageHeader from '@/components/PageHeader';
+import {
+  Play,
+  Pause,
+  ArrowRight,
+  ArrowLeft,
+  ArrowUp,
   ArrowDown,
   Video,
   Wifi,
@@ -274,9 +275,19 @@ export default function RobotControl() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-background p-6">
-      <div className="container mx-auto">
-        <h1 className="text-3xl font-bold mb-6 text-center">Robot Control Interface</h1>
+    <div className="min-h-screen bg-gray-50">
+      <PageHeader
+        title="Contrôle Robot"
+        subtitle="Interface de contrôle du robot autonome"
+        userRole="technicien"
+        badge={{
+          text: "En Ligne",
+          variant: "outline",
+          className: "bg-green-50 border-green-200 text-green-700"
+        }}
+      />
+
+      <div className="container mx-auto p-6">
         
         {/* Connection Status */}
         <div className="grid grid-cols-4 gap-4 mb-6">

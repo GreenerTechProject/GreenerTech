@@ -13,6 +13,7 @@ import {
   LogOut,
   Menu,
   X,
+  Bot,
 } from "lucide-react";
 
 interface SidebarItem {
@@ -89,6 +90,12 @@ export default function TechnicianSidebar({
       label: "Rapports",
       icon: <Bookmark className="h-5 w-5" />,
       path: "/reports",
+    },
+    {
+      id: "robot-control",
+      label: "Contrôle Robot",
+      icon: <Bot className="h-5 w-5" />,
+      path: "/robot-control",
     },
   ];
 
