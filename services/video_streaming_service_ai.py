@@ -1,11 +1,8 @@
-import logging
-logging.basicConfig(level=logging.DEBUG)
-
 import asyncio
 import cv2
 import numpy as np
 from aiohttp import web, WSMsgType
-from aiortc import RTCPeerConnection, VideoStreamTrack, RTCSessionDescription, RTCConfiguration, RTCIceServer
+from aiortc import RTCPeerConnection, VideoStreamTrack, RTCSessionDescription
 from av import VideoFrame
 from cv2 import QRCodeDetector
 #from detectobjects import detect_frame
@@ -181,14 +178,7 @@ async def offer(request):
         params = await request.json()
         offer = params["offer"]
 
-        #pc = RTCPeerConnection()
-
-        pc = RTCPeerConnection(
-            configuration=RTCConfiguration(
-                iceServers=[RTCIceServer(urls=["stun:stun.l.google.com:19302"])]
-            )
-        )
-
+        pc = RTCPeerConnection()
 
         @pc.on("connectionstatechange")
         async def on_connectionstatechange():
@@ -200,8 +190,6 @@ async def offer(request):
         )
         answer = await pc.createAnswer()
         await pc.setLocalDescription(answer)
-        
-        await asyncio.sleep(0.5)
 
         return set_cors_headers(web.json_response({
             "sdp": pc.localDescription.sdp,
