@@ -73,7 +73,7 @@ export default function RobotControl() {
       const offer = await pc.createOffer();
       await pc.setLocalDescription(offer);
 	  
-      const protocol = window.location.protocol === "https:" ? "wss" : "ws";
+      const protocol = window.location.protocol === "https:" ? "https" : "http";
       const hostname = window.location.hostname;
       const port = "8080";
 
