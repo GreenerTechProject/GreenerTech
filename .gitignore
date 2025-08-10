@@ -5,6 +5,7 @@ services/my_model.pt
 services/Data/**
 services/images/*
 backend/static/images/*
+robot/jetson/robot_ref.txt
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
