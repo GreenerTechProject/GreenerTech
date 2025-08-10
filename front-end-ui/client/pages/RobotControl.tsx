@@ -317,7 +317,6 @@ export default function RobotControl() {
                 ref={videoRef}
                 autoPlay
                 playsInline
-                controls
                 muted
                 className="w-full h-96 bg-black rounded-lg object-contain border"
               />
