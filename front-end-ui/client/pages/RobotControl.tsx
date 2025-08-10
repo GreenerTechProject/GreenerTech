@@ -1,20 +1,23 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { 
-  Play, 
-  Pause, 
-  ArrowRight, 
-  ArrowLeft, 
-  ArrowUp, 
+import {
+  Play,
+  Pause,
+  ArrowRight,
+  ArrowLeft,
+  ArrowUp,
   ArrowDown,
   Video,
   Wifi,
   Thermometer,
   Droplets,
   Zap,
-  Sun
+  Sun,
+  Menu
 } from 'lucide-react';
+import { useSidebar } from '@/hooks/useSidebar';
+import DirectorSidebar from '../components/DirectorSidebar';
 
 interface QRData {
   [key: string]: any;
@@ -32,6 +35,7 @@ interface ControlCommand {
 }
 
 export default function RobotControl() {
+  const { isOpen, setIsOpen } = useSidebar();
   const videoRef = useRef<HTMLVideoElement>(null);
   const [qrCodes, setQrCodes] = useState<QRData[]>([]);
   const [sensorData, setSensorData] = useState<SensorData | null>(null);
@@ -274,9 +278,36 @@ export default function RobotControl() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-background p-6">
-      <div className="container mx-auto">
-        <h1 className="text-3xl font-bold mb-6 text-center">Robot Control Interface</h1>
+    <div className="min-h-screen bg-gray-50 flex">
+      <DirectorSidebar isOpen={isOpen} setIsOpen={setIsOpen} />
+
+      <div className="flex-1 overflow-auto">
+        {/* Header */}
+        <div className="bg-white border-b px-6 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setIsOpen(!isOpen)}
+                className="lg:hidden"
+              >
+                <Menu className="h-5 w-5" />
+              </Button>
+              <div>
+                <h1 className="text-2xl font-semibold text-gray-900">
+                  Contrôle Robot
+                </h1>
+                <p className="text-gray-600 mt-1">
+                  Interface de contrôle et surveillance en temps réel
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="p-6">
+          <div className="container mx-auto">
         
         {/* Connection Status */}
         <div className="grid grid-cols-4 gap-4 mb-6">
@@ -426,6 +457,8 @@ export default function RobotControl() {
             </div>
           </CardContent>
         </Card>
+          </div>
+        </div>
       </div>
     </div>
   );
