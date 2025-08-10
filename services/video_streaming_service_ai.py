@@ -40,7 +40,7 @@ class RelayStreamTrack(VideoStreamTrack):
         #frame_to_use = detect_frame(latest_frame) if latest_frame is not None else self.fallback_frame
         
         #_, Billan_dicts = predict_frame(latest_frame) if latest_frame is not None else self.fallback_frame, 111
-        print (Billan_dicts)
+        #print (Billan_dicts)
         # frame_to_use = detected_frame
         if frame_to_use is None:
             raise Exception("No video stream and no fallback image found!")
