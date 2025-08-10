@@ -303,9 +303,9 @@ export default function RobotControl() {
           ))}
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-4 gap-6">
-          {/* Video Stream */}
-          <Card className="lg:col-span-1 xl:col-span-2">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Video Stream with Overlays */}
+          <Card className="lg:col-span-2">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Video className="h-5 w-5" />
@@ -313,133 +313,182 @@ export default function RobotControl() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <video
-                ref={videoRef}
-                autoPlay
-                playsInline
-                muted
-                className="w-full h-96 bg-black rounded-lg object-contain border"
-              />
+              <div className="relative">
+                <video
+                  ref={videoRef}
+                  autoPlay
+                  playsInline
+                  muted
+                  className="w-full h-[600px] bg-black rounded-lg object-contain border"
+                />
+
+                {/* Sensor Data Overlay - Top Left */}
+                <div className="absolute top-4 left-4 bg-black/80 backdrop-blur-sm text-white p-4 rounded-lg border border-white/20">
+                  <div className="flex items-center gap-2 mb-3">
+                    <Thermometer className="h-4 w-4" />
+                    <span className="font-semibold text-sm">Sensor Data</span>
+                  </div>
+                  {sensorData ? (
+                    <div className="space-y-2 text-sm">
+                      <div className="flex items-center gap-2">
+                        <Thermometer className="h-3 w-3 text-red-400" />
+                        <span>{sensorData.temperature}°C</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Droplets className="h-3 w-3 text-blue-400" />
+                        <span>{sensorData.humidity}%</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Zap className="h-3 w-3 text-green-400" />
+                        <span>{sensorData.co2} ppm</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Sun className="h-3 w-3 text-yellow-400" />
+                        <span>{sensorData.luminosite} lux</span>
+                      </div>
+                    </div>
+                  ) : (
+                    <p className="text-gray-300 text-sm">Waiting for sensor data...</p>
+                  )}
+                </div>
+
+                {/* QR Code Data Overlay - Top Right */}
+                <div className="absolute top-4 right-4 bg-black/80 backdrop-blur-sm text-white p-4 rounded-lg border border-white/20 max-w-xs">
+                  <div className="flex items-center gap-2 mb-3">
+                    <div className="h-4 w-4 border-2 border-white rounded-sm" />
+                    <span className="font-semibold text-sm">QR Codes</span>
+                  </div>
+                  <div className="max-h-40 overflow-y-auto space-y-2 text-sm">
+                    {qrCodes.length > 0 ? (
+                      qrCodes.map((qr) => (
+                        <div key={qr.id} className="p-2 bg-white/10 rounded text-xs">
+                          <div className="font-medium mb-1">QR {qr.id + 1}:</div>
+                          {typeof qr.data === 'object' ? (
+                            <div className="space-y-1">
+                              {Object.entries(qr.data).slice(0, 3).map(([key, value]) => (
+                                <div key={key} className="truncate">
+                                  <span className="text-gray-300">{key}:</span> {String(value)}
+                                </div>
+                              ))}
+                              {Object.entries(qr.data).length > 3 && (
+                                <div className="text-gray-400">...{Object.entries(qr.data).length - 3} more</div>
+                              )}
+                            </div>
+                          ) : (
+                            <div className="truncate">{String(qr.data)}</div>
+                          )}
+                        </div>
+                      ))
+                    ) : (
+                      <p className="text-gray-300">No QR codes detected</p>
+                    )}
+                  </div>
+                </div>
+
+                {/* Connection Status Overlay - Bottom Left */}
+                <div className="absolute bottom-4 left-4 flex gap-2">
+                  {Object.entries(connectionStatus).map(([key, connected]) => (
+                    <div
+                      key={key}
+                      className={`flex items-center gap-1 px-2 py-1 rounded text-xs font-medium ${
+                        connected
+                          ? 'bg-green-500/80 text-white'
+                          : 'bg-red-500/80 text-white'
+                      }`}
+                    >
+                      <Wifi className="h-3 w-3" />
+                      <span className="capitalize">{key}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </CardContent>
           </Card>
 
-          {/* Sensor Data */}
-          <Card>
+          {/* Robot Controls - Right Panel */}
+          <Card className="h-fit">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Thermometer className="h-5 w-5" />
-                Sensor Data
+                <div className="h-5 w-5 rounded bg-gradient-to-br from-blue-500 to-purple-600" />
+                Robot Controls
               </CardTitle>
             </CardHeader>
             <CardContent>
-              {sensorData ? (
-                <div className="space-y-4">
-                  <div className="flex items-center gap-2">
-                    <Thermometer className="h-4 w-4 text-red-500" />
-                    <span className="font-medium">Temperature:</span>
-                    <span>{sensorData.temperature}°C</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Droplets className="h-4 w-4 text-blue-500" />
-                    <span className="font-medium">Humidity:</span>
-                    <span>{sensorData.humidity}%</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Zap className="h-4 w-4 text-green-500" />
-                    <span className="font-medium">CO₂:</span>
-                    <span>{sensorData.co2} ppm</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Sun className="h-4 w-4 text-yellow-500" />
-                    <span className="font-medium">Light:</span>
-                    <span>{sensorData.luminosite} lux</span>
+              <div className="space-y-4">
+                {/* Mission Controls */}
+                <div className="space-y-2">
+                  <h4 className="font-semibold text-sm text-muted-foreground">Mission</h4>
+                  <div className="grid grid-cols-1 gap-2">
+                    <ControlButton mode="PLAY_MISSION" className="bg-green-50 hover:bg-green-100 border-green-200 text-green-800">
+                      <Play className="mr-2 h-4 w-4" />
+                      Start Mission
+                    </ControlButton>
+                    <ControlButton mode="PAUSE_MISSION" className="bg-yellow-50 hover:bg-yellow-100 border-yellow-200 text-yellow-800">
+                      <Pause className="mr-2 h-4 w-4" />
+                      Pause Mission
+                    </ControlButton>
                   </div>
                 </div>
-              ) : (
-                <p className="text-muted-foreground">Waiting for sensor data...</p>
-              )}
-            </CardContent>
-          </Card>
 
-          {/* QR Code Data */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Detected QR Codes</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="max-h-80 overflow-y-auto space-y-2">
-                {qrCodes.length > 0 ? (
-                  qrCodes.map((qr) => (
-                    <div key={qr.id} className="p-3 bg-muted rounded-lg text-sm">
-                      <div className="font-medium mb-2">QR Code {qr.id + 1}:</div>
-                      {typeof qr.data === 'object' ? (
-                        <div className="space-y-1">
-                          {Object.entries(qr.data).map(([key, value]) => 
-                            renderQRValue(key, value)
-                          )}
-                        </div>
-                      ) : (
-                        <div>{String(qr.data)}</div>
-                      )}
+                {/* Movement Controls */}
+                <div className="space-y-2">
+                  <h4 className="font-semibold text-sm text-muted-foreground">Movement</h4>
+                  <div className="grid grid-cols-3 gap-2">
+                    <div></div>
+                    <ControlButton mode="TOP" className="bg-blue-50 hover:bg-blue-100 border-blue-200 text-blue-800">
+                      <ArrowUp className="h-4 w-4" />
+                    </ControlButton>
+                    <div></div>
+
+                    <ControlButton mode="LEFT" className="bg-blue-50 hover:bg-blue-100 border-blue-200 text-blue-800">
+                      <ArrowLeft className="h-4 w-4" />
+                    </ControlButton>
+                    <div className="flex items-center justify-center">
+                      <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center">
+                        <div className="w-2 h-2 rounded-full bg-gray-500"></div>
+                      </div>
                     </div>
-                  ))
-                ) : (
-                  <p className="text-muted-foreground">No QR codes detected</p>
-                )}
+                    <ControlButton mode="RIGHT" className="bg-blue-50 hover:bg-blue-100 border-blue-200 text-blue-800">
+                      <ArrowRight className="h-4 w-4" />
+                    </ControlButton>
+
+                    <div></div>
+                    <ControlButton mode="DOWN" className="bg-blue-50 hover:bg-blue-100 border-blue-200 text-blue-800">
+                      <ArrowDown className="h-4 w-4" />
+                    </ControlButton>
+                    <div></div>
+                  </div>
+                </div>
+
+                {/* Camera Controls */}
+                <div className="space-y-2">
+                  <h4 className="font-semibold text-sm text-muted-foreground">Camera</h4>
+                  <div className="grid grid-cols-2 gap-2">
+                    <ControlButton mode="LEFT_CAM" className="bg-purple-50 hover:bg-purple-100 border-purple-200 text-purple-800">
+                      <ArrowLeft className="mr-2 h-4 w-4" />
+                      Left
+                    </ControlButton>
+                    <ControlButton mode="RIGHT_CAM" className="bg-purple-50 hover:bg-purple-100 border-purple-200 text-purple-800">
+                      <ArrowRight className="mr-2 h-4 w-4" />
+                      Right
+                    </ControlButton>
+                  </div>
+                </div>
+
+                {/* Emergency Stop */}
+                <div className="pt-4 border-t">
+                  <Button
+                    onClick={() => sendCommand("EMERGENCY_STOP")}
+                    className="w-full bg-red-600 hover:bg-red-700 text-white"
+                    variant="destructive"
+                  >
+                    🛑 EMERGENCY STOP
+                  </Button>
+                </div>
               </div>
             </CardContent>
           </Card>
         </div>
-
-        {/* Control Buttons */}
-        <Card className="mt-6">
-          <CardHeader>
-            <CardTitle>Robot Controls</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4">
-              <ControlButton mode="PAUSE_MISSION" className="col-span-2">
-                <Pause className="mr-2 h-4 w-4" />
-                Pause Mission
-              </ControlButton>
-              
-              <ControlButton mode="PLAY_MISSION" className="col-span-2">
-                <Play className="mr-2 h-4 w-4" />
-                Play Mission
-              </ControlButton>
-              
-              <ControlButton mode="RIGHT">
-                <ArrowRight className="mr-2 h-4 w-4" />
-                Right
-              </ControlButton>
-              
-              <ControlButton mode="LEFT">
-                <ArrowLeft className="mr-2 h-4 w-4" />
-                Left
-              </ControlButton>
-              
-              <ControlButton mode="TOP">
-                <ArrowUp className="mr-2 h-4 w-4" />
-                Up
-              </ControlButton>
-              
-              <ControlButton mode="DOWN">
-                <ArrowDown className="mr-2 h-4 w-4" />
-                Down
-              </ControlButton>
-              
-              <ControlButton mode="RIGHT_CAM">
-                <ArrowRight className="mr-2 h-4 w-4" />
-                Cam Right
-              </ControlButton>
-              
-              <ControlButton mode="LEFT_CAM">
-                <ArrowLeft className="mr-2 h-4 w-4" />
-                Cam Left
-              </ControlButton>
-            </div>
-          </CardContent>
-        </Card>
       </div>
     </div>
   );
