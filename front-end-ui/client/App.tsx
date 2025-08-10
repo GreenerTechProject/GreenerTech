@@ -236,6 +236,15 @@ const App = () => (
             />
 
             <Route
+              path="/robot-surveillance"
+              element={
+                <ProtectedRoute>
+                  <RobotSurveillance />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
               path="/reports"
               element={
                 <ProtectedRoute>
