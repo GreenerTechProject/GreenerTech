@@ -51,6 +51,7 @@ class RelayStreamTrack(VideoStreamTrack):
         self.av_frame.time_base = time_base
         return self.av_frame
 
+
 async def video_stream_handler(request):
     global latest_frame, latest_qr_results, last_frame_time
     from sensors_realtime_service import get_latest_sensor_data
@@ -162,7 +163,17 @@ def get_latest_frame():
 async def index(request):
     return web.Response(content_type="text/html", text=open("index.html", encoding="utf-8").read())
 
+def set_cors_headers(resp):
+    resp.headers["Access-Control-Allow-Origin"] = "*"
+    resp.headers["Access-Control-Allow-Methods"] = "GET, POST, OPTIONS"
+    resp.headers["Access-Control-Allow-Headers"] = "*"
+    return resp
+
+
 async def offer(request):
+    if request.method == "OPTIONS":
+        return set_cors_headers(web.Response())
+    
     params = await request.json()
     offer = params["offer"]
 
