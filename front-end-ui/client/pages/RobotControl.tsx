@@ -1,12 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { 
-  Play, 
-  Pause, 
-  ArrowRight, 
-  ArrowLeft, 
-  ArrowUp, 
+import PageHeader from '@/components/PageHeader';
+import {
+  Play,
+  Pause,
+  ArrowRight,
+  ArrowLeft,
+  ArrowUp,
   ArrowDown,
   Video,
   Wifi,
