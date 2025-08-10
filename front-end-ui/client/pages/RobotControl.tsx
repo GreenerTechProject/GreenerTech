@@ -332,19 +332,19 @@ export default function RobotControl() {
                     <div className="space-y-2 text-sm">
                       <div className="flex items-center gap-2">
                         <Thermometer className="h-3 w-3 text-red-400" />
-                        <span>{sensorData.temperature}°C</span>
+                        <span>Température {sensorData.temperature} °C</span>
                       </div>
                       <div className="flex items-center gap-2">
                         <Droplets className="h-3 w-3 text-blue-400" />
-                        <span>{sensorData.humidity}%</span>
+                        <span>Humidité {sensorData.humidity} %</span>
                       </div>
                       <div className="flex items-center gap-2">
                         <Zap className="h-3 w-3 text-green-400" />
-                        <span>{sensorData.co2} ppm</span>
+                        <span>CO₂ {sensorData.co2} ppm</span>
                       </div>
                       <div className="flex items-center gap-2">
                         <Sun className="h-3 w-3 text-yellow-400" />
-                        <span>{sensorData.luminosite} lux</span>
+                        <span>Luminosité {sensorData.luminosite} lux</span>
                       </div>
                     </div>
                   ) : (
