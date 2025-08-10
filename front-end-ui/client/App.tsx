@@ -263,6 +263,16 @@ const App = () => (
               }
             />
 
+            {/* Robot Control */}
+            <Route
+              path="/robot-control"
+              element={
+                <ProtectedRoute>
+                  <RobotControl />
+                </ProtectedRoute>
+              }
+            />
+
             {/* Redirect root to dashboard */}
             <Route path="/" element={<Navigate to="/dashboard" replace />} />
 
