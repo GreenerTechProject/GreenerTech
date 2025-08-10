@@ -72,6 +72,10 @@ export default function RobotControl() {
 
       const offer = await pc.createOffer();
       await pc.setLocalDescription(offer);
+	  
+      const protocol = window.location.protocol === "https:" ? "wss" : "ws";
+      const hostname = window.location.hostname;
+      const port = "8080";
 
       const response = await fetch(`${protocol}://${hostname}:${port}/service/video_stream_service`, {
         method: "POST",
@@ -313,7 +317,6 @@ export default function RobotControl() {
                 ref={videoRef}
                 autoPlay
                 playsInline
-                controls
                 muted
                 className="w-full h-96 bg-black rounded-lg object-contain border"
               />
