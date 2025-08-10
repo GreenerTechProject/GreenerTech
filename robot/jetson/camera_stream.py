@@ -8,7 +8,6 @@ import json
 
 host = "localhost"
 
-
 async def send_video():
     cap = cv2.VideoCapture(0)
 
