@@ -2,7 +2,7 @@ import asyncio
 import cv2
 import numpy as np
 from aiohttp import web, WSMsgType
-from aiortc import RTCPeerConnection, VideoStreamTrack, RTCSessionDescription
+from aiortc import RTCPeerConnection, VideoStreamTrack, RTCSessionDescription, RTCConfiguration, RTCIceServer
 from av import VideoFrame
 from cv2 import QRCodeDetector
 #from detectobjects import detect_frame
@@ -179,9 +179,13 @@ async def offer(request):
         offer = params["offer"]
 
         #pc = RTCPeerConnection()
-        pc = RTCPeerConnection(configuration={
-            "iceServers": [{"urls": "stun:stun.l.google.com:19302"}]
-        })
+
+        pc = RTCPeerConnection(
+            configuration=RTCConfiguration(
+                iceServers=[RTCIceServer(urls=["stun:stun.l.google.com:19302"])]
+            )
+        )
+
 
         @pc.on("connectionstatechange")
         async def on_connectionstatechange():
