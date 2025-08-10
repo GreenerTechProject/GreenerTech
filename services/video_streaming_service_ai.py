@@ -173,27 +173,32 @@ def set_cors_headers(resp):
 async def offer(request):
     if request.method == "OPTIONS":
         return set_cors_headers(web.Response())
-    
-    params = await request.json()
-    offer = params["offer"]
 
-    pc = RTCPeerConnection()
+    try:
+        params = await request.json()
+        offer = params["offer"]
 
-    @pc.on("connectionstatechange")
-    async def on_connectionstatechange():
-        print("Connection state:", pc.connectionState)
+        pc = RTCPeerConnection()
 
-    pc.addTrack(RelayStreamTrack())
-    await pc.setRemoteDescription(
-        RTCSessionDescription(sdp=offer["sdp"], type=offer["type"])
-    )
-    answer = await pc.createAnswer()
-    await pc.setLocalDescription(answer)
+        @pc.on("connectionstatechange")
+        async def on_connectionstatechange():
+            print("Connection state:", pc.connectionState)
 
-    return web.json_response({
-        "sdp": pc.localDescription.sdp,
-        "type": pc.localDescription.type
-    })
+        pc.addTrack(RelayStreamTrack())
+        await pc.setRemoteDescription(
+            RTCSessionDescription(sdp=offer["sdp"], type=offer["type"])
+        )
+        answer = await pc.createAnswer()
+        await pc.setLocalDescription(answer)
+
+        return set_cors_headers(web.json_response({
+            "sdp": pc.localDescription.sdp,
+            "type": pc.localDescription.type
+        }))
+
+    except Exception as e:
+        return set_cors_headers(web.json_response({"error": str(e)}, status=500))
+
 
 async def monitor_video_timeout():
     global latest_frame, last_frame_time
