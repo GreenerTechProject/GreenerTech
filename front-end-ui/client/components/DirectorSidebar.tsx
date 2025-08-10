@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { 
-  Users, 
-  UserCheck, 
-  ClipboardList, 
-  AlertTriangle, 
+import {
+  Users,
+  UserCheck,
+  ClipboardList,
+  AlertTriangle,
   FileText,
   LayoutDashboard,
   Menu,
@@ -12,7 +12,8 @@ import {
   ChevronRight,
   Settings,
   BarChart3,
-  MapPin
+  MapPin,
+  Bot
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -78,6 +79,13 @@ const navigationItems = [
     icon: MapPin,
     href: '/director/locations',
     description: 'Domaines, serres et géolocalisation'
+  },
+  {
+    id: 'robot-control',
+    label: 'Contrôle Robot',
+    icon: Bot,
+    href: '/robot-control',
+    description: 'Surveillance et contrôle du robot en temps réel'
   }
 ];
 
