@@ -5,7 +5,7 @@ from aiohttp import web, WSMsgType
 from aiortc import RTCPeerConnection, VideoStreamTrack, RTCSessionDescription
 from av import VideoFrame
 from cv2 import QRCodeDetector
-from detectobjects import detect_frame
+#from detectobjects import detect_frame
 #from classificationmaladies import predict_frame
 import json
 import os
@@ -34,7 +34,7 @@ class RelayStreamTrack(VideoStreamTrack):
         pts, time_base = await self.next_timestamp()
 
         frame_to_use = latest_frame if latest_frame is not None else self.fallback_frame
-        frame_to_use = detect_frame(latest_frame) if latest_frame is not None else self.fallback_frame
+        #frame_to_use = detect_frame(latest_frame) if latest_frame is not None else self.fallback_frame
         
         #_, Billan_dicts = predict_frame(latest_frame) if latest_frame is not None else self.fallback_frame, 111
         print (Billan_dicts)
