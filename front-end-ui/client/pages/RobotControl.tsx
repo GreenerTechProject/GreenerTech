@@ -385,8 +385,8 @@ export default function RobotControl() {
                   </div>
                 </div>
 
-                {/* Robot Control Buttons Overlay - Center */}
-                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                {/* Robot Control Buttons Overlay - Bottom Right */}
+                <div className="absolute bottom-4 right-4 pointer-events-none">
                   <div className="bg-black/40 backdrop-blur-sm rounded-xl p-4 pointer-events-auto">
                     <div className="space-y-4">
                       {/* Mission Controls */}
