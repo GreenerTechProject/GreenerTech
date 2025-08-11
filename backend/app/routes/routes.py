@@ -22,7 +22,7 @@ from app.controllers.mission_robot import create_mission_robot, get_mission_robo
 from app.controllers.robot import create_robot, get_robot, update_robot, get_all_robots, delete_robot
 from app.controllers.etat_bilan import create_etat_bilan, get_etat_bilan, update_etat_bilan, get_etat_bilan_by_bilan, get_last_etat_bilan_by_serre, delete_etat_bilan
 from app.controllers.alerte import create_alerte, get_alerte, get_all_alertes, update_alerte, delete_alerte, get_alertes_by_assigned_serres
-from app.controllers.rapport import create_rapport, get_rapport, update_rapport, delete_rapport, get_rapports_by_user
+from app.controllers.rapport import create_rapport, get_rapport, update_rapport, get_rapports_by_user
 
 all_bp = Blueprint('all_bp', __name__)
 all_bp.route('/register', methods=['POST'])(register)
@@ -161,7 +161,7 @@ all_bp.route('/rapport', methods=['POST'])(create_rapport)
 # all_bp.route('/rapport', methods=['GET'])(get_all_rapports)
 all_bp.route('/rapport', methods=['GET'])(get_rapports_by_user)
 all_bp.route('/rapport/<int:id>', methods=['PUT'])(update_rapport)
-all_bp.route('/rapport/<int:id>', methods=['DELETE'])(delete_rapport)
+# all_bp.route('/rapport/<int:id>', methods=['DELETE'])(delete_rapport)
 
 
 
