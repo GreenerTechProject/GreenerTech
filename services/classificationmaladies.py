@@ -37,16 +37,15 @@ def predict_frame(bgr_frame):
     return detected_frame,Billan_dicts
 
 
-"""
-img =cv2.imread("img1.png",1)
-img = cv2.resize(img,(640,640))
-start = time.time()
-detected_frame , Frame_dict = predict_frame(img)
-end = time.time()
-print(f"Time : {end - start}")
-print(Frame_dict)
-cv2.imshow("Detected Frame",detected_frame)
-cv2.waitKey(0)
-cv2.destroyAllWindows()
 
-"""
+# img =cv2.imread("img1.png",1)
+# img = cv2.resize(img,(640,640))
+# start = time.time()
+# detected_frame , Frame_dict = predict_frame(img)
+# end = time.time()
+# print(f"Time : {end - start}")
+# print(Frame_dict)
+# cv2.imshow("Detected Frame",detected_frame)
+# cv2.waitKey(0)
+# cv2.destroyAllWindows()
+

@@ -1,0 +1,31 @@
+---
+- name: Déployer et redémarrer les services avec docker-compose v1 et un script python
+  hosts: hosts
+  become: no  # utiliser sudo si nécessaire
+  vars:
+    project_path: ~/GreenerTech   # modifiez par le chemin où est docker-compose.yml
+    services_path: ~/GreenerTech/services  # chemin vers dossier services
+
+  tasks:
+
+    - name: Arrêter et supprimer les conteneurs Docker
+      ansible.builtin.shell: docker-compose down
+      args:
+        chdir: "{{ project_path }}"
+      ignore_errors: yes
+
+    - name: Construire et démarrer les conteneurs Docker en mode détaché
+      ansible.builtin.shell: docker-compose up -d --build
+      args:
+        chdir: "{{ project_path }}"
+
+    - name: Terminer tous les processus python3 services.py en cours
+      ansible.builtin.shell: pkill -f "python3 services.py" || true
+      args:
+        warn: false
+
+    - name: Lancer services.py en arrière-plan avec nohup
+      ansible.builtin.shell: nohup python3 services.py > /dev/null 2>&1 &
+      args:
+        chdir: "{{ services_path }}"
+        executable: /bin/bash

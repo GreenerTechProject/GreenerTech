@@ -23,6 +23,7 @@ services:
       - "5000:5000"
     volumes:
       - rapports_data:/app/static/rapports
+      - ./static/iamges:/app/static/iamges  # ✅ bind mount host folder
     environment:
       - FLASK_ENV=development
       - DATABASE_URL=postgresql://postgres:postgres@db:5432/greenertech

@@ -25,9 +25,6 @@ def create_domaine(current_user):
         return jsonify({"message": "Les champs name, area, center et path sont obligatoires"}), 400
 
 
-
-
-
     # Récupérer le dernier id_group_cor existant (max)
     last_id_group_cor = db.session.query(func.max(GroupCor.id_group_cor)).scalar()
     if last_id_group_cor is None:
@@ -62,6 +59,17 @@ def create_domaine(current_user):
     )
 
     db.session.add(domaine)
+    
+    
+    db.session.flush()  # permet d'avoir domaine.id sans commit
+    
+    # Créer l'autorisation pour le directeur qui a créé le domaine
+    autorisation = Autorisation_domaine(
+        id_user=current_user.id,
+        id_domaine=domaine.id
+    )
+    db.session.add(autorisation)
+    
     db.session.commit()
 
     return jsonify(domaine.to_dict()), 201
