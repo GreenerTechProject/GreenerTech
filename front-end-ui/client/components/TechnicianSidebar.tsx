@@ -24,7 +24,7 @@ interface SidebarItem {
 }
 
 interface TechnicianSidebarProps {
-  userRole: "technicien" | "technicien_sup";
+  userRole: "technicien" | "technicien_superieur";
   onInterventionClick?: () => void;
 }
 
@@ -37,7 +37,7 @@ export default function TechnicianSidebar({
   const navigate = useNavigate();
 
   const basePath =
-    userRole === "technicien_sup"
+    userRole === "technicien_superieur"
       ? "/technicien-sup"
       : "/technician";
 
@@ -47,14 +47,14 @@ export default function TechnicianSidebar({
         id: "accueil",
         label: "Accueil",
         icon: <Home className="h-5 w-5" />,
-        path: userRole === "technicien_sup" ? "/technicien-sup/home" : basePath,
+        path: userRole === "technicien_superieur" ? "/technicien-sup/home" : basePath,
       },
       {
         id: "carte",
         label: "Carte",
         icon: <Map className="h-5 w-5" />,
-        path: userRole === "technicien_sup" ? "/technicien-sup/map" : undefined,
-        onClick: userRole === "technicien_sup" ? undefined : () => {
+        path: userRole === "technicien_superieur" ? "/technicien-sup/map" : undefined,
+        onClick: userRole === "technicien_superieur" ? undefined : () => {
           const mapElement = document.querySelector('[data-testid="map-section"]');
           if (mapElement) {
             mapElement.scrollIntoView({ behavior: "smooth" });
@@ -65,23 +65,23 @@ export default function TechnicianSidebar({
         id: "alertes",
         label: "Alertes",
         icon: <AlertTriangle className="h-5 w-5" />,
-        path: userRole === "technicien_sup" ? "/technicien-sup/alerts" : "/alerts",
+        path: userRole === "technicien_superieur" ? "/technicien-sup/alerts" : "/alerts",
       },
       {
         id: "interventions",
         label: "Interventions",
         icon: <Bell className="h-5 w-5" />,
-        path: userRole === "technicien_sup" ? "/technicien-sup/interventions" : "/interventions",
+        path: userRole === "technicien_superieur" ? "/technicien-sup/interventions" : "/interventions",
       },
       {
         id: "rapports",
         label: "Rapports",
         icon: <Bookmark className="h-5 w-5" />,
-        path: userRole === "technicien_sup" ? "/technicien-sup/reports" : "/reports",
+        path: userRole === "technicien_superieur" ? "/technicien-sup/reports" : "/reports",
       },
     ];
     // Only show Surveillance for roles other than technicien_sup
-    if (userRole !== "technicien_sup") {
+    if (userRole !== "technicien_superieur") {
       items.splice(2, 0, {
         id: "surveillance",
         label: "Surveillance",
@@ -146,7 +146,7 @@ export default function TechnicianSidebar({
           <div className="p-6 border-b border-gray-100">
             <h2 className="text-lg font-semibold text-gray-900">Navigation</h2>
             <p className="text-sm text-gray-500 mt-1">
-              {userRole === "technicien_sup"
+              {userRole === "technicien_superieur"
                 ? "Technicien Supérieur"
                 : "Technicien"}
             </p>

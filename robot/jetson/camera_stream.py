@@ -6,10 +6,10 @@ import json
 #import serial
 
 
-host = "localhost"
+host = "greenertech.mywire.org"
 
 async def send_video():
-    cap = cv2.VideoCapture(0)
+    cap = cv2.VideoCapture(1)
 
     while True:
         try:
