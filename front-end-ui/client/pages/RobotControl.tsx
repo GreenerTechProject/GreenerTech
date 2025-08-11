@@ -303,9 +303,9 @@ export default function RobotControl() {
           ))}
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="w-full">
           {/* Video Stream with Overlays */}
-          <Card className="lg:col-span-2">
+          <Card className="w-full">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Video className="h-5 w-5" />
@@ -319,7 +319,7 @@ export default function RobotControl() {
                   autoPlay
                   playsInline
                   muted
-                  className="w-full h-[600px] bg-black rounded-lg object-contain border"
+                  className="w-full h-[700px] bg-black rounded-lg object-contain border"
                 />
 
                 {/* Sensor Data Overlay - Top Left */}
@@ -385,8 +385,8 @@ export default function RobotControl() {
                   </div>
                 </div>
 
-                {/* Robot Control Buttons Overlay - Center */}
-                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                {/* Robot Control Buttons Overlay - Bottom Right */}
+                <div className="absolute bottom-4 right-4 pointer-events-none">
                   <div className="bg-black/40 backdrop-blur-sm rounded-xl p-4 pointer-events-auto">
                     <div className="space-y-4">
                       {/* Mission Controls */}
@@ -467,90 +467,6 @@ export default function RobotControl() {
                       <span className="capitalize">{key}</span>
                     </div>
                   ))}
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Robot Controls - Right Panel */}
-          <Card className="h-fit">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <div className="h-5 w-5 rounded bg-gradient-to-br from-blue-500 to-purple-600" />
-                Robot Controls
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {/* Mission Controls */}
-                <div className="space-y-2">
-                  <h4 className="font-semibold text-sm text-muted-foreground">Mission</h4>
-                  <div className="grid grid-cols-1 gap-2">
-                    <ControlButton mode="PLAY_MISSION" className="bg-green-50 hover:bg-green-100 border-green-200 text-green-800">
-                      <Play className="mr-2 h-4 w-4" />
-                      Start Mission
-                    </ControlButton>
-                    <ControlButton mode="PAUSE_MISSION" className="bg-yellow-50 hover:bg-yellow-100 border-yellow-200 text-yellow-800">
-                      <Pause className="mr-2 h-4 w-4" />
-                      Pause Mission
-                    </ControlButton>
-                  </div>
-                </div>
-
-                {/* Movement Controls */}
-                <div className="space-y-2">
-                  <h4 className="font-semibold text-sm text-muted-foreground">Movement</h4>
-                  <div className="grid grid-cols-3 gap-2">
-                    <div></div>
-                    <ControlButton mode="TOP" className="bg-blue-50 hover:bg-blue-100 border-blue-200 text-blue-800">
-                      <ArrowUp className="h-4 w-4" />
-                    </ControlButton>
-                    <div></div>
-
-                    <ControlButton mode="LEFT" className="bg-blue-50 hover:bg-blue-100 border-blue-200 text-blue-800">
-                      <ArrowLeft className="h-4 w-4" />
-                    </ControlButton>
-                    <div className="flex items-center justify-center">
-                      <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center">
-                        <div className="w-2 h-2 rounded-full bg-gray-500"></div>
-                      </div>
-                    </div>
-                    <ControlButton mode="RIGHT" className="bg-blue-50 hover:bg-blue-100 border-blue-200 text-blue-800">
-                      <ArrowRight className="h-4 w-4" />
-                    </ControlButton>
-
-                    <div></div>
-                    <ControlButton mode="DOWN" className="bg-blue-50 hover:bg-blue-100 border-blue-200 text-blue-800">
-                      <ArrowDown className="h-4 w-4" />
-                    </ControlButton>
-                    <div></div>
-                  </div>
-                </div>
-
-                {/* Camera Controls */}
-                <div className="space-y-2">
-                  <h4 className="font-semibold text-sm text-muted-foreground">Camera</h4>
-                  <div className="grid grid-cols-2 gap-2">
-                    <ControlButton mode="LEFT_CAM" className="bg-purple-50 hover:bg-purple-100 border-purple-200 text-purple-800">
-                      <ArrowLeft className="mr-2 h-4 w-4" />
-                      Left
-                    </ControlButton>
-                    <ControlButton mode="RIGHT_CAM" className="bg-purple-50 hover:bg-purple-100 border-purple-200 text-purple-800">
-                      <ArrowRight className="mr-2 h-4 w-4" />
-                      Right
-                    </ControlButton>
-                  </div>
-                </div>
-
-                {/* Emergency Stop */}
-                <div className="pt-4 border-t">
-                  <Button
-                    onClick={() => sendCommand("EMERGENCY_STOP")}
-                    className="w-full bg-red-600 hover:bg-red-700 text-white"
-                    variant="destructive"
-                  >
-                    🛑 EMERGENCY STOP
-                  </Button>
                 </div>
               </div>
             </CardContent>
