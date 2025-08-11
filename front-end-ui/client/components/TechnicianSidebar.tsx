@@ -13,6 +13,7 @@ import {
   LogOut,
   Menu,
   X,
+  Bot,
 } from "lucide-react";
 
 interface SidebarItem {
@@ -79,6 +80,12 @@ export default function TechnicianSidebar({
         icon: <Bookmark className="h-5 w-5" />,
         path: userRole === "technicien_sup" ? "/technicien-sup/reports" : "/reports",
       },
+	  {
+        id: "robot-control",
+        label: "Contrôle Robot",
+        icon: <Bot className="h-5 w-5" />,
+        path: "/robot-control",
+	  },
     ];
     // Only show Surveillance for roles other than technicien_sup
     if (userRole !== "technicien_sup") {
