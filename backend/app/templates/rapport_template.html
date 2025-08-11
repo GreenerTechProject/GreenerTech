@@ -114,7 +114,7 @@
                     <p><strong>Status de traitement :</strong> {{ alerte.status }}</p>
                     {% if alerte.lien_image %}
                         <p><strong>Image :</strong><br>
-                            <img src="{{ alerte.lien_image }}" alt="Image alerte" style="max-width: 300px; border: 1px solid #ccc;">
+                            <img src="file:///app/app/{{ alerte.lien_image }}" alt="Image alerte" style="max-width: 300px; border: 1px solid #ccc;">
                         </p>
                     {% endif %}
                 </div>
