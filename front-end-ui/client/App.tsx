@@ -32,6 +32,7 @@ import Alerts from "./pages/Alerts";
 import Surveillance from "./pages/Surveillance";
 import Profile from "./pages/Profile";
 import ProfileEdit from "./pages/ProfileEdit";
+import RobotControl from "./pages/RobotControl";
 import NotFound from "./pages/NotFound";
 
 // New Director Pages
@@ -264,6 +265,17 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <ProfileEdit />
+                </ProtectedRoute>
+              }
+            />
+			
+			
+            {/* Robot Control */}
+            <Route
+              path="/robot-control"
+              element={
+                <ProtectedRoute>
+                  <RobotControl />
                 </ProtectedRoute>
               }
             />
