@@ -95,7 +95,7 @@ def update_bilan(current_user, id):
 
     data = request.get_json()
     bilan.nom = data.get('nom', bilan.nom)
-    serre.surface = data.get('surface', serre.surface)
+    bilan.surface = data.get('surface', bilan.surface)
 
     center = data.get('center')
     if center:
