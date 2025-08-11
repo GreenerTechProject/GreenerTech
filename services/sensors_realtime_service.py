@@ -117,12 +117,12 @@ async def sensor_data_handler(request):
                             img_rgb = img_array[:, :, ::-1]
                             pil_img = Image.fromarray(img_rgb)
 
-                            os.makedirs("../backend/static/images", exist_ok=True)
+                            os.makedirs("../backend/app/static/images", exist_ok=True)
                             
                             # Save as JPG to disk
                             timanow = datetime.now().strftime("%Y%m%d%H%M%S")
                             image_filename = f"{qrdata['id']}_{timanow}.jpg"
-                            image_path = f"../backend/static/images/{image_filename}"
+                            image_path = f"../backend/app/static/images/{image_filename}"
                             pil_img.save(image_path, format="JPEG", quality=95)  # You can adjust quality if needed
 
                             # Send alert

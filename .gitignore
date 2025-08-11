@@ -4,7 +4,7 @@ services/best_modelV2.pth
 services/my_model.pt
 services/Data/**
 services/images/*
-backend/static/images/*
+backend/app/static/images/*
 robot/jetson/robot_ref.txt
 services/nohup.out
 
