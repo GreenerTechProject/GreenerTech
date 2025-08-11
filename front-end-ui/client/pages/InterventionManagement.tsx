@@ -53,7 +53,7 @@ import { useToast } from "@/hooks/use-toast";
 interface Technician {
   id: string;
   name: string;
-  role: "technicien" | "technicien_superieur";
+  role: "technicien" | "technicien_sup";
   avatar?: string;
   status: "available" | "busy" | "unavailable";
   currentInterventions: number;
@@ -106,7 +106,7 @@ export default function InterventionManagement() {
       {
         id: "1",
         name: "Marie Dubois",
-        role: "technicien_superieur",
+        role: "technicien_sup",
         status: "available",
         currentInterventions: 2
       },
@@ -127,7 +127,7 @@ export default function InterventionManagement() {
       {
         id: "4",
         name: "Pierre Durand",
-        role: "technicien_superieur",
+        role: "technicien_sup",
         status: "unavailable",
         currentInterventions: 0
       }
@@ -755,7 +755,7 @@ export default function InterventionManagement() {
                                           <p className="font-medium">{technician.name}</p>
                                           <div className="flex items-center space-x-2">
                                             <Badge variant="outline">
-                                              {technician.role === "technicien_superieur" ? "Technicien Sup." : "Technicien"}
+                                              {technician.role === "technicien_sup" ? "Technicien Sup." : "Technicien"}
                                             </Badge>
                                             <Badge variant="outline" className={getTechnicianStatusColor(technician.status)}>
                                               {technician.status === "available" ? "Disponible" : 

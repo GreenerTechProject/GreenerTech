@@ -168,7 +168,7 @@ export default function ProfileEdit() {
     <div className="min-h-screen bg-gray-50">
       {/* Show TechHeader for technician superior users */}
       {user?.role === "technicien_superieur" && (
-        <TechHeader role="technicien_superieur" />
+        <TechHeader role="technicien_sup" />
       )}
       
       <div className="container mx-auto px-4 py-8 max-w-4xl">

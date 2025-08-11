@@ -22,7 +22,7 @@ interface PageHeaderProps {
     variant?: "default" | "secondary" | "destructive" | "outline";
     className?: string;
   };
-  userRole?: "technicien" | "technicien_superieur" | "directeur";
+  userRole?: "technicien" | "technicien_sup" | "directeur";
   actions?: React.ReactNode;
   showProfile?: boolean;
 }
