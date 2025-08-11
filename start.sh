@@ -1,1 +1,1 @@
-docker-compose down ; docker-compose up -d --build ; cd services ; python3 services.py
+docker-compose down ; docker-compose up -d --build ; [ ! -f services/.env ] ; cp services/copy.env services/.env ; cd services ; pkill -f "python3 services.py" ; nohup python3 services.py &

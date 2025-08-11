@@ -5,20 +5,22 @@ from aiohttp import web, WSMsgType
 from aiortc import RTCPeerConnection, VideoStreamTrack, RTCSessionDescription
 from av import VideoFrame
 from cv2 import QRCodeDetector
-#from detectobjects import detect_frame
-#from classificationmaladies import predict_frame
-import json
+from detectobjects import detect_frame
+#import json
 import os
 import time
-#import ast
+import json
 import requests
-
+import aioredis
 
 qr_detector = QRCodeDetector()
-latest_frame = None
-latest_qr_results = []
 connected_qr_clients = set()
-last_frame_time = 0
+
+redis = None
+
+async def init_redis():
+    global redis
+    redis = await aioredis.create_redis_pool('redis://localhost')
 
 class RelayStreamTrack(VideoStreamTrack):
     def __init__(self):
@@ -30,16 +32,23 @@ class RelayStreamTrack(VideoStreamTrack):
         self.cached_frame = None
 
     async def recv(self):
-        global latest_frame
         pts, time_base = await self.next_timestamp()
 
-        frame_to_use = latest_frame if latest_frame is not None else self.fallback_frame
-        #frame_to_use = detect_frame(latest_frame) if latest_frame is not None else self.fallback_frame
-        
-        #_, Billan_dicts = predict_frame(latest_frame) if latest_frame is not None else self.fallback_frame, 111
-        #print (Billan_dicts)
+        # استرجاع آخر إطار من Redis
+        frame_bytes = await redis.get('latest_frame')
+        if frame_bytes:
+            nparr = np.frombuffer(frame_bytes, np.uint8)
+            latest_frame = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+        else:
+            latest_frame = None
 
-        # frame_to_use = detected_frame
+        frame_to_use = latest_frame if latest_frame is not None else self.fallback_frame
+        frame_to_use = detect_frame(frame_to_use) if frame_to_use is not None else self.fallback_frame
+
+        # إذا عندك دالة predict_frame مفعلة عطل السطر التالي مؤقتاً
+        # _, Billan_dicts = predict_frame(frame_to_use)
+        # print(Billan_dicts)
+
         if frame_to_use is None:
             raise Exception("No video stream and no fallback image found!")
 
@@ -52,9 +61,7 @@ class RelayStreamTrack(VideoStreamTrack):
         self.av_frame.time_base = time_base
         return self.av_frame
 
-
 async def video_stream_handler(request):
-    global latest_frame, latest_qr_results, last_frame_time
     from sensors_realtime_service import get_latest_sensor_data
 
     ws = web.WebSocketResponse()
@@ -71,31 +78,33 @@ async def video_stream_handler(request):
                 if retval and points is not None:
                     for i, text in enumerate(decoded_info):
                         if text:
-                            
                             try:
                                 data = json.loads(text)
-                                #print(data["nom"])
                                 print("Detected bilan : "+data["nom"])
+
+                                qr_json = await redis.get('latest_qr_results')
+                                if qr_json:
+                                    latest_qr_results = json.loads(qr_json)
+                                else:
+                                    latest_qr_results = []
+
                                 if latest_qr_results and text != latest_qr_results[0]:
                                     data2 = json.loads(latest_qr_results[0])
                                     if data["nom"] != data2["nom"]:
                                         print("Old bilan : "+data2["nom"])
                                         print(get_latest_sensor_data())
-                                        #print("Old bilan sensor data : "+str(get_latest_sensor_data()["temperature"]))
-                                        
-                                        
-                                        # Send etat_bilan
+
                                         data3 = {
-                                          "id_bilan": data2["id"],
-                                          "temperature": get_latest_sensor_data()["mean_temperature"],
-                                          "humidite": get_latest_sensor_data()["mean_humidity"],
-                                          "luminosite": get_latest_sensor_data()["mean_luminosite"],
-                                          "co2": get_latest_sensor_data()["mean_co2"],
-                                          "nombre_tomates_maladies": 0,
-                                          "nombre_tomates_non_maladies": 0,
-                                          "nombre_malade1": 0,
-                                          "nombre_malade2": 0,
-                                          "rendement": 0
+                                            "id_bilan": data2["id"],
+                                            "temperature": get_latest_sensor_data()["mean_temperature"],
+                                            "humidite": get_latest_sensor_data()["mean_humidity"],
+                                            "luminosite": get_latest_sensor_data()["mean_luminosite"],
+                                            "co2": get_latest_sensor_data()["mean_co2"],
+                                            "nombre_tomates_maladies": 0,
+                                            "nombre_tomates_non_maladies": 0,
+                                            "nombre_malade1": 0,
+                                            "nombre_malade2": 0,
+                                            "rendement": 0
                                         }
                                         print(data3)
                                         try:
@@ -103,11 +112,10 @@ async def video_stream_handler(request):
                                             print("✅ etat_bilan sent:", response.status_code, response.text)
                                         except Exception as e:
                                             print("❌ Failed to send etat_bilan:", e)
-                            
+
                             except json.JSONDecodeError:
                                 print("No json", text)
 
-                            #print("Detected bilan : "+decoded_info[0])
                             pts = points[i].astype(int)
                             for j in range(4):
                                 pt1 = tuple(pts[j])
@@ -117,14 +125,16 @@ async def video_stream_handler(request):
                             cv2.putText(frame, text, (x, y - 10),
                                         cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
                             qr_results.append(text)
-                
-                
-                latest_frame = frame
-                
+
+                # تخزين آخر إطار في Redis
+                _, img_encoded = cv2.imencode('.jpg', frame)
+                img_bytes = img_encoded.tobytes()
+                await redis.set('latest_frame', img_bytes)
+                await redis.set('latest_frame_time', str(time.time()))
+
                 if qr_results:
-                    if qr_results != latest_qr_results:
-                        latest_qr_results = qr_results
-                last_frame_time = time.time()
+                    qr_json = json.dumps(qr_results)
+                    await redis.set('latest_qr_results', qr_json)
 
             except Exception as e:
                 print(f"❌ Error decoding video frame: {e}")
@@ -139,6 +149,12 @@ async def qr_data_handler(request):
     try:
         previous_qr = None
         while not ws.closed:
+            qr_json = await redis.get('latest_qr_results')
+            if qr_json:
+                latest_qr_results = json.loads(qr_json)
+            else:
+                latest_qr_results = []
+
             if latest_qr_results != previous_qr:
                 try:
                     await ws.send_str(json.dumps({"qr_codes": latest_qr_results}))
@@ -147,63 +163,65 @@ async def qr_data_handler(request):
                     print(f"❌ Failed to send QR data: {e}")
             await asyncio.sleep(0.8)
 
-
     finally:
         connected_qr_clients.discard(ws)
 
     return ws
 
-
-def get_latest_qr_results():
-    return latest_qr_results
-
-def get_latest_frame():
-    return latest_frame
-
-
 async def index(request):
     return web.Response(content_type="text/html", text=open("index.html", encoding="utf-8").read())
 
-def set_cors_headers(resp):
-    resp.headers["Access-Control-Allow-Origin"] = "*"
-    resp.headers["Access-Control-Allow-Methods"] = "GET, POST, OPTIONS"
-    resp.headers["Access-Control-Allow-Headers"] = "*"
-    return resp
-
-
 async def offer(request):
-    if request.method == "OPTIONS":
-        return set_cors_headers(web.Response())
+    params = await request.json()
+    offer = params["offer"]
 
-    try:
-        params = await request.json()
-        offer = params["offer"]
+    pc = RTCPeerConnection()
 
-        pc = RTCPeerConnection()
+    @pc.on("connectionstatechange")
+    async def on_connectionstatechange():
+        print("Connection state:", pc.connectionState)
 
-        @pc.on("connectionstatechange")
-        async def on_connectionstatechange():
-            print("Connection state:", pc.connectionState)
+    pc.addTrack(RelayStreamTrack())
+    await pc.setRemoteDescription(
+        RTCSessionDescription(sdp=offer["sdp"], type=offer["type"])
+    )
+    answer = await pc.createAnswer()
+    await pc.setLocalDescription(answer)
 
-        pc.addTrack(RelayStreamTrack())
-        await pc.setRemoteDescription(
-            RTCSessionDescription(sdp=offer["sdp"], type=offer["type"])
-        )
-        answer = await pc.createAnswer()
-        await pc.setLocalDescription(answer)
-
-        return set_cors_headers(web.json_response({
-            "sdp": pc.localDescription.sdp,
-            "type": pc.localDescription.type
-        }))
-
-    except Exception as e:
-        return set_cors_headers(web.json_response({"error": str(e)}, status=500))
-
+    return web.json_response({
+        "sdp": pc.localDescription.sdp,
+        "type": pc.localDescription.type
+    })
 
 async def monitor_video_timeout():
-    global latest_frame, last_frame_time
     while True:
-        if time.time() - last_frame_time > 3:
-            latest_frame = None
+        last_time = await redis.get('latest_frame_time')
+        if last_time:
+            last_time = float(last_time)
+            if time.time() - last_time > 3:
+                await redis.delete('latest_frame')
+                await redis.delete('latest_frame_time')
         await asyncio.sleep(1)
+
+async def main():
+    await init_redis()
+
+    app = web.Application()
+    app.router.add_get('/', index)
+    app.router.add_post('/offer', offer)
+    app.router.add_get('/video_stream', video_stream_handler)
+    app.router.add_get('/qr_data', qr_data_handler)
+
+    runner = web.AppRunner(app)
+    await runner.setup()
+    site = web.TCPSite(runner, '0.0.0.0', 8080)
+    await site.start()
+
+    asyncio.create_task(monitor_video_timeout())
+
+    print("Server running at http://0.0.0.0:8080")
+    while True:
+        await asyncio.sleep(3600)
+
+if __name__ == "__main__":
+    asyncio.run(main())

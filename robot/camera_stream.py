@@ -207,8 +207,10 @@ def listen_missions(robot_reference):
 
             while True:
                 msg = ws.recv()
-                data = json.loads(msg)
-                mission = data.get("mission")
+                # data = json.loads(msg)
+                data = msg
+                #mission = data.get("mission")
+                mission = data
                 if mission:
                     print("Received mission: {}".format(mission))
                     # Send to Arduino if needed
