@@ -303,9 +303,9 @@ export default function RobotControl() {
           ))}
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="w-full">
           {/* Video Stream with Overlays */}
-          <Card className="lg:col-span-2">
+          <Card className="w-full">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Video className="h-5 w-5" />
