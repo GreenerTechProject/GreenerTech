@@ -16,10 +16,10 @@ def create_domaine(current_user):
     if not entreprise:
         return jsonify({"message": "Aucune entreprise associée à cet utilisateur"}), 404
 
-    name = data.get('name')
-    area = data.get('area')
+    name = data.get('nom')
+    area = data.get('surface')
     center = data.get('center')
-    path = data.get('path')
+    path = data.get('position')
 
     if not name or not area or not center or not path:
         return jsonify({"message": "Les champs name, area, center et path sont obligatoires"}), 400
@@ -33,7 +33,7 @@ def create_domaine(current_user):
     id_group_cor = last_id_group_cor + 1
 
 
-    gps_points = data.get('path', [])
+    gps_points = data.get('position', [])
     if not gps_points:
         return jsonify({"message": "Veuillez fournir une liste de points GPS"}), 400
 
@@ -41,8 +41,8 @@ def create_domaine(current_user):
     for point in gps_points:
         gc = GroupCor(
             id_group_cor=id_group_cor,
-            point_x=point['lat'],
-            point_y=point['lng'],
+            point_x=point['latitude'],
+            point_y=point['longitude'],
             ordre=point.get('ordre', 0)
         )
         db.session.add(gc)
@@ -52,8 +52,8 @@ def create_domaine(current_user):
         nom=name,
         id_group_cor=id_group_cor,
         surface=area,
-        center_lat=center.get('lat'),
-        center_lng=center.get('lng'),
+        center_lat=center.get('latitude'),
+        center_lng=center.get('longitude'),
         #path=path,
         id_entreprise=entreprise.id
     )
@@ -76,9 +76,30 @@ def create_domaine(current_user):
 
 
 @token_required
-@role_required("directeur")
+@role_required("directeur", "technicien_superieur", "technicien")
 def get_all_domaines(current_user):
-    entreprise = Entreprise.query.filter_by(id_user=current_user.id).first()
+    """
+    Returns all domains for the entreprise of the current user.
+    - directeur: entreprise is looked up by id_user = current_user.id
+    - technicien/technicien_superieur: use current_user.id_entreprise if set,
+      otherwise fallback to the director via current_user.id_assigned and
+      get entreprise where id_user = director.id
+    """
+    entreprise = None
+
+    if getattr(current_user, 'role', None) == 'directeur':
+        entreprise = Entreprise.query.filter_by(id_user=current_user.id).first()
+    else:
+        # First try direct entreprise link
+        if getattr(current_user, 'id_entreprise', None):
+            entreprise = Entreprise.query.filter_by(id=current_user.id_entreprise).first()
+        # Fallback: use assigned director
+        if not entreprise and getattr(current_user, 'id_assigned', None):
+            from app.models.user import User
+            director = User.query.get(current_user.id_assigned)
+            if director:
+                entreprise = Entreprise.query.filter_by(id_user=director.id).first()
+
     if not entreprise:
         return jsonify({"message": "Aucune entreprise associée"}), 404
 
@@ -108,15 +129,15 @@ def update_domaine(current_user, id):
 
     data = request.get_json()
 
-    domaine.nom = data.get('name', domaine.nom)
-    domaine.surface = data.get('area', domaine.surface)
+    domaine.nom = data.get('nom', domaine.nom)
+    domaine.surface = data.get('surface', domaine.surface)
 
     center = data.get('center')
     if center:
-        domaine.center_lat = center.get('lat', domaine.center_lat)
-        domaine.center_lng = center.get('lng', domaine.center_lng)
+        domaine.center_lat = center.get('longitude', domaine.center_lat)
+        domaine.center_lng = center.get('longitude', domaine.center_lng)
 
-    path = data.get('path')
+    path = data.get('position')
     if path:
         domaine.path = path
 

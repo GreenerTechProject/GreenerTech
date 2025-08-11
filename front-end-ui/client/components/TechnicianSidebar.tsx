@@ -41,56 +41,56 @@ export default function TechnicianSidebar({
       ? "/technicien-sup"
       : "/technician";
 
-  const sidebarItems: SidebarItem[] = [
-    {
-      id: "accueil",
-      label: "Accueil",
-      icon: <Home className="h-5 w-5" />,
-      path: basePath,
-    },
-    {
-      id: "carte",
-      label: "Carte",
-      icon: <Map className="h-5 w-5" />,
-      onClick: () => {
-        // Navigate to map view or scroll to map section
-        const mapElement = document.querySelector(
-          '[data-testid="map-section"]',
-        );
-        if (mapElement) {
-          mapElement.scrollIntoView({ behavior: "smooth" });
-        }
+  const sidebarItems: SidebarItem[] = (() => {
+    const items: SidebarItem[] = [
+      {
+        id: "accueil",
+        label: "Accueil",
+        icon: <Home className="h-5 w-5" />,
+        path: userRole === "technicien_sup" ? "/technicien-sup/home" : basePath,
       },
-    },
-    {
-      id: "surveillance",
-      label: "Surveillance",
-      icon: <Camera className="h-5 w-5" />,
-      path: "/surveillance",
-    },
-    {
-      id: "alertes",
-      label: "Alertes",
-      icon: <AlertTriangle className="h-5 w-5" />,
-      path: "/alerts",
-    },
-    {
-      id: "interventions",
-      label: "Interventions",
-      icon: <Bell className="h-5 w-5" />,
-      onClick: () => {
-        setIsOpen(false); // Close sidebar first
-        onInterventionClick?.();
+      {
+        id: "carte",
+        label: "Carte",
+        icon: <Map className="h-5 w-5" />,
+        path: userRole === "technicien_sup" ? "/technicien-sup/map" : undefined,
+        onClick: userRole === "technicien_sup" ? undefined : () => {
+          const mapElement = document.querySelector('[data-testid="map-section"]');
+          if (mapElement) {
+            mapElement.scrollIntoView({ behavior: "smooth" });
+          }
+        },
       },
-      path: "/interventions",
-    },
-    {
-      id: "rapports",
-      label: "Rapports",
-      icon: <Bookmark className="h-5 w-5" />,
-      path: "/reports",
-    },
-  ];
+      {
+        id: "alertes",
+        label: "Alertes",
+        icon: <AlertTriangle className="h-5 w-5" />,
+        path: userRole === "technicien_sup" ? "/technicien-sup/alerts" : "/alerts",
+      },
+      {
+        id: "interventions",
+        label: "Interventions",
+        icon: <Bell className="h-5 w-5" />,
+        path: userRole === "technicien_sup" ? "/technicien-sup/interventions" : "/interventions",
+      },
+      {
+        id: "rapports",
+        label: "Rapports",
+        icon: <Bookmark className="h-5 w-5" />,
+        path: userRole === "technicien_sup" ? "/technicien-sup/reports" : "/reports",
+      },
+    ];
+    // Only show Surveillance for roles other than technicien_sup
+    if (userRole !== "technicien_sup") {
+      items.splice(2, 0, {
+        id: "surveillance",
+        label: "Surveillance",
+        icon: <Camera className="h-5 w-5" />,
+        path: "/surveillance",
+      });
+    }
+    return items;
+  })();
 
   const handleItemClick = (item: SidebarItem) => {
     if (item.path) {

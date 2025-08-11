@@ -63,6 +63,7 @@ export default function DomainCreation({
     if (!pendingShape || !newDomainName.trim()) return;
 
     const newDomain: Domain = {
+      id: pendingShape.id,
       name: newDomainName.trim(),
       area: pendingShape.area,
       center: pendingShape.center,
@@ -100,6 +101,7 @@ export default function DomainCreation({
     // Add existing domains
     domains.forEach((domain) => {
       shapes.push({
+        id: domain.id,
         type: "domain",
         name: domain.name,
         path: domain.path,

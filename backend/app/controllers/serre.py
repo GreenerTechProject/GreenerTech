@@ -12,7 +12,6 @@ from app.models.guide_culture import GuideCulture
 
 @token_required
 @role_required("directeur" , "technicien_superieur")
-@access_domaine_required
 def create_serre(current_user):
     data = request.get_json()
 
@@ -32,10 +31,16 @@ def create_serre(current_user):
         return jsonify({"message": "Points GPS requis"}), 400
 
     for point in gps_points:
+        # Accept both {lat,lng} and {latitude,longitude}
+        lat = point.get('latitude')
+        lng = point.get('longitude')
+        if lat is None or lng is None:
+            return jsonify({"message": "Chaque point doit contenir lat/lng ou latitude/longitude"}), 400
+
         gc = GroupCor(
             id_group_cor=id_group_cor,
-            point_x=point['latitude'],
-            point_y=point['longitude'],
+            point_x=lat,
+            point_y=lng,
             ordre=point.get('ordre', 0)
         )
         db.session.add(gc)
@@ -43,7 +48,8 @@ def create_serre(current_user):
     serre = Serre(
         nom=data['nom'],
         surface = data.get('surface'),
-        center = data.get('center'),
+        center_lat=data['center']['latitude'] if data.get('center') else None,
+        center_lng=data['center']['longitude'] if data.get('center') else None,
         id_group_cor=id_group_cor,
         id_domaine=domaine.id
     )
@@ -86,6 +92,13 @@ def get_serre(current_user, id):
     serre = Serre.query.get_or_404(id)
     domaine = Domaine.query.get(serre.id_domaine)
     entreprise = Entreprise.query.filter_by(id=current_user.id_entreprise).first()
+    # Allow technicien_superieur if explicit autorisation exists
+    from app.models.autorisation_serre import Autorisation_serre
+    if getattr(current_user, "role", None) == "technicien_superieur":
+        auth = Autorisation_serre.query.filter_by(id_user=current_user.id, id_serre=serre.id).first()
+        if auth:
+            return jsonify(serre.to_dict()), 200
+
     if not entreprise or domaine.id_entreprise != entreprise.id:
         return jsonify({"message": "Non autorisé"}), 403
 
@@ -176,5 +189,37 @@ def get_guides_by_serre(current_user, id_serre):
 
     guides = GuideCulture.query.filter_by(id_serre=id_serre).all()
     return jsonify([g.to_dict() for g in guides]), 200
+
+
+@token_required
+@role_required("technicien", "technicien_superieur", "directeur")
+def get_serres_by_user(current_user):
+    """
+    Get all serres assigned to the current user through autorisation_serre
+    """
+    from app.models.autorisation_serre import Autorisation_serre
+    
+    # Get all autorisations for the current user
+    autorisations = Autorisation_serre.query.filter_by(id_user=current_user.id).all()
+    
+    if not autorisations:
+        return jsonify([]), 200
+    
+    # Get serre IDs from autorisations
+    serre_ids = [auth.id_serre for auth in autorisations]
+    
+    # Get serre details
+    serres = Serre.query.filter(Serre.id.in_(serre_ids)).all()
+    
+    # Get domain information for each serre
+    serres_data = []
+    for serre in serres:
+        domaine = Domaine.query.get(serre.id_domaine)
+        serre_dict = serre.to_dict()
+        if domaine:
+            serre_dict['domaine_nom'] = domaine.nom
+        serres_data.append(serre_dict)
+    
+    return jsonify(serres_data), 200
 
 

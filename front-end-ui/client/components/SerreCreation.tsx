@@ -27,7 +27,7 @@ import { getGoogleMapsAPIKey } from "@/config/maps";
 import { ExtendedSerre, ExtendedGuideDeCulture } from "@shared/api";
 import { guideService } from "@/services/guideService";
 import { useToast } from "@/hooks/use-toast";
-import {serreService} from "@/services/serreService"
+import { serreService } from "@/services/serreService";
 
 interface Domain {
   id: string;
@@ -43,7 +43,7 @@ interface SerreCreationProps {
   onComplete: (domains: Domain[]) => void;
   onBack: () => void;
   selectedDomainId?: string;
-  setupMode?: boolean; // If true, don't call backend APIs, just store locally
+  setupMode?: boolean;
 }
 
 const GOOGLE_MAPS_API_KEY = getGoogleMapsAPIKey();
@@ -71,7 +71,7 @@ export default function SerreCreation({
 }: SerreCreationProps) {
   const [currentDomains, setCurrentDomains] = useState<Domain[]>(domains);
   const [activeDomainId, setActiveDomainId] = useState<string>(
-    selectedDomainId || domains[0]?.id || "",
+    selectedDomainId || domains[0]?.id || ""
   );
   const [isDrawing, setIsDrawing] = useState(false);
   const [pendingSerre, setPendingSerre] = useState<DrawnShape | null>(null);
@@ -86,6 +86,7 @@ export default function SerreCreation({
     nombre_de_plants: "",
     date_debut_saison: undefined as Date | undefined,
     date_fin_saison: undefined as Date | undefined,
+    notes: "",
   });
   const [guides, setGuides] = useState<ExtendedGuideDeCulture[]>([]);
   const [showCreateGuide, setShowCreateGuide] = useState(false);
@@ -95,12 +96,10 @@ export default function SerreCreation({
 
   const activeDomain = currentDomains.find((d) => d.id === activeDomainId);
 
-  // Load existing guides on component mount
   useEffect(() => {
     const loadGuides = async () => {
       try {
         const existingGuides = await guideService.getGuides();
-        // Convert backend guides to ExtendedGuideDeCulture format
         const convertedGuides: ExtendedGuideDeCulture[] = existingGuides.map(guide => ({
           id: guide.id,
           nom: guide.nom,
@@ -140,7 +139,7 @@ export default function SerreCreation({
       !guideForm.date_fin_saison
     ) {
       return;
-    }y
+    }
 
     setIsCreatingGuide(true);
 
@@ -148,19 +147,17 @@ export default function SerreCreation({
       let newGuide: ExtendedGuideDeCulture;
 
       if (setupMode) {
-        // In setup mode, create guide locally without backend call
         newGuide = {
-          id: `temp-guide-${Date.now()}`, // Temporary ID for frontend use
+          id: `temp-guide-${Date.now()}`,
           nom: guideForm.nom,
           variete: guideForm.variete,
           rendement: parseFloat(guideForm.rendement),
           nombre_de_plants: parseInt(guideForm.nombre_de_plants),
           date_debut_saison: guideForm.date_debut_saison,
           date_fin_saison: guideForm.date_fin_saison,
-          id_serre: "", // Will be set when serre is created
+          id_serre: "",
         };
       } else {
-        // In standalone mode, call the backend to create the guide
         const guideRequest = {
           nom: guideForm.nom,
           variete: guideForm.variete,
@@ -168,7 +165,7 @@ export default function SerreCreation({
           nombre_de_plants: parseInt(guideForm.nombre_de_plants),
           date_debut_saison: guideForm.date_debut_saison.toISOString(),
           date_fin_saison: guideForm.date_fin_saison.toISOString(),
-          id_serre: "temp", // Temporary value, will be updated when serre is created
+          id_serre: "temp",
         };
 
         const response = await guideService.createGuide(guideRequest);
@@ -184,10 +181,9 @@ export default function SerreCreation({
           id_serre: "",
         };
       }
+
       setGuides((prev) => [...prev, newGuide]);
       setSerreForm((prev) => ({ ...prev, selectedGuideId: newGuide.id }));
-
-      // Reset guide form
       setGuideForm({
         nom: "",
         variete: "",
@@ -203,9 +199,17 @@ export default function SerreCreation({
         title: "Guide créé",
         description: `Le guide "${guideForm.nom}" a été créé avec succès`,
       });
-   
+    } catch (error) {
+      console.error("Error creating guide:", error);
+      toast({
+        title: "Erreur",
+        description: "Échec de la création du guide",
+        variant: "destructive",
+      });
+    } finally {
+      setIsCreatingGuide(false);
+    }
   };
-
 
   const handleSaveSerre = async () => {
     if (
@@ -213,12 +217,11 @@ export default function SerreCreation({
       !serreForm.nom.trim() ||
       !serreForm.selectedGuideId ||
       !activeDomainId
-    )
+    ) {
       return;
+    }
 
-    const selectedGuide = guides.find(
-      (g) => g.id === serreForm.selectedGuideId,
-    );
+    const selectedGuide = guides.find((g) => g.id === serreForm.selectedGuideId);
     if (!selectedGuide) return;
 
     setIsSavingSerre(true);
@@ -227,9 +230,8 @@ export default function SerreCreation({
       let newSerre: ExtendedSerre;
 
       if (setupMode) {
-        // In setup mode, just create the serre object locally (no backend call)
         newSerre = {
-          id: `temp-serre-${Date.now()}`, // Temporary ID for frontend use
+          id: `temp-serre-${Date.now()}`,
           nom: serreForm.nom.trim(),
           surface: pendingSerre.area,
           domainId: activeDomainId,
@@ -239,7 +241,6 @@ export default function SerreCreation({
           guide: selectedGuide,
         };
       } else {
-        // In standalone mode, call the backend to create the serre
         const serreRequest = {
           nom: serreForm.nom.trim(),
           id_domaine: parseInt(activeDomainId),
@@ -262,27 +263,32 @@ export default function SerreCreation({
           center: pendingSerre.center,
           guide: selectedGuide,
         };
+      }
 
       setCurrentDomains((prev) =>
         prev.map((domain) =>
           domain.id === activeDomainId
             ? { ...domain, serres: [...domain.serres, newSerre] }
-            : domain,
-        ),
+            : domain
+        )
       );
-
-      // Reset form
-      setSerreForm({
-        nom: "",
-        selectedGuideId: "",
-      });
+      setSerreForm({ nom: "", selectedGuideId: "" });
       setPendingSerre(null);
 
       toast({
         title: "Serre créée",
         description: `La serre "${serreForm.nom}" a été créée avec succès`,
       });
-   
+    } catch (error) {
+      console.error("Error saving serre:", error);
+      toast({
+        title: "Erreur",
+        description: "Échec de la création de la serre",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSavingSerre(false);
+    }
   };
 
   const handleDeleteSerre = (serreId: string) => {
@@ -290,7 +296,7 @@ export default function SerreCreation({
       prev.map((domain) => ({
         ...domain,
         serres: domain.serres.filter((s) => s.id !== serreId),
-      })),
+      }))
     );
   };
 
@@ -311,7 +317,6 @@ export default function SerreCreation({
   const getAllShapes = (): DrawnShape[] => {
     const shapes: DrawnShape[] = [];
 
-    // Add current active domain
     if (activeDomain) {
       shapes.push({
         id: activeDomain.id,
@@ -323,7 +328,6 @@ export default function SerreCreation({
         color: "#B4CC5F",
       });
 
-      // Add all serres in this domain
       activeDomain.serres.forEach((serre) => {
         shapes.push({
           id: serre.id,
@@ -338,7 +342,6 @@ export default function SerreCreation({
       });
     }
 
-    // Add pending serre
     if (pendingSerre) {
       shapes.push(pendingSerre);
     }
@@ -348,473 +351,193 @@ export default function SerreCreation({
 
   const totalSerres = currentDomains.reduce(
     (total, domain) => total + domain.serres.length,
-    0,
+    0
   );
 
   return (
     <div className="h-screen flex">
       {/* Left Panel */}
       <div className="w-1/3 bg-white border-r flex flex-col">
+        {/* Header */}
         <div className="p-6 border-b">
-          <div className="flex items-center mb-4">
-            <Button variant="ghost" size="sm" onClick={onBack} className="mr-2">
-              <ArrowLeft className="h-4 w-4" />
-            </Button>
+          <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-2xl font-bold text-gray-900">
-                Créer vos serres
-              </h2>
-              <p className="text-gray-600 text-sm">
-                Ajoutez des serres à vos domaines et configurez les guides de
-                culture.
+              <h2 className="text-xl font-semibold text-gray-900">Création de Serres</h2>
+              <p className="text-sm text-gray-600">
+                Créez des serres pour vos domaines
               </p>
             </div>
-          </div>
-
-          {/* Domain Selector */}
-          <div className="space-y-2">
-            <Label>Domaine actuel</Label>
-            <Select value={activeDomainId} onValueChange={setActiveDomainId}>
-              <SelectTrigger>
-                <SelectValue placeholder="Sélectionnez un domaine" />
-              </SelectTrigger>
-              <SelectContent>
-                {currentDomains.map((domain) => (
-                  <SelectItem key={domain.id} value={domain.id}>
-                    {domain.name} ({domain.serres.length} serre
-                    {domain.serres.length > 1 ? "s" : ""})
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Button variant="outline" onClick={onBack}>
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Retour
+            </Button>
           </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-6">
-          {/* Culture Guide Management */}
-          <Card className="mb-6">
-            <CardHeader>
-              <CardTitle className="text-lg flex items-center">
-                <BookOpen className="mr-2 h-5 w-5" />
-                Guides de culture
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {guides.length > 0 ? (
-                <div className="space-y-2">
-                  {guides.map((guide) => (
-                    <div key={guide.id} className="p-3 border rounded-lg">
-                      <div className="font-medium">{guide.nom}</div>
-                      <div className="text-sm text-gray-600">
-                        Variété: {guide.variete}
-                      </div>
-                      <div className="text-sm text-gray-600">
-                        Rendement: {guide.rendement} kg/m²
-                      </div>
-                      <div className="text-sm text-gray-600">
-                        Plants: {guide.nombre_de_plants}
-                      </div>
-                      <div className="text-sm text-gray-600">
-                        Saison:{" "}
-                        {guide.date_debut_saison instanceof Date
-                          ? format(guide.date_debut_saison, "dd/MM/yyyy", {
-                              locale: fr,
-                            })
-                          : guide.date_debut_saison}{" "}
-                        →{" "}
-                        {guide.date_fin_saison instanceof Date
-                          ? format(guide.date_fin_saison, "dd/MM/yyyy", {
-                              locale: fr,
-                            })
-                          : guide.date_fin_saison}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-sm text-gray-500">
-                  Aucun guide de culture créé
-                </p>
-              )}
+        {/* Domain Selection */}
+        <div className="p-6 border-b">
+          <Label htmlFor="domain-select">Sélectionner un domaine</Label>
+          <Select value={activeDomainId} onValueChange={setActiveDomainId}>
+            <SelectTrigger>
+              <SelectValue placeholder="Choisir un domaine" />
+            </SelectTrigger>
+            <SelectContent>
+              {currentDomains.map((domain) => (
+                <SelectItem key={domain.id} value={domain.id}>
+                  {domain.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
 
-              {!showCreateGuide ? (
-                <Button
-                  onClick={() => setShowCreateGuide(true)}
-                  variant="outline"
-                  className="w-full"
-                >
-                  <Plus className="mr-2 h-4 w-4" />
-                  Créer un guide de culture
-                </Button>
-              ) : (
-                <div className="space-y-4 p-4 border rounded-lg bg-gray-50">
-                  <h4 className="font-medium">Nouveau guide de culture</h4>
-
+        {/* Serre Creation Form */}
+        <div className="flex-1 p-6 overflow-y-auto">
+          {activeDomain && (
+            <div className="space-y-6">
+              {/* Serre Form */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Plus className="h-5 w-5" />
+                    Nouvelle Serre
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
                   <div>
-                    <Label htmlFor="guideName">Nom du guide *</Label>
+                    <Label htmlFor="serre-name">Nom de la serre</Label>
                     <Input
-                      id="guideName"
-                      value={guideForm.nom}
-                      onChange={(e) =>
-                        setGuideForm((prev) => ({ ...prev, nom: e.target.value }))
-                      }
-                      placeholder="Ex: Guide Tomates Printemps 2024"
-                    />
-                  </div>
-
-                  <div>
-                    <Label htmlFor="guideVariety">Variété *</Label>
-                    <Select
-                      value={guideForm.variete}
-                      onValueChange={(value) =>
-                        setGuideForm((prev) => ({ ...prev, variete: value }))
-                      }
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Sélectionnez une variété" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {cropVarieties.map((variety) => (
-                          <SelectItem key={variety.value} value={variety.value}>
-                            {variety.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div>
-                    <Label htmlFor="guideYield">
-                      Rendement prévu (kg/m²) *
-                    </Label>
-                    <Input
-                      id="guideYield"
-                      type="number"
-                      step="0.1"
-                      value={guideForm.rendement}
-                      onChange={(e) =>
-                        setGuideForm((prev) => ({
-                          ...prev,
-                          rendement: e.target.value,
-                        }))
-                      }
-                      placeholder="Ex: 25.5"
-                    />
-                  </div>
-
-                  <div>
-                    <Label htmlFor="guidePlants">
-                      Nombre de plants *
-                    </Label>
-                    <Input
-                      id="guidePlants"
-                      type="number"
-                      value={guideForm.nombre_de_plants}
-                      onChange={(e) =>
-                        setGuideForm((prev) => ({
-                          ...prev,
-                          nombre_de_plants: e.target.value,
-                        }))
-                      }
-                      placeholder="Ex: 100"
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <Label>Date de début de saison *</Label>
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <Button
-                            variant="outline"
-                            className="w-full justify-start text-left font-normal"
-                          >
-                            <CalendarIcon className="mr-2 h-4 w-4" />
-                            {guideForm.date_debut_saison ? (
-                              format(guideForm.date_debut_saison, "dd/MM/yyyy", {
-                                locale: fr,
-                              })
-                            ) : (
-                              <span>Choisir</span>
-                            )}
-                          </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0">
-                          <Calendar
-                            mode="single"
-                            selected={guideForm.date_debut_saison}
-                            onSelect={(date) =>
-                              setGuideForm((prev) => ({
-                                ...prev,
-                                date_debut_saison: date,
-                              }))
-                            }
-                            initialFocus
-                          />
-                        </PopoverContent>
-                      </Popover>
-                    </div>
-
-                    <div>
-                      <Label>Date de fin de saison *</Label>
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <Button
-                            variant="outline"
-                            className="w-full justify-start text-left font-normal"
-                          >
-                            <CalendarIcon className="mr-2 h-4 w-4" />
-                            {guideForm.date_fin_saison ? (
-                              format(guideForm.date_fin_saison, "dd/MM/yyyy", {
-                                locale: fr,
-                              })
-                            ) : (
-                              <span>Choisir</span>
-                            )}
-                          </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0">
-                          <Calendar
-                            mode="single"
-                            selected={guideForm.harvestDate}
-                            onSelect={(date) =>
-                              setGuideForm((prev) => ({
-                                ...prev,
-                                date_fin_saison: date,
-                              }))
-                            }
-                            initialFocus
-                          />
-                        </PopoverContent>
-                      </Popover>
-                    </div>
-                  </div>
-
-                  <div>
-                    <Label htmlFor="guideNotes">Notes additionnelles</Label>
-                    <Textarea
-                      id="guideNotes"
-                      value={guideForm.notes}
-                      onChange={(e) =>
-                        setGuideForm((prev) => ({
-                          ...prev,
-                          notes: e.target.value,
-                        }))
-                      }
-                      placeholder="Informations supplémentaires..."
-                      rows={3}
-                    />
-                  </div>
-
-                  <div className="flex space-x-2">
-                    <Button
-                      onClick={handleCreateGuide}
-                      disabled={
-                        isCreatingGuide ||
-                        !guideForm.nom ||
-                        !guideForm.variete ||
-                        !guideForm.rendement ||
-                        !guideForm.nombre_de_plants ||
-                        !guideForm.date_debut_saison ||
-                        !guideForm.date_fin_saison
-                      }
-                      className="flex-1"
-                    >
-                      {isCreatingGuide ? (
-                        <>
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          Création...
-                        </>
-                      ) : (
-                        "Créer le guide"
-                      )}
-                    </Button>
-                    <Button
-                      variant="outline"
-                      onClick={() => setShowCreateGuide(false)}
-                    >
-                      Annuler
-                    </Button>
-                  </div>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Drawing Controls */}
-          <Card className="mb-6">
-            <CardHeader>
-              <CardTitle className="text-lg">Nouvelle serre</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {!isDrawing && !pendingSerre && (
-                <Button
-                  onClick={startDrawing}
-                  className="w-full"
-                  disabled={!activeDomainId}
-                >
-                  <Plus className="mr-2 h-4 w-4" />
-                  Dessiner une serre
-                </Button>
-              )}
-
-              {isDrawing && (
-                <div className="space-y-3">
-                  <div className="text-sm text-blue-600 bg-blue-50 p-3 rounded-md">
-                    Dessinez la serre dans le domaine{" "}
-                    <strong>{activeDomain?.name}</strong>
-                  </div>
-                  <Button
-                    variant="outline"
-                    onClick={cancelDrawing}
-                    className="w-full"
-                  >
-                    Annuler
-                  </Button>
-                </div>
-              )}
-
-              {pendingSerre && (
-                <div className="space-y-4">
-                  <div className="text-xs text-gray-500">
-                    Surface: {pendingSerre.area.toFixed(0)} m²
-                  </div>
-
-                  <div>
-                    <Label htmlFor="serreName">Nom de la serre *</Label>
-                    <Input
-                      id="serreName"
+                      id="serre-name"
                       value={serreForm.nom}
                       onChange={(e) =>
-                        setSerreForm((prev) => ({
-                          ...prev,
-                          nom: e.target.value,
-                        }))
+                        setSerreForm((prev) => ({ ...prev, nom: e.target.value }))
                       }
-                      placeholder="Ex: Serre Tomates A1"
+                      placeholder="Ex: Serre A-1"
                     />
                   </div>
 
                   <div>
-                    <Label htmlFor="guideSelect">Guide de culture *</Label>
+                    <Label htmlFor="guide-select">Guide de culture</Label>
                     <Select
                       value={serreForm.selectedGuideId}
                       onValueChange={(value) =>
-                        setSerreForm((prev) => ({
-                          ...prev,
-                          selectedGuideId: value,
-                        }))
+                        setSerreForm((prev) => ({ ...prev, selectedGuideId: value }))
                       }
                     >
                       <SelectTrigger>
-                        <SelectValue placeholder="Sélectionnez un guide de culture" />
+                        <SelectValue placeholder="Choisir un guide" />
                       </SelectTrigger>
                       <SelectContent>
                         {guides.map((guide) => (
                           <SelectItem key={guide.id} value={guide.id}>
-                            {guide.nom} - {guide.variete} ({guide.rendement} kg/m²)
+                            {guide.nom} - {guide.variete}
                           </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
-                    {guides.length === 0 && (
-                      <p className="text-sm text-gray-500 mt-1">
-                        Créez d'abord un guide de culture
-                      </p>
+                  </div>
+
+                  {!serreForm.selectedGuideId && (
+                    <div className="text-center">
+                      <Button
+                        variant="outline"
+                        onClick={() => setShowCreateGuide(true)}
+                        className="w-full"
+                      >
+                        <BookOpen className="h-4 w-4 mr-2" />
+                        Créer un nouveau guide
+                      </Button>
+                    </div>
+                  )}
+
+                  <div className="flex gap-2">
+                    <Button
+                      onClick={startDrawing}
+                      disabled={!serreForm.nom.trim() || !serreForm.selectedGuideId}
+                      className="flex-1"
+                    >
+                      <Plus className="h-4 w-4 mr-2" />
+                      Dessiner la serre
+                    </Button>
+                    {pendingSerre && (
+                      <Button
+                        onClick={cancelDrawing}
+                        variant="outline"
+                        size="icon"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
                     )}
                   </div>
 
-                  <div className="flex space-x-2">
-                    <Button
-                      onClick={handleSaveSerre}
-                      disabled={
-                        isSavingSerre ||
-                        !serreForm.nom.trim() ||
-                        !serreForm.selectedGuideId
-                      }
-                      className="flex-1"
-                    >
-                      {isSavingSerre ? (
-                        <>
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          Enregistrement...
-                        </>
-                      ) : (
-                        "Enregistrer"
-                      )}
-                    </Button>
-                    <Button variant="outline" onClick={cancelDrawing}>
-                      Annuler
-                    </Button>
-                  </div>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Serres List for Active Domain */}
-          {activeDomain && activeDomain.serres.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">
-                  Serres de {activeDomain.name} ({activeDomain.serres.length})
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {activeDomain.serres.map((serre) => (
-                    <div key={serre.id} className="p-3 border rounded-lg">
-                      <div className="flex justify-between items-start">
-                        <div className="flex-1">
-                          <h4 className="font-medium text-gray-900">
-                            {serre.nom}
-                          </h4>
-                          <div className="text-sm text-gray-600 space-y-1">
-                            {serre.guide && (
-                              <>
-                                <div>Guide: {serre.guide.nom}</div>
-                                <div>Variété: {serre.guide.variete}</div>
-                                <div>Rendement: {serre.guide.rendement} kg/m²</div>
-                                <div>Plants: {serre.guide.nombre_de_plants}</div>
-                                <div>Surface: {serre.surface.toFixed(0)} m²</div>
-                              </>
-                            )}
-                          </div>
-                        </div>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleDeleteSerre(serre.id)}
-                          className="text-red-500 hover:text-red-700"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
+                  {pendingSerre && (
+                    <div className="space-y-2">
+                      <div className="flex justify-between text-sm">
+                        <span>Surface:</span>
+                        <span className="font-medium">
+                          {pendingSerre.area.toFixed(2)} m²
+                        </span>
                       </div>
+                      <Button
+                        onClick={handleSaveSerre}
+                        disabled={isSavingSerre}
+                        className="w-full"
+                      >
+                        {isSavingSerre && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                        Sauvegarder la serre
+                      </Button>
                     </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Existing Serres */}
+              {activeDomain.serres.length > 0 && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Serres existantes ({activeDomain.serres.length})</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-2">
+                      {activeDomain.serres.map((serre) => (
+                        <div
+                          key={serre.id}
+                          className="flex items-center justify-between p-3 border rounded-lg"
+                        >
+                          <div>
+                            <p className="font-medium">{serre.nom}</p>
+                            <p className="text-sm text-gray-600">
+                              {serre.surface.toFixed(2)} m²
+                            </p>
+                          </div>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleDeleteSerre(serre.id)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
           )}
         </div>
 
-        {/* Navigation Buttons */}
-        <div className="p-6 border-t bg-gray-50">
-          <div className="mb-3 text-sm text-gray-600">
-            Total: {totalSerres} serre{totalSerres > 1 ? "s" : ""} créée
-            {totalSerres > 1 ? "s" : ""}
-            dans {currentDomains.length} domaine
-            {currentDomains.length > 1 ? "s" : ""}
-          </div>
-          <div className="flex space-x-3">
-            <Button variant="outline" onClick={onBack}>
-              Retour aux domaines
-            </Button>
+        {/* Footer */}
+        <div className="p-6 border-t">
+          <div className="flex justify-between items-center">
+            <div className="text-sm text-gray-600">
+              Total: {totalSerres} serre(s) créée(s)
+            </div>
             <Button
               onClick={() => onComplete(currentDomains)}
-              className="flex-1"
+              disabled={totalSerres === 0}
             >
-              Terminer la configuration
+              Continuer
             </Button>
           </div>
         </div>
@@ -832,6 +555,166 @@ export default function SerreCreation({
           />
         </GoogleMapsWrapper>
       </div>
+
+      {/* Create Guide Modal */}
+      {showCreateGuide && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
+            <h3 className="text-lg font-semibold mb-4">Créer un guide de culture</h3>
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="guide-name">Nom du guide</Label>
+                <Input
+                  id="guide-name"
+                  value={guideForm.nom}
+                  onChange={(e) =>
+                    setGuideForm((prev) => ({ ...prev, nom: e.target.value }))
+                  }
+                  placeholder="Ex: Guide Tomates"
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="guide-variete">Variété</Label>
+                <Select
+                  value={guideForm.variete}
+                  onValueChange={(value) =>
+                    setGuideForm((prev) => ({ ...prev, variete: value }))
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Choisir une variété" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {cropVarieties.map((variety) => (
+                      <SelectItem key={variety.value} value={variety.value}>
+                        {variety.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="guide-rendement">Rendement (kg/m²)</Label>
+                  <Input
+                    id="guide-rendement"
+                    type="number"
+                    value={guideForm.rendement}
+                    onChange={(e) =>
+                      setGuideForm((prev) => ({ ...prev, rendement: e.target.value }))
+                    }
+                    placeholder="0.0"
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="guide-plants">Nombre de plants</Label>
+                  <Input
+                    id="guide-plants"
+                    type="number"
+                    value={guideForm.nombre_de_plants}
+                    onChange={(e) =>
+                      setGuideForm((prev) => ({ ...prev, nombre_de_plants: e.target.value }))
+                    }
+                    placeholder="0"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label>Date de début</Label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className="w-full justify-start text-left font-normal"
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {guideForm.date_debut_saison ? (
+                          format(guideForm.date_debut_saison, "PPP", { locale: fr })
+                        ) : (
+                          <span>Choisir une date</span>
+                        )}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0">
+                      <Calendar
+                        mode="single"
+                        selected={guideForm.date_debut_saison}
+                        onSelect={(date) =>
+                          setGuideForm((prev) => ({ ...prev, date_debut_saison: date }))
+                        }
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </div>
+
+                <div>
+                  <Label>Date de fin</Label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className="w-full justify-start text-left font-normal"
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {guideForm.date_fin_saison ? (
+                          format(guideForm.date_fin_saison, "PPP", { locale: fr })
+                        ) : (
+                          <span>Choisir une date</span>
+                        )}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0">
+                      <Calendar
+                        mode="single"
+                        selected={guideForm.date_fin_saison}
+                        onSelect={(date) =>
+                          setGuideForm((prev) => ({ ...prev, date_fin_saison: date }))
+                        }
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </div>
+              </div>
+
+              <div>
+                <Label htmlFor="guide-notes">Notes</Label>
+                <Textarea
+                  id="guide-notes"
+                  value={guideForm.notes}
+                  onChange={(e) =>
+                    setGuideForm((prev) => ({ ...prev, notes: e.target.value }))
+                  }
+                  placeholder="Notes supplémentaires..."
+                />
+              </div>
+
+              <div className="flex gap-2">
+                <Button
+                  onClick={handleCreateGuide}
+                  disabled={isCreatingGuide}
+                  className="flex-1"
+                >
+                  {isCreatingGuide && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                  Créer le guide
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => setShowCreateGuide(false)}
+                >
+                  Annuler
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

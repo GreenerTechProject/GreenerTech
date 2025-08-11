@@ -1,246 +1,214 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useAuth } from "../contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
-import PageHeader from "../components/PageHeader";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { User, Mail, Shield, ArrowLeft, Save } from "lucide-react";
+import { 
+  ArrowLeft, 
+  Edit, 
+  LogOut, 
+  MapPin, 
+  Phone, 
+  Mail, 
+  Calendar,
+  Sprout
+} from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import TechHeader from "@/components/TechHeader";
 
 export default function Profile() {
-  const { user, updateUserProfile } = useAuth();
+  const { user, logout } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [isEditing, setIsEditing] = useState(false);
-  const [formData, setFormData] = useState({
-    name: user?.name || "",
-    email: user?.email || "",
-  });
+  const [userInfo, setUserInfo] = useState<any>(null);
 
-  const handleSave = async () => {
-    try {
-      // You would typically call an API here to update the user profile
-      // For now, we'll just show a success message
-      toast({
-        title: "Profil mis à jour",
-        description: "Vos informations ont été sauvegardées avec succès.",
-      });
-      setIsEditing(false);
-    } catch (error) {
-      toast({
-        title: "Erreur",
-        description: "Une erreur est survenue lors de la mise à jour.",
-        variant: "destructive",
-      });
+  useEffect(() => {
+    if (user) {
+      // Format user data for display
+      const formattedUser = {
+        ...user,
+        // Split name into first and last name if available
+        firstName: user.name ? user.name.split(' ')[0] : '',
+        lastName: user.name ? user.name.split(' ').slice(1).join(' ') : '',
+        // Format role display
+        roleDisplay: getRoleDisplayName(user.role),
+        // Use actual user data or provide defaults
+        telephone: user.telephone || "Non renseigné",
+        birthday: user.birthday ? formatBirthday(user.birthday) : "Non renseigné",
+        // For now, these would need to come from additional API calls
+        domaine: "Domaine Ait Melloul", // This would come from user's assigned domaine
+        serre: "Serre 1" // This would come from user's assigned serre
+      };
+      setUserInfo(formattedUser);
     }
-  };
+  }, [user]);
 
-  const handleCancel = () => {
-    setFormData({
-      name: user?.name || "",
-      email: user?.email || "",
-    });
-    setIsEditing(false);
+  const formatBirthday = (birthday: string) => {
+    try {
+      const date = new Date(birthday);
+      const options: Intl.DateTimeFormatOptions = { 
+        day: 'numeric', 
+        month: 'long', 
+        year: 'numeric' 
+      };
+      return date.toLocaleDateString('fr-FR', options);
+    } catch {
+      return birthday;
+    }
   };
 
   const getRoleDisplayName = (role?: string) => {
     switch (role) {
       case "technicien":
-        return "Technicien";
-      case "technicien_sup":
-        return "Technicien Supérieur";
+        return "Tech";
+      case "technicien_superieur":
+        return "Tech - Sup";
       case "directeur":
         return "Directeur";
       default:
-        return "Non défini";
+        return "Utilisateur";
     }
   };
 
   const getRoleColor = (role?: string) => {
     switch (role) {
       case "technicien":
-        return "bg-blue-50 border-blue-200 text-blue-700";
-      case "technicien_sup":
-        return "bg-purple-50 border-purple-200 text-purple-700";
+        return "bg-blue-100 text-blue-800";
+      case "technicien_superieur":
+        return "bg-purple-100 text-purple-800";
       case "directeur":
-        return "bg-green-50 border-green-200 text-green-700";
+        return "bg-green-100 text-green-800";
       default:
-        return "bg-gray-50 border-gray-200 text-gray-700";
+        return "bg-gray-100 text-gray-800";
     }
   };
 
+  const handleLogout = async () => {
+    try {
+      await logout();
+      navigate("/login");
+    } catch (error) {
+      toast({
+        title: "Erreur",
+        description: "Erreur lors de la déconnexion",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleEditProfile = () => {
+    navigate("/technicien/profile/edit");
+  };
+
+  if (!userInfo) {
+    return (
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-gray-50">
-      <PageHeader
-        title="Mon Profil"
-        subtitle="Gérez vos informations personnelles"
-        userRole={user?.role as any}
-        actions={
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => navigate(-1)}
-            className="flex items-center space-x-1"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            <span>Retour</span>
-          </Button>
-        }
-      />
-
-      <div className="max-w-4xl mx-auto p-6">
-        <div className="grid gap-6">
-          {/* Profile Information Card */}
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
-              <div className="flex items-center space-x-3">
-                <div className="p-2 bg-blue-100 rounded-full">
-                  <User className="h-6 w-6 text-blue-600" />
-                </div>
-                <div>
-                  <CardTitle>Informations personnelles</CardTitle>
-                  <p className="text-sm text-gray-600">
-                    Vos informations de base et contact
-                  </p>
-                </div>
-              </div>
-              <Button
-                variant={isEditing ? "outline" : "default"}
-                size="sm"
-                onClick={() => setIsEditing(!isEditing)}
-              >
-                {isEditing ? "Annuler" : "Modifier"}
-              </Button>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="name">Nom complet</Label>
-                  {isEditing ? (
-                    <Input
-                      id="name"
-                      value={formData.name}
-                      onChange={(e) =>
-                        setFormData({ ...formData, name: e.target.value })
-                      }
-                      placeholder="Votre nom complet"
-                    />
-                  ) : (
-                    <div className="flex items-center space-x-2">
-                      <User className="h-4 w-4 text-gray-400" />
-                      <span className="text-gray-900">
-                        {user?.name || "Non renseigné"}
-                      </span>
-                    </div>
-                  )}
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="email">Adresse e-mail</Label>
-                  {isEditing ? (
-                    <Input
-                      id="email"
-                      type="email"
-                      value={formData.email}
-                      onChange={(e) =>
-                        setFormData({ ...formData, email: e.target.value })
-                      }
-                      placeholder="votre@email.com"
-                    />
-                  ) : (
-                    <div className="flex items-center space-x-2">
-                      <Mail className="h-4 w-4 text-gray-400" />
-                      <span className="text-gray-900">{user?.email}</span>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {isEditing && (
-                <>
-                  <Separator />
-                  <div className="flex justify-end space-x-2">
-                    <Button variant="outline" onClick={handleCancel}>
-                      Annuler
-                    </Button>
-                    <Button onClick={handleSave} className="flex items-center space-x-1">
-                      <Save className="h-4 w-4" />
-                      <span>Sauvegarder</span>
-                    </Button>
-                  </div>
-                </>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Role and Status Card */}
-          <Card>
-            <CardHeader>
-              <div className="flex items-center space-x-3">
-                <div className="p-2 bg-green-100 rounded-full">
-                  <Shield className="h-6 w-6 text-green-600" />
-                </div>
-                <div>
-                  <CardTitle>Rôle et statut</CardTitle>
-                  <p className="text-sm text-gray-600">
-                    Votre rôle dans l'organisation
-                  </p>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>Rôle</Label>
-                  <Badge
-                    variant="outline"
-                    className={getRoleColor(user?.role)}
-                  >
-                    {getRoleDisplayName(user?.role)}
-                  </Badge>
-                </div>
-
-                <div className="space-y-2">
-                  <Label>Statut du compte</Label>
-                  <div className="flex items-center space-x-2">
-                    <Badge
-                      variant={user?.setup_completed ? "default" : "secondary"}
-                      className={
-                        user?.setup_completed
-                          ? "bg-green-50 border-green-200 text-green-700"
-                          : "bg-yellow-50 border-yellow-200 text-yellow-700"
-                      }
-                    >
-                      {user?.setup_completed ? "Configuré" : "Configuration incomplète"}
-                    </Badge>
-                  </div>
-                </div>
-              </div>
-
-              {user?.role === "directeur" && (
-                <div className="space-y-2">
-                  <Label>Validation directeur</Label>
-                  <Badge
-                    variant={user?.directeur_valide ? "default" : "secondary"}
-                    className={
-                      user?.directeur_valide
-                        ? "bg-green-50 border-green-200 text-green-700"
-                        : "bg-red-50 border-red-200 text-red-700"
-                    }
-                  >
-                    {user?.directeur_valide ? "Validé" : "En attente de validation"}
-                  </Badge>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+    <div className="min-h-screen bg-white">
+      {/* Show TechHeader for technician superior users */}
+      {userInfo.role === "technicien_superieur" && (
+        <TechHeader role="technicien_sup" />
+      )}
+      
+      <div className="flex items-center justify-center p-4">
+        <Card className="w-full max-w-md shadow-lg border-0">
+        {/* Blue Header with User Info */}
+        <div className="bg-blue-600 rounded-t-lg p-6 relative">
+          {/* Profile Picture Placeholder - No actual image as requested */}
+          <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center mb-4 relative">
+            <div className="text-2xl font-bold text-blue-600">
+              {userInfo.firstName ? userInfo.firstName[0] : 'U'}
+              {userInfo.lastName ? userInfo.lastName[0] : ''}
+            </div>
+            {/* Online status dot */}
+            <div className="absolute bottom-0 right-0 w-4 h-4 bg-green-500 rounded-full border-2 border-white"></div>
+          </div>
+          
+          {/* User Name and Role */}
+          <div className="text-white">
+            <h1 className="text-2xl font-bold mb-1">
+              {userInfo.firstName} {userInfo.lastName}
+            </h1>
+            <Badge className={`${getRoleColor(userInfo.role)} text-sm`}>
+              {userInfo.roleDisplay}
+            </Badge>
+          </div>
         </div>
 
+        {/* User Details */}
+        <CardContent className="p-6 space-y-4">
+          {/* Domaine and Serre */}
+          <div className="flex items-center space-x-3">
+            <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+              <Sprout className="w-4 h-4 text-green-600" />
+            </div>
+            <div>
+              <div className="text-sm text-gray-600">Domaine</div>
+              <div className="font-medium text-gray-900">{userInfo.domaine}</div>
+              <div className="text-sm text-gray-600">{userInfo.serre}</div>
+            </div>
+          </div>
+
+          {/* Phone Number */}
+          <div className="flex items-center space-x-3">
+            <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+              <Phone className="w-4 h-4 text-blue-600" />
+            </div>
+            <div>
+              <div className="text-sm text-gray-600">Numéro de téléphone</div>
+              <div className="font-medium text-gray-900">{userInfo.telephone}</div>
+            </div>
+          </div>
+
+          {/* Email */}
+          <div className="flex items-center space-x-3">
+            <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center">
+              <Mail className="w-4 h-4 text-gray-600" />
+            </div>
+            <div>
+              <div className="text-sm text-gray-600">Adresse e-mail</div>
+              <div className="font-medium text-gray-900">{userInfo.email}</div>
+            </div>
+          </div>
+
+          {/* Birthday */}
+          <div className="flex items-center space-x-3">
+            <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center">
+              <Calendar className="w-4 h-4 text-purple-600" />
+            </div>
+            <div>
+              <div className="text-sm text-gray-600">Date de naissance</div>
+              <div className="font-medium text-gray-900">{userInfo.birthday}</div>
+            </div>
+          </div>
+        </CardContent>
+
+        {/* Action Buttons */}
+        <div className="p-6 pt-0 flex flex-col sm:flex-row gap-3">
+          <Button
+            variant="outline"
+            onClick={handleLogout}
+            className="flex-1 border-gray-300 text-gray-700 hover:bg-gray-50"
+          >
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Se déconnecter
+          </Button>
+          <Button
+            onClick={handleEditProfile}
+            className="flex-1 bg-blue-600 hover:bg-blue-700 text-white"
+          >
+            <Edit className="w-4 h-4 mr-2" />
+            Modifier le profil
+          </Button>
+        </div>
+      </Card>
+        </div>
       </div>
-    </div>
   );
 }

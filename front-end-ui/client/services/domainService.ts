@@ -19,9 +19,10 @@ export interface CreateDomainRequest {
 }
 
 export interface CreateDomainResponse {
-  success: boolean;
-  message: string;
-  domainId: string;
+  success?: boolean;
+  message?: string;
+  domainId?: string;
+  id?: string;
 }
 
 export interface ApiError {
@@ -44,6 +45,20 @@ const createAuthenticatedRequest = () => {
 };
 
 export const domainService = {
+  // Get domains for current user's entreprise (role-aware backend route /domaine)
+  getMyCompanyDomains: async (): Promise<Domain[]> => {
+    try {
+      const response = await axios.get<Domain[]>(
+        `${API_BASE_URL}/domaine`,
+        createAuthenticatedRequest(),
+      );
+      return response.data;
+    } catch (error: any) {
+      const errorMessage =
+        error.response?.data?.message || "Erreur lors de la récupération des domaines";
+      throw { message: errorMessage, status: error.response?.status || 500 } as ApiError;
+    }
+  },
   // Create multiple domains
   createDomains: async (
     domains: CreateDomainRequest[],
@@ -52,11 +67,13 @@ export const domainService = {
       const results: CreateDomainResponse[] = [];
 
       for (const domain of domains) {
+        console.log("Creating domain:", domain);
         const response = await axios.post<CreateDomainResponse>(
           `${API_BASE_URL}/domaine`,
           domain,
           createAuthenticatedRequest(),
         );
+        console.log("Domain creation response:", response.data);
         results.push(response.data);
       }
 

@@ -301,7 +301,7 @@ export default function TechnicianCreation({
                                   htmlFor={serre.id}
                                   className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
                                 >
-                                  {serre.name} ({serre.domainName})
+                                  {serre.nom} ({serre.domainName})
                                 </label>
                               </div>
                             ))}
