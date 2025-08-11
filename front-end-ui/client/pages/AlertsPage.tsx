@@ -67,10 +67,17 @@ export default function AlertsPage() {
     }
   };
 
-  const getAlertLevel = (statusAlert: number): "High" | "Medium" | "Low" => {
-    if (statusAlert >= 8) return "High";
-    if (statusAlert >= 5) return "Medium";
+  // Map backend status_alert integer: 0=low, 1=medium, 2=very dangerous
+  const getAlertLevel = (statusAlert: number): "Low" | "Medium" | "High" => {
+    if (statusAlert === 2) return "High";
+    if (statusAlert === 1) return "Medium";
     return "Low";
+  };
+
+  const getAlertLevelLabel = (statusAlert: number): string => {
+    if (statusAlert === 2) return "Très dangereux";
+    if (statusAlert === 1) return "Moyen";
+    return "Faible";
   };
 
   const getAlertLevelColor = (level: "High" | "Medium" | "Low"): string => {
@@ -112,7 +119,7 @@ export default function AlertsPage() {
         <div className="max-w-full px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col lg:flex-row lg:justify-between lg:items-center py-4 gap-4">
             <div className="flex items-center gap-4">
-              <TechnicianSidebar userRole="technicien" />
+              <TechnicianSidebar userRole={user?.role === "technicien_superieur" ? "technicien_sup" : "technicien"} />
               <div className="flex items-center space-x-2">
                 <AlertTriangle className="h-6 w-6 text-red-500" />
                 <h1 className="text-lg sm:text-xl font-semibold text-gray-900">
@@ -212,7 +219,7 @@ export default function AlertsPage() {
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <Badge variant="outline" className={getAlertLevelColor(level)}>
-                            {level}
+                            {getAlertLevelLabel(alert.status_alert)}
                           </Badge>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">

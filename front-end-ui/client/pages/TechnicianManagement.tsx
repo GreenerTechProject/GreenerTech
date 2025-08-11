@@ -144,6 +144,13 @@ export default function TechnicianManagement() {
       interventions: { total: 0, completed: 0, inProgress: 0 }
     };
     
+    //Handling Api call
+    try {
+    const response =technicienService.createTechnicians(newTechnician);
+    } catch(error){
+      console.log(error)
+    }
+
     setTechnicians([...technicians, newTechnician]);
     setIsCreateModalOpen(false);
     resetForm();

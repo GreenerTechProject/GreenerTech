@@ -142,10 +142,10 @@ export default function NewDirectorDashboard() {
   };
 
    useEffect(() => {
-    if (user?.setup_completed) {
+    if (!user?.setup_completed) {
       window.location.href = "/setup";
     }
-  }, [user?.pleted]);
+  }, [user?.setup_completed]);
 
   return (
     <div className="min-h-screen bg-gray-50 flex">

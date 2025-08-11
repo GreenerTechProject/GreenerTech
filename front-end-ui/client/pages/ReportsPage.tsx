@@ -12,7 +12,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import TechnicianSidebar from "../components/TechnicianSidebar";
 import {
   Bookmark,
   FileText,
@@ -20,7 +19,6 @@ import {
   Calendar,
   Filter,
   Search,
-  LogOut,
   BarChart3,
   TrendingUp,
 } from "lucide-react";
@@ -158,37 +156,6 @@ export default function ReportsPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white shadow-sm border-b sticky top-0 z-10">
-        <div className="max-w-full px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col lg:flex-row lg:justify-between lg:items-center py-4 gap-4">
-            <div className="flex items-center gap-4">
-              <TechnicianSidebar userRole="technicien" />
-              <div className="flex items-center space-x-2">
-                <Bookmark className="h-6 w-6 text-purple-500" />
-                <h1 className="text-lg sm:text-xl font-semibold text-gray-900">
-                  Rapports et Documentation
-                </h1>
-              </div>
-            </div>
-            <div className="flex items-center space-x-4">
-              <span className="text-sm text-gray-600 hidden sm:block">
-                {user?.name || user?.email}
-              </span>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => logout()}
-                className="flex items-center space-x-1"
-              >
-                <LogOut className="h-4 w-4" />
-                <span className="hidden sm:inline">Déconnexion</span>
-              </Button>
-            </div>
-          </div>
-        </div>
-      </header>
-
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">

@@ -52,11 +52,13 @@ export const guideService = {
     guide: CreateGuideRequest,
   ): Promise<CreateGuideResponse> => {
     try {
+      console.log("Creating guide:", guide);
       const response = await axios.post<CreateGuideResponse>(
         `${API_BASE_URL}/guide_culture`,
         guide,
         createAuthenticatedRequest(),
       );
+      console.log("Guide creation response:", response.data);
       return response.data;
     } catch (error: any) {
       console.error("Erreur lors de la création du guide:", error);

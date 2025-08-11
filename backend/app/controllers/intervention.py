@@ -97,6 +97,50 @@ def get_all_interention (current_user):
 
     except Exception as e:
         return jsonify({'error': str(e)}), 400
+
+@token_required
+def get_interventions_by_assigned_serres(current_user):
+    try:
+        # Get serres assigned to the current user
+        from app.models.autorisation_serre import Autorisation_serre
+        
+        # Get user's assigned serres
+        autorisations = Autorisation_serre.query.filter_by(id_user=current_user.id).all()
+        assigned_serre_ids = [auth.id_serre for auth in autorisations]
+        
+        if not assigned_serre_ids:
+            return jsonify([]), 200
+        
+        # Get interventions from assigned serres
+        interventions = Intervention.query.filter(Intervention.id_serre.in_(assigned_serre_ids)).all()
+        
+        # Get additional data for each intervention
+        from app.models.serre import Serre
+        from app.models.type_tache import Type_tache
+        
+        result = []
+        for intervention in interventions:
+            intervention_data = intervention.to_dict()
+            
+            # Get serre information
+            serre = Serre.query.get(intervention.id_serre)
+            if serre:
+                intervention_data['serre_nom'] = serre.nom
+                if hasattr(serre, 'domaine') and serre.domaine:
+                    intervention_data['domaine_nom'] = serre.domaine.nom
+                else:
+                    intervention_data['domaine_nom'] = "Domaine inconnu"
+            
+            # Get type_tache information
+            type_tache = Type_tache.query.get(intervention.id_type_tache)
+            if type_tache:
+                intervention_data['type_nom'] = type_tache.nom
+            
+            result.append(intervention_data)
+        
+        return jsonify(result), 200
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
     
 @token_required
 def get_intervention(current_user, id):

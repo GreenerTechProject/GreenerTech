@@ -80,11 +80,35 @@ export default function DirecteurSetup() {
     try {
       setIsSubmittingCompanyInfo(true);
 
+      console.log("Starting setup process with data:", setupData);
+
       // Step 1: Create the company
+      console.log("Creating company:", setupData.companyInfo);
       const companyResponse = await companyService.createCompany(
         setupData.companyInfo,
       );
-      const companyId = companyResponse.id;
+      const companyId = companyResponse.id || companyResponse.companyId;
+      
+      if (!companyId) {
+        throw new Error("Failed to create company - no ID returned");
+      }
+
+      console.log("Company created with ID:", companyId);
+
+      // Immediately update the director's id_entreprise in the backend and context
+      try {
+        await fetch(`${window.location.protocol}//${window.location.hostname}:5000/api/user`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${localStorage.getItem('auth_token') || ''}`,
+          },
+          body: JSON.stringify({ id_entreprise: parseInt(companyId.toString(), 10) }),
+        });
+        updateUser({ ...(user as any), id_entreprise: parseInt(companyId.toString(), 10) });
+      } catch (e) {
+        console.warn('Failed to set director company id on user', e);
+      }
 
       // Step 2: Create domains
       const domainRequests = setupData.domains.map((domain) => ({
@@ -101,11 +125,12 @@ export default function DirecteurSetup() {
         companyId,
       }));
 
+      console.log("Creating domains:", domainRequests);
       const domainResponses = await domainService.createDomains(domainRequests);
+      console.log("Domains created:", domainResponses);
 
       // Step 3: Prepare guide data for after serre creation
       const guideDataMap = new Map<string, any>(); // Maps old guide id to guide data
-
 
       // Collect unique guides from all serres
       setupData.domains.forEach((domain) => {
@@ -118,29 +143,53 @@ export default function DirecteurSetup() {
 
       // Step 4: Create serres and guides in order
       const allSerres: any[] = [];
+      const serreIdMap = new Map<string, number>(); // map temp UI serre id -> backend serre id
 
       for (let i = 0; i < setupData.domains.length; i++) {
         const domain = setupData.domains[i];
-        const backendDomainId = domainResponses[i].domainId;
+        const backendDomainId = domainResponses[i]?.domainId || domainResponses[i]?.id;
+        
+        if (!backendDomainId) {
+          throw new Error(`Failed to get domain ID for domain: ${domain.name}`);
+        }
+
+        console.log(`Creating serres for domain ${domain.name} with ID: ${backendDomainId}`);
 
         // Create serres for this domain
         for (const serre of domain.serres) {
           const serreRequest = {
             nom: serre.nom,
-            id_domaine: parseInt(backendDomainId), // Use the actual backend domain ID as integer
+            id_domaine: parseInt(backendDomainId.toString()), // Use the actual backend domain ID as integer
             position: serre.position.map((point, index) => ({
               latitude: point.lat(),
               longitude: point.lng(),
               ordre: index + 1,
             })),
+            surface: serre.surface,
+            center: {
+              lat: serre.center.lat(),
+              lng: serre.center.lng(),
+            },
           };
 
+          console.log("Creating serre:", serreRequest);
           const createdSerre = await serreService.createSerre(serreRequest);
           allSerres.push(createdSerre);
+          // record mapping from temp id to backend id
+          const backendSerreId = (createdSerre.id || createdSerre.serreId) as number;
+          if (backendSerreId) {
+            serreIdMap.set(serre.id, parseInt(backendSerreId.toString(), 10));
+          }
 
           // Create guide for this serre if it has one
           if (serre.guide && guideDataMap.has(serre.guideId)) {
             const guide = guideDataMap.get(serre.guideId);
+            const serreId = createdSerre.id || createdSerre.serreId;
+
+            if (!serreId) {
+              console.warn("No serre ID returned, skipping guide creation");
+              continue;
+            }
 
             const guideRequest = {
               nom: guide.nom,
@@ -149,35 +198,63 @@ export default function DirecteurSetup() {
               nombre_de_plants: guide.nombre_de_plants,
               date_debut_saison:
                 typeof guide.date_debut_saison === "string"
-                  ? guide.date_debut_saison
-                  : guide.date_debut_saison.toISOString(),
+                  ? guide.date_debut_saison.split('T')[0] // Convert to YYYY-MM-DD format
+                  : guide.date_debut_saison.toISOString().split('T')[0],
               date_fin_saison:
                 typeof guide.date_fin_saison === "string"
-                  ? guide.date_fin_saison
-                  : guide.date_fin_saison.toISOString(),
-              id_serre: createdSerre.id.toString(), // Link to the actual created serre
-              irrigationType: guide.irrigationType,
-              notes: guide.notes,
+                  ? guide.date_fin_saison.split('T')[0] // Convert to YYYY-MM-DD format
+                  : guide.date_fin_saison.toISOString().split('T')[0],
+              id_serre: serreId.toString(), // Link to the actual created serre
             };
 
+            console.log("Creating guide:", guideRequest);
             await guideService.createGuide(guideRequest);
           }
         }
       }
 
       // Step 5: Create technicians
-      const technicianRequests = setupData.technicians.map((technician) => ({
-        fullName: technician.fullName,
-        email: technician.email,
-        role: technician.role,
-        assignedSerres: technician.assignedSerres,
-        companyId,
-      }));
+      let createdTechnicians: { id: number; email: string; role: Technician["role"]; assignedSerres: string[] }[] = [];
+      if (setupData.technicians.length > 0) {
+        const technicianRequests = setupData.technicians.map((technician) => ({
+          fullName: technician.fullName,
+          email: technician.email,
+          role: technician.role,
+          assignedSerres: technician.assignedSerres,
+          companyId,
+        }));
 
-      await technicianService.createTechnicians(technicianRequests);
+        console.log("Creating technicians:", technicianRequests);
+        const responses = await technicianService.createTechnicians(technicianRequests);
+        createdTechnicians = responses.map((res, idx) => ({
+          id: res.id,
+          email: technicianRequests[idx].email,
+          role: technicianRequests[idx].role,
+          assignedSerres: technicianRequests[idx].assignedSerres,
+        }));
+      }
 
-      // Update user context with setup_completed  = true
-      updateUser({ ...user!, setup_completed : true });
+      // Step 6: Create autorisations_serre for each technician assigned to serres
+      if (createdTechnicians.length > 0) {
+        for (const tech of createdTechnicians) {
+          for (const assignedTempId of tech.assignedSerres) {
+            const targetSerreId = serreIdMap.get(assignedTempId) ?? parseInt(assignedTempId, 10);
+            if (!targetSerreId || Number.isNaN(targetSerreId)) continue;
+            try {
+              await serreService.createAutorisationSerre({
+                id_user: tech.id,
+                id_serre: targetSerreId,
+              });
+            } catch (e) {
+              console.warn("Failed to create autorisation_serre for", tech.email, assignedTempId, e);
+            }
+          }
+        }
+      }
+
+      // Update user context with setup_completed = true
+      const updatedUser = { ...user!, setup_completed: true };
+      updateUser(updatedUser);
 
       const totalSerres = setupData.domains.reduce(
         (total, domain) => total + domain.serres.length,
@@ -189,6 +266,12 @@ export default function DirecteurSetup() {
         title: "Configuration terminée !",
         description: `Votre entreprise, ${setupData.domains.length} domaine(s), ${totalSerres} serre(s) et ${totalTechnicians} technicien(s) ont été configurés avec succès.`,
       });
+
+      // Redirect to the main directeur dashboard
+      setTimeout(() => {
+        window.location.href = "/directeur";
+      }, 2000);
+
     } catch (error) {
       console.error("Erreur lors de la configuration:", error);
       toast({
@@ -223,14 +306,14 @@ export default function DirecteurSetup() {
   }
 
   // Show setup wizard if user is not connected
-  if (!user?.setup_completed ) {
+  if (!user?.setup_completed) {
     return <CompanySetupWizard onComplete={handleCompanySetupComplete} />;
   }
 
   // Show main directeur dashboard - redirect to new dashboard
   useEffect(() => {
     if (user?.setup_completed) {
-      window.location.href = "/director-dashboard";
+      window.location.href = "/directeur";
     }
   }, [user?.setup_completed]);
 

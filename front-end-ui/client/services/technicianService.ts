@@ -18,9 +18,8 @@ export interface CreateTechnicianRequest {
 }
 
 export interface CreateTechnicianResponse {
-  success: boolean;
   message: string;
-  technicianId: string;
+  id: number;
 }
 
 export interface ApiError {
@@ -51,12 +50,23 @@ export const technicianService = {
       const results: CreateTechnicianResponse[] = [];
 
       for (const technician of technicians) {
-        const response = await axios.post<CreateTechnicianResponse>(
+        console.log("Creating technician:", technician);
+        const response = await axios.post<any>(
           `${API_BASE_URL}/technicien`,
-          technician,
+          {
+            email: technician.email,
+            fullName: technician.fullName,
+            role: technician.role,
+            // The backend will automatically associate with the current user's company
+          },
           createAuthenticatedRequest(),
         );
-        results.push(response.data);
+        console.log("Technician creation response:", response.data);
+        // Normalize backend response { message, id }
+        results.push({
+          message: response.data?.message ?? "",
+          id: response.data?.id ?? 0,
+        });
       }
 
       return results;
@@ -80,16 +90,11 @@ export const technicianService = {
       const response = await axios.get<{
         success: boolean;
         technicians: Technician[];
-      }>(
-        `${API_BASE_URL}/technicien/company/${companyId}`,
-        createAuthenticatedRequest(),
-      );
+      }>(`${API_BASE_URL}/technicien/company/${companyId}`,
+        createAuthenticatedRequest());
 
-      if (response.data.success) {
-        return response.data.technicians;
-      } else {
-        throw new Error("Échec de la récupération des techniciens");
-      }
+      if (response.data?.success) return response.data.technicians;
+      return [];
     } catch (error: any) {
       console.error("Erreur lors de la récupération des techniciens:", error);
 
