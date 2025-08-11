@@ -386,7 +386,7 @@ export default function TechnicienSupDashboard() {
               <div className="flex items-center gap-4">
                 {/* Sidebar Button */}
                 <TechnicianSidebar
-                  userRole="technicien_superieur"
+                  userRole="technicien_sup"
                   onInterventionClick={() => setIsInterventionFormOpen(true)}
                 />
                 <div className="flex items-center space-x-2">
