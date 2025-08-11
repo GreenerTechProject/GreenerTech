@@ -294,24 +294,24 @@ export default function RobotControl() {
       <div className="container mx-auto p-6">
         
         {/* Connection Status */}
-        <div className="grid grid-cols-4 gap-4 mb-6">
+        </*div className="grid grid-cols-4 gap-4 mb-6">
           {Object.entries(connectionStatus).map(([key, connected]) => (
             <div key={key} className={`flex items-center gap-2 p-2 rounded-lg ${connected ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
               <Wifi className="h-4 w-4" />
               <span className="text-sm font-medium capitalize">{key}: {connected ? 'Connected' : 'Disconnected'}</span>
             </div>
           ))}
-        </div>
+        </div*/>
 
         <div className="w-full">
           {/* Video Stream with Overlays */}
           <Card className="w-full">
-            <CardHeader>
+            </*CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Video className="h-5 w-5" />
                 Live Video Stream
               </CardTitle>
-            </CardHeader>
+            </CardHeader*/>
             <CardContent>
               <div className="relative">
                 <video
@@ -391,11 +391,11 @@ export default function RobotControl() {
                     <div className="space-y-4">
                       {/* Mission Controls */}
                       <div className="flex gap-2 justify-center">
-                        <ControlButton mode="PLAY_MISSION" className="bg-green-500/90 hover:bg-green-600/90 border-green-400 text-white px-4 py-2">
-                          <Play className="h-4 w-4" />
-                        </ControlButton>
                         <ControlButton mode="PAUSE_MISSION" className="bg-yellow-500/90 hover:bg-yellow-600/90 border-yellow-400 text-white px-4 py-2">
                           <Pause className="h-4 w-4" />
+                        </ControlButton>
+                        <ControlButton mode="PLAY_MISSION" className="bg-green-500/90 hover:bg-green-600/90 border-green-400 text-white px-4 py-2">
+                          <Play className="h-4 w-4" />
                         </ControlButton>
                       </div>
 
@@ -439,7 +439,7 @@ export default function RobotControl() {
                       </div>
 
                       {/* Emergency Stop */}
-                      <div className="flex justify-center pt-2 border-t border-white/20">
+                      </*div className="flex justify-center pt-2 border-t border-white/20">
                         <Button
                           onClick={() => sendCommand("EMERGENCY_STOP")}
                           className="bg-red-600/90 hover:bg-red-700/90 text-white px-6 py-2 text-sm font-semibold"
@@ -447,7 +447,7 @@ export default function RobotControl() {
                         >
                           🛑 STOP
                         </Button>
-                      </div>
+                      </div*/>
                     </div>
                   </div>
                 </div>
