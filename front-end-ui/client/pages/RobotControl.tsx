@@ -385,6 +385,73 @@ export default function RobotControl() {
                   </div>
                 </div>
 
+                {/* Robot Control Buttons Overlay - Center */}
+                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                  <div className="bg-black/40 backdrop-blur-sm rounded-xl p-4 pointer-events-auto">
+                    <div className="space-y-4">
+                      {/* Mission Controls */}
+                      <div className="flex gap-2 justify-center">
+                        <ControlButton mode="PLAY_MISSION" className="bg-green-500/90 hover:bg-green-600/90 border-green-400 text-white px-4 py-2">
+                          <Play className="h-4 w-4" />
+                        </ControlButton>
+                        <ControlButton mode="PAUSE_MISSION" className="bg-yellow-500/90 hover:bg-yellow-600/90 border-yellow-400 text-white px-4 py-2">
+                          <Pause className="h-4 w-4" />
+                        </ControlButton>
+                      </div>
+
+                      {/* Movement Controls - Cross Pattern */}
+                      <div className="grid grid-cols-3 gap-2 w-40">
+                        <div></div>
+                        <ControlButton mode="TOP" className="bg-blue-500/90 hover:bg-blue-600/90 border-blue-400 text-white p-3">
+                          <ArrowUp className="h-5 w-5" />
+                        </ControlButton>
+                        <div></div>
+
+                        <ControlButton mode="LEFT" className="bg-blue-500/90 hover:bg-blue-600/90 border-blue-400 text-white p-3">
+                          <ArrowLeft className="h-5 w-5" />
+                        </ControlButton>
+                        <div className="flex items-center justify-center">
+                          <div className="w-8 h-8 rounded-full bg-white/20 border border-white/40 flex items-center justify-center">
+                            <div className="w-2 h-2 rounded-full bg-white"></div>
+                          </div>
+                        </div>
+                        <ControlButton mode="RIGHT" className="bg-blue-500/90 hover:bg-blue-600/90 border-blue-400 text-white p-3">
+                          <ArrowRight className="h-5 w-5" />
+                        </ControlButton>
+
+                        <div></div>
+                        <ControlButton mode="DOWN" className="bg-blue-500/90 hover:bg-blue-600/90 border-blue-400 text-white p-3">
+                          <ArrowDown className="h-5 w-5" />
+                        </ControlButton>
+                        <div></div>
+                      </div>
+
+                      {/* Camera Controls */}
+                      <div className="flex gap-2 justify-center">
+                        <ControlButton mode="LEFT_CAM" className="bg-purple-500/90 hover:bg-purple-600/90 border-purple-400 text-white px-3 py-2">
+                          <ArrowLeft className="mr-1 h-4 w-4" />
+                          <span className="text-xs">Cam</span>
+                        </ControlButton>
+                        <ControlButton mode="RIGHT_CAM" className="bg-purple-500/90 hover:bg-purple-600/90 border-purple-400 text-white px-3 py-2">
+                          <ArrowRight className="mr-1 h-4 w-4" />
+                          <span className="text-xs">Cam</span>
+                        </ControlButton>
+                      </div>
+
+                      {/* Emergency Stop */}
+                      <div className="flex justify-center pt-2 border-t border-white/20">
+                        <Button
+                          onClick={() => sendCommand("EMERGENCY_STOP")}
+                          className="bg-red-600/90 hover:bg-red-700/90 text-white px-6 py-2 text-sm font-semibold"
+                          variant="destructive"
+                        >
+                          🛑 STOP
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
                 {/* Connection Status Overlay - Bottom Left */}
                 <div className="absolute bottom-4 left-4 flex gap-2">
                   {Object.entries(connectionStatus).map(([key, connected]) => (
