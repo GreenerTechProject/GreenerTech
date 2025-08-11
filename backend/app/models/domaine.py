@@ -26,16 +26,16 @@ class Domaine(db.Model):
     def to_dict(self):
         return {
             "id": self.id,
-            "name": self.nom,
+            "nom": self.nom,
             #"nom": self.nom,
-            "path": [g.to_dict() for g in self.group_coords] if self.group_coords else [],
+            "position": [g.to_dict() for g in self.group_coords] if self.group_coords else [],
             #"position": [g.to_dict() for g in self.group_coords] if self.group_coords else [],
-            "area": self.surface,
+            "surface": self.surface,
             "center": {
-                "lat": self.center_lat,
-                "lng": self.center_lng
+                "latitude": self.center_lat,
+                "longitude": self.center_lng
             } if self.center_lat is not None and self.center_lng is not None else None,
             #"path": self.path or [],
-            "companyId": self.id_entreprise,
+            "id_entreprise": self.id_entreprise,
             #"id_entreprise": self.id_entreprise,
         }

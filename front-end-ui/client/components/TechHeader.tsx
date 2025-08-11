@@ -8,14 +8,14 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSepara
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Home, Map, ChevronDown, User, LogOut } from "lucide-react";
 
-type UserRole = "technicien" | "technicien_sup";
+type UserRole = "technicien" | "technicien_superieur";
 
 interface TechHeaderProps {
   role: UserRole;
 }
 
 const getRoleLabel = (role: UserRole): string =>
-  role === "technicien_sup" ? "Technicien Supérieur" : "Technicien";
+  role === "technicien_superieur" ? "Technicien Supérieur" : "Technicien";
 
 export default function TechHeader({ role }: TechHeaderProps) {
   const { user, logout } = useAuth();
@@ -47,14 +47,14 @@ export default function TechHeader({ role }: TechHeaderProps) {
           <div className="justify-self-center flex items-center gap-3">
             <div 
               className="h-9 w-9 sm:h-10 sm:w-10 rounded-xl bg-[#B4CC5F] flex items-center justify-center shadow-sm cursor-pointer hover:bg-[#9BB84F] transition-colors duration-200"
-              onClick={() => navigate(role === "technicien_sup" ? "/technicien-sup/home" : "/technician")}
+              onClick={() => navigate(role === "technicien_superieur" ? "/technicien-sup/home" : "/technician")}
               title="Accueil - Tableau de bord"
             >
               <Home className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
             </div>
             <div 
               className="cursor-pointer hover:scale-110 transition-transform duration-200"
-              onClick={() => navigate(role === "technicien_sup" ? "/technicien-sup" : "/technician")}
+              onClick={() => navigate(role === "technicien_superieur" ? "/technicien-sup" : "/technician")}
               title="Carte - Vue d'ensemble"
             >
               <Map className="h-5 w-5 sm:h-6 sm:w-6 text-blue-700" />

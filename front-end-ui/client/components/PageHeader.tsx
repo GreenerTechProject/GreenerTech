@@ -22,7 +22,7 @@ interface PageHeaderProps {
     variant?: "default" | "secondary" | "destructive" | "outline";
     className?: string;
   };
-  userRole?: "technicien" | "technicien_sup" | "directeur";
+  userRole?: "technicien" | "technicien_superieur" | "directeur";
   actions?: React.ReactNode;
   showProfile?: boolean;
 }
@@ -48,7 +48,7 @@ export default function PageHeader({
   };
 
   const handleProfileClick = () => {
-    navigate("/technicien/profile");
+    navigate("/profile");
   };
 
   const handleLogout = () => {

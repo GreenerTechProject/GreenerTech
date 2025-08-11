@@ -119,7 +119,7 @@ export default function AlertsPage() {
         <div className="max-w-full px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col lg:flex-row lg:justify-between lg:items-center py-4 gap-4">
             <div className="flex items-center gap-4">
-              <TechnicianSidebar userRole={user?.role === "technicien_superieur" ? "technicien_sup" : "technicien"} />
+              <TechnicianSidebar userRole={user?.role === "technicien_superieur" ? "technicien_superieur" : "technicien"} />
               <div className="flex items-center space-x-2">
                 <AlertTriangle className="h-6 w-6 text-red-500" />
                 <h1 className="text-lg sm:text-xl font-semibold text-gray-900">

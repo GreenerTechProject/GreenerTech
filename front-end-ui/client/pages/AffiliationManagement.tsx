@@ -43,7 +43,7 @@ interface AffiliationRequest {
   name: string;
   email: string;
   phone?: string;
-  requestedRole: "technicien" | "technicien_sup";
+  requestedRole: "technicien" | "technicien_superieur";
   company?: string;
   location?: string;
   experience?: string;
@@ -82,7 +82,7 @@ export default function AffiliationManagement() {
         name: "Emma Leclerc",
         email: "emma.leclerc@example.com",
         phone: "+33 6 55 66 77 88",
-        requestedRole: "technicien_sup",
+        requestedRole: "technicien_superieur",
         company: "Green Solutions SARL",
         location: "Nantes, France",
         experience: "5 ans en tant que technicienne senior, spécialisée en systèmes d'irrigation",
@@ -106,7 +106,7 @@ export default function AffiliationManagement() {
         id: "4",
         name: "Alice Bernard",
         email: "alice.bernard@example.com",
-        requestedRole: "technicien_sup",
+        requestedRole: "technicien_superieur",
         location: "Lille, France",
         experience: "1 an d'expérience",
         motivation: "Motivation insuffisante pour le poste de technicien supérieur.",
@@ -150,7 +150,7 @@ export default function AffiliationManagement() {
   };
 
   const getRoleDisplayName = (role: string) => {
-    return role === "technicien_sup" ? "Technicien Supérieur" : "Technicien";
+    return role === "technicien_superieur" ? "Technicien Supérieur" : "Technicien";
   };
 
   const getStatusColor = (status: string) => {
