@@ -65,10 +65,17 @@ export default function AlertsPage() {
     }
   };
 
-  const getAlertLevel = (statusAlert: number): "High" | "Medium" | "Low" => {
-    if (statusAlert >= 8) return "High";
-    if (statusAlert >= 5) return "Medium";
+  // Map backend status_alert integer: 0=low, 1=medium, 2=very dangerous
+  const getAlertLevel = (statusAlert: number): "Low" | "Medium" | "High" => {
+    if (statusAlert === 2) return "High";
+    if (statusAlert === 1) return "Medium";
     return "Low";
+  };
+
+  const getAlertLevelLabel = (statusAlert: number): string => {
+    if (statusAlert === 2) return "Très dangereux";
+    if (statusAlert === 1) return "Moyen";
+    return "Faible";
   };
 
   const getAlertLevelColor = (level: "High" | "Medium" | "Low"): string => {
@@ -230,7 +237,7 @@ export default function AlertsPage() {
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <Badge variant="outline" className={getAlertLevelColor(level)}>
-                            {level}
+                            {getAlertLevelLabel(alert.status_alert)}
                           </Badge>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">

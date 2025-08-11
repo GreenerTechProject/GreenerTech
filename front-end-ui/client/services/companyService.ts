@@ -28,9 +28,10 @@ export interface ApiError {
 }
 
 export interface CreateCompanyResponse {
-  success: boolean;
-  message: string;
-  companyId: string;
+  success?: boolean;
+  message?: string;
+  companyId?: string;
+  id?: string;
 }
 
 // Configure axios base URL - should match your backend
@@ -82,12 +83,14 @@ export const companyService = {
     companyData: CompanyInfo,
   ): Promise<CreateCompanyResponse> => {
     try {
+      console.log("Sending company data:", companyData);
       const response = await axios.post<CreateCompanyResponse>(
         `${API_BASE_URL}/entreprise`,
         companyData,
         createAuthenticatedRequest(),
       );
 
+      console.log("Company creation response:", response.data);
       return response.data;
     } catch (error: any) {
       console.error("Erreur lors de la création de l'entreprise:", error);

@@ -23,10 +23,22 @@ def create_autorisation_serre(current_user):
 
 @token_required
 @role_required("directeur", "technicien_superieur")
-def get_autorisation_serre(current_user, id_serre):
-    autorisation_serres = Autorisation_serre.query.filter_by(id_serre=id_serre).all()
-    if not autorisation_serres:
-        return jsonify({"status": "error", "message": "Aucune autorisation_serre trouvée pour cette serre"}), 404
+def get_autorisation_serre(current_user):
+    """
+    GET /autorisation_serre
+      - optional query params: id_user, id_serre
+    Returns autorisations filtered by given query params.
+    """
+    id_serre = request.args.get('id_serre', type=int)
+    id_user = request.args.get('id_user', type=int)
+
+    query = Autorisation_serre.query
+    if id_serre is not None:
+        query = query.filter_by(id_serre=id_serre)
+    if id_user is not None:
+        query = query.filter_by(id_user=id_user)
+
+    autorisation_serres = query.all()
 
     return jsonify({
         "status": "success",

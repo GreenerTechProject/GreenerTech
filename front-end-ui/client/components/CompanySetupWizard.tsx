@@ -40,13 +40,6 @@ import DomainCreation from "./DomainCreation";
 import SerreCreation from "./SerreCreation";
 import TechnicianCreation from "./TechnicianCreation";
 import FinalOverview from "./FinalOverview";
-import {
-  CompletedSetupData,
-  DomainSetup,
-  SerreSetup,
-  TechnicianSetup,
-  CompanyInfoSetup,
-} from "../types/setup";
 
 const companyInfoSchema = z.object({
   nom: z.string().min(1, "Le nom de l'entreprise est requis"),
@@ -61,20 +54,32 @@ const companyInfoSchema = z.object({
 
 type CompanyInfoForm = z.infer<typeof companyInfoSchema>;
 
-// Using shared types from ../types/setup
-type Domain = DomainSetup;
+// Define interfaces that match the expected structure
+interface Domain {
+  id: string;
+  name: string;
+  area: number;
+  center: google.maps.LatLng;
+  path: google.maps.LatLng[];
+  serres: any[];
+}
 
-type Technician = TechnicianSetup;
+interface Technician {
+  id: string;
+  fullName: string;
+  email: string;
+  role: "technicien_superieur" | "technicien";
+  assignedSerres: string[];
+}
 
-// Use shared CompletedSetupData but adapt companyInfo type
-interface LocalCompletedSetupData {
+interface CompletedSetupData {
   companyInfo: CompanyInfoForm;
   domains: Domain[];
   technicians: Technician[];
 }
 
 interface CompanySetupWizardProps {
-  onComplete: (data: LocalCompletedSetupData) => Promise<void>;
+  onComplete: (data: CompletedSetupData) => Promise<void>;
 }
 
 type WizardStep = "company" | "domains" | "serres" | "technicians" | "overview";
@@ -258,114 +263,46 @@ export default function CompanySetupWizard({
 
           {/* Progress Steps */}
           <div className="flex justify-center mt-6">
-            <div className="flex items-center space-x-2">
-              <div className="flex items-center space-x-1">
-                <div
-                  className={`w-6 h-6 rounded-full flex items-center justify-center text-xs ${
-                    getStepStatus("company") === "current"
-                      ? "bg-[#B4CC5F] text-white"
-                      : getStepStatus("company") === "completed"
-                        ? "bg-green-500 text-white"
-                        : "bg-gray-200 text-gray-500"
-                  }`}
-                >
-                  {getStepStatus("company") === "completed" ? (
-                    <CheckCircle className="w-3 h-3" />
-                  ) : (
-                    "1"
-                  )}
-                </div>
-                <span className="text-xs font-medium">Entreprise</span>
-              </div>
-
-              <div className="w-4 h-px bg-gray-300"></div>
-
-              <div className="flex items-center space-x-1">
-                <div
-                  className={`w-6 h-6 rounded-full flex items-center justify-center text-xs ${
-                    getStepStatus("domains") === "current"
-                      ? "bg-[#B4CC5F] text-white"
-                      : getStepStatus("domains") === "completed"
-                        ? "bg-green-500 text-white"
-                        : getStepStatus("domains") === "pending"
-                          ? "bg-gray-200 text-gray-500"
-                          : "bg-gray-100 text-gray-400"
-                  }`}
-                >
-                  {getStepStatus("domains") === "completed" ? (
-                    <CheckCircle className="w-3 h-3" />
-                  ) : (
-                    "2"
-                  )}
-                </div>
-                <span className="text-xs font-medium">Domaines</span>
-              </div>
-
-              <div className="w-4 h-px bg-gray-300"></div>
-
-              <div className="flex items-center space-x-1">
-                <div
-                  className={`w-6 h-6 rounded-full flex items-center justify-center text-xs ${
-                    getStepStatus("serres") === "current"
-                      ? "bg-[#B4CC5F] text-white"
-                      : getStepStatus("serres") === "completed"
-                        ? "bg-green-500 text-white"
-                        : getStepStatus("serres") === "pending"
-                          ? "bg-gray-200 text-gray-500"
-                          : "bg-gray-100 text-gray-400"
-                  }`}
-                >
-                  {getStepStatus("serres") === "completed" ? (
-                    <CheckCircle className="w-3 h-3" />
-                  ) : (
-                    "3"
-                  )}
-                </div>
-                <span className="text-xs font-medium">Serres</span>
-              </div>
-
-              <div className="w-4 h-px bg-gray-300"></div>
-
-              <div className="flex items-center space-x-1">
-                <div
-                  className={`w-6 h-6 rounded-full flex items-center justify-center text-xs ${
-                    getStepStatus("technicians") === "current"
-                      ? "bg-[#B4CC5F] text-white"
-                      : getStepStatus("technicians") === "completed"
-                        ? "bg-green-500 text-white"
-                        : getStepStatus("technicians") === "pending"
-                          ? "bg-gray-200 text-gray-500"
-                          : "bg-gray-100 text-gray-400"
-                  }`}
-                >
-                  {getStepStatus("technicians") === "completed" ? (
-                    <CheckCircle className="w-3 h-3" />
-                  ) : (
-                    "4"
-                  )}
-                </div>
-                <span className="text-xs font-medium">Équipe</span>
-              </div>
-
-              <div className="w-4 h-px bg-gray-300"></div>
-
-              <div className="flex items-center space-x-1">
-                <div
-                  className={`w-6 h-6 rounded-full flex items-center justify-center text-xs ${
-                    getStepStatus("overview") === "current"
-                      ? "bg-[#B4CC5F] text-white"
-                      : getStepStatus("overview") === "completed"
-                        ? "bg-green-500 text-white"
-                        : "bg-gray-100 text-gray-400"
-                  }`}
-                >
-                  5
-                </div>
-                <span className="text-xs font-medium">Aperçu</span>
-              </div>
+            <div className="flex items-center space-x-4">
+              {[
+                { step: "company" as WizardStep, label: "Entreprise", icon: Building },
+                { step: "domains" as WizardStep, label: "Domaines", icon: MapPin },
+                { step: "serres" as WizardStep, label: "Serres", icon: Home },
+                { step: "technicians" as WizardStep, label: "Techniciens", icon: Users },
+                { step: "overview" as WizardStep, label: "Aperçu", icon: CheckCircle },
+              ].map(({ step, label, icon: Icon }, index) => {
+                const status = getStepStatus(step);
+                return (
+                  <div key={step} className="flex items-center">
+                    <div
+                      className={`flex items-center justify-center w-10 h-10 rounded-full border-2 ${
+                        status === "completed"
+                          ? "bg-[#B4CC5F] border-[#B4CC5F] text-white"
+                          : status === "current"
+                            ? "bg-blue-500 border-blue-500 text-white"
+                            : "bg-gray-100 border-gray-300 text-gray-400"
+                      }`}
+                    >
+                      {status === "completed" ? (
+                        <CheckCircle className="h-5 w-5" />
+                      ) : (
+                        <Icon className="h-5 w-5" />
+                      )}
+                    </div>
+                    {index < 4 && (
+                      <div
+                        className={`w-8 h-0.5 mx-2 ${
+                          status === "completed" ? "bg-[#B4CC5F]" : "bg-gray-300"
+                        }`}
+                      />
+                    )}
+                  </div>
+                );
+              })}
             </div>
           </div>
         </CardHeader>
+
         <CardContent>
           <Form {...form}>
             <form
@@ -426,10 +363,7 @@ export default function CompanySetupWizard({
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Statut juridique *</FormLabel>
-                    <Select
-                      onValueChange={field.onChange}
-                      defaultValue={field.value}
-                    >
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="Sélectionnez le statut juridique" />
@@ -457,7 +391,7 @@ export default function CompanySetupWizard({
                     <FormControl>
                       <Input
                         type="email"
-                        placeholder="contact@votre-entreprise.com"
+                        placeholder="Saisissez l'email de l'entreprise"
                         {...field}
                       />
                     </FormControl>

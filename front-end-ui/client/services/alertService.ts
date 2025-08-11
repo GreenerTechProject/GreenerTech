@@ -40,6 +40,20 @@ export class AlertService {
     }
   }
 
+  static async getAlertsByAssignedSerres(): Promise<Alert[]> {
+    try {
+      const response = await axios.get(`${API_BASE_URL}/alerte/assigned`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching alerts by assigned serres:", error);
+      throw error;
+    }
+  }
+
   static async getAlert(id: number): Promise<Alert> {
     try {
       const response = await axios.get(`${API_BASE_URL}/alerte/${id}`);
