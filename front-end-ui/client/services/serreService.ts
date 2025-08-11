@@ -116,6 +116,116 @@ export const serreService = {
     }
   },
 
+  // Get serres with their assigned technician information
+  getSerresWithTechnicians: async (): Promise<any[]> => {
+    try {
+      // Fetch all serres that the current user has access to
+      const userResponse = await axios.get(`${API_BASE_URL}/user`, createAuthenticatedRequest());
+      const currentUser = userResponse.data;
+      
+      // Get serres assigned to current user (by autorisations)
+      const authzResp = await axios.get(
+        `${API_BASE_URL}/autorisation_serre`,
+        {
+          ...createAuthenticatedRequest(),
+          params: { id_user: currentUser.id },
+        },
+      );
+
+      const autorisations = authzResp.data?.data || [];
+      const serreIds: number[] = autorisations.map((a: any) => a.id_serre);
+      if (serreIds.length === 0) return [];
+
+      // Fetch company technicians to get their details
+      let companyTechnicians: any[] = [];
+      try {
+        if (currentUser.id_entreprise) {
+          const techResponse = await axios.get(
+            `${API_BASE_URL}/technicien/company/${currentUser.id_entreprise}`,
+            createAuthenticatedRequest()
+          );
+          companyTechnicians = techResponse.data?.technicians || [];
+        }
+      } catch (techError) {
+        console.warn('Could not fetch company technicians:', techError);
+      }
+
+      // Fetch details for each serre with technician information
+      const results: any[] = [];
+      for (const id of serreIds) {
+        try {
+          const serreResponse = await axios.get(`${API_BASE_URL}/serre/${id}`, createAuthenticatedRequest());
+          const serre = serreResponse.data;
+          
+          // Fetch technician assignments for this serre
+          try {
+            const techResponse = await axios.get(
+              `${API_BASE_URL}/autorisation_serre`,
+              {
+                ...createAuthenticatedRequest(),
+                params: { id_serre: id },
+              }
+            );
+            
+            console.log(`[SerreService] Fetching technicians for serre ${id}:`, techResponse.data);
+            
+            // Find all technician assignments (not the current user's assignment)
+            const technicianAuths = techResponse.data?.data?.filter((auth: any) => {
+              // Only filter out the current user's own assignment
+              const isCurrentUser = auth.id_user === currentUser.id;
+              console.log(`[SerreService] Auth ${auth.id_user} vs current user ${currentUser.id}: ${isCurrentUser}`);
+              return !isCurrentUser;
+            }) || [];
+            
+            console.log(`[SerreService] Found ${technicianAuths.length} technician assignments for serre ${id}:`, technicianAuths);
+            
+            if (technicianAuths.length > 0) {
+              // Match technician IDs with company technicians data
+              const assignedTechnicians = [];
+              for (const techAuth of technicianAuths) {
+                const companyTech = companyTechnicians.find((ct: any) => ct.id === techAuth.id_user);
+                if (companyTech) {
+                  assignedTechnicians.push({
+                    id: companyTech.id,
+                    name: companyTech.fullName || companyTech.name || companyTech.email,
+                    email: companyTech.email
+                  });
+                  console.log(`[SerreService] Found technician:`, companyTech);
+                } else {
+                  console.log(`[SerreService] Technician ${techAuth.id_user} not found in company technicians`);
+                }
+              }
+              
+              if (assignedTechnicians.length > 0) {
+                serre.assignedTechnicians = assignedTechnicians;
+                console.log(`[SerreService] Set assignedTechnicians for serre ${id}:`, assignedTechnicians);
+              } else {
+                console.log(`[SerreService] No valid technicians found for serre ${id}`);
+              }
+            } else {
+              console.log(`[SerreService] No technician assignments found for serre ${id}`);
+            }
+          } catch (authError) {
+            console.warn(`Could not fetch technician assignments for serre ${id}:`, authError);
+          }
+          
+          results.push(serre);
+        } catch (serreError) {
+          console.warn(`Could not fetch serre ${id}:`, serreError);
+        }
+      }
+      
+      return results;
+    } catch (error: any) {
+      const errorMessage = error.response?.data?.message ||
+        "Erreur lors de la récupération des serres avec techniciens";
+      throw {
+        message: errorMessage,
+        status: error.response?.status || 500,
+      } as ApiError;
+    }
+  },
+
   // Get serres assigned to the current user
   getSerresByUser: async (): Promise<any[]> => {
     try {

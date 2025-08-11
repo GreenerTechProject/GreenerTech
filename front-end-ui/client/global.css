@@ -49,6 +49,28 @@
     }
   }
 
+  @keyframes slide-in-bottom {
+    from {
+      transform: translateY(100%);
+      opacity: 0;
+    }
+    to {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
+
+  @keyframes slide-out-bottom {
+    from {
+      transform: translateY(0);
+      opacity: 1;
+    }
+    to {
+      transform: translateY(100%);
+      opacity: 0;
+    }
+  }
+
   .animate-fade-in {
     animation: fade-in 0.5s ease-out;
   }
@@ -60,6 +82,95 @@
   .animate-bounce-in {
     animation: bounce-in 0.6s ease-out;
   }
+
+  .animate-slide-in-bottom {
+    animation: slide-in-bottom 0.3s ease-out;
+  }
+
+  .animate-slide-out-bottom {
+    animation: slide-out-bottom 0.3s ease-out;
+  }
+
+  /* Mobile-first responsive utilities */
+  .xs\:inline {
+    @media (min-width: 475px) {
+      display: inline;
+    }
+  }
+
+  .xs\:block {
+    @media (min-width: 475px) {
+      display: block;
+    }
+  }
+
+  .xs\:flex {
+    @media (min-width: 475px) {
+      display: flex;
+    }
+  }
+
+  .xs\:hidden {
+    @media (min-width: 475px) {
+      display: none;
+    }
+  }
+
+  /* Touch-friendly button states */
+  .touch\:active\:scale-95:active {
+    transform: scale(0.95);
+  }
+
+  .touch\:active\:scale-90:active {
+    transform: scale(0.9);
+  }
+
+  /* Mobile panel animations */
+  .mobile-panel-enter {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+
+  .mobile-panel-enter-active {
+    transform: translateY(0);
+    opacity: 1;
+    transition: transform 300ms ease-out, opacity 300ms ease-out;
+  }
+
+  .mobile-panel-exit {
+    transform: translateY(0);
+    opacity: 1;
+  }
+
+  .mobile-panel-exit-active {
+    transform: translateY(100%);
+    opacity: 0;
+    transition: transform 300ms ease-in, opacity 300ms ease-in;
+  }
+
+  /* Mobile-friendly scrollbar */
+  .scrollbar-mobile {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(156, 163, 175, 0.5) transparent;
+  }
+
+  .scrollbar-mobile::-webkit-scrollbar {
+    width: 4px;
+  }
+
+  .scrollbar-mobile::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .scrollbar-mobile::-webkit-scrollbar-thumb {
+    background-color: rgba(156, 163, 175, 0.5);
+    border-radius: 2px;
+  }
+
+  .scrollbar-mobile::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(156, 163, 175, 0.7);
+  }
+
   :root {
     --background: 0 0% 100%;
     --foreground: 222.2 84% 4.9%;
@@ -80,7 +191,7 @@
     --muted-foreground: 215.4 16.3% 46.9%;
 
     --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    --accent-foreground: 222.2 84% 4.9%;
 
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
@@ -99,13 +210,10 @@
 
     --sidebar-primary-foreground: 0 0% 98%;
 
-    --sidebar-accent: 240 4.8% 95.9%;
-
-    --sidebar-accent-foreground: 240 5.9% 10%;
-
-    --sidebar-border: 220 13% 91%;
-
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    /* Mobile-specific variables */
+    --mobile-header-height: 60px;
+    --mobile-panel-height: 60vh;
+    --mobile-fab-size: 56px;
   }
 
   .dark {

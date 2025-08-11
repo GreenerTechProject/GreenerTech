@@ -40,6 +40,10 @@ import {
   LogOut,
   Shield,
   Bell,
+  Menu,
+  X,
+  ChevronUp,
+  ChevronDown,
 } from "lucide-react";
 import TechnicianSidebar from "../components/TechnicianSidebar";
 import InterventionForm from "../components/InterventionForm";
@@ -68,6 +72,11 @@ interface Serre {
   lastUpdate: Date;
   supervisedBy?: string;
   bilansCount?: number;
+  assignedTechnicians?: {
+    id: number;
+    name: string;
+    email?: string;
+  }[];
 }
 
 interface Zone {
@@ -234,10 +243,15 @@ export default function TechnicienSupDashboard(): JSX.Element {
   const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false);
   const [selectedTechnician, setSelectedTechnician] = useState("");
   const [companyTechnicians, setCompanyTechnicians] = useState<ApiTechnician[]>([]);
+  const [isLoadingTechnicians, setIsLoadingTechnicians] = useState(false);
   const [isInterventionFormOpen, setIsInterventionFormOpen] = useState(false);
   const mapRef = useRef<HTMLDivElement>(null);
   const [assignedSerresRaw, setAssignedSerresRaw] = useState<any[]>([]);
   const [domainsRaw, setDomainsRaw] = useState<BackendDomain[]>([]);
+
+  // Mobile responsive state
+  const [isMobilePanelOpen, setIsMobilePanelOpen] = useState(false);
+  const [activeMobileTab, setActiveMobileTab] = useState<'serres' | 'alerts'>('serres');
 
   // Alerts / heatmap state
   const [showHeatmap, setShowHeatmap] = useState<boolean>(true);
@@ -277,7 +291,7 @@ export default function TechnicienSupDashboard(): JSX.Element {
       }
       // @ts-ignore
       const newMap = new google.maps.Map(mapRef.current!, {
-        center: { lat: 46.7051, lng: 1.7291 },
+        center: { lat: 46.7051, lng: 1.7191 },
         // @ts-ignore
         mapTypeId: google.maps.MapTypeId.SATELLITE,
         zoom: 13,
@@ -394,7 +408,7 @@ export default function TechnicienSupDashboard(): JSX.Element {
     (async () => {
       try {
         const userIdNum = typeof user.id === 'string' ? parseInt(user.id, 10) : (user.id as unknown as number);
-        const list: any[] = await serreService.getSerresAssignedToUser(userIdNum);
+        const list: any[] = await serreService.getSerresWithTechnicians();
         console.log('[TechSup] Assigned serres count', list.length);
         setAssignedSerresRaw(list);
       } catch (e) {
@@ -410,16 +424,50 @@ export default function TechnicienSupDashboard(): JSX.Element {
         console.error('[TechSup] Failed to fetch domains', e);
       }
     })();
+  }, [user?.id]);
+
+  // Fetch technicians from the same company
+  useEffect(() => {
     (async () => {
       try {
-        // Load technicians of same entreprise for assignment
-        const companyId = (user as any)?.id_entreprise?.toString();
+        console.log('[TechSup] useEffect triggered for technicians fetch');
+        console.log('[TechSup] Current user:', user);
+        console.log('[TechSup] User ID:', user?.id);
+        console.log('[TechSup] User company ID:', user?.id_entreprise);
+        
+        const companyId = user?.id_entreprise?.toString();
+        console.log('[TechSup] Company ID extracted:', companyId);
+        
         if (companyId) {
-          const list = await technicianService.getTechniciansByCompany(companyId);
-          setCompanyTechnicians(list);
+          console.log('[TechSup] Fetching technicians for company:', companyId);
+          setIsLoadingTechnicians(true);
+          try {
+            const list = await technicianService.getTechniciansByCompany(companyId);
+            console.log('[TechSup] Technicians fetched successfully:', list);
+            console.log('[TechSup] Technicians count:', list.length);
+            console.log('[TechSup] Technicians type:', typeof list);
+            console.log('[TechSup] Technicians is array:', Array.isArray(list));
+            if (list && list.length > 0) {
+              console.log('[TechSup] First technician sample:', list[0]);
+              console.log('[TechSup] First technician keys:', Object.keys(list[0]));
+            }
+            // Ensure we have an array and normalize the data
+            const normalizedList = Array.isArray(list) ? list : [];
+            console.log('[TechSup] Setting normalized technicians list:', normalizedList);
+            setCompanyTechnicians(normalizedList);
+          } catch (error) {
+            console.error('[TechSup] Error fetching technicians:', error);
+            setCompanyTechnicians([]);
+          } finally {
+            setIsLoadingTechnicians(false);
+          }
+        } else {
+          console.log('[TechSup] No company ID found, cannot fetch technicians');
+          setCompanyTechnicians([]);
+          setIsLoadingTechnicians(false);
         }
       } catch (e) {
-        // non-blocking
+        console.error('[TechSup] Failed to fetch technicians from same company', e);
       }
     })();
   }, [user?.id]);
@@ -472,6 +520,7 @@ export default function TechnicienSupDashboard(): JSX.Element {
         lastUpdate: new Date(),
         supervisedBy: user?.name || user?.email || undefined,
         bilansCount: 0,
+        assignedTechnicians: s.assignedTechnicians,
       });
     });
     setSerres(uiSerres);
@@ -505,30 +554,27 @@ export default function TechnicienSupDashboard(): JSX.Element {
     }
   }, [map, assignedSerresRaw, domainsRaw]);
 
-  // Resolve assigned technician names for displayed serres
+  // Update supervisedBy based on assignedTechnicians if available
   useEffect(() => {
-    (async () => {
-      if (serres.length === 0 || companyTechnicians.length === 0) return;
-      try {
-        const updated = await Promise.all(
-          serres.map(async (s) => {
-            try {
-              const auths = await serreService.getAutorisationSerre({ id_serre: parseInt(s.id, 10) });
-              if (auths.length > 0) {
-                const techId = String(auths[0].id_user);
-                const tech = companyTechnicians.find((t) => String(t.id) === techId);
-                return { ...s, supervisedBy: tech ? (tech as any).fullName || tech?.email : `Technicien #${techId}` };
-              }
-            } catch (_e) {}
-            return s;
-          })
-        );
-        setSerres(updated);
-      } catch (_e) {
-        // ignore
+    if (serres.length === 0) return;
+    
+    const updated = serres.map((s) => {
+      if (s.assignedTechnicians && s.assignedTechnicians.length > 0) {
+        if (s.assignedTechnicians.length === 1) {
+          return { ...s, supervisedBy: `Technicien ${s.assignedTechnicians[0].name}` };
+        } else {
+          const technicianNames = s.assignedTechnicians.map(t => t.name).join(', ');
+          return { ...s, supervisedBy: `Techniciens: ${technicianNames}` };
+        }
       }
-    })();
-  }, [serres.length, companyTechnicians]);
+      return s;
+    });
+    
+    // Only update if there are changes
+    if (JSON.stringify(updated) !== JSON.stringify(serres)) {
+      setSerres(updated);
+    }
+  }, [serres]);
 
   // Setup DrawingManager and load guides
   useEffect(() => {
@@ -722,16 +768,28 @@ export default function TechnicienSupDashboard(): JSX.Element {
           const tech = companyTechnicians.find((t) => String(t.id) === String(selectedTechnician));
           const technicianName = (tech as any)?.fullName || tech?.email || selectedTechnician;
 
+          const technicianData = {
+            id: parseInt(selectedTechnician, 10),
+            name: technicianName,
+            email: tech?.email
+          };
+
           setSerres((prev) =>
             prev.map((serre) =>
               serre.id === selectedSerre.id
-                ? { ...serre, supervisedBy: `Technicien ${technicianName}` }
+                ? { 
+                    ...serre, 
+                    assignedTechnicians: [...(serre.assignedTechnicians || []), technicianData]
+                  }
                 : serre,
             ),
           );
   
           setSelectedSerre((prev) =>
-            prev ? { ...prev, supervisedBy: `Technicien ${technicianName}` } : prev,
+            prev ? { 
+              ...prev, 
+              assignedTechnicians: [...(prev.assignedTechnicians || []), technicianData]
+            } : prev,
           );
         } catch (_e) {
           // ignore UI failure
@@ -787,7 +845,42 @@ export default function TechnicienSupDashboard(): JSX.Element {
   };
 
   return (
-    <div className="h-[calc(100vh-73px)]">
+    <div className="h-[calc(100vh-73px)] relative">
+      {/* Mobile Header Overlay */}
+      <div className="lg:hidden absolute top-0 left-0 right-0 z-20 bg-white/95 backdrop-blur-sm border-b border-gray-200">
+        <div className="flex items-center justify-between p-3">
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setIsMobilePanelOpen(!isMobilePanelOpen)}
+              className="p-2"
+            >
+              {isMobilePanelOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+            </Button>
+            <div className="flex items-center gap-2">
+              <Bell className="h-4 w-4 text-red-500" />
+              <span className="text-sm font-medium">Technicien Sup</span>
+            </div>
+          </div>
+          
+          {/* Mobile Alerts Summary */}
+          <div className="flex items-center gap-1 text-xs">
+            <span className="px-1.5 py-0.5 rounded bg-red-100 text-red-700 font-medium">
+              {alertsSummary.high}
+            </span>
+            <span className="px-1.5 py-0.5 rounded bg-yellow-100 text-yellow-700 font-medium">
+              {alertsSummary.medium}
+            </span>
+            <span className="px-1.5 py-0.5 rounded bg-green-100 text-green-700 font-medium">
+              {alertsSummary.low}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* Desktop Layout */}
+      <div className="hidden lg:block h-full">
         <ResizablePanelGroup direction="horizontal">
           {/* Left Panel: Serres list */}
           <ResizablePanel defaultSize={28} minSize={20} maxSize={45} className="bg-white shadow-lg">
@@ -798,7 +891,6 @@ export default function TechnicienSupDashboard(): JSX.Element {
                   <span>Serres Supervisées ({serres.length})</span>
                 </h3>
               </div>
-              {/* Ajout de serre désactivé pour le moment */}
               <ScrollArea className="flex-1">
                 <div className="p-4 space-y-3">
                   {serres.map((serre) => (
@@ -814,6 +906,17 @@ export default function TechnicienSupDashboard(): JSX.Element {
                           <span>{serre.surface} m²</span>
                           <span>Bilans: {serre.bilansCount ?? 0}</span>
                         </div>
+                        {serre.assignedTechnicians && serre.assignedTechnicians.length > 0 && (
+                          <div className="mt-2 pt-2 border-t border-gray-100">
+                            <p className="text-xs text-blue-600">
+                              {serre.assignedTechnicians.length === 1 ? (
+                                `Technicien: ${serre.assignedTechnicians[0].name}`
+                              ) : (
+                                `Techniciens: ${serre.assignedTechnicians.map(t => t.name).join(', ')}`
+                              )}
+                            </p>
+                          </div>
+                        )}
                       </CardContent>
                     </Card>
                   ))}
@@ -823,10 +926,10 @@ export default function TechnicienSupDashboard(): JSX.Element {
           </ResizablePanel>
           <ResizableHandle withHandle />
           {/* Right Panel: Map */}
-          <ResizablePanel defaultSize={72} minSize={55}>
-            <div className="h-full relative" data-testid="map-section">
+          <ResizablePanel defaultSize={72} minSize={55} className="min-w-0">
+            <div className="h-full relative min-h-[500px] w-full flex-1" data-testid="map-section">
               <GoogleMapsWrapper apiKey={GOOGLE_MAPS_API_KEY}>
-                <div ref={mapRef} className="w-full h-full" />
+                <div ref={mapRef} className="w-full h-full min-h-[500px] min-w-[400px] flex-1" />
               </GoogleMapsWrapper>
 
               {/* Map Overlay Info */}
@@ -853,54 +956,30 @@ export default function TechnicienSupDashboard(): JSX.Element {
                   <p className="text-xs text-gray-500">
                     {selectedSerre.surface} m² • {selectedSerre.zones.length} zones
                   </p>
-                  {selectedSerre.supervisedBy && (
+                  {selectedSerre.assignedTechnicians && selectedSerre.assignedTechnicians.length > 0 && (
+                    <p className="text-xs text-blue-600 mt-1">
+                      {selectedSerre.assignedTechnicians.length === 1 ? (
+                        `Technicien: ${selectedSerre.assignedTechnicians[0].name}`
+                      ) : (
+                        `Techniciens: ${selectedSerre.assignedTechnicians.map(t => t.name).join(', ')}`
+                      )}
+                    </p>
+                  )}
+                  {selectedSerre.supervisedBy && (!selectedSerre.assignedTechnicians || selectedSerre.assignedTechnicians.length === 0) && (
                     <p className="text-xs text-blue-600 mt-1">
                       {selectedSerre.supervisedBy}
                     </p>
                   )}
 
                   <div className="mt-3">
-                    <Dialog open={isAssignDialogOpen} onOpenChange={setIsAssignDialogOpen}>
-                      <DialogTrigger asChild>
-                        <Button size="sm" variant="outline" className="w-full">
-                          Assigner un technicien
-                        </Button>
-                      </DialogTrigger>
-                      <DialogContent>
-                        <DialogHeader>
-                          <DialogTitle>Assigner un technicien</DialogTitle>
-                        </DialogHeader>
-                        <div className="space-y-4">
-                          <div>
-                            <Label>Serre sélectionnée</Label>
-                            <p className="text-sm text-gray-600">{selectedSerre?.nom}</p>
-                          </div>
-                          <div>
-                            <Label htmlFor="technician-select">Technicien</Label>
-                            <Select value={selectedTechnician} onValueChange={setSelectedTechnician}>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Sélectionnez un technicien" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {companyTechnicians.length === 0 ? (
-                                  <SelectItem value="no-tech" disabled>Aucun technicien trouvé</SelectItem>
-                                ) : (
-                                  companyTechnicians.map((tech) => (
-                                    <SelectItem key={tech.id} value={tech.id}>
-                                      {(tech as any).fullName || tech.email} ({tech.email})
-                                    </SelectItem>
-                                  ))
-                                )}
-                              </SelectContent>
-                            </Select>
-                          </div>
-                          <div className="flex space-x-2">
-                            <Button onClick={handleAssignTechnician} disabled={!selectedTechnician || companyTechnicians.length === 0} className="flex-1">Assigner</Button>
-                            <Button variant="outline" onClick={() => { setIsAssignDialogOpen(false); setSelectedTechnician(""); }} className="flex-1">Annuler</Button>
-                          </div>
-                        </div>
-                      </DialogContent>
-                    </Dialog>
+                    <Button 
+                      size="sm" 
+                      variant="outline" 
+                      className="w-full"
+                      onClick={() => setIsAssignDialogOpen(true)}
+                    >
+                      Assigner un technicien
+                    </Button>
                   </div>
                 </div>
               )}
@@ -931,6 +1010,252 @@ export default function TechnicienSupDashboard(): JSX.Element {
             </div>
           </ResizablePanel>
         </ResizablePanelGroup>
+      </div>
+
+      {/* Mobile Layout - Full Screen Map */}
+      <div className="lg:hidden h-full relative">
+        <GoogleMapsWrapper apiKey={GOOGLE_MAPS_API_KEY}>
+          <div ref={mapRef} className="w-full h-full" />
+        </GoogleMapsWrapper>
+
+        {/* Mobile Floating Action Button */}
+        <div className="absolute bottom-6 right-4 z-10">
+          <Button
+            size="lg"
+            className="h-14 w-14 rounded-full shadow-lg bg-[#B4CC5F] hover:bg-[#9BB84F] text-white"
+            onClick={() => setIsMobilePanelOpen(!isMobilePanelOpen)}
+          >
+            {isMobilePanelOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+          </Button>
+        </div>
+
+        {/* Mobile Bottom Panel */}
+        <div className={cn(
+          "absolute bottom-0 left-0 right-0 bg-white rounded-t-3xl shadow-2xl transition-transform duration-300 ease-in-out z-20",
+          isMobilePanelOpen ? "translate-y-0" : "translate-y-full"
+        )}>
+          {/* Panel Handle */}
+          <div className="flex justify-center pt-3 pb-2">
+            <div className="w-12 h-1 bg-gray-300 rounded-full"></div>
+          </div>
+
+          {/* Panel Tabs */}
+          <div className="flex border-b border-gray-200">
+            <button
+              onClick={() => setActiveMobileTab('serres')}
+              className={cn(
+                "flex-1 py-3 text-sm font-medium transition-colors",
+                activeMobileTab === 'serres'
+                  ? "text-[#B4CC5F] border-b-2 border-[#B4CC5F]"
+                  : "text-gray-500 hover:text-gray-700"
+              )}
+            >
+              Serres ({serres.length})
+            </button>
+            <button
+              onClick={() => setActiveMobileTab('alerts')}
+              className={cn(
+                "flex-1 py-3 text-sm font-medium transition-colors",
+                activeMobileTab === 'alerts'
+                  ? "text-[#B4CC5F] border-b-2 border-[#B4CC5F]"
+                  : "text-gray-500 hover:text-gray-700"
+              )}
+            >
+              Alertes ({alertsSummary.low + alertsSummary.medium + alertsSummary.high})
+            </button>
+          </div>
+
+          {/* Panel Content */}
+          <div className="max-h-[60vh] overflow-y-auto scrollbar-mobile">
+            {activeMobileTab === 'serres' && (
+              <div className="p-4 space-y-3">
+                {serres.map((serre) => (
+                  <Card 
+                    key={serre.id} 
+                    className={cn(
+                      "cursor-pointer transition-all duration-200 hover:shadow-md border",
+                      selectedSerre?.id === serre.id 
+                        ? "ring-2 ring-[#B4CC5F] border-[#B4CC5F] shadow-md" 
+                        : "border-gray-200 hover:border-[#B4CC5F]/50"
+                    )} 
+                    onClick={() => {
+                      handleSelectSerre(serre);
+                      setIsMobilePanelOpen(false);
+                    }}
+                  >
+                    <CardContent className="p-4">
+                      <div className="flex items-start justify-between mb-2">
+                        <div className="flex-1">
+                          <h4 className="font-semibold text-gray-900 text-base">{serre.nom}</h4>
+                          <p className="text-sm text-gray-600">Variété: {serre.variety || "—"}</p>
+                        </div>
+                        <div className="text-right">
+                          <Badge variant="outline" className="text-xs">
+                            {serre.surface} m²
+                          </Badge>
+                        </div>
+                      </div>
+                      <div className="flex items-center justify-between text-xs text-gray-500">
+                        <span>Bilans: {serre.bilansCount ?? 0}</span>
+                        {serre.supervisedBy && (
+                          <span className="text-blue-600 truncate max-w-[120px]">
+                            {serre.supervisedBy}
+                          </span>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+
+            {activeMobileTab === 'alerts' && (
+              <div className="p-4 space-y-4">
+                {/* Alerts Summary Cards */}
+                <div className="grid grid-cols-3 gap-3">
+                  <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-center">
+                    <div className="text-2xl font-bold text-red-600">{alertsSummary.high}</div>
+                    <div className="text-xs text-red-700 font-medium">Élevé</div>
+                  </div>
+                  <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 text-center">
+                    <div className="text-2xl font-bold text-yellow-600">{alertsSummary.medium}</div>
+                    <div className="text-xs text-yellow-700 font-medium">Moyen</div>
+                  </div>
+                  <div className="bg-green-50 border border-green-200 rounded-lg p-3 text-center">
+                    <div className="text-2xl font-bold text-green-600">{alertsSummary.low}</div>
+                    <div className="text-xs text-green-700 font-medium">Faible</div>
+                  </div>
+                </div>
+
+                {/* Heatmap Toggle */}
+                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                  <div className="flex items-center gap-2">
+                    <Layers className="h-4 w-4 text-gray-600" />
+                    <span className="text-sm font-medium text-gray-700">Heatmap des alertes</span>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={showHeatmap}
+                      onChange={(e) => {
+                        setShowHeatmap(e.target.checked);
+                        if (heatmapRef.current) {
+                          heatmapRef.current.setMap(e.target.checked ? map! : null);
+                        }
+                      }}
+                      className="sr-only peer"
+                    />
+                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-[#B4CC5F]/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#B4CC5F]"></div>
+                  </label>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Mobile Serre Info Overlay */}
+        {selectedSerre && (
+          <div className="absolute top-20 left-4 right-4 z-10 bg-white rounded-xl shadow-lg p-4 border border-gray-200">
+            <div className="flex items-start justify-between mb-3">
+              <div className="flex-1">
+                <div className="flex items-center space-x-2 mb-2">
+                  <div
+                    className={cn(
+                      "w-3 h-3 rounded-full",
+                      selectedSerre.status === "active"
+                        ? "bg-green-500"
+                        : selectedSerre.status === "maintenance"
+                          ? "bg-yellow-500"
+                          : "bg-red-500",
+                    )}
+                  />
+                  <h4 className="font-semibold text-gray-900 text-base">
+                    {selectedSerre.nom}
+                  </h4>
+                </div>
+                <p className="text-sm text-gray-600 mb-1">
+                  {selectedSerre.variety}
+                </p>
+                <p className="text-xs text-gray-500">
+                  {selectedSerre.surface} m² • {selectedSerre.zones.length} zones
+                </p>
+                {selectedSerre.supervisedBy && (
+                  <p className="text-xs text-blue-600 mt-1">
+                    {selectedSerre.supervisedBy}
+                  </p>
+                )}
+              </div>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setSelectedSerre(null)}
+                className="p-2 h-8 w-8"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+
+            <div className="flex gap-2">
+              <Button 
+                size="sm" 
+                variant="outline" 
+                className="flex-1"
+                onClick={() => setIsAssignDialogOpen(true)}
+              >
+                Assigner un technicien
+              </Button>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Global Assign Technician Dialog */}
+      <Dialog open={isAssignDialogOpen} onOpenChange={setIsAssignDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Assigner un technicien</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label>Serre sélectionnée</Label>
+              <p className="text-sm text-gray-600">{selectedSerre?.nom}</p>
+            </div>
+            <div>
+              <Label htmlFor="technician-select">Technicien</Label>
+              <select 
+                id="technician-select"
+                className="w-full p-3 border border-gray-300 rounded-md bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                value={selectedTechnician}
+                onChange={(e) => setSelectedTechnician(e.target.value)}
+              >
+                <option value="">Sélectionnez un technicien</option>
+                {companyTechnicians.map((tech) => (
+                  <option key={tech.id} value={String(tech.id)}>
+                    {tech.fullName || tech.email} ({tech.email})
+                  </option>
+                ))}
+              </select>
+              {isLoadingTechnicians ? (
+                <p className="text-xs text-gray-500 mt-1">
+                  Chargement des techniciens...
+                </p>
+              ) : companyTechnicians.length > 0 ? (
+                <p className="text-xs text-gray-500 mt-1">
+                  {companyTechnicians.length} technicien(s) trouvé(s) dans votre entreprise
+                </p>
+              ) : (
+                <p className="text-xs text-gray-500 mt-1">
+                  Aucun technicien trouvé dans votre entreprise
+                </p>
+              )}
+            </div>
+            <div className="flex space-x-2">
+              <Button onClick={handleAssignTechnician} disabled={!selectedTechnician || companyTechnicians.length === 0} className="flex-1">Assigner</Button>
+              <Button variant="outline" onClick={() => { setIsAssignDialogOpen(false); setSelectedTechnician(""); }} className="flex-1">Annuler</Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Intervention Form Modal */}
       <InterventionForm

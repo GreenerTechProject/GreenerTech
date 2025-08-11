@@ -3,6 +3,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useSidebar } from '@/hooks/useSidebar';
 import DirectorSidebar from '../components/DirectorSidebar';
 import { useToast } from '@/hooks/use-toast';
+import { affiliationService, PendingTechnician } from '../services/affiliationService';
 import {
   Menu,
   Search,
@@ -18,7 +19,9 @@ import {
   Calendar,
   Building,
   User,
-  FileText
+  FileText,
+  Loader2,
+  AlertCircle
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -87,202 +90,150 @@ export default function DirectorAffiliationManagement() {
   const { isOpen, setIsOpen, toggleSidebar } = useSidebar();
   const { toast } = useToast();
   
-  const [requests, setRequests] = useState<AffiliationRequest[]>([
-    {
-      id: '1',
-      applicantName: 'Sophie Dubois',
-      email: 'sophie.dubois@email.com',
-      phone: '+33 6 45 67 89 12',
-      company: 'AgriTech Solutions',
-      requestedRole: 'technicien_superieur',
-      experience: '5 ans d\'expérience en agriculture de précision et systèmes hydroponiques',
-      motivation: 'Passionnée par l\'innovation agricole, je souhaite contribuer à l\'évolution des pratiques durables...',
-      documents: {
-        cv: 'sophie_dubois_cv.pdf',
-        certifications: ['Certification Hydroponique Avancée', 'Sécurité en Agriculture'],
-        recommendations: ['lettre_recommandation_1.pdf']
-      },
-      location: 'Lyon, France',
-      appliedDate: '2024-01-15',
-      status: 'pending',
-      skills: ['Hydroponique', 'Serres automatisées', 'Analyse des sols', 'Gestion IoT'],
-      availability: 'Immédiate',
-      references: [
-        {
-          name: 'Marc Leroy',
-          position: 'Directeur Technique',
-          company: 'Ferme du Futur',
-          contact: 'marc.leroy@fermedufutur.com'
-        }
-      ]
-    },
-    {
-      id: '2',
-      applicantName: 'Antoine Moreau',
-      email: 'antoine.moreau@email.com',
-      phone: '+33 6 78 90 12 34',
-      requestedRole: 'technicien',
-      experience: '2 ans en maintenance de serres traditionnelles',
-      motivation: 'Désireux d\'évoluer vers les technologies modernes...',
-      documents: {
-        cv: 'antoine_moreau_cv.pdf',
-        certifications: ['CAP Agriculture']
-      },
-      location: 'Toulouse, France',
-      appliedDate: '2024-01-18',
-      status: 'under_review',
-      skills: ['Maintenance', 'Irrigation', 'Culture légumes'],
-      availability: 'Dans 2 semaines',
-      references: []
-    },
-    {
-      id: '3',
-      applicantName: 'Lucie Petit',
-      email: 'lucie.petit@email.com',
-      requestedRole: 'technicien_superieur',
-      experience: '8 ans en recherche agricole',
-      motivation: 'Experte en optimisation de rendements...',
-      documents: {
-        cv: 'lucie_petit_cv.pdf',
-        certifications: ['PhD Agronomie', 'Certification Bio'],
-        recommendations: ['recommandation_inra.pdf']
-      },
-      location: 'Paris, France',
-      appliedDate: '2024-01-10',
-      status: 'approved',
-      reviewedBy: 'Directeur Principal',
-      reviewedDate: '2024-01-12',
-      skills: ['Recherche', 'Optimisation', 'Agriculture bio', 'Data science'],
-      availability: 'Flexible',
-      references: [
-        {
-          name: 'Dr. Pierre Martin',
-          position: 'Chercheur Senior',
-          company: 'INRA',
-          contact: 'pierre.martin@inra.fr'
-        }
-      ]
-    }
-  ]);
-
+  const [technicians, setTechnicians] = useState<PendingTechnician[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [roleFilter, setRoleFilter] = useState<string>('all');
-  const [selectedRequest, setSelectedRequest] = useState<AffiliationRequest | null>(null);
+  const [selectedTechnician, setSelectedTechnician] = useState<PendingTechnician | null>(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [isRejectDialogOpen, setIsRejectDialogOpen] = useState(false);
   const [rejectionReason, setRejectionReason] = useState('');
 
-  const filteredRequests = requests.filter(request => {
-    const matchesSearch = request.applicantName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         request.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         (request.company && request.company.toLowerCase().includes(searchTerm.toLowerCase()));
-    const matchesStatus = statusFilter === 'all' || request.status === statusFilter;
-    const matchesRole = roleFilter === 'all' || request.requestedRole === roleFilter;
+  // Fetch technicians from backend
+  useEffect(() => {
+    const fetchTechnicians = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        
+        // Get pending technicians (directeur_valide = false)
+        const techniciansData = await affiliationService.getPendingTechnicians();
+        setTechnicians(techniciansData);
+      } catch (error: any) {
+        console.error('Error fetching technicians:', error);
+        setError(error.message || 'Erreur lors du chargement des techniciens en attente');
+        toast({
+          title: "Erreur",
+          description: error.message || 'Erreur lors du chargement des techniciens en attente',
+          variant: "destructive"
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchTechnicians();
+  }, [toast]);
+
+  const filteredTechnicians = technicians.filter(technician => {
+    const matchesSearch = technician.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         technician.email.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesStatus = statusFilter === 'all' || 
+                         (statusFilter === 'pending' && !technician.directeur_valide) ||
+                         (statusFilter === 'approved' && technician.directeur_valide);
+    const matchesRole = roleFilter === 'all' || technician.role === roleFilter;
     return matchesSearch && matchesStatus && matchesRole;
   });
 
-  const handleApproveRequest = (requestId: string) => {
-    const updatedRequests = requests.map(request =>
-      request.id === requestId
-        ? {
-            ...request,
-            status: 'approved' as const,
-            reviewedBy: user?.name || user?.email || 'Directeur',
-            reviewedDate: new Date().toISOString().split('T')[0]
-          }
-        : request
-    );
-    
-    setRequests(updatedRequests);
-    
-    toast({
-      title: "Demande approuvée",
-      description: "Le technicien a été validé et peut maintenant accéder à la plateforme.",
-    });
+  const handleValidateTechnician = async (technicianId: number) => {
+    try {
+      await affiliationService.validateTechnician(technicianId);
+      
+      // Update local state
+      setTechnicians(prev => prev.map(tech => 
+        tech.id === technicianId 
+          ? { ...tech, directeur_valide: true }
+          : tech
+      ));
+      
+      toast({
+        title: "Technicien validé",
+        description: "Le technicien a été validé avec succès et peut maintenant accéder à la plateforme.",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Erreur",
+        description: error.message || "Erreur lors de la validation du technicien",
+        variant: "destructive"
+      });
+    }
   };
 
-  const handleRejectRequest = () => {
-    if (!selectedRequest || !rejectionReason.trim()) return;
+  const handleRejectTechnician = async () => {
+    if (!selectedTechnician) return;
     
-    const updatedRequests = requests.map(request =>
-      request.id === selectedRequest.id
-        ? {
-            ...request,
-            status: 'rejected' as const,
-            reviewedBy: user?.name || user?.email || 'Directeur',
-            reviewedDate: new Date().toISOString().split('T')[0],
-            rejectionReason
-          }
-        : request
-    );
-    
-    setRequests(updatedRequests);
-    setIsRejectDialogOpen(false);
-    setRejectionReason('');
-    setSelectedRequest(null);
-    
-    toast({
-      title: "Demande rejetée",
-      description: "La demande d'affiliation a été rejetée.",
-      variant: "destructive"
-    });
+    try {
+      await affiliationService.rejectTechnician(selectedTechnician.id, rejectionReason);
+      
+      // Update local state
+      setTechnicians(prev => prev.map(tech => 
+        tech.id === selectedTechnician.id 
+          ? { ...tech, directeur_valide: false }
+          : tech
+      ));
+      
+      setIsRejectDialogOpen(false);
+      setSelectedTechnician(null);
+      setRejectionReason('');
+      
+      toast({
+        title: "Technicien rejeté",
+        description: "Le technicien a été rejeté et ne peut plus accéder à la plateforme.",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Erreur",
+        description: error.message || "Erreur lors du rejet du technicien",
+        variant: "destructive"
+      });
+    }
   };
 
-  const handleSetUnderReview = (requestId: string) => {
-    const updatedRequests = requests.map(request =>
-      request.id === requestId
-        ? { ...request, status: 'under_review' as const }
-        : request
-    );
-    setRequests(updatedRequests);
-    
-    toast({
-      title: "Mise en révision",
-      description: "La demande est maintenant en cours de révision.",
-    });
-  };
-
-  const openDetailModal = (request: AffiliationRequest) => {
-    setSelectedRequest(request);
+  const openDetailModal = (technician: PendingTechnician) => {
+    setSelectedTechnician(technician);
     setIsDetailModalOpen(true);
   };
 
-  const openRejectDialog = (request: AffiliationRequest) => {
-    setSelectedRequest(request);
+  const openRejectDialog = (technician: PendingTechnician) => {
+    setSelectedTechnician(technician);
     setIsRejectDialogOpen(true);
   };
 
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'pending':
-        return <Badge className="bg-yellow-100 text-yellow-800 border-yellow-200">En attente</Badge>;
-      case 'under_review':
-        return <Badge className="bg-blue-100 text-blue-800 border-blue-200">En révision</Badge>;
-      case 'approved':
-        return <Badge className="bg-green-100 text-green-800 border-green-200">Approuvé</Badge>;
-      case 'rejected':
-        return <Badge className="bg-red-100 text-red-800 border-red-200">Rejeté</Badge>;
-      default:
-        return <Badge variant="outline">{status}</Badge>;
+  const getStatusBadge = (technician: PendingTechnician) => {
+    if (technician.directeur_valide) {
+      return <Badge className="bg-green-100 text-green-800 border-green-200">Validé</Badge>;
+    } else if (technician.email_valide) {
+      return <Badge className="bg-yellow-100 text-yellow-800 border-yellow-200">En attente de validation</Badge>;
+    } else {
+      return <Badge className="bg-gray-100 text-gray-800 border-gray-200">Incomplet</Badge>;
     }
   };
 
   const getRoleBadge = (role: string) => {
-    switch (role) {
-      case 'technicien_superieur':
-        return <Badge variant="secondary" className="bg-purple-100 text-purple-800 border-purple-200">Technicien Supérieur</Badge>;
-      case 'technicien':
-        return <Badge variant="outline">Technicien</Badge>;
-      default:
-        return <Badge variant="outline">{role}</Badge>;
-    }
+    const roleColors = {
+      'technicien': 'bg-blue-100 text-blue-800 border-blue-200',
+      'technicien_superieur': 'bg-purple-100 text-purple-800 border-purple-200'
+    };
+    
+    const roleLabels = {
+      'technicien': 'Technicien',
+      'technicien_superieur': 'Technicien Supérieur'
+    };
+    
+    return (
+      <Badge className={cn("border", roleColors[role as keyof typeof roleColors])}>
+        {roleLabels[role as keyof typeof roleLabels]}
+      </Badge>
+    );
   };
 
-  const pendingCount = requests.filter(r => r.status === 'pending').length;
-  const underReviewCount = requests.filter(r => r.status === 'under_review').length;
-  const approvedCount = requests.filter(r => r.status === 'approved').length;
-  const rejectedCount = requests.filter(r => r.status === 'rejected').length;
+  // Calculate statistics based on real data
+  const pendingCount = technicians.filter(t => !t.directeur_valide).length;
+  const approvedCount = technicians.filter(t => t.directeur_valide).length;
+  const incompleteCount = technicians.filter(t => !t.email_valide).length;
+  const completeCount = technicians.filter(t => t.email_valide).length;
 
   return (
     <div className="min-h-screen bg-gray-50 flex">
@@ -304,10 +255,10 @@ export default function DirectorAffiliationManagement() {
                 </Button>
                 <div>
                   <h1 className="text-xl font-semibold text-gray-900">
-                    Demandes d'Affiliation
+                    Gestion des Affiliations Techniciens
                   </h1>
                   <p className="text-sm text-gray-600">
-                    Valider les demandes de techniciens et techniciens supérieurs
+                    Valider les comptes techniciens en attente d'approbation
                   </p>
                 </div>
               </div>
@@ -322,25 +273,25 @@ export default function DirectorAffiliationManagement() {
             <Card>
               <CardContent className="p-4">
                 <div className="text-2xl font-bold text-yellow-600">{pendingCount}</div>
-                <div className="text-sm text-gray-600">En Attente</div>
+                <div className="text-sm text-gray-600">En Attente de Validation</div>
               </CardContent>
             </Card>
             <Card>
               <CardContent className="p-4">
-                <div className="text-2xl font-bold text-blue-600">{underReviewCount}</div>
-                <div className="text-sm text-gray-600">En Révision</div>
+                <div className="text-2xl font-bold text-blue-600">{approvedCount}</div>
+                <div className="text-sm text-gray-600">Déjà Validés</div>
               </CardContent>
             </Card>
             <Card>
               <CardContent className="p-4">
-                <div className="text-2xl font-bold text-green-600">{approvedCount}</div>
-                <div className="text-sm text-gray-600">Approuvées</div>
+                <div className="text-2xl font-bold text-green-600">{completeCount}</div>
+                <div className="text-sm text-gray-600">Comptes Complets</div>
               </CardContent>
             </Card>
             <Card>
               <CardContent className="p-4">
-                <div className="text-2xl font-bold text-red-600">{rejectedCount}</div>
-                <div className="text-sm text-gray-600">Rejetées</div>
+                <div className="text-2xl font-bold text-red-600">{incompleteCount}</div>
+                <div className="text-sm text-gray-600">Comptes Incomplets</div>
               </CardContent>
             </Card>
           </div>
@@ -353,7 +304,7 @@ export default function DirectorAffiliationManagement() {
                   <div className="relative">
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
                     <Input
-                      placeholder="Rechercher par nom, email ou entreprise..."
+                      placeholder="Rechercher par nom ou email..."
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
                       className="pl-10"
@@ -366,10 +317,8 @@ export default function DirectorAffiliationManagement() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">Tous les statuts</SelectItem>
-                    <SelectItem value="pending">En attente</SelectItem>
-                    <SelectItem value="under_review">En révision</SelectItem>
-                    <SelectItem value="approved">Approuvé</SelectItem>
-                    <SelectItem value="rejected">Rejeté</SelectItem>
+                    <SelectItem value="pending">En attente de validation</SelectItem>
+                    <SelectItem value="approved">Déjà validés</SelectItem>
                   </SelectContent>
                 </Select>
                 <Select value={roleFilter} onValueChange={setRoleFilter}>
@@ -389,133 +338,118 @@ export default function DirectorAffiliationManagement() {
           {/* Requests List */}
           <Card>
             <CardHeader>
-              <CardTitle>Demandes d'Affiliation ({filteredRequests.length})</CardTitle>
+              <CardTitle>Techniciens en Attente ({filteredTechnicians.length})</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {filteredRequests.map((request) => (
-                  <div
-                    key={request.id}
-                    className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 transition-colors"
-                  >
-                    <div className="flex items-center space-x-4">
-                      <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
-                        <User className="h-6 w-6 text-blue-600" />
-                      </div>
-                      <div>
-                        <div className="font-medium text-gray-900">{request.applicantName}</div>
-                        <div className="text-sm text-gray-600 space-y-1">
-                          <div className="flex items-center space-x-4">
-                            <span className="flex items-center">
-                              <Mail className="h-3 w-3 mr-1" />
-                              {request.email}
-                            </span>
-                            {request.phone && (
+                {loading ? (
+                  <div className="flex justify-center items-center py-8">
+                    <Loader2 className="h-8 w-8 text-blue-500 animate-spin" />
+                    <span className="ml-2 text-gray-600">Chargement des techniciens en attente...</span>
+                  </div>
+                ) : error ? (
+                  <div className="flex justify-center items-center py-8 text-red-600">
+                    <AlertCircle className="h-6 w-6 mr-2" />
+                    {error}
+                  </div>
+                ) : filteredTechnicians.length === 0 ? (
+                  <div className="text-center py-8 text-gray-600">
+                    Aucun technicien en attente de validation.
+                  </div>
+                ) : (
+                  filteredTechnicians.map((technician) => (
+                    <div
+                      key={technician.id}
+                      className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 transition-colors"
+                    >
+                      <div className="flex items-center space-x-4">
+                        <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                          <User className="h-6 w-6 text-blue-600" />
+                        </div>
+                        <div>
+                          <div className="font-medium text-gray-900">{technician.name}</div>
+                          <div className="text-sm text-gray-600 space-y-1">
+                            <div className="flex items-center space-x-4">
                               <span className="flex items-center">
-                                <Phone className="h-3 w-3 mr-1" />
-                                {request.phone}
+                                <Mail className="h-3 w-3 mr-1" />
+                                {technician.email}
                               </span>
-                            )}
-                          </div>
-                          <div className="flex items-center space-x-4">
-                            {request.company && (
+                              {technician.phone && (
+                                <span className="flex items-center">
+                                  <Phone className="h-3 w-3 mr-1" />
+                                  {technician.phone}
+                                </span>
+                              )}
+                            </div>
+                            <div className="flex items-center space-x-4">
                               <span className="flex items-center">
                                 <Building className="h-3 w-3 mr-1" />
-                                {request.company}
+                                {technician.company || 'Non spécifié'}
                               </span>
-                            )}
-                            {request.location && (
+                              {technician.location && (
+                                <span className="flex items-center">
+                                  <MapPin className="h-3 w-3 mr-1" />
+                                  {technician.location}
+                                </span>
+                              )}
                               <span className="flex items-center">
-                                <MapPin className="h-3 w-3 mr-1" />
-                                {request.location}
+                                <Calendar className="h-3 w-3 mr-1" />
+                                {new Date(technician.created_at).toLocaleDateString('fr-FR')}
                               </span>
-                            )}
-                            <span className="flex items-center">
-                              <Calendar className="h-3 w-3 mr-1" />
-                              {new Date(request.appliedDate).toLocaleDateString('fr-FR')}
-                            </span>
+                            </div>
                           </div>
                         </div>
                       </div>
-                    </div>
 
-                    <div className="flex items-center space-x-4">
-                      <div className="text-right">
-                        <div className="text-sm font-medium">
-                          {request.experience.substring(0, 50)}...
+                      <div className="flex items-center space-x-4">
+                        <div className="text-right">
+                          <div className="text-sm font-medium">
+                            {technician.experience ? `${technician.experience.substring(0, 50)}...` : 'Aucune expérience spécifiée'}
+                          </div>
+                          <div className="text-xs text-gray-500">
+                            Disponibilité: {technician.availability || 'Non spécifiée'}
+                          </div>
                         </div>
-                        <div className="text-xs text-gray-500">
-                          Disponibilité: {request.availability}
-                        </div>
-                      </div>
-                      
-                      <div className="flex flex-col items-end space-y-1">
-                        {getStatusBadge(request.status)}
-                        {getRoleBadge(request.requestedRole)}
-                      </div>
-
-                      <div className="flex space-x-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => openDetailModal(request)}
-                        >
-                          <Eye className="h-4 w-4" />
-                        </Button>
                         
-                        {request.status === 'pending' && (
-                          <>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleSetUnderReview(request.id)}
-                              className="text-blue-600 border-blue-200 hover:bg-blue-50"
-                            >
-                              <Clock className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleApproveRequest(request.id)}
-                              className="text-green-600 border-green-200 hover:bg-green-50"
-                            >
-                              <CheckCircle className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => openRejectDialog(request)}
-                              className="text-red-600 border-red-200 hover:bg-red-50"
-                            >
-                              <XCircle className="h-4 w-4" />
-                            </Button>
-                          </>
-                        )}
+                        <div className="flex flex-col items-end space-y-1">
+                          {getStatusBadge(technician)}
+                          {getRoleBadge(technician.role)}
+                        </div>
 
-                        {request.status === 'under_review' && (
-                          <>
+                        <div className="flex space-x-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => openDetailModal(technician)}
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                          
+                          {technician.directeur_valide ? (
                             <Button
                               variant="outline"
                               size="sm"
-                              onClick={() => handleApproveRequest(request.id)}
-                              className="text-green-600 border-green-200 hover:bg-green-50"
-                            >
-                              <CheckCircle className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => openRejectDialog(request)}
+                              onClick={() => handleRejectTechnician()}
                               className="text-red-600 border-red-200 hover:bg-red-50"
                             >
                               <XCircle className="h-4 w-4" />
                             </Button>
-                          </>
-                        )}
+                          ) : (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleValidateTechnician(technician.id)}
+                              className="text-green-600 border-green-200 hover:bg-green-50"
+                            >
+                              <CheckCircle className="h-4 w-4" />
+                              Valider
+                            </Button>
+                          )}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  ))
+                )}
               </div>
             </CardContent>
           </Card>
@@ -525,103 +459,116 @@ export default function DirectorAffiliationManagement() {
         <Dialog open={isDetailModalOpen} onOpenChange={setIsDetailModalOpen}>
           <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>Détails de la Demande d'Affiliation</DialogTitle>
+              <DialogTitle>Détails du Technicien</DialogTitle>
               <DialogDescription>
-                Informations complètes du candidat
+                Consultez les informations détaillées du technicien et prenez une décision de validation.
               </DialogDescription>
             </DialogHeader>
-            {selectedRequest && (
+            {selectedTechnician && (
               <div className="space-y-6">
                 {/* Personal Info */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
                     <h3 className="font-semibold text-gray-900 mb-2">Informations Personnelles</h3>
                     <div className="space-y-2 text-sm">
-                      <p><strong>Nom:</strong> {selectedRequest.applicantName}</p>
-                      <p><strong>Email:</strong> {selectedRequest.email}</p>
-                      {selectedRequest.phone && <p><strong>Téléphone:</strong> {selectedRequest.phone}</p>}
-                      {selectedRequest.company && <p><strong>Entreprise:</strong> {selectedRequest.company}</p>}
-                      {selectedRequest.location && <p><strong>Localisation:</strong> {selectedRequest.location}</p>}
-                      <p><strong>Disponibilité:</strong> {selectedRequest.availability}</p>
+                      <p><strong>Nom:</strong> {selectedTechnician.name}</p>
+                      <p><strong>Email:</strong> {selectedTechnician.email}</p>
+                      {selectedTechnician.telephone && <p><strong>Téléphone:</strong> {selectedTechnician.telephone}</p>}
+                      {selectedTechnician.company && <p><strong>Entreprise:</strong> {selectedTechnician.company}</p>}
+                      {selectedTechnician.location && <p><strong>Localisation:</strong> {selectedTechnician.location}</p>}
+                      <p><strong>Disponibilité:</strong> {selectedTechnician.availability || 'Non spécifiée'}</p>
                     </div>
                   </div>
                   <div>
                     <h3 className="font-semibold text-gray-900 mb-2">Demande</h3>
                     <div className="space-y-2 text-sm">
-                      <p><strong>Rôle demandé:</strong> {getRoleBadge(selectedRequest.requestedRole)}</p>
-                      <p><strong>Date de candidature:</strong> {new Date(selectedRequest.appliedDate).toLocaleDateString('fr-FR')}</p>
-                      <p><strong>Statut:</strong> {getStatusBadge(selectedRequest.status)}</p>
-                      {selectedRequest.reviewedBy && (
-                        <>
-                          <p><strong>Révisé par:</strong> {selectedRequest.reviewedBy}</p>
-                          <p><strong>Date de révision:</strong> {selectedRequest.reviewedDate && new Date(selectedRequest.reviewedDate).toLocaleDateString('fr-FR')}</p>
-                        </>
-                      )}
+                      <p><strong>Rôle demandé:</strong> {getRoleBadge(selectedTechnician.role)}</p>
+                      <p><strong>Date de candidature:</strong> {new Date(selectedTechnician.created_at).toLocaleDateString('fr-FR')}</p>
+                      <p><strong>Statut:</strong> {getStatusBadge(selectedTechnician)}</p>
+                      <p><strong>Validé par directeur:</strong> {selectedTechnician.directeur_valide ? 'Oui' : 'Non'}</p>
+                      <p><strong>Email validé:</strong> {selectedTechnician.email_valide ? 'Oui' : 'Non'}</p>
                     </div>
                   </div>
                 </div>
 
                 {/* Experience */}
-                <div>
-                  <h3 className="font-semibold text-gray-900 mb-2">Expérience</h3>
-                  <p className="text-sm text-gray-700 bg-gray-50 p-3 rounded-lg">
-                    {selectedRequest.experience}
-                  </p>
-                </div>
+                {selectedTechnician.experience && (
+                  <div>
+                    <h3 className="font-semibold text-gray-900 mb-2">Expérience</h3>
+                    <p className="text-sm text-gray-700 bg-gray-50 p-3 rounded-lg">
+                      {selectedTechnician.experience}
+                    </p>
+                  </div>
+                )}
 
                 {/* Motivation */}
-                <div>
-                  <h3 className="font-semibold text-gray-900 mb-2">Motivation</h3>
-                  <p className="text-sm text-gray-700 bg-gray-50 p-3 rounded-lg">
-                    {selectedRequest.motivation}
-                  </p>
-                </div>
+                {selectedTechnician.motivation && (
+                  <div>
+                    <h3 className="font-semibold text-gray-900 mb-2">Motivation</h3>
+                    <p className="text-sm text-gray-700 bg-gray-50 p-3 rounded-lg">
+                      {selectedTechnician.motivation}
+                    </p>
+                  </div>
+                )}
 
                 {/* Skills */}
-                <div>
-                  <h3 className="font-semibold text-gray-900 mb-2">Compétences</h3>
-                  <div className="flex flex-wrap gap-2">
-                    {selectedRequest.skills.map((skill, index) => (
-                      <Badge key={index} variant="secondary">{skill}</Badge>
-                    ))}
+                {selectedTechnician.skills && selectedTechnician.skills.length > 0 && (
+                  <div>
+                    <h3 className="font-semibold text-gray-900 mb-2">Compétences</h3>
+                    <div className="flex flex-wrap gap-2">
+                      {selectedTechnician.skills.map((skill, index) => (
+                        <Badge key={index} variant="secondary">{skill}</Badge>
+                      ))}
+                    </div>
                   </div>
-                </div>
+                )}
 
                 {/* Documents */}
-                <div>
-                  <h3 className="font-semibold text-gray-900 mb-2">Documents</h3>
-                  <div className="space-y-2">
-                    {selectedRequest.documents.cv && (
-                      <div className="flex items-center space-x-2">
-                        <FileText className="h-4 w-4 text-blue-600" />
-                        <span className="text-sm">{selectedRequest.documents.cv}</span>
-                        <Button variant="outline" size="sm">
-                          <Download className="h-3 w-3" />
-                        </Button>
-                      </div>
-                    )}
-                    {selectedRequest.documents.certifications?.map((cert, index) => (
-                      <div key={index} className="flex items-center space-x-2">
-                        <FileText className="h-4 w-4 text-green-600" />
-                        <span className="text-sm">{cert}</span>
-                        <Button variant="outline" size="sm">
-                          <Download className="h-3 w-3" />
-                        </Button>
-                      </div>
-                    ))}
+                {selectedTechnician.documents && (
+                  <div>
+                    <h3 className="font-semibold text-gray-900 mb-2">Documents</h3>
+                    <div className="space-y-2">
+                      {selectedTechnician.documents.cv && (
+                        <div className="flex items-center space-x-2">
+                          <FileText className="h-4 w-4 text-blue-600" />
+                          <span className="text-sm">{selectedTechnician.documents.cv}</span>
+                          <Button variant="outline" size="sm">
+                            <Download className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      )}
+                      {selectedTechnician.documents.certifications?.map((cert, index) => (
+                        <div key={index} className="flex items-center space-x-2">
+                          <FileText className="h-4 w-4 text-green-600" />
+                          <span className="text-sm">{cert}</span>
+                          <Button variant="outline" size="sm">
+                            <Download className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      ))}
+                      {selectedTechnician.documents.recommendations?.map((rec, index) => (
+                        <div key={index} className="flex items-center space-x-2">
+                          <FileText className="h-4 w-4 text-purple-600" />
+                          <span className="text-sm">{rec}</span>
+                          <Button variant="outline" size="sm">
+                            <Download className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                </div>
+                )}
 
                 {/* References */}
-                {selectedRequest.references.length > 0 && (
+                {selectedTechnician.references && selectedTechnician.references.length > 0 && (
                   <div>
                     <h3 className="font-semibold text-gray-900 mb-2">Références</h3>
                     <div className="space-y-2">
-                      {selectedRequest.references.map((ref, index) => (
+                      {selectedTechnician.references.map((ref, index) => (
                         <div key={index} className="bg-gray-50 p-3 rounded-lg">
                           <p className="font-medium">{ref.name}</p>
                           <p className="text-sm text-gray-600">{ref.position} - {ref.company}</p>
-                          <p className="text-sm text-gray-600">{ref.contact}</p>
+                          <p className="text-sm text-gray-500">{ref.contact}</p>
                         </div>
                       ))}
                     </div>
@@ -629,41 +576,46 @@ export default function DirectorAffiliationManagement() {
                 )}
 
                 {/* Rejection Reason */}
-                {selectedRequest.status === 'rejected' && selectedRequest.rejectionReason && (
+                {selectedTechnician.directeur_valide === false && selectedTechnician.rejection_reason && (
                   <div>
                     <h3 className="font-semibold text-gray-900 mb-2">Motif de Rejet</h3>
                     <p className="text-sm text-red-700 bg-red-50 p-3 rounded-lg">
-                      {selectedRequest.rejectionReason}
+                      {selectedTechnician.rejection_reason}
                     </p>
                   </div>
                 )}
 
                 {/* Actions */}
-                {selectedRequest.status === 'pending' || selectedRequest.status === 'under_review' ? (
+                {selectedTechnician.directeur_valide === false ? (
                   <div className="flex justify-end space-x-2 pt-4 border-t">
                     <Button
                       variant="outline"
-                      onClick={() => openRejectDialog(selectedRequest)}
+                      onClick={() => openRejectDialog(selectedTechnician)}
                       className="text-red-600 border-red-200 hover:bg-red-50"
                     >
                       <XCircle className="h-4 w-4 mr-2" />
-                      Rejeter
+                      Révoquer la Validation
                     </Button>
                     <Button
                       onClick={() => {
-                        handleApproveRequest(selectedRequest.id);
+                        handleValidateTechnician(selectedTechnician.id);
                         setIsDetailModalOpen(false);
                       }}
                       className="bg-green-600 hover:bg-green-700"
                     >
                       <CheckCircle className="h-4 w-4 mr-2" />
-                      Approuver
+                      Valider le Technicien
                     </Button>
                   </div>
                 ) : (
-                  <div className="flex justify-end pt-4 border-t">
-                    <Button onClick={() => setIsDetailModalOpen(false)}>
-                      Fermer
+                  <div className="flex justify-end space-x-2 pt-4 border-t">
+                    <Button
+                      variant="outline"
+                      onClick={() => openRejectDialog(selectedTechnician)}
+                      className="text-red-600 border-red-200 hover:bg-red-50"
+                    >
+                      <XCircle className="h-4 w-4 mr-2" />
+                      Révoquer la Validation
                     </Button>
                   </div>
                 )}
@@ -676,31 +628,30 @@ export default function DirectorAffiliationManagement() {
         <AlertDialog open={isRejectDialogOpen} onOpenChange={setIsRejectDialogOpen}>
           <AlertDialogContent>
             <AlertDialogHeader>
-              <AlertDialogTitle>Rejeter la Demande</AlertDialogTitle>
+              <AlertDialogTitle>Rejeter le Technicien</AlertDialogTitle>
               <AlertDialogDescription>
-                Veuillez indiquer le motif du rejet de cette demande d'affiliation.
+                Veuillez indiquer la raison du rejet de ce technicien. Cette action peut être annulée plus tard.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <div className="my-4">
-              <Label htmlFor="rejection-reason">Motif du rejet</Label>
+              <Label htmlFor="rejection-reason">Raison du rejet</Label>
               <Textarea
                 id="rejection-reason"
+                placeholder="Ex: Expérience insuffisante, documents manquants, etc."
                 value={rejectionReason}
                 onChange={(e) => setRejectionReason(e.target.value)}
-                placeholder="Expliquez pourquoi cette demande est rejetée..."
-                className="mt-2"
+                rows={3}
               />
             </div>
             <AlertDialogFooter>
-              <AlertDialogCancel onClick={() => setRejectionReason('')}>
-                Annuler
-              </AlertDialogCancel>
+              <AlertDialogCancel>Annuler</AlertDialogCancel>
               <AlertDialogAction
-                onClick={handleRejectRequest}
+                onClick={handleRejectTechnician}
                 className="bg-red-600 hover:bg-red-700"
                 disabled={!rejectionReason.trim()}
               >
-                Rejeter la Demande
+                <XCircle className="h-4 w-4 mr-2" />
+                Rejeter le Technicien
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>

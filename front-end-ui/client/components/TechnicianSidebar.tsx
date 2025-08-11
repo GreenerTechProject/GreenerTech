@@ -13,6 +13,7 @@ import {
   LogOut,
   Menu,
   X,
+  Bot,
 } from "lucide-react";
 
 interface SidebarItem {
@@ -65,13 +66,13 @@ export default function TechnicianSidebar({
         id: "alertes",
         label: "Alertes",
         icon: <AlertTriangle className="h-5 w-5" />,
-        path: userRole === "technicien_sup" ? "/technicien-sup/alerts" : "/alerts",
+        path: userRole === "technicien_sup" ? "/technicien-sup/alerts" : "/technician/alerts",
       },
       {
         id: "interventions",
         label: "Interventions",
         icon: <Bell className="h-5 w-5" />,
-        path: userRole === "technicien_sup" ? "/technicien-sup/interventions" : "/interventions",
+        path: userRole === "technicien_sup" ? "/technicien-sup/interventions" : "/technician/interventions",
       },
       {
         id: "rapports",
@@ -80,15 +81,13 @@ export default function TechnicianSidebar({
         path: userRole === "technicien_sup" ? "/technicien-sup/reports" : "/reports",
       },
     ];
-    // Only show Surveillance for roles other than technicien_sup
-    if (userRole !== "technicien_sup") {
-      items.splice(2, 0, {
-        id: "surveillance",
-        label: "Surveillance",
-        icon: <Camera className="h-5 w-5" />,
-        path: "/surveillance",
-      });
-    }
+    // Show Surveillance for all technician roles
+    items.splice(2, 0, {
+      id: "surveillance",
+      label: "Surveillance",
+      icon: <Bot className="h-5 w-5" />,
+      path: "/surveillance",
+    });
     return items;
   })();
 
@@ -115,6 +114,7 @@ export default function TechnicianSidebar({
           "h-10 w-10 rounded-lg transition-all duration-300",
           "bg-gray-50 hover:bg-gray-100 text-gray-700 border border-gray-200",
           isOpen && "bg-gray-100",
+          "lg:h-11 lg:w-11 xl:h-12 xl:w-12",
         )}
         size="sm"
       >
@@ -124,7 +124,7 @@ export default function TechnicianSidebar({
       {/* Backdrop */}
       {isOpen && (
         <div
-          className="fixed inset-0 bg-black/20 backdrop-blur-sm z-40 transition-opacity duration-300"
+          className="fixed inset-0 bg-black/20 backdrop-blur-sm z-40 transition-opacity duration-300 lg:hidden"
           onClick={() => setIsOpen(false)}
         />
       )}
@@ -132,12 +132,16 @@ export default function TechnicianSidebar({
       {/* Sidebar */}
       <div
         className={cn(
-          "fixed top-1/2 left-8 transform -translate-y-1/2 w-80 bg-white shadow-2xl z-50 transition-all duration-300 ease-in-out",
+          "fixed top-1/2 left-4 lg:left-8 xl:left-12 2xl:left-16 transform -translate-y-1/2 w-72 lg:w-80 xl:w-96 2xl:w-[28rem] bg-white shadow-2xl z-50 transition-all duration-300 ease-in-out",
           "rounded-2xl border border-gray-200/50 backdrop-blur-sm bg-white/95",
           isOpen
             ? "translate-x-0 opacity-100 scale-100"
             : "-translate-x-full opacity-0 scale-95",
           "max-h-[85vh] overflow-hidden",
+          "lg:max-w-sm xl:max-w-md 2xl:max-w-lg",
+          "pointer-events-auto",
+          "max-w-[calc(100vw-2rem)]",
+          "lg:max-w-none",
         )}
       >
         {/* Sidebar Content */}

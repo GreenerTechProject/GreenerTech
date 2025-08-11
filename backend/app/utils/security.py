@@ -67,7 +67,7 @@ def role_required(*allowed_roles):
         @wraps(f)
         def decorated(current_user, *args, **kwargs):
             if current_user.role not in allowed_roles:
-                return jsonify({"message": "Access denied: unauthorized role"}), 403
+                return jsonify({"message": "Accès refusé : rôle non autorisé"}), 403
             return f(current_user, *args, **kwargs)
         return decorated
     return decorator

@@ -1,7 +1,7 @@
 from flask import Blueprint
 
 
-from app.controllers.user import register, login, get_user, update_user, delete_user, create_technicien, register_technicien, verify_email, validate_technicien, get_technicien_by_email, get_all_technicians, get_techniciens_by_company
+from app.controllers.user import register, login, get_user, update_user, delete_user, create_technicien, register_technicien, verify_email, validate_technicien, get_technicien_by_email, get_all_technicians, get_techniciens_by_company, get_pending_technicians_by_company
 
 from app.controllers.entreprise import create_entreprise, get_entreprise, get_all_entreprises, update_entreprise, delete_entreprise
 from app.controllers.domaine import create_domaine, get_domaine, get_all_domaines, update_domaine, delete_domaine, get_serres_by_domaine
@@ -37,10 +37,13 @@ all_bp.route('/verify_email', methods=['GET'])(verify_email)
 
 all_bp.route('/technicien', methods=['POST'])(create_technicien)
 all_bp.route('/technicien/register', methods=['POST'])(register_technicien)
-all_bp.route('/technicien', methods=['GET'])(get_technicien_by_email)
-all_bp.route('/technicien/validate/<int:id>', methods=['PUT'])(validate_technicien)
-all_bp.route('/technicien', methods=['GET'])(get_all_technicians)
+# Specific routes must come BEFORE generic routes to avoid conflicts
 all_bp.route('/technicien/company/<int:company_id>', methods=['GET'])(get_techniciens_by_company)
+all_bp.route('/technicien/pending', methods=['GET'])(get_pending_technicians_by_company)
+all_bp.route('/technicien/validate/<int:id>', methods=['PUT'])(validate_technicien)
+# Generic routes come last
+all_bp.route('/technicien', methods=['GET'])(get_technicien_by_email)
+all_bp.route('/technicien', methods=['GET'])(get_all_technicians)
 
 
 all_bp.route('/entreprise', methods=['POST'])(create_entreprise)

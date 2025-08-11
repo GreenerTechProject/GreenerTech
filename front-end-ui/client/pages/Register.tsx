@@ -211,7 +211,7 @@ export default function Register() {
                     name="lastName"
                     value={formData.lastName}
                     onChange={handleChange}
-                    placeholder="Rachid"
+                    placeholder="Bennani"
                     className="w-full h-10 pl-10 pr-4 border border-gray-300 rounded-md text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#B4CC5F] focus:border-transparent"
                     required
                   />
@@ -236,7 +236,7 @@ export default function Register() {
                     name="firstName"
                     value={formData.firstName}
                     onChange={handleChange}
-                    placeholder="Bennani"
+                    placeholder="Rachid"
                     className="w-full h-10 pl-10 pr-4 border border-gray-300 rounded-md text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#B4CC5F] focus:border-transparent"
                     required
                   />

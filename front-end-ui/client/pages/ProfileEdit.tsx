@@ -17,7 +17,8 @@ import {
 import TechHeader from "@/components/TechHeader";
 
 interface ProfileFormData {
-  name: string;
+  firstName: string;
+  lastName: string;
   email: string;
   telephone: string;
   birthday: string;
@@ -66,9 +67,15 @@ export default function ProfileEdit() {
       
       setUser(profileData);
       
+      // Split the full name into first and last name
+      const nameParts = (profileData.name || "").trim().split(' ');
+      const firstName = nameParts[0] || "";
+      const lastName = nameParts.slice(1).join(' ') || "";
+      
       // Set form values
       reset({
-        name: profileData.name || "",
+        firstName: firstName,
+        lastName: lastName,
         email: profileData.email || "",
         telephone: profileData.telephone || "",
         birthday: profileData.birthday || "",
@@ -100,13 +107,35 @@ export default function ProfileEdit() {
         return;
       }
 
+      // Combine first name and last name into full name
+      const fullName = `${data.firstName.trim()} ${data.lastName.trim()}`.trim();
+
       // Prepare update data
       const updateData: any = {
-        name: data.name,
+        name: fullName,
         email: data.email,
-        telephone: data.telephone,
+        telephone: data.telephone || "", // Ensure telephone is always a string
         birthday: data.birthday,
       };
+
+      // Debug: Log the update data
+      console.log("Updating profile with data:", updateData);
+      console.log("Telephone value:", data.telephone);
+      console.log("Telephone type:", typeof data.telephone);
+      
+      // Validate telephone format if provided
+      if (data.telephone && data.telephone.trim() !== "") {
+        // Basic phone number validation (optional)
+        const phoneRegex = /^[\+]?[0-9\s\-\(\)]+$/;
+        if (!phoneRegex.test(data.telephone.trim())) {
+          toast({
+            title: "Attention",
+            description: "Le format du numéro de téléphone semble incorrect",
+            variant: "destructive",
+          });
+          return;
+        }
+      }
 
       // Only include password if it's provided
       if (data.password && data.password.trim() !== "") {
@@ -114,14 +143,22 @@ export default function ProfileEdit() {
       }
 
       // Call backend API to update user using authService
-      await authService.updateProfile(updateData);
+      console.log("Calling updateProfile API with data:", updateData);
+      const updatedUser = await authService.updateProfile(updateData);
+      console.log("Profile update response:", updatedUser);
 
       toast({
         title: "Succès",
         description: "Profil mis à jour avec succès",
       });
 
-      navigate("/technicien/profile");
+      // Navigate back to the appropriate profile page based on user role
+      if (user?.role === "technicien_superieur") {
+        navigate("/technicien-sup/profile");
+      } else {
+        navigate("/technicien/profile");
+      }
+      
     } catch (error: any) {
       console.error("Error updating profile:", error);
       toast({
@@ -135,7 +172,12 @@ export default function ProfileEdit() {
   };
 
   const handleCancel = () => {
-    navigate("/technicien/profile");
+    // Navigate back to the appropriate profile page based on user role
+    if (user?.role === "technicien_superieur") {
+      navigate("/technicien-sup/profile");
+    } else {
+      navigate("/technicien/profile");
+    }
   };
 
   if (loading) {
@@ -155,7 +197,14 @@ export default function ProfileEdit() {
         <Card className="max-w-md mx-auto">
           <CardContent className="p-6 text-center">
             <p className="text-gray-600">Impossible de charger les données utilisateur</p>
-            <Button onClick={() => navigate("/technicien/profile")} className="mt-4">
+            <Button onClick={() => {
+              // Navigate back to the appropriate profile page based on user role
+              if (user?.role === "technicien_superieur") {
+                navigate("/technicien-sup/profile");
+              } else {
+                navigate("/technicien/profile");
+              }
+            }} className="mt-4">
               Retour au profil
             </Button>
           </CardContent>
@@ -166,16 +215,23 @@ export default function ProfileEdit() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Show TechHeader for technician superior users */}
-      {user?.role === "technicien_superieur" && (
-        <TechHeader role="technicien_sup" />
+      {/* Show TechHeader for all technician users */}
+      {(user?.role === "technicien" || user?.role === "technicien_superieur") && (
+        <TechHeader role={user?.role === "technicien_superieur" ? "technicien_sup" : "technicien"} />
       )}
       
       <div className="container mx-auto px-4 py-8 max-w-4xl">
         {/* Back button */}
         <Button 
           variant="ghost" 
-          onClick={() => navigate("/technicien/profile")}
+          onClick={() => {
+            // Navigate back to the appropriate profile page based on user role
+            if (user?.role === "technicien_superieur") {
+              navigate("/technicien-sup/profile");
+            } else {
+              navigate("/technicien/profile");
+            }
+          }}
           className="mb-6 text-primary hover:text-primary/80"
         >
           <ChevronLeft className="w-4 h-4 mr-2" />
@@ -203,37 +259,38 @@ export default function ProfileEdit() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {/* First Name */}
                   <div className="space-y-2">
-                    <Label htmlFor="name" className="text-sm font-medium text-gray-700">
-                      Prénom
+                    <Label htmlFor="firstName" className="text-sm font-medium text-gray-700">
+                      Prénom *
                     </Label>
                     <Input
-                      id="name"
-                      {...register("name", { 
+                      id="firstName"
+                      {...register("firstName", { 
                         required: "Le prénom est requis" 
                       })}
-                      placeholder="Mohamed"
+                      placeholder="Votre prénom"
                       className="w-full"
                     />
-                    {errors.name && (
-                      <p className="text-sm text-red-600">{errors.name.message}</p>
+                    {errors.firstName && (
+                      <p className="text-sm text-red-600">{errors.firstName.message}</p>
                     )}
                   </div>
 
-                  {/* Last Name - Note: For simplicity, using name field for full name */}
+                  {/* Last Name */}
                   <div className="space-y-2">
                     <Label htmlFor="lastName" className="text-sm font-medium text-gray-700">
-                      Nom
+                      Nom de famille *
                     </Label>
                     <Input
                       id="lastName"
-                      placeholder="Samir"
-                      disabled
-                      className="w-full bg-gray-50"
-                      value="Samir"
+                      {...register("lastName", { 
+                        required: "Le nom de famille est requis" 
+                      })}
+                      placeholder="Votre nom de famille"
+                      className="w-full"
                     />
-                    <p className="text-xs text-gray-500">
-                      Le nom de famille ne peut pas être modifié
-                    </p>
+                    {errors.lastName && (
+                      <p className="text-sm text-red-600">{errors.lastName.message}</p>
+                    )}
                   </div>
                 </div>
 
@@ -267,16 +324,21 @@ export default function ProfileEdit() {
                     </Label>
                     <Input
                       id="telephone"
-                      {...register("telephone")}
+                      {...register("telephone", {
+                        setValueAs: (value) => value || "", // Ensure empty string instead of undefined
+                      })}
                       placeholder="(+212) 602562364"
                       className="w-full"
                     />
+                    <p className="text-xs text-gray-500">
+                      Format: (+212) 602562364 ou 0602562364
+                    </p>
                   </div>
 
                   {/* Email */}
                   <div className="space-y-2">
                     <Label htmlFor="email" className="text-sm font-medium text-gray-700">
-                      Adresse e-mail
+                      Adresse e-mail *
                     </Label>
                     <Input
                       id="email"

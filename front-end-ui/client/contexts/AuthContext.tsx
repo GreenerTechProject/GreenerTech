@@ -85,6 +85,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setUser(response.user);
     } catch (error) {
       const apiError = error as ApiError;
+      console.log("AuthContext received error:", apiError);
+      console.log("Error message:", apiError.message);
+      console.log("Error status:", apiError.status);
       setError(apiError.message);
       throw error;
     } finally {
