@@ -20,7 +20,9 @@ import {
   Maximize,
   Minimize,
   Camera,
-  Bot
+  Bot,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 
 interface QRData {
@@ -55,6 +57,7 @@ export default function RobotControl() {
   const [selectedRobot, setSelectedRobot] = useState<string>('1');
   const [isFullScreen, setIsFullScreen] = useState<boolean>(false);
   const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState<boolean>(false);
 
   // WebSocket references
   const qrWsRef = useRef<WebSocket | null>(null);
@@ -447,273 +450,289 @@ export default function RobotControl() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <PageHeader
-        title="Contrôle Robot"
-        subtitle="Interface de contrôle du robot autonome"
-        userRole="technicien"
-        badge={{
-          text: "En Ligne",
-          variant: "outline",
-          className: "bg-green-50 border-green-200 text-green-700"
-        }}
-      />
+      {/* Header - Compact */}
+      <header className="bg-white shadow-sm border-b sticky top-0 z-10">
+        <div className="max-w-full px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center py-3">
+            <div className="flex items-center space-x-4">
+              <h1 className="text-xl font-semibold text-gray-900">
+                Contrôle Robot
+              </h1>
+              <div className="flex space-x-2">
+                <div className="flex items-center gap-2 bg-green-50 border border-green-200 text-green-700 px-2 py-1 rounded-md text-sm">
+                  <Bot className="h-3 w-3" />
+                  Robot #{selectedRobot}
+                </div>
+                <div className="flex items-center gap-2 bg-blue-50 border border-blue-200 text-blue-700 px-2 py-1 rounded-md text-sm">
+                  <Camera className="h-3 w-3" />
+                  {selectedCamera === 'left' ? 'Gauche' : 'Droite'}
+                </div>
+              </div>
+            </div>
+            <div className="flex items-center space-x-2">
+              <Button
+                onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+                variant="outline"
+                size="sm"
+              >
+                {sidebarCollapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
+              </Button>
+              <Button
+                onClick={toggleFullScreen}
+                variant="outline"
+                size="sm"
+              >
+                {isFullScreen ? <Minimize className="h-4 w-4" /> : <Maximize className="h-4 w-4" />}
+              </Button>
+            </div>
+          </div>
+        </div>
+      </header>
 
-      <div className="container mx-auto p-6">
-        <div className="flex gap-6">
-          {/* Left Sidebar - Controls */}
-          <div className="w-80 space-y-4">
-            {/* Camera Selection */}
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm flex items-center gap-2">
-                  <Camera className="h-4 w-4" />
-                  Sélection Caméra
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <Select value={selectedCamera} onValueChange={handleCameraChange}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Choisir une caméra" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="left">Caméra Gauche</SelectItem>
-                    <SelectItem value="right">Caméra Droite</SelectItem>
-                  </SelectContent>
-                </Select>
-              </CardContent>
-            </Card>
+      <div className="flex h-[calc(100vh-65px)]">
+        {/* Collapsible Left Sidebar - Minimized */}
+        <div className={`bg-white shadow-lg transition-all duration-300 ${sidebarCollapsed ? 'w-16' : 'w-72'} flex-shrink-0`}>
+          <div className="h-full overflow-y-auto">
+            <div className={`p-4 space-y-4 ${sidebarCollapsed ? 'hidden' : ''}`}>
+              {/* Camera Selection */}
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm flex items-center gap-2">
+                    <Camera className="h-4 w-4" />
+                    Caméra
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <Select value={selectedCamera} onValueChange={handleCameraChange}>
+                    <SelectTrigger className="h-8">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="left">Gauche</SelectItem>
+                      <SelectItem value="right">Droite</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </CardContent>
+              </Card>
 
-            {/* Robot Selection */}
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm flex items-center gap-2">
-                  <Bot className="h-4 w-4" />
-                  Sélection Robot
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <Select value={selectedRobot} onValueChange={handleRobotChange}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Choisir un robot" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="1">Robot #1</SelectItem>
-                    <SelectItem value="2">Robot #2</SelectItem>
-                    <SelectItem value="3">Robot #3</SelectItem>
-                  </SelectContent>
-                </Select>
-              </CardContent>
-            </Card>
+              {/* Robot Selection */}
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm flex items-center gap-2">
+                    <Bot className="h-4 w-4" />
+                    Robot
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <Select value={selectedRobot} onValueChange={handleRobotChange}>
+                    <SelectTrigger className="h-8">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="1">Robot #1</SelectItem>
+                      <SelectItem value="2">Robot #2</SelectItem>
+                      <SelectItem value="3">Robot #3</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </CardContent>
+              </Card>
 
-            {/* Control Actions */}
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm">Actions de Contrôle</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <Button
-                  onClick={refreshConnections}
-                  disabled={isRefreshing}
-                  className="w-full"
-                  variant="outline"
-                >
-                  <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
-                  {isRefreshing ? 'Actualisation...' : 'Actualiser'}
-                </Button>
+              {/* Quick Actions */}
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm">Actions</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                  <Button
+                    onClick={refreshConnections}
+                    disabled={isRefreshing}
+                    className="w-full h-8 text-xs"
+                    variant="outline"
+                  >
+                    <RefreshCw className={`h-3 w-3 mr-1 ${isRefreshing ? 'animate-spin' : ''}`} />
+                    {isRefreshing ? 'Actualisation...' : 'Actualiser'}
+                  </Button>
+                </CardContent>
+              </Card>
 
-                <Button
-                  onClick={toggleFullScreen}
-                  className="w-full"
-                  variant="outline"
-                >
-                  {isFullScreen ? (
-                    <>
-                      <Minimize className="h-4 w-4 mr-2" />
-                      Quitter Plein Écran
-                    </>
-                  ) : (
-                    <>
-                      <Maximize className="h-4 w-4 mr-2" />
-                      Plein Écran
-                    </>
-                  )}
-                </Button>
-              </CardContent>
-            </Card>
-
-            {/* Connection Status */}
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm">État des Connexions</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
-                  {Object.entries(connectionStatus).map(([key, connected]) => (
-                    <div key={key} className="flex items-center justify-between">
-                      <span className="text-sm capitalize">{key}</span>
-                      <div className={`flex items-center gap-1 px-2 py-1 rounded text-xs ${connected ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
-                        <Wifi className="h-3 w-3" />
-                        <span>{connected ? 'Connecté' : 'Déconnecté'}</span>
+              {/* Connection Status - Compact */}
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm">Connexions</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-2 gap-2">
+                    {Object.entries(connectionStatus).map(([key, connected]) => (
+                      <div key={key} className="flex items-center gap-1">
+                        <Wifi className={`h-3 w-3 ${connected ? 'text-green-600' : 'text-red-600'}`} />
+                        <span className="text-xs capitalize">{key}</span>
                       </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Collapsed sidebar indicators */}
+            {sidebarCollapsed && (
+              <div className="p-2 space-y-3 mt-4">
+                <div className="flex flex-col items-center gap-2">
+                  <Camera className="h-5 w-5 text-gray-500" />
+                  <Bot className="h-5 w-5 text-gray-500" />
+                  <RefreshCw className="h-5 w-5 text-gray-500" />
+                </div>
+                <div className="space-y-1">
+                  {Object.entries(connectionStatus).map(([key, connected]) => (
+                    <div key={key} className="flex justify-center">
+                      <Wifi className={`h-3 w-3 ${connected ? 'text-green-600' : 'text-red-600'}`} />
                     </div>
                   ))}
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+            )}
           </div>
+        </div>
 
-          {/* Main Video Area */}
-          <div className="flex-1">
-          {/* Video Stream with Overlays */}
-          <Card className="w-full">
-            <CardHeader className="px-4 py-3 flex flex-row items-center justify-between">
-            </CardHeader>
-            <CardContent>
-              <div className="relative">
-                <video
-                  ref={videoRef}
-                  autoPlay
-                  playsInline
-                  muted
-                  className="w-full h-[450px] bg-black rounded-lg object-contain border"
-                />
+        {/* Main Video Area - Full Screen */}
+        <div className="flex-1 bg-black">
+          <div className="h-full relative">
+            <video
+              ref={videoRef}
+              autoPlay
+              playsInline
+              muted
+              className="w-full h-full bg-black object-contain"
+            />
 
-                {/* Sensor Data Overlay - Top Left */}
-                <div className="absolute top-4 left-4 bg-black/80 backdrop-blur-sm text-white p-4 rounded-lg border border-white/20">
-                  <div className="flex items-center gap-2 mb-3">
-                    <Thermometer className="h-4 w-4" />
-                    <span className="font-semibold text-sm">Sensor Data</span>
+            {/* Sensor Data Overlay - Top Left */}
+            <div className="absolute top-4 left-4 bg-black/80 backdrop-blur-sm text-white p-3 rounded-lg border border-white/20">
+              <div className="flex items-center gap-2 mb-2">
+                <Thermometer className="h-4 w-4" />
+                <span className="font-semibold text-sm">Capteurs</span>
+              </div>
+              {sensorData ? (
+                <div className="space-y-1 text-sm">
+                  <div className="flex items-center gap-2">
+                    <Thermometer className="h-3 w-3 text-red-400" />
+                    <span>{sensorData.temperature}°C</span>
                   </div>
-                  {sensorData ? (
-                    <div className="space-y-2 text-sm">
-                      <div className="flex items-center gap-2">
-                        <Thermometer className="h-3 w-3 text-red-400" />
-                        <span>Température {sensorData.temperature} °C</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Droplets className="h-3 w-3 text-blue-400" />
-                        <span>Humidité {sensorData.humidity} %</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Zap className="h-3 w-3 text-green-400" />
-                        <span>CO₂ {sensorData.co2} ppm</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Sun className="h-3 w-3 text-yellow-400" />
-                        <span>Luminosité {sensorData.luminosite} lux</span>
-                      </div>
-                    </div>
-                  ) : (
-                    <p className="text-gray-300 text-sm">Waiting for sensor data...</p>
-                  )}
+                  <div className="flex items-center gap-2">
+                    <Droplets className="h-3 w-3 text-blue-400" />
+                    <span>{sensorData.humidity}%</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Zap className="h-3 w-3 text-green-400" />
+                    <span>{sensorData.co2} ppm</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Sun className="h-3 w-3 text-yellow-400" />
+                    <span>{sensorData.luminosite} lux</span>
+                  </div>
                 </div>
+              ) : (
+                <p className="text-gray-300 text-sm">En attente...</p>
+              )}
+            </div>
 
-                {/* QR Code Data Overlay - Top Right */}
-                <div className="absolute top-4 right-4 bg-black/80 backdrop-blur-sm text-white p-4 rounded-lg border border-white/20 max-w-xs">
-                  <div className="flex items-center gap-2 mb-3">
-                    <div className="h-4 w-4 border-2 border-white rounded-sm" />
-                    <span className="font-semibold text-sm">QR Codes</span>
-                  </div>
-                  <div className="max-h-40 overflow-y-auto space-y-2 text-sm">
-                    {qrCodes.length > 0 ? (
-                      qrCodes.map((qr) => (
-                        <div key={qr.id} className="p-2 bg-white/10 rounded text-xs">
-                          <div className="font-medium mb-1">QR {qr.id + 1}:</div>
-                          {typeof qr.data === 'object' ? (
-                            <div className="space-y-1">
-                              {Object.entries(qr.data).slice(0, 3).map(([key, value]) => (
-                                <div key={key} className="truncate">
-                                  <span className="text-gray-300">{key}:</span> {String(value)}
-                                </div>
-                              ))}
-                              {Object.entries(qr.data).length > 3 && (
-                                <div className="text-gray-400">...{Object.entries(qr.data).length - 3} more</div>
-                              )}
+            {/* QR Code Data Overlay - Top Right */}
+            <div className="absolute top-4 right-4 bg-black/80 backdrop-blur-sm text-white p-3 rounded-lg border border-white/20 max-w-xs">
+              <div className="flex items-center gap-2 mb-2">
+                <div className="h-4 w-4 border-2 border-white rounded-sm" />
+                <span className="font-semibold text-sm">QR Codes</span>
+              </div>
+              <div className="max-h-32 overflow-y-auto space-y-1 text-sm">
+                {qrCodes.length > 0 ? (
+                  qrCodes.slice(0, 3).map((qr) => (
+                    <div key={qr.id} className="p-2 bg-white/10 rounded text-xs">
+                      <div className="font-medium mb-1">QR {qr.id + 1}:</div>
+                      {typeof qr.data === 'object' ? (
+                        <div className="space-y-1">
+                          {Object.entries(qr.data).slice(0, 2).map(([key, value]) => (
+                            <div key={key} className="truncate">
+                              <span className="text-gray-300">{key}:</span> {String(value)}
                             </div>
-                          ) : (
-                            <div className="truncate">{String(qr.data)}</div>
-                          )}
+                          ))}
                         </div>
-                      ))
-                    ) : (
-                      <p className="text-gray-300">No QR codes detected</p>
-                    )}
+                      ) : (
+                        <div className="truncate">{String(qr.data)}</div>
+                      )}
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-gray-300">Aucun QR détecté</p>
+                )}
+              </div>
+            </div>
+
+            {/* Robot Control Buttons Overlay - Bottom Right */}
+            <div className="absolute bottom-4 right-4 pointer-events-none">
+              <div className="bg-black/40 backdrop-blur-sm rounded-xl p-4 pointer-events-auto">
+                <div className="space-y-3">
+                  {/* Mission Controls */}
+                  <div className="flex gap-2 justify-center">
+                    <ControlButton mode="PAUSE_MISSION" className="bg-yellow-500/90 hover:bg-yellow-600/90 border-yellow-400 text-white px-3 py-2">
+                      <Pause className="h-4 w-4" />
+                    </ControlButton>
+                    <ControlButton mode="PLAY_MISSION" className="bg-green-500/90 hover:bg-green-600/90 border-green-400 text-white px-3 py-2">
+                      <Play className="h-4 w-4" />
+                    </ControlButton>
                   </div>
-                </div>
 
-                {/* Robot Control Buttons Overlay - Bottom Right */}
-                <div className="absolute bottom-4 right-4 pointer-events-none">
-                  <div className="bg-black/40 backdrop-blur-sm rounded-xl p-4 pointer-events-auto">
-                    <div className="space-y-4">
-                      {/* Mission Controls */}
-                      <div className="flex gap-2 justify-center">
-                        <ControlButton mode="PAUSE_MISSION" className="bg-yellow-500/90 hover:bg-yellow-600/90 border-yellow-400 text-white px-4 py-2">
-                          <Pause className="h-4 w-4" />
-                        </ControlButton>
-                        <ControlButton mode="PLAY_MISSION" className="bg-green-500/90 hover:bg-green-600/90 border-green-400 text-white px-4 py-2">
-                          <Play className="h-4 w-4" />
-                        </ControlButton>
+                  {/* Movement Controls - Cross Pattern */}
+                  <div className="grid grid-cols-3 gap-1 w-32">
+                    <div></div>
+                    <ControlButton mode="TOP" className="bg-blue-500/90 hover:bg-blue-600/90 border-blue-400 text-white p-2">
+                      <ArrowUp className="h-4 w-4" />
+                    </ControlButton>
+                    <div></div>
+
+                    <ControlButton mode="LEFT" className="bg-blue-500/90 hover:bg-blue-600/90 border-blue-400 text-white p-2">
+                      <ArrowLeft className="h-4 w-4" />
+                    </ControlButton>
+                    <div className="flex items-center justify-center">
+                      <div className="w-6 h-6 rounded-full bg-white/20 border border-white/40 flex items-center justify-center">
+                        <div className="w-2 h-2 rounded-full bg-white"></div>
                       </div>
-
-                      {/* Movement Controls - Cross Pattern */}
-                      <div className="grid grid-cols-3 gap-2 w-40">
-                        <div></div>
-                        <ControlButton mode="TOP" className="bg-blue-500/90 hover:bg-blue-600/90 border-blue-400 text-white p-3">
-                          <ArrowUp className="h-5 w-5" />
-                        </ControlButton>
-                        <div></div>
-
-                        <ControlButton mode="LEFT" className="bg-blue-500/90 hover:bg-blue-600/90 border-blue-400 text-white p-3">
-                          <ArrowLeft className="h-5 w-5" />
-                        </ControlButton>
-                        <div className="flex items-center justify-center">
-                          <div className="w-8 h-8 rounded-full bg-white/20 border border-white/40 flex items-center justify-center">
-                            <div className="w-2 h-2 rounded-full bg-white"></div>
-                          </div>
-                        </div>
-                        <ControlButton mode="RIGHT" className="bg-blue-500/90 hover:bg-blue-600/90 border-blue-400 text-white p-3">
-                          <ArrowRight className="h-5 w-5" />
-                        </ControlButton>
-
-                        <div></div>
-                        <ControlButton mode="DOWN" className="bg-blue-500/90 hover:bg-blue-600/90 border-blue-400 text-white p-3">
-                          <ArrowDown className="h-5 w-5" />
-                        </ControlButton>
-                        <div></div>
-                      </div>
-
-                      {/* Camera Controls */}
-                      <div className="flex gap-2 justify-center">
-                        <ControlButton mode="LEFT_CAM" className="bg-purple-500/90 hover:bg-purple-600/90 border-purple-400 text-white px-3 py-2">
-                          <ArrowLeft className="mr-1 h-4 w-4" />
-                          <span className="text-xs">Cam</span>
-                        </ControlButton>
-                        <ControlButton mode="RIGHT_CAM" className="bg-purple-500/90 hover:bg-purple-600/90 border-purple-400 text-white px-3 py-2">
-                          <ArrowRight className="mr-1 h-4 w-4" />
-                          <span className="text-xs">Cam</span>
-                        </ControlButton>
-                      </div>
-
                     </div>
+                    <ControlButton mode="RIGHT" className="bg-blue-500/90 hover:bg-blue-600/90 border-blue-400 text-white p-2">
+                      <ArrowRight className="h-4 w-4" />
+                    </ControlButton>
+
+                    <div></div>
+                    <ControlButton mode="DOWN" className="bg-blue-500/90 hover:bg-blue-600/90 border-blue-400 text-white p-2">
+                      <ArrowDown className="h-4 w-4" />
+                    </ControlButton>
+                    <div></div>
                   </div>
-                </div>
 
-                {/* Current Robot/Camera Info Overlay - Bottom Left */}
-                <div className="absolute bottom-4 left-4 bg-black/80 backdrop-blur-sm text-white p-3 rounded-lg border border-white/20">
-                  <div className="text-xs space-y-1">
-                    <div className="flex items-center gap-2">
-                      <Bot className="h-3 w-3 text-blue-400" />
-                      <span>Robot: {selectedRobot.toUpperCase()}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Camera className="h-3 w-3 text-green-400" />
-                      <span>Caméra: {selectedCamera === 'left' ? 'Gauche' : 'Droite'}</span>
-                    </div>
+                  {/* Camera Controls */}
+                  <div className="flex gap-2 justify-center">
+                    <ControlButton mode="LEFT_CAM" className="bg-purple-500/90 hover:bg-purple-600/90 border-purple-400 text-white px-2 py-1">
+                      <ArrowLeft className="mr-1 h-3 w-3" />
+                      <span className="text-xs">Cam</span>
+                    </ControlButton>
+                    <ControlButton mode="RIGHT_CAM" className="bg-purple-500/90 hover:bg-purple-600/90 border-purple-400 text-white px-2 py-1">
+                      <ArrowRight className="mr-1 h-3 w-3" />
+                      <span className="text-xs">Cam</span>
+                    </ControlButton>
                   </div>
                 </div>
               </div>
-            </CardContent>
-          </Card>
+            </div>
+
+            {/* Current Robot/Camera Info Overlay - Bottom Left */}
+            <div className="absolute bottom-4 left-4 bg-black/80 backdrop-blur-sm text-white p-3 rounded-lg border border-white/20">
+              <div className="text-xs space-y-1">
+                <div className="flex items-center gap-2">
+                  <Bot className="h-3 w-3 text-blue-400" />
+                  <span>Robot: {selectedRobot.toUpperCase()}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Camera className="h-3 w-3 text-green-400" />
+                  <span>Caméra: {selectedCamera === 'left' ? 'Gauche' : 'Droite'}</span>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
