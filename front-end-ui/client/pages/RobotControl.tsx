@@ -1,6 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useAuth } from "../contexts/AuthContext";
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import TechnicianSidebar from "../components/TechnicianSidebar";
 import PageHeader from '@/components/PageHeader';
 import {
   Play,
@@ -14,7 +17,13 @@ import {
   Thermometer,
   Droplets,
   Zap,
-  Sun
+  Sun,
+  RefreshCw,
+  Maximize,
+  Minimize,
+  Camera,
+  LogOut,
+  Bot
 } from 'lucide-react';
 
 interface QRData {
@@ -32,7 +41,9 @@ interface ControlCommand {
   control_mode: string;
 }
 
+
 export default function RobotControl() {
+  const { user, logout } = useAuth();
   const videoRef = useRef<HTMLVideoElement>(null);
   const [qrCodes, setQrCodes] = useState<QRData[]>([]);
   const [sensorData, setSensorData] = useState<SensorData | null>(null);
@@ -43,17 +54,34 @@ export default function RobotControl() {
     sensor: false
   });
 
+  // New state for controls
+  const [selectedCamera, setSelectedCamera] = useState<string>('right');
+  const [selectedRobot, setSelectedRobot] = useState<string>('1');
+  const [isFullScreen, setIsFullScreen] = useState<boolean>(false);
+  const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
+
   // WebSocket references
   const qrWsRef = useRef<WebSocket | null>(null);
   const controlWsRef = useRef<WebSocket | null>(null);
   const sensorWsRef = useRef<WebSocket | null>(null);
   const pcRef = useRef<RTCPeerConnection | null>(null);
 
+  const updateSelectedFromUrl = () => {
+    const params = new URLSearchParams(window.location.search);
+    const idrobot = params.get('robot') || "1";
+    const idcamera = params.get('camera') || "right";
+    if (idrobot) setSelectedRobot(idrobot);
+    if (idcamera) setSelectedCamera(idcamera);
+  };
+
   // Initialize WebRTC for video streaming
-  const startWebRTC = async () => {
+  const startWebRTC = async (robot?: string, camera?: string) => {
     try {
       const pc = new RTCPeerConnection();
       pcRef.current = pc;
+	  
+      const rob = robot || "1";
+      const cam = camera || "right";
 
       pc.addTransceiver("video", { direction: "recvonly" });
       
@@ -77,7 +105,7 @@ export default function RobotControl() {
       const hostname = window.location.hostname;
       const port = "8080";
 
-      const response = await fetch(`${protocol}://${hostname}:${port}/service/video_stream_service`, {
+      const response = await fetch(`${protocol}://${hostname}:${port}/service/video_stream_service?robot=${encodeURIComponent(rob)}&camera=${encodeURIComponent(cam)}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ offer: pc.localDescription })
@@ -94,13 +122,16 @@ export default function RobotControl() {
   };
 
   // Initialize WebSocket connections
-  const initializeWebSockets = () => {
+  const initializeWebSockets = (robot?: string, camera?: string) => {
     const protocol = window.location.protocol === "https:" ? "wss" : "ws";
     const hostname = window.location.hostname;
     const port = "8080";
+    
+	const rob = robot || "1";
+    const cam = camera || "right";
 
     // QR Code WebSocket
-    const qrWs = new WebSocket(`${protocol}://${hostname}:${port}/service/qr_data`);
+    const qrWs = new WebSocket(`${protocol}://${hostname}:${port}/service/qr_data?robot=${encodeURIComponent(rob)}&camera=${encodeURIComponent(cam)}`);
     qrWsRef.current = qrWs;
 
     qrWs.onopen = () => {
@@ -137,7 +168,7 @@ export default function RobotControl() {
     };
 
     // Control WebSocket
-    const controlWs = new WebSocket(`${protocol}://${hostname}:${port}/service/control`);
+    const controlWs = new WebSocket(`${protocol}://${hostname}:${port}/service/control?robot=${encodeURIComponent(rob)}&camera=${encodeURIComponent(cam)}`);
     controlWsRef.current = controlWs;
 
     controlWs.onopen = () => {
@@ -156,7 +187,7 @@ export default function RobotControl() {
     };
 
     // Sensor WebSocket
-    const sensorWs = new WebSocket(`${protocol}://${hostname}:${port}/service/sensor_data`);
+    const sensorWs = new WebSocket(`${protocol}://${hostname}:${port}/service/sensor_data?robot=${encodeURIComponent(rob)}`);
     sensorWsRef.current = sensorWs;
 
     sensorWs.onopen = () => {
@@ -187,10 +218,71 @@ export default function RobotControl() {
   // Send control command
   const sendCommand = (mode: string) => {
     if (controlWsRef.current && controlWsRef.current.readyState === WebSocket.OPEN) {
-      controlWsRef.current.send(JSON.stringify({ control_mode: mode }));
+      controlWsRef.current.send(JSON.stringify({
+        control_mode: mode,
+        camera: selectedCamera,
+        robot: selectedRobot
+      }));
     } else {
       console.warn("Control WebSocket not open");
     }
+  };
+
+  // Refresh connections
+  const refreshConnections = async () => {
+    setIsRefreshing(true);
+
+    // Close existing connections
+    if (pcRef.current) {
+      pcRef.current.close();
+    }
+    if (qrWsRef.current) {
+      qrWsRef.current.close();
+    }
+    if (controlWsRef.current) {
+      controlWsRef.current.close();
+    }
+    if (sensorWsRef.current) {
+      sensorWsRef.current.close();
+    }
+
+    // Reset connection status
+    setConnectionStatus({
+      video: false,
+      qr: false,
+      control: false,
+      sensor: false
+    });
+
+    // Wait a moment then reinitialize
+    setTimeout(() => {
+      startWebRTC(selectedRobot, selectedCamera);
+      initializeWebSockets(selectedRobot, selectedCamera);
+      setIsRefreshing(false);
+    }, 1000);
+  };
+
+  // Toggle full screen
+  const toggleFullScreen = () => {
+    if (!document.fullscreenElement) {
+      videoRef.current?.requestFullscreen();
+      setIsFullScreen(true);
+    } else {
+      document.exitFullscreen();
+      setIsFullScreen(false);
+    }
+  };
+
+  // Handle camera selection change
+  const handleCameraChange = (camera: string) => {
+    setSelectedCamera(camera);
+  };
+
+  // Handle robot selection change
+  const handleRobotChange = (robot: string) => {
+    setSelectedRobot(robot);
+    // Send robot selection command
+    sendCommand('SELECT_ROBOT');
   };
 
   // Handle button press/release
@@ -211,15 +303,16 @@ export default function RobotControl() {
     className?: string;
   }> = ({ mode, children, className = "" }) => (
     <Button
-      onMouseDown={() => handleButtonDown(mode)}
-      onMouseUp={handleButtonUp}
-      onMouseLeave={handleButtonUp}
-      className={`w-full ${className}`}
-      variant="outline"
+	onMouseDown={() => handleButtonDown(mode)}
+	onMouseUp={handleButtonUp}
+	onMouseLeave={handleButtonUp}
+	className={`w-full ${className} ${pressedButton === mode ? "ring-4 ring-yellow-300" : ""}`}
+	variant="outline"
     >
-      {children}
+	{children}
     </Button>
   );
+
 
   // Render QR data recursively
   const renderQRValue = (key: string, value: any, depth = 0): React.ReactNode => {
@@ -258,8 +351,20 @@ export default function RobotControl() {
 
   // Initialize connections on component mount
   useEffect(() => {
-    startWebRTC();
-    initializeWebSockets();
+	
+	
+	updateSelectedFromUrl();
+	
+	
+    startWebRTC(selectedRobot, selectedCamera);
+    initializeWebSockets(selectedRobot, selectedCamera);
+
+    // Add fullscreen event listener
+    const handleFullscreenChange = () => {
+      setIsFullScreen(!!document.fullscreenElement);
+    };
+
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
 
     return () => {
       // Cleanup on unmount
@@ -275,219 +380,356 @@ export default function RobotControl() {
       if (sensorWsRef.current) {
         sensorWsRef.current.close();
       }
+
+      document.removeEventListener('fullscreenchange', handleFullscreenChange);
     };
   }, []);
+  
+  const [pressedButton, setPressedButton] = useState<string | null>(null);
+  const pressedKeys = useRef<Set<string>>(new Set());
+  
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+	const keyMap: Record<string, string> = {
+	  ArrowUp: "TOP",
+	  ArrowDown: "DOWN",
+	  ArrowLeft: "LEFT",
+	  ArrowRight: "RIGHT",
+	};
+
+	if (keyMap[e.key] && !pressedKeys.current.has(e.key)) {
+	  pressedKeys.current.add(e.key);
+	  setPressedButton(keyMap[e.key]);
+	  handleButtonDown(keyMap[e.key]);
+	}
+    };
+
+    const handleKeyUp = (e: KeyboardEvent) => {
+	const keyMap: Record<string, string> = {
+	  ArrowUp: "TOP",
+	  ArrowDown: "DOWN",
+	  ArrowLeft: "LEFT",
+	  ArrowRight: "RIGHT",
+	};
+
+	if (keyMap[e.key]) {
+	  pressedKeys.current.delete(e.key);
+	  setPressedButton(null);
+	  handleButtonUp();
+	}
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    window.addEventListener("keyup", handleKeyUp);
+
+    return () => {
+	window.removeEventListener("keydown", handleKeyDown);
+	window.removeEventListener("keyup", handleKeyUp);
+    };
+  }, []);
+  
+  
+  useEffect(() => {
+    if (qrWsRef.current) qrWsRef.current.close();
+    if (controlWsRef.current) controlWsRef.current.close();
+    if (sensorWsRef.current) sensorWsRef.current.close();
+
+    initializeWebSockets(selectedRobot, selectedCamera);
+    
+    if (pcRef.current) pcRef.current.close();
+    startWebRTC(selectedRobot, selectedCamera);
+
+    return () => {
+      if (qrWsRef.current) qrWsRef.current.close();
+      if (controlWsRef.current) controlWsRef.current.close();
+      if (sensorWsRef.current) sensorWsRef.current.close();
+      if (pcRef.current) pcRef.current.close();
+    };
+  }, [selectedRobot, selectedCamera]);
+
+
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <PageHeader
-        title="Contrôle Robot"
-        subtitle="Interface de contrôle du robot autonome"
-        userRole="technicien"
-        badge={{
-          text: "En Ligne",
-          variant: "outline",
-          className: "bg-green-50 border-green-200 text-green-700"
-        }}
-      />
-
-      <div className="container mx-auto p-6">
-        
-        {/* Connection Status */}
-        <div className="grid grid-cols-4 gap-4 mb-6">
-          {Object.entries(connectionStatus).map(([key, connected]) => (
-            <div key={key} className={`flex items-center gap-2 p-2 rounded-lg ${connected ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
-              <Wifi className="h-4 w-4" />
-              <span className="text-sm font-medium capitalize">{key}: {connected ? 'Connected' : 'Disconnected'}</span>
+      
+      {/* Header */}
+      <header className="bg-white shadow-sm border-b sticky top-0 z-10">
+        <div className="max-w-full px-4 sm:px-6 lg:px-8">
+          <div className="flex flex-col lg:flex-row lg:justify-between lg:items-center py-4 gap-4">
+            <div className="flex items-center gap-4">
+              <TechnicianSidebar userRole="technicien" />
+              <div className="flex items-center space-x-2">
+                <h1 className="text-lg sm:text-xl font-semibold text-gray-900">
+                  Contrôle Robot
+                </h1>
+              </div>
             </div>
-          ))}
+            <div className="flex items-center space-x-4">
+              <span className="text-sm text-gray-600 hidden sm:block">
+                {user?.name || user?.email}
+              </span>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => logout()}
+                className="flex items-center space-x-1"
+              >
+                <LogOut className="h-4 w-4" />
+                <span className="hidden sm:inline">Déconnexion</span>
+              </Button>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <div className="flex h-[calc(100vh-85px)]">
+        {/* Minimized Left Sidebar - Controls */}
+        <div className="w-64 bg-white shadow-lg p-3 overflow-y-auto space-y-3">
+          {/* Camera Selection */}
+          <Card className="text-sm">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm flex items-center gap-1">
+                <Camera className="h-3 w-3" />
+                Caméra
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Select value={selectedCamera} onValueChange={handleCameraChange}>
+                <SelectTrigger className="h-8 text-sm">
+                  <SelectValue placeholder="Choisir" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="left">Gauche</SelectItem>
+                  <SelectItem value="right">Droite</SelectItem>
+                </SelectContent>
+              </Select>
+            </CardContent>
+          </Card>
+
+          {/* Robot Selection */}
+          <Card className="text-sm">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm flex items-center gap-1">
+                <Bot className="h-3 w-3" />
+                Robot
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Select value={selectedRobot} onValueChange={handleRobotChange}>
+                <SelectTrigger className="h-8 text-sm">
+                  <SelectValue placeholder="Choisir" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="1">Robot #1</SelectItem>
+                  <SelectItem value="2">Robot #2</SelectItem>
+                  <SelectItem value="3">Robot #3</SelectItem>
+                </SelectContent>
+              </Select>
+            </CardContent>
+          </Card>
+
+          {/* Control Actions */}
+          <Card className="text-sm">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm">Actions</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              <Button
+                onClick={refreshConnections}
+                disabled={isRefreshing}
+                className="w-full h-8 text-sm"
+                variant="outline"
+              >
+                <RefreshCw className={`h-3 w-3 mr-1 ${isRefreshing ? 'animate-spin' : ''}`} />
+                {isRefreshing ? 'Actualise...' : 'Actualiser'}
+              </Button>
+
+              <Button
+                onClick={toggleFullScreen}
+                className="w-full h-8 text-sm"
+                variant="outline"
+              >
+                {isFullScreen ? (
+                  <>
+                    <Minimize className="h-3 w-3 mr-1" />
+                    Quitter
+                  </>
+                ) : (
+                  <>
+                    <Maximize className="h-3 w-3 mr-1" />
+                    Plein Écran
+                  </>
+                )}
+              </Button>
+            </CardContent>
+          </Card>
+
+          {/* Connection Status */}
+          <Card className="text-sm">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm">Connexions</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-1">
+                {Object.entries(connectionStatus).map(([key, connected]) => (
+                  <div key={key} className="flex items-center justify-between">
+                    <span className="text-sm capitalize">{key}</span>
+                    <div className={`flex items-center gap-1 px-1 py-0.5 rounded text-sm ${connected ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                      <Wifi className="h-2 w-2" />
+                      <span className="text-sm">{connected ? 'OK' : 'KO'}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Video Stream with Overlays */}
-          <Card className="lg:col-span-2">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Video className="h-5 w-5" />
-                Live Video Stream
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="relative">
-                <video
-                  ref={videoRef}
-                  autoPlay
-                  playsInline
-                  muted
-                  className="w-full h-[600px] bg-black rounded-lg object-contain border"
-                />
+        {/* Full Screen Video Area */}
+        <div className="flex-1 relative">
+          <div className="absolute inset-0 bg-black">
+            <video
+              ref={videoRef}
+              autoPlay
+              playsInline
+              muted
+              className="w-full h-full bg-black object-contain"
+            />
 
-                {/* Sensor Data Overlay - Top Left */}
-                <div className="absolute top-4 left-4 bg-black/80 backdrop-blur-sm text-white p-4 rounded-lg border border-white/20">
-                  <div className="flex items-center gap-2 mb-3">
-                    <Thermometer className="h-4 w-4" />
-                    <span className="font-semibold text-sm">Sensor Data</span>
+            {/* Sensor Data Overlay - Top Left */}
+            <div className="absolute top-4 left-4 bg-black/80 backdrop-blur-sm text-white p-4 rounded-lg border border-white/20">
+              <div className="flex items-center gap-2 mb-3">
+                <Thermometer className="h-4 w-4" />
+                <span className="font-semibold text-sm">Sensor Data</span>
+              </div>
+              {sensorData ? (
+                <div className="space-y-2 text-sm">
+                  <div className="flex items-center gap-2">
+                    <Thermometer className="h-3 w-3 text-red-400" />
+                    <span>Température {sensorData.temperature} °C</span>
                   </div>
-                  {sensorData ? (
-                    <div className="space-y-2 text-sm">
-                      <div className="flex items-center gap-2">
-                        <Thermometer className="h-3 w-3 text-red-400" />
-                        <span>Température {sensorData.temperature} °C</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Droplets className="h-3 w-3 text-blue-400" />
-                        <span>Humidité {sensorData.humidity} %</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Zap className="h-3 w-3 text-green-400" />
-                        <span>CO₂ {sensorData.co2} ppm</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Sun className="h-3 w-3 text-yellow-400" />
-                        <span>Luminosité {sensorData.luminosite} lux</span>
-                      </div>
-                    </div>
-                  ) : (
-                    <p className="text-gray-300 text-sm">Waiting for sensor data...</p>
-                  )}
+                  <div className="flex items-center gap-2">
+                    <Droplets className="h-3 w-3 text-blue-400" />
+                    <span>Humidité {sensorData.humidity} %</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Zap className="h-3 w-3 text-green-400" />
+                    <span>CO₂ {sensorData.co2} ppm</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Sun className="h-3 w-3 text-yellow-400" />
+                    <span>Luminosité {sensorData.luminosite} lux</span>
+                  </div>
                 </div>
+              ) : (
+                <p className="text-gray-300 text-sm">Waiting for sensor data...</p>
+              )}
+            </div>
 
-                {/* QR Code Data Overlay - Top Right */}
-                <div className="absolute top-4 right-4 bg-black/80 backdrop-blur-sm text-white p-4 rounded-lg border border-white/20 max-w-xs">
-                  <div className="flex items-center gap-2 mb-3">
-                    <div className="h-4 w-4 border-2 border-white rounded-sm" />
-                    <span className="font-semibold text-sm">QR Codes</span>
-                  </div>
-                  <div className="max-h-40 overflow-y-auto space-y-2 text-sm">
-                    {qrCodes.length > 0 ? (
-                      qrCodes.map((qr) => (
-                        <div key={qr.id} className="p-2 bg-white/10 rounded text-xs">
-                          <div className="font-medium mb-1">QR {qr.id + 1}:</div>
-                          {typeof qr.data === 'object' ? (
-                            <div className="space-y-1">
-                              {Object.entries(qr.data).slice(0, 3).map(([key, value]) => (
-                                <div key={key} className="truncate">
-                                  <span className="text-gray-300">{key}:</span> {String(value)}
-                                </div>
-                              ))}
-                              {Object.entries(qr.data).length > 3 && (
-                                <div className="text-gray-400">...{Object.entries(qr.data).length - 3} more</div>
-                              )}
+            {/* QR Code Data Overlay - Top Right */}
+            <div className="absolute top-4 right-4 bg-black/80 backdrop-blur-sm text-white p-4 rounded-lg border border-white/20 max-w-xs">
+              <div className="flex items-center gap-2 mb-3">
+                <div className="h-4 w-4 border-2 border-white rounded-sm" />
+                <span className="font-semibold text-sm">QR Codes</span>
+              </div>
+              <div className="max-h-40 overflow-y-auto space-y-2 text-sm">
+                {qrCodes.length > 0 ? (
+                  qrCodes.map((qr) => (
+                    <div key={qr.id} className="p-2 bg-white/10 rounded text-sm">
+                      <div className="font-medium mb-1">QR {qr.id + 1}:</div>
+                      {typeof qr.data === 'object' ? (
+                        <div className="space-y-1">
+                          {Object.entries(qr.data).slice(0, 3).map(([key, value]) => (
+                            <div key={key} className="truncate">
+                              <span className="text-gray-300">{key}:</span> {String(value)}
                             </div>
-                          ) : (
-                            <div className="truncate">{String(qr.data)}</div>
+                          ))}
+                          {Object.entries(qr.data).length > 3 && (
+                            <div className="text-gray-400">...{Object.entries(qr.data).length - 3} more</div>
                           )}
                         </div>
-                      ))
-                    ) : (
-                      <p className="text-gray-300">No QR codes detected</p>
-                    )}
-                  </div>
-                </div>
-
-                {/* Connection Status Overlay - Bottom Left */}
-                <div className="absolute bottom-4 left-4 flex gap-2">
-                  {Object.entries(connectionStatus).map(([key, connected]) => (
-                    <div
-                      key={key}
-                      className={`flex items-center gap-1 px-2 py-1 rounded text-xs font-medium ${
-                        connected
-                          ? 'bg-green-500/80 text-white'
-                          : 'bg-red-500/80 text-white'
-                      }`}
-                    >
-                      <Wifi className="h-3 w-3" />
-                      <span className="capitalize">{key}</span>
+                      ) : (
+                        <div className="truncate">{String(qr.data)}</div>
+                      )}
                     </div>
-                  ))}
-                </div>
+                  ))
+                ) : (
+                  <p className="text-gray-300">No QR codes detected</p>
+                )}
               </div>
-            </CardContent>
-          </Card>
+            </div>
 
-          {/* Robot Controls - Right Panel */}
-          <Card className="h-fit">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <div className="h-5 w-5 rounded bg-gradient-to-br from-blue-500 to-purple-600" />
-                Robot Controls
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {/* Mission Controls */}
-                <div className="space-y-2">
-                  <h4 className="font-semibold text-sm text-muted-foreground">Mission</h4>
-                  <div className="grid grid-cols-1 gap-2">
-                    <ControlButton mode="PLAY_MISSION" className="bg-green-50 hover:bg-green-100 border-green-200 text-green-800">
-                      <Play className="mr-2 h-4 w-4" />
-                      Start Mission
+            {/* Robot Control Buttons Overlay - Bottom Right */}
+            <div className="absolute bottom-4 right-4 pointer-events-none">
+              <div className="bg-black/40 backdrop-blur-sm rounded-xl p-4 pointer-events-auto">
+                <div className="space-y-4">
+                  {/* Mission Controls */}
+                  <div className="flex gap-2 justify-center">
+                    <ControlButton mode="PAUSE_MISSION" className="bg-yellow-500/90 hover:bg-yellow-600/90 border-yellow-400 text-white px-4 py-2">
+                      <Pause className="h-4 w-4" />
                     </ControlButton>
-                    <ControlButton mode="PAUSE_MISSION" className="bg-yellow-50 hover:bg-yellow-100 border-yellow-200 text-yellow-800">
-                      <Pause className="mr-2 h-4 w-4" />
-                      Pause Mission
+                    <ControlButton mode="PLAY_MISSION" className="bg-green-500/90 hover:bg-green-600/90 border-green-400 text-white px-4 py-2">
+                      <Play className="h-4 w-4" />
                     </ControlButton>
                   </div>
-                </div>
 
-                {/* Movement Controls */}
-                <div className="space-y-2">
-                  <h4 className="font-semibold text-sm text-muted-foreground">Movement</h4>
-                  <div className="grid grid-cols-3 gap-2">
+                  {/* Movement Controls - Cross Pattern */}
+                  <div className="grid grid-cols-3 gap-2 w-40">
                     <div></div>
-                    <ControlButton mode="TOP" className="bg-blue-50 hover:bg-blue-100 border-blue-200 text-blue-800">
-                      <ArrowUp className="h-4 w-4" />
+                    <ControlButton mode="TOP" className="bg-blue-500/90 hover:bg-blue-600/90 border-blue-400 text-white p-3">
+                      <ArrowUp className="h-5 w-5" />
                     </ControlButton>
                     <div></div>
 
-                    <ControlButton mode="LEFT" className="bg-blue-50 hover:bg-blue-100 border-blue-200 text-blue-800">
-                      <ArrowLeft className="h-4 w-4" />
+                    <ControlButton mode="LEFT" className="bg-blue-500/90 hover:bg-blue-600/90 border-blue-400 text-white p-3">
+                      <ArrowLeft className="h-5 w-5" />
                     </ControlButton>
                     <div className="flex items-center justify-center">
-                      <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center">
-                        <div className="w-2 h-2 rounded-full bg-gray-500"></div>
+                      <div className="w-8 h-8 rounded-full bg-white/20 border border-white/40 flex items-center justify-center">
+                        <div className="w-2 h-2 rounded-full bg-white"></div>
                       </div>
                     </div>
-                    <ControlButton mode="RIGHT" className="bg-blue-50 hover:bg-blue-100 border-blue-200 text-blue-800">
-                      <ArrowRight className="h-4 w-4" />
+                    <ControlButton mode="RIGHT" className="bg-blue-500/90 hover:bg-blue-600/90 border-blue-400 text-white p-3">
+                      <ArrowRight className="h-5 w-5" />
                     </ControlButton>
 
                     <div></div>
-                    <ControlButton mode="DOWN" className="bg-blue-50 hover:bg-blue-100 border-blue-200 text-blue-800">
-                      <ArrowDown className="h-4 w-4" />
+                    <ControlButton mode="DOWN" className="bg-blue-500/90 hover:bg-blue-600/90 border-blue-400 text-white p-3">
+                      <ArrowDown className="h-5 w-5" />
                     </ControlButton>
                     <div></div>
                   </div>
-                </div>
 
-                {/* Camera Controls */}
-                <div className="space-y-2">
-                  <h4 className="font-semibold text-sm text-muted-foreground">Camera</h4>
-                  <div className="grid grid-cols-2 gap-2">
-                    <ControlButton mode="LEFT_CAM" className="bg-purple-50 hover:bg-purple-100 border-purple-200 text-purple-800">
-                      <ArrowLeft className="mr-2 h-4 w-4" />
-                      Left
+                  {/* Camera Controls */}
+                  <div className="flex gap-2 justify-center">
+                    <ControlButton mode="LEFT_CAM" className="bg-purple-500/90 hover:bg-purple-600/90 border-purple-400 text-white px-3 py-2">
+                      <ArrowLeft className="mr-1 h-4 w-4" />
+                      <span className="text-sm">Cam</span>
                     </ControlButton>
-                    <ControlButton mode="RIGHT_CAM" className="bg-purple-50 hover:bg-purple-100 border-purple-200 text-purple-800">
-                      <ArrowRight className="mr-2 h-4 w-4" />
-                      Right
+                    <ControlButton mode="RIGHT_CAM" className="bg-purple-500/90 hover:bg-purple-600/90 border-purple-400 text-white px-3 py-2">
+                      <ArrowRight className="mr-1 h-4 w-4" />
+                      <span className="text-sm">Cam</span>
                     </ControlButton>
                   </div>
-                </div>
 
-                {/* Emergency Stop */}
-                <div className="pt-4 border-t">
-                  <Button
-                    onClick={() => sendCommand("EMERGENCY_STOP")}
-                    className="w-full bg-red-600 hover:bg-red-700 text-white"
-                    variant="destructive"
-                  >
-                    🛑 EMERGENCY STOP
-                  </Button>
                 </div>
               </div>
-            </CardContent>
-          </Card>
+            </div>
+
+            {/* Current Robot/Camera Info Overlay - Bottom Left */}
+            <div className="absolute bottom-4 left-4 bg-black/80 backdrop-blur-sm text-white p-3 rounded-lg border border-white/20">
+              <div className="text-sm space-y-1">
+                <div className="flex items-center gap-2">
+                  <Bot className="h-3 w-3 text-blue-400" />
+                  <span>Robot: {selectedRobot.toUpperCase()}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Camera className="h-3 w-3 text-green-400" />
+                  <span>Caméra: {selectedCamera === 'left' ? 'Gauche' : 'Droite'}</span>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
