@@ -211,15 +211,16 @@ export default function RobotControl() {
     className?: string;
   }> = ({ mode, children, className = "" }) => (
     <Button
-      onMouseDown={() => handleButtonDown(mode)}
-      onMouseUp={handleButtonUp}
-      onMouseLeave={handleButtonUp}
-      className={`w-full ${className}`}
-      variant="outline"
+  	onMouseDown={() => handleButtonDown(mode)}
+  	onMouseUp={handleButtonUp}
+  	onMouseLeave={handleButtonUp}
+  	className={`w-full ${className} ${pressedButton === mode ? "ring-4 ring-yellow-300" : ""}`}
+  	variant="outline"
     >
-      {children}
+  	{children}
     </Button>
   );
+
 
   // Render QR data recursively
   const renderQRValue = (key: string, value: any, depth = 0): React.ReactNode => {
@@ -278,48 +279,49 @@ export default function RobotControl() {
     };
   }, []);
   
+  const [pressedButton, setPressedButton] = useState<string | null>(null);
+  const pressedKeys = useRef<Set<string>>(new Set());
+  
   useEffect(() => {
-	  const handleKeyDown = (e: KeyboardEvent) => {
-		switch (e.key) {
-		  case "ArrowUp":
-			e.preventDefault();
-			handleButtonDown("TOP");
-			break;
-		  case "ArrowDown":
-			e.preventDefault();
-			handleButtonDown("DOWN");
-			break;
-		  case "ArrowLeft":
-			e.preventDefault();
-			handleButtonDown("LEFT");
-			break;
-		  case "ArrowRight":
-			e.preventDefault();
-			handleButtonDown("RIGHT");
-			break;
-		}
-	  };
+    const handleKeyDown = (e: KeyboardEvent) => {
+  	const keyMap: Record<string, string> = {
+  	  ArrowUp: "TOP",
+  	  ArrowDown: "DOWN",
+  	  ArrowLeft: "LEFT",
+  	  ArrowRight: "RIGHT",
+  	};
+  
+  	if (keyMap[e.key] && !pressedKeys.current.has(e.key)) {
+  	  pressedKeys.current.add(e.key);
+  	  setPressedButton(keyMap[e.key]);
+  	  handleButtonDown(keyMap[e.key]);
+  	}
+    };
+  
+    const handleKeyUp = (e: KeyboardEvent) => {
+  	const keyMap: Record<string, string> = {
+  	  ArrowUp: "TOP",
+  	  ArrowDown: "DOWN",
+  	  ArrowLeft: "LEFT",
+  	  ArrowRight: "RIGHT",
+  	};
+  
+  	if (keyMap[e.key]) {
+  	  pressedKeys.current.delete(e.key);
+  	  setPressedButton(null);
+  	  handleButtonUp();
+  	}
+    };
+  
+    window.addEventListener("keydown", handleKeyDown);
+    window.addEventListener("keyup", handleKeyUp);
+  
+    return () => {
+  	window.removeEventListener("keydown", handleKeyDown);
+  	window.removeEventListener("keyup", handleKeyUp);
+    };
+  }, []);
 
-	  const handleKeyUp = (e: KeyboardEvent) => {
-		switch (e.key) {
-		  case "ArrowUp":
-		  case "ArrowDown":
-		  case "ArrowLeft":
-		  case "ArrowRight":
-			e.preventDefault();
-			handleButtonUp();
-			break;
-		}
-	  };
-
-	  window.addEventListener("keydown", handleKeyDown);
-	  window.addEventListener("keyup", handleKeyUp);
-
-	  return () => {
-		window.removeEventListener("keydown", handleKeyDown);
-		window.removeEventListener("keyup", handleKeyUp);
-	  };
-	}, []);
 
 
   return (
