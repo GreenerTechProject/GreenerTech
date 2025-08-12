@@ -297,6 +297,8 @@ export default function RobotControl() {
         <div className="w-full">
           {/* Video Stream with Overlays */}
           <Card className="w-full">
+            <CardHeader>
+            </CardHeader>
             <CardContent>
               <div className="relative">
                 <video
@@ -304,7 +306,7 @@ export default function RobotControl() {
                   autoPlay
                   playsInline
                   muted
-                  className="w-full h-[700px] bg-black rounded-lg object-contain border"
+                  className="w-full h-[500px] bg-black rounded-lg object-contain border"
                 />
 
                 {/* Sensor Data Overlay - Top Left */}
