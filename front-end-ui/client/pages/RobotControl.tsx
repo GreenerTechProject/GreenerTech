@@ -22,7 +22,7 @@ import {
   Maximize,
   Minimize,
   Camera,
-  Bookmark,
+  LogOut,
   Bot
 } from 'lucide-react';
 
