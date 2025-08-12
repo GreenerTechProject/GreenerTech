@@ -50,7 +50,7 @@ export default function RobotControl() {
   });
 
   // New state for controls
-  const [selectedCamera, setSelectedCamera] = useState<string>('left');
+  const [selectedCamera, setSelectedCamera] = useState<string>('right');
   const [selectedRobot, setSelectedRobot] = useState<string>('1');
   const [isFullScreen, setIsFullScreen] = useState<boolean>(false);
   const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
@@ -243,8 +243,8 @@ export default function RobotControl() {
 
     // Wait a moment then reinitialize
     setTimeout(() => {
-      startWebRTC("1", "right");
-      initializeWebSockets("1", "right");
+      startWebRTC(selectedRobot, selectedCamera);
+      initializeWebSockets(selectedRobot, selectedCamera);
       setIsRefreshing(false);
     }, 1000);
   };
