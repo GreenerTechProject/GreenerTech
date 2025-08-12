@@ -38,14 +38,6 @@ interface ControlCommand {
   control_mode: string;
 }
 
-const updateSelectedFromUrl = () => {
-  const params = new URLSearchParams(window.location.search);
-  const idrobot = params.get('robot') || "1";
-  const idcamera = params.get('camera') || "right";
-  if (idrobot) setSelectedRobot(idrobot);
-  if (idcamera) setSelectedCamera(idcamera);
-};
-
 
 export default function RobotControl() {
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -69,6 +61,14 @@ export default function RobotControl() {
   const controlWsRef = useRef<WebSocket | null>(null);
   const sensorWsRef = useRef<WebSocket | null>(null);
   const pcRef = useRef<RTCPeerConnection | null>(null);
+
+  const updateSelectedFromUrl = () => {
+    const params = new URLSearchParams(window.location.search);
+    const idrobot = params.get('robot') || "1";
+    const idcamera = params.get('camera') || "right";
+    if (idrobot) setSelectedRobot(idrobot);
+    if (idcamera) setSelectedCamera(idcamera);
+  };
 
   // Initialize WebRTC for video streaming
   const startWebRTC = async (robot?: string, camera?: string) => {
