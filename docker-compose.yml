@@ -44,15 +44,15 @@ services:
     ports:
       - "5433:5432"
 
-  # frontend:
-  #   build:
-  #     context: ./
-  #     dockerfile: ./frontend.Dockerfile
-  #   container_name: greenertech-frontend
-  #   ports:
-  #     - "3000:3000"
-  #   depends_on:
-  #     - backend
+  frontend:
+    build:
+      context: ./
+      dockerfile: ./frontend.Dockerfile
+    container_name: greenertech-frontend
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
 
   pgadmin:
       image: dpage/pgadmin4
