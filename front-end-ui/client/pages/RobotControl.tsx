@@ -51,7 +51,6 @@ export default function RobotControl() {
 
   // New state for controls
   const [selectedCamera, setSelectedCamera] = useState<string>('left');
-  const [selectedRobot, setSelectedRobot] = useState<string>('robot1');
   const [isFullScreen, setIsFullScreen] = useState<boolean>(false);
   const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
 
@@ -201,8 +200,7 @@ export default function RobotControl() {
     if (controlWsRef.current && controlWsRef.current.readyState === WebSocket.OPEN) {
       controlWsRef.current.send(JSON.stringify({
         control_mode: mode,
-        camera: selectedCamera,
-        robot: selectedRobot
+        camera: selectedCamera
       }));
     } else {
       console.warn("Control WebSocket not open");
@@ -264,13 +262,6 @@ export default function RobotControl() {
     setTimeout(() => {
       startWebRTC();
     }, 500);
-  };
-
-  // Handle robot selection change
-  const handleRobotChange = (robot: string) => {
-    setSelectedRobot(robot);
-    // Send robot selection command
-    sendCommand('SELECT_ROBOT');
   };
 
   // Handle button press/release
@@ -451,28 +442,6 @@ export default function RobotControl() {
               </CardContent>
             </Card>
 
-            {/* Robot Selection */}
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm flex items-center gap-2">
-                  <Bot className="h-4 w-4" />
-                  Sélection Robot
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <Select value={selectedRobot} onValueChange={handleRobotChange}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Choisir un robot" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="robot1">Robot #1</SelectItem>
-                    <SelectItem value="robot2">Robot #2</SelectItem>
-                    <SelectItem value="robot3">Robot #3</SelectItem>
-                  </SelectContent>
-                </Select>
-              </CardContent>
-            </Card>
-
             {/* Control Actions */}
             <Card>
               <CardHeader className="pb-3">
@@ -535,27 +504,6 @@ export default function RobotControl() {
           {/* Video Stream with Overlays */}
           <Card className="w-full">
             <CardHeader className="px-4 py-3 flex flex-row items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Video className="h-5 w-5" />
-                <span className="font-semibold">Flux Vidéo - {selectedCamera === 'left' ? 'Caméra Gauche' : 'Caméra Droite'}</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Button
-                  onClick={refreshConnections}
-                  disabled={isRefreshing}
-                  size="sm"
-                  variant="outline"
-                >
-                  <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
-                </Button>
-                <Button
-                  onClick={toggleFullScreen}
-                  size="sm"
-                  variant="outline"
-                >
-                  {isFullScreen ? <Minimize className="h-4 w-4" /> : <Maximize className="h-4 w-4" />}
-                </Button>
-              </div>
             </CardHeader>
             <CardContent>
               <div className="relative">
@@ -690,10 +638,6 @@ export default function RobotControl() {
                 {/* Current Robot/Camera Info Overlay - Bottom Left */}
                 <div className="absolute bottom-4 left-4 bg-black/80 backdrop-blur-sm text-white p-3 rounded-lg border border-white/20">
                   <div className="text-xs space-y-1">
-                    <div className="flex items-center gap-2">
-                      <Bot className="h-3 w-3 text-blue-400" />
-                      <span>Robot: {selectedRobot.toUpperCase()}</span>
-                    </div>
                     <div className="flex items-center gap-2">
                       <Camera className="h-3 w-3 text-green-400" />
                       <span>Caméra: {selectedCamera === 'left' ? 'Gauche' : 'Droite'}</span>
