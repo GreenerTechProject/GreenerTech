@@ -42,8 +42,8 @@ const updateSelectedFromUrl = () => {
   const params = new URLSearchParams(window.location.search);
   const idrobot = params.get('robot') || "1";
   const idcamera = params.get('camera') || "right";
-  setSelectedRobot(idrobot);
-  setSelectedCamera(idcamera);
+  if (idrobot) setSelectedRobot(idrobot);
+  if (idcamera) setSelectedCamera(idcamera);
 };
 
 
