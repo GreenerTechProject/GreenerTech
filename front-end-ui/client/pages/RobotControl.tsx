@@ -306,7 +306,7 @@ export default function RobotControl() {
                   autoPlay
                   playsInline
                   muted
-                  className="w-full h-[400px] bg-black rounded-lg object-contain border"
+                  className="w-full h-[450px] bg-black rounded-lg object-contain border"
                 />
 
                 {/* Sensor Data Overlay - Top Left */}
