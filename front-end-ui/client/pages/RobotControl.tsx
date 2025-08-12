@@ -39,13 +39,11 @@ interface ControlCommand {
 }
 
 const updateSelectedFromUrl = () => {
-  const pathParts = window.location.pathname.split('/');
-  if (pathParts.length >= 4) {
-    const idrobot = pathParts[2] || "1";
-    const idcamera = pathParts[3] || "right";
-    if (idrobot) setSelectedRobot(idrobot);
-    if (idcamera) setSelectedCamera(idcamera);
-  }
+  const params = new URLSearchParams(window.location.search);
+  const idrobot = params.get('robot') || "1";
+  const idcamera = params.get('camera') || "right";
+  setSelectedRobot(idrobot);
+  setSelectedCamera(idcamera);
 };
 
 
