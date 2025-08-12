@@ -66,8 +66,15 @@ def role_required(*allowed_roles):
     def decorator(f):
         @wraps(f)
         def decorated(current_user, *args, **kwargs):
+            print(f"[DEBUG] role_required decorator - User role: '{current_user.role}'")
+            print(f"[DEBUG] role_required decorator - Allowed roles: {allowed_roles}")
+            print(f"[DEBUG] role_required decorator - Role in allowed: {current_user.role in allowed_roles}")
+            
             if current_user.role not in allowed_roles:
-                return jsonify({"message": "Access denied: unauthorized role"}), 403
+                print(f"[DEBUG] role_required decorator - Access denied for role '{current_user.role}'")
+                return jsonify({"message": "Accès refusé : rôle non autorisé"}), 403
+            
+            print(f"[DEBUG] role_required decorator - Access granted for role '{current_user.role}'")
             return f(current_user, *args, **kwargs)
         return decorated
     return decorator

@@ -21,7 +21,9 @@ export default function AffiliationRequest() {
     lastName: "",
     telephone: "",
     cin: "",
-    companyName: "",
+    companyId: "", // Add this back for internal use
+    companyName: "", // Add this for display purposes
+    id_entreprise: "",
     birthDate: "",
     role: selectedRole || "",
   });
@@ -106,8 +108,13 @@ export default function AffiliationRequest() {
     setIsDropdownOpen(false);
   };
 
-  const handleCompanySelect = (companyName: string) => {
-    setFormData((prev) => ({ ...prev, companyName }));
+  const handleCompanySelect = (companyId: string, companyName: string) => {
+    setFormData((prev) => ({ 
+      ...prev, 
+      companyId: companyId, 
+      companyName: companyName, // Update companyName
+      id_entreprise: companyId 
+    }));
     setIsCompanyDropdownOpen(false);
   };
 
@@ -123,7 +130,7 @@ export default function AffiliationRequest() {
       !formData.lastName ||
       !formData.telephone ||
       !formData.cin ||
-      !formData.companyName ||
+      !formData.id_entreprise ||
       !formData.birthDate
     ) {
       setLocalError("Tous les champs sont requis");
@@ -153,7 +160,7 @@ export default function AffiliationRequest() {
         lastName: formData.lastName,
         telephone: formData.telephone,
         cin: formData.cin,
-        companyName: formData.companyName,
+        id_entreprise: formData.id_entreprise, // Use id_entreprise to match the updated interface
         birthDate: formData.birthDate,
         role: formData.role,
       });
@@ -382,7 +389,7 @@ export default function AffiliationRequest() {
                 >
                   <span
                     className={
-                      formData.companyName ? "text-gray-900" : "text-gray-400"
+                      formData.companyId ? "text-gray-900" : "text-gray-400"
                     }
                   >
                     {loadingCompanies
@@ -415,13 +422,11 @@ export default function AffiliationRequest() {
                         <button
                           key={company.id}
                           type="button"
-                          onClick={() => handleCompanySelect(company.name)}
+                          onClick={() => handleCompanySelect(company.id, company.name)}
                           className="w-full px-4 py-3 text-left text-sm text-gray-900 hover:bg-gray-50 flex flex-col border-b border-gray-100 last:border-b-0"
                         >
                           <span className="font-medium">{company.name}</span>
-                          <span className="text-xs text-gray-500 mt-1">
-                            {company.type} • {company.location}
-                          </span>
+                      
                         </button>
                       ))
                     )}

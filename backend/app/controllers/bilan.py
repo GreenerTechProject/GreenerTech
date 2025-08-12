@@ -48,9 +48,10 @@ def create_bilan(current_user):
 
     # Créer le bilan
     bilan = Bilan(
-        nom=data['nom'],
-        surface = data.get('surface'),
-        center = data.get('center'),
+        nom=data['name'],
+        surface=data.get('area'),
+        center_lat=data.get('center', {}).get('lat') if data.get('center') else None,
+        center_lng=data.get('center', {}).get('lng') if data.get('center') else None,
         id_group_cor=id_group_cor,
         id_serre=serre.id,
         #id_entreprise=entreprise.id
@@ -99,8 +100,8 @@ def update_bilan(current_user, id):
 
     center = data.get('center')
     if center:
-        bilan.center_lat = center.get('latitude', bilan.center_lat)
-        bilan.center_lng = center.get('longitude', bilan.center_lng)
+        bilan.center_lat = center.get('lat', bilan.center_lat)
+        bilan.center_lng = center.get('lng', bilan.center_lng)
 
     gps_points = data.get('gps_points')
     if gps_points:
@@ -110,8 +111,8 @@ def update_bilan(current_user, id):
         for point in gps_points:
             new_point = GroupCor(
                 id_group_cor=bilan.id_group_cor,
-                point_x=point['latitude'],
-                point_y=point['longitude'],
+                point_x=point['lat'],
+                point_y=point['lng'],
                 ordre=point.get('ordre', 0)
             )
             db.session.add(new_point)

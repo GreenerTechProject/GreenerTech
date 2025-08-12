@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import TechHeader from "../components/TechHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -10,7 +11,8 @@ import {
   Search,
   ChevronLeft,
   ChevronRight,
-  TrendingUp
+  TrendingUp,
+  Bell
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { AlertService } from "@/services/alertService";
@@ -81,11 +83,11 @@ export default function AlertsPage() {
   const getAlertLevelColor = (level: "High" | "Medium" | "Low"): string => {
     switch (level) {
       case "High":
-        return "bg-red-100 text-red-800";
+        return "bg-red-100 text-red-800 border-red-300";
       case "Medium":
-        return "bg-orange-100 text-orange-800";
+        return "bg-orange-100 text-orange-800 border-orange-300";
       case "Low":
-        return "bg-green-100 text-green-800";
+        return "bg-green-100 text-green-800 border-green-300";
       default:
         return "bg-gray-100 text-gray-800";
     }
@@ -110,69 +112,30 @@ export default function AlertsPage() {
 
   const totalPages = Math.ceil(totalAlerts / alertsPerPage);
 
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#B4CC5F]"></div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white border-b border-gray-200 shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center space-x-4">
-              <Button variant="ghost" size="sm">
-                <div className="grid grid-cols-1 gap-1">
-                  <div className="h-0.5 w-6 bg-gray-600"></div>
-                  <div className="h-0.5 w-6 bg-gray-600"></div>
-                  <div className="h-0.5 w-6 bg-gray-600"></div>
-                </div>
-              </Button>
-              <img 
-                src="https://api.builder.io/api/v1/image/assets/TEMP/e838108a21bc561dc1bf539fbfff0473770f8f68?width=364" 
-                alt="GreenerTech" 
-                className="h-8"
-              />
-            </div>
-            
-            <div className="flex items-center space-x-6">
-              <div className="hidden md:flex items-center space-x-4">
-                <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-                  <span className="text-white text-sm">🏠</span>
-                </div>
-                <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-                  <span className="text-white text-sm">📊</span>
-                </div>
-                <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-                  <span className="text-white text-sm">📹</span>
-                </div>
-              </div>
-              
-              <div className="relative">
-                <Input
-                  type="text"
-                  placeholder="Rechercher..."
-                  className="w-64 pl-10"
-                />
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-              </div>
-              
-              <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
-                <span className="text-white text-sm">👤</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </header>
-
+      <TechHeader role="technicien" />
+      
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Page Header */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Gestion des Alertes</h1>
-          <p className="text-gray-600">Surveillez et gérez toutes les alertes de votre système</p>
+          <p className="text-gray-600 text-lg">Surveillez et gérez toutes les alertes de votre système</p>
         </div>
 
         {/* Search Bar */}
         <div className="mb-8">
           <div className="relative max-w-md">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
             <Input
               type="text"
               placeholder="Rechercher une alerte..."
@@ -184,207 +147,191 @@ export default function AlertsPage() {
         </div>
 
         {/* Alerts Table */}
-        <Card className="mb-8">
-          <div className="overflow-hidden">
-            <table className="w-full">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                    Nom d'anomalie
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                    Niveau
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                    Statut
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                    Localisation
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                    Horodatage
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {loading ? (
-                  <tr>
-                    <td colSpan={5} className="px-6 py-8 text-center text-gray-500">
-                      Chargement...
-                    </td>
+        <Card className="mb-6">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Bell className="h-5 w-5 text-red-500" />
+              Alertes ({totalAlerts})
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b">
+                    <th className="text-left py-3 px-4 font-medium text-gray-700">Nom d'anomalie</th>
+                    <th className="text-left py-3 px-4 font-medium text-gray-700">Niveau</th>
+                    <th className="text-left py-3 px-4 font-medium text-gray-700">Statut</th>
+                    <th className="text-left py-3 px-4 font-medium text-gray-700">Localisation</th>
+                    <th className="text-left py-3 px-4 font-medium text-gray-700">Horodatage</th>
                   </tr>
-                ) : alerts.length === 0 ? (
-                  <tr>
-                    <td colSpan={5} className="px-6 py-8 text-center text-gray-500">
-                      Aucune alerte trouvée
-                    </td>
-                  </tr>
-                ) : (
-                  alerts.map((alert, index) => {
-                    const level = getAlertLevel(alert.status_alert);
-                    return (
-                      <tr 
-                        key={alert.id} 
-                        className={cn(
-                          "hover:bg-gray-50 transition-colors",
-                          index % 2 === 1 && "bg-gray-50"
-                        )}
-                      >
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm font-medium text-gray-900">
-                            {alert.maladie}
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <Badge variant="outline" className={getAlertLevelColor(level)}>
-                            {getAlertLevelLabel(alert.status_alert)}
-                          </Badge>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className={cn(
-                              "flex items-center space-x-1",
-                              getStatusColor(alert.status)
-                            )}
-                            onClick={() => handleUpdateAlert(
-                              alert.id, 
-                              alert.status === "résolue" ? "non résolue" : "résolue"
-                            )}
-                          >
-                            {alert.status === "résolue" ? (
-                              <CheckCircle className="h-3 w-3" />
-                            ) : (
-                              <AlertTriangle className="h-3 w-3" />
-                            )}
-                            <span>{alert.status === "résolue" ? "Résolu" : "Non Résolu"}</span>
-                          </Button>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm text-gray-600">
+                </thead>
+                <tbody>
+                  {alerts.length === 0 ? (
+                    <tr>
+                      <td colSpan={5} className="px-6 py-8 text-center text-gray-500">
+                        Aucune alerte trouvée
+                      </td>
+                    </tr>
+                  ) : (
+                    alerts.map((alert, index) => {
+                      const level = getAlertLevel(alert.status_alert);
+                      return (
+                        <tr 
+                          key={alert.id} 
+                          className={cn(
+                            "border-b hover:bg-gray-50",
+                            index % 2 === 1 && "bg-gray-50"
+                          )}
+                        >
+                          <td className="py-3 px-4">
+                            <div className="font-medium text-gray-900">{alert.maladie}</div>
+                          </td>
+                          <td className="py-3 px-4">
+                            <Badge variant="outline" className={getAlertLevelColor(level)}>
+                              {getAlertLevelLabel(alert.status_alert)}
+                            </Badge>
+                          </td>
+                          <td className="py-3 px-4">
+                            <div className="flex items-center gap-2">
+                              {alert.status === "résolue" ? (
+                                <CheckCircle className="h-4 w-4 text-green-600" />
+                              ) : (
+                                <AlertTriangle className="h-4 w-4 text-red-600" />
+                              )}
+                              <span className={cn(
+                                "text-sm",
+                                alert.status === "résolue" ? "text-green-600" : "text-red-600"
+                              )}>
+                                {alert.status === "résolue" ? "Résolu" : "Non Résolu"}
+                              </span>
+                            </div>
+                          </td>
+                          <td className="py-3 px-4 text-sm text-gray-600">
                             Bilan ID: {alert.id_bilan}
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm text-gray-600">
+                          </td>
+                          <td className="py-3 px-4 text-sm text-gray-600">
                             {formatDate(alert.date)}
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })
-                )}
-              </tbody>
-            </table>
-          </div>
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Pagination */}
+            <div className="flex items-center justify-between mt-6">
+              <div className="text-sm text-gray-600">
+                Affichage de {((currentPage - 1) * alertsPerPage) + 1} à {Math.min(currentPage * alertsPerPage, totalAlerts)} sur {totalAlerts} alerte{totalAlerts > 1 ? 's' : ''}
+              </div>
+              
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                  disabled={currentPage === 1}
+                >
+                  <ChevronLeft className="h-4 w-4 mr-1" />
+                  Précédent
+                </Button>
+                
+                {[...Array(Math.min(3, totalPages))].map((_, i) => {
+                  const pageNum = i + 1;
+                  return (
+                    <Button
+                      key={pageNum}
+                      variant={currentPage === pageNum ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => setCurrentPage(pageNum)}
+                      className={cn(
+                        pageNum === currentPage
+                          ? "bg-blue-600 text-white hover:bg-blue-700"
+                          : "bg-white border-gray-300 text-gray-700 hover:bg-gray-50"
+                      )}
+                    >
+                      {pageNum}
+                    </Button>
+                  );
+                })}
+                
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                  disabled={currentPage === totalPages}
+                >
+                  Suivant
+                  <ChevronRight className="h-4 w-4 ml-1" />
+                </Button>
+              </div>
+            </div>
+          </CardContent>
         </Card>
 
-        {/* Pagination */}
-        <div className="flex items-center justify-between">
-          <div className="text-sm text-gray-700">
-            Affichage de {((currentPage - 1) * alertsPerPage) + 1} à {Math.min(currentPage * alertsPerPage, totalAlerts)} sur {totalAlerts} alerte{totalAlerts > 1 ? 's' : ''}
-          </div>
-          
-          <div className="flex items-center space-x-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-              disabled={currentPage === 1}
-            >
-              <ChevronLeft className="h-4 w-4" />
-              Précédent
-            </Button>
-            
-            {[...Array(Math.min(3, totalPages))].map((_, i) => {
-              const pageNum = i + 1;
-              return (
-                <Button
-                  key={pageNum}
-                  variant={currentPage === pageNum ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setCurrentPage(pageNum)}
-                  className="w-8"
-                >
-                  {pageNum}
-                </Button>
-              );
-            })}
-            
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
-              disabled={currentPage === totalPages}
-            >
-              Suivant
-              <ChevronRight className="h-4 w-4" />
-            </Button>
-          </div>
-        </div>
-
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mt-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <Card>
             <CardContent className="p-6">
-              <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-red-100 rounded-full">
+                  <AlertTriangle className="h-6 w-6 text-red-600" />
+                </div>
                 <div>
                   <p className="text-sm font-medium text-gray-600">Alertes Non Résolues</p>
                   <p className="text-2xl font-bold text-red-600">
                     {stats?.unresolvedAlerts || 0}
                   </p>
                 </div>
-                <div className="w-11 h-11 bg-red-100 rounded-full flex items-center justify-center">
-                  <AlertTriangle className="h-5 w-5 text-red-600" />
-                </div>
               </div>
             </CardContent>
           </Card>
 
           <Card>
             <CardContent className="p-6">
-              <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-green-100 rounded-full">
+                  <CheckCircle className="h-6 w-6 text-green-600" />
+                </div>
                 <div>
                   <p className="text-sm font-medium text-gray-600">Alertes Résolues</p>
                   <p className="text-2xl font-bold text-green-600">
                     {stats?.resolvedAlerts || 0}
                   </p>
                 </div>
-                <div className="w-11 h-11 bg-green-100 rounded-full flex items-center justify-center">
-                  <CheckCircle className="h-5 w-5 text-green-600" />
-                </div>
               </div>
             </CardContent>
           </Card>
 
           <Card>
             <CardContent className="p-6">
-              <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-orange-100 rounded-full">
+                  <Clock className="h-6 w-6 text-orange-600" />
+                </div>
                 <div>
                   <p className="text-sm font-medium text-gray-600">Temps Moyen de Résolution</p>
                   <p className="text-2xl font-bold text-orange-600">
                     {stats?.averageResolutionTime || 0}h
                   </p>
                 </div>
-                <div className="w-11 h-11 bg-orange-100 rounded-full flex items-center justify-center">
-                  <Clock className="h-5 w-5 text-orange-600" />
-                </div>
               </div>
             </CardContent>
           </Card>
 
           <Card>
             <CardContent className="p-6">
-              <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-blue-100 rounded-full">
+                  <TrendingUp className="h-6 w-6 text-blue-600" />
+                </div>
                 <div>
                   <p className="text-sm font-medium text-gray-600">Total Alertes</p>
                   <p className="text-2xl font-bold text-blue-600">
                     {stats?.totalAlerts || 0}
                   </p>
-                </div>
-                <div className="w-11 h-11 bg-blue-100 rounded-full flex items-center justify-center">
-                  <TrendingUp className="h-5 w-5 text-blue-600" />
                 </div>
               </div>
             </CardContent>

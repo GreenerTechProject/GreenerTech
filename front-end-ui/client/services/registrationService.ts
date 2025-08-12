@@ -13,7 +13,7 @@ export interface UnifiedRegistrationData {
   lastName?: string;
   telephone?: string;
   cin?: string;
-  companyName?: string;
+  id_entreprise?: string; // Changed from companyName to id_entreprise to match backend model
   birthDate?: string;
   role: string;
 }
@@ -47,7 +47,7 @@ export const registrationService = {
       const result = await authService.register(registerData);
       return {
         type: "registration",
-        message: result.message,
+        data: result, // Fixed: was 'message: result.message'
       };
     }
 
@@ -56,7 +56,7 @@ export const registrationService = {
       if (
         !userData.firstName ||
         !userData.lastName ||
-        !userData.companyName ||
+        !userData.id_entreprise ||
         !userData.birthDate
       ) {
         throw {
@@ -72,7 +72,7 @@ export const registrationService = {
         lastName: userData.lastName,
         telephone: userData.telephone || "",
         cin: userData.cin || "",
-        companyName: userData.companyName,
+        id_entreprise: userData.id_entreprise,
         birthDate: userData.birthDate,
         role: userData.role,
       };
@@ -110,7 +110,7 @@ export const registrationService = {
         "lastName",
         "telephone",
         "cin",
-        "companyName",
+        "id_entreprise", // Fixed: was "companyName"
         "birthDate",
       ];
     }
