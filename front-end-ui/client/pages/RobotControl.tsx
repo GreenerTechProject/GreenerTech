@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import PageHeader from '@/components/PageHeader';
 import {
   Play,
@@ -14,7 +15,12 @@ import {
   Thermometer,
   Droplets,
   Zap,
-  Sun
+  Sun,
+  RefreshCw,
+  Maximize,
+  Minimize,
+  Camera,
+  Bot
 } from 'lucide-react';
 
 interface QRData {
@@ -42,6 +48,12 @@ export default function RobotControl() {
     control: false,
     sensor: false
   });
+
+  // New state for controls
+  const [selectedCamera, setSelectedCamera] = useState<string>('left');
+  const [selectedRobot, setSelectedRobot] = useState<string>('robot1');
+  const [isFullScreen, setIsFullScreen] = useState<boolean>(false);
+  const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
 
   // WebSocket references
   const qrWsRef = useRef<WebSocket | null>(null);
@@ -187,10 +199,78 @@ export default function RobotControl() {
   // Send control command
   const sendCommand = (mode: string) => {
     if (controlWsRef.current && controlWsRef.current.readyState === WebSocket.OPEN) {
-      controlWsRef.current.send(JSON.stringify({ control_mode: mode }));
+      controlWsRef.current.send(JSON.stringify({
+        control_mode: mode,
+        camera: selectedCamera,
+        robot: selectedRobot
+      }));
     } else {
       console.warn("Control WebSocket not open");
     }
+  };
+
+  // Refresh connections
+  const refreshConnections = async () => {
+    setIsRefreshing(true);
+
+    // Close existing connections
+    if (pcRef.current) {
+      pcRef.current.close();
+    }
+    if (qrWsRef.current) {
+      qrWsRef.current.close();
+    }
+    if (controlWsRef.current) {
+      controlWsRef.current.close();
+    }
+    if (sensorWsRef.current) {
+      sensorWsRef.current.close();
+    }
+
+    // Reset connection status
+    setConnectionStatus({
+      video: false,
+      qr: false,
+      control: false,
+      sensor: false
+    });
+
+    // Wait a moment then reinitialize
+    setTimeout(() => {
+      startWebRTC();
+      initializeWebSockets();
+      setIsRefreshing(false);
+    }, 1000);
+  };
+
+  // Toggle full screen
+  const toggleFullScreen = () => {
+    if (!document.fullscreenElement) {
+      videoRef.current?.requestFullscreen();
+      setIsFullScreen(true);
+    } else {
+      document.exitFullscreen();
+      setIsFullScreen(false);
+    }
+  };
+
+  // Handle camera selection change
+  const handleCameraChange = (camera: string) => {
+    setSelectedCamera(camera);
+    // Restart video stream with new camera
+    if (pcRef.current) {
+      pcRef.current.close();
+    }
+    setTimeout(() => {
+      startWebRTC();
+    }, 500);
+  };
+
+  // Handle robot selection change
+  const handleRobotChange = (robot: string) => {
+    setSelectedRobot(robot);
+    // Send robot selection command
+    sendCommand('SELECT_ROBOT');
   };
 
   // Handle button press/release
@@ -338,12 +418,135 @@ export default function RobotControl() {
       />
 
       <div className="container mx-auto p-6">
-        
+        <div className="flex gap-6">
+          {/* Left Sidebar - Controls */}
+          <div className="w-80 space-y-4">
+            {/* Camera Selection */}
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm flex items-center gap-2">
+                  <Camera className="h-4 w-4" />
+                  Sélection Caméra
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <Select value={selectedCamera} onValueChange={handleCameraChange}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Choisir une caméra" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="left">Caméra Gauche</SelectItem>
+                    <SelectItem value="right">Caméra Droite</SelectItem>
+                  </SelectContent>
+                </Select>
+              </CardContent>
+            </Card>
 
-        <div className="w-full">
+            {/* Robot Selection */}
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm flex items-center gap-2">
+                  <Bot className="h-4 w-4" />
+                  Sélection Robot
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <Select value={selectedRobot} onValueChange={handleRobotChange}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Choisir un robot" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="robot1">Robot #1</SelectItem>
+                    <SelectItem value="robot2">Robot #2</SelectItem>
+                    <SelectItem value="robot3">Robot #3</SelectItem>
+                  </SelectContent>
+                </Select>
+              </CardContent>
+            </Card>
+
+            {/* Control Actions */}
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm">Actions de Contrôle</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <Button
+                  onClick={refreshConnections}
+                  disabled={isRefreshing}
+                  className="w-full"
+                  variant="outline"
+                >
+                  <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
+                  {isRefreshing ? 'Actualisation...' : 'Actualiser'}
+                </Button>
+
+                <Button
+                  onClick={toggleFullScreen}
+                  className="w-full"
+                  variant="outline"
+                >
+                  {isFullScreen ? (
+                    <>
+                      <Minimize className="h-4 w-4 mr-2" />
+                      Quitter Plein Écran
+                    </>
+                  ) : (
+                    <>
+                      <Maximize className="h-4 w-4 mr-2" />
+                      Plein Écran
+                    </>
+                  )}
+                </Button>
+              </CardContent>
+            </Card>
+
+            {/* Connection Status */}
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm">État des Connexions</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  {Object.entries(connectionStatus).map(([key, connected]) => (
+                    <div key={key} className="flex items-center justify-between">
+                      <span className="text-sm capitalize">{key}</span>
+                      <div className={`flex items-center gap-1 px-2 py-1 rounded text-xs ${connected ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                        <Wifi className="h-3 w-3" />
+                        <span>{connected ? 'Connecté' : 'Déconnecté'}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Main Video Area */}
+          <div className="flex-1">
           {/* Video Stream with Overlays */}
           <Card className="w-full">
-            <CardHeader className="px-4 py-3">
+            <CardHeader className="px-4 py-3 flex flex-row items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Video className="h-5 w-5" />
+                <span className="font-semibold">Flux Vidéo - {selectedCamera === 'left' ? 'Caméra Gauche' : 'Caméra Droite'}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  onClick={refreshConnections}
+                  disabled={isRefreshing}
+                  size="sm"
+                  variant="outline"
+                >
+                  <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+                </Button>
+                <Button
+                  onClick={toggleFullScreen}
+                  size="sm"
+                  variant="outline"
+                >
+                  {isFullScreen ? <Minimize className="h-4 w-4" /> : <Maximize className="h-4 w-4" />}
+                </Button>
+              </div>
             </CardHeader>
             <CardContent>
               <div className="relative">
@@ -475,25 +678,23 @@ export default function RobotControl() {
                   </div>
                 </div>
 
-                {/* Connection Status Overlay - Bottom Left */}
-                <div className="absolute bottom-4 left-4 flex gap-2">
-                  {Object.entries(connectionStatus).map(([key, connected]) => (
-                    <div
-                      key={key}
-                      className={`flex items-center gap-1 px-2 py-1 rounded text-xs font-medium ${
-                        connected
-                          ? 'bg-green-500/80 text-white'
-                          : 'bg-red-500/80 text-white'
-                      }`}
-                    >
-                      <Wifi className="h-3 w-3" />
-                      <span className="capitalize">{key}</span>
+                {/* Current Robot/Camera Info Overlay - Bottom Left */}
+                <div className="absolute bottom-4 left-4 bg-black/80 backdrop-blur-sm text-white p-3 rounded-lg border border-white/20">
+                  <div className="text-xs space-y-1">
+                    <div className="flex items-center gap-2">
+                      <Bot className="h-3 w-3 text-blue-400" />
+                      <span>Robot: {selectedRobot.toUpperCase()}</span>
                     </div>
-                  ))}
+                    <div className="flex items-center gap-2">
+                      <Camera className="h-3 w-3 text-green-400" />
+                      <span>Caméra: {selectedCamera === 'left' ? 'Gauche' : 'Droite'}</span>
+                    </div>
+                  </div>
                 </div>
               </div>
             </CardContent>
           </Card>
+          </div>
         </div>
       </div>
     </div>
