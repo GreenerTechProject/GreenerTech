@@ -33,7 +33,7 @@ export interface AffiliationRequest {
   lastName: string;
   telephone: string;
   cin: string;
-  companyName: string;
+  id_entreprise: string; // Changed from companyName to id_entreprise to match backend model
   birthDate: string;
   role: string;
 }

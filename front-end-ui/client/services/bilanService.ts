@@ -1,23 +1,42 @@
 import axios from 'axios';
+import { tokenManager } from './authService';
 
-const API_BASE_URL = '/api';
+const API_BASE_URL = `${window.location.protocol}//${window.location.hostname}:5000/api`;
 
-interface Bilan {
-  id: number;
-  nom: string;
-  description?: string;
-  id_serre: number;
-  date_creation: string;
-  statut: string;
+export interface BilanPoint {
+  lat: number;
+  lng: number;
+  ordre: number;
 }
 
-interface ApiError {
+export interface Bilan {
+  id: number;
+  nom: string;
+  id_serre: number;
+  surface?: number;
+  center_lat?: number;
+  center_lng?: number;
+  position: BilanPoint[];
+}
+
+export interface CreateBilanRequest {
+  name: string;
+  id_serre: number;
+  path: BilanPoint[];
+  area?: number;
+  center?: {
+    lat: number;
+    lng: number;
+  };
+}
+
+export interface ApiError {
   message: string;
   status: number;
 }
 
 const createAuthenticatedRequest = () => {
-  const token = localStorage.getItem('authToken');
+  const token = tokenManager.getToken();
   return {
     headers: {
       'Content-Type': 'application/json',
@@ -53,7 +72,7 @@ export const bilanService = {
         createAuthenticatedRequest()
       );
       return response.data;
-    } catch (error: any) {
+      } catch (error: any) {
       const errorMessage = error.response?.data?.message || 
         "Erreur lors de la récupération du bilan";
       throw {
@@ -66,12 +85,23 @@ export const bilanService = {
   // Get bilans by serre ID
   getBilansBySerre: async (serreId: number): Promise<Bilan[]> => {
     try {
+      console.log('[BilanService] Fetching bilans for serre:', serreId);
+      console.log('[BilanService] API URL:', `${API_BASE_URL}/serre/${serreId}/bilans`);
+      
+      const requestConfig = createAuthenticatedRequest();
+      console.log('[BilanService] Request config:', requestConfig);
+      
       const response = await axios.get<Bilan[]>(
-        `${API_BASE_URL}/bilan/serre/${serreId}`,
-        createAuthenticatedRequest()
+        `${API_BASE_URL}/serre/${serreId}/bilans`,
+        requestConfig
       );
+      
+      console.log('[BilanService] Response:', response.data);
       return response.data;
     } catch (error: any) {
+      console.error('[BilanService] Error:', error);
+      console.error('[BilanService] Error response:', error.response);
+      
       const errorMessage = error.response?.data?.message || 
         "Erreur lors de la récupération des bilans de la serre";
       throw {
@@ -82,7 +112,7 @@ export const bilanService = {
   },
 
   // Create new bilan
-  createBilan: async (bilanData: Omit<Bilan, 'id' | 'date_creation'>): Promise<Bilan> => {
+  createBilan: async (bilanData: CreateBilanRequest): Promise<Bilan> => {
     try {
       const response = await axios.post<Bilan>(
         `${API_BASE_URL}/bilan`,

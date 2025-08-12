@@ -106,6 +106,7 @@ def get_user(current_user):
         "name":current_user.name,
         "email":current_user.email,
         "role":current_user.role,
+        "telephone":current_user.telephone,
         "birthday":current_user.birthday.isoformat() if current_user.birthday else None,
         "created_at":current_user.created_at.isoformat() if current_user.created_at else None,
         "updated_at":current_user.updated_at.isoformat() if current_user.updated_at else None,
@@ -180,10 +181,9 @@ def create_technicien(current_user):
         "id": new_user.id
     }), 201
 
-
 @token_required
 @role_required('directeur', 'technicien_superieur')
-def get_techniciens_by_company(current_user, company_id):
+def get_alltechniciens_by_company(current_user, company_id):
     """Return technicians (both roles) belonging to a given entreprise (company)."""
     print(f"[Backend] ===== get_techniciens_by_company FUNCTION CALLED =====")
     try:
@@ -222,6 +222,41 @@ def get_techniciens_by_company(current_user, company_id):
         return jsonify({"success": True, "technicians": data}), 200
     except Exception as e:
         print(f"[Backend] Error in get_techniciens_by_company: {str(e)}")
+        return jsonify({"success": False, "message": str(e)}), 400
+
+@token_required
+@role_required('directeur', 'technicien_superieur')
+def get_techniciens_by_company(current_user, company_id):
+    try: 
+        # Tech sup can only query their own company
+        if current_user.role == 'technicien_superieur' and current_user.id_entreprise != company_id:
+            print(f"[Backend] Access denied: tech_sup id_entreprise {current_user.id_entreprise} != requested {company_id}")
+            return jsonify({"message": "Non autorisé"}), 403
+
+        technicians = (
+            User.query
+            .filter(User.id_entreprise == company_id)
+            .filter(User.role.in_(["technicien"]))
+            .all()
+        )
+        
+        print(f"[Backend] Found {len(technicians)} technicians for company {company_id}")
+        for tech in technicians:
+            print(f"[Backend] Tech: {tech.email}, role: {tech.role}, id_entreprise: {tech.id_entreprise}")
+        
+        data = [
+            {
+                "id": tech.id,
+                "fullName": tech.name,  # Changed from "name" to "fullName" to match frontend
+                "email": tech.email,
+                "role": tech.role,
+                "assignedSerres": [],  # Added to match frontend expectations
+            }
+            for tech in technicians
+        ]
+        
+        return jsonify({"success": True, "technicians": data}), 200
+    except Exception as e:
         return jsonify({"success": False, "message": str(e)}), 400
 
 # # === CHECK EMAIL ===
@@ -323,15 +358,25 @@ def register_technicien():
     try:
         data = request.get_json()
 
-        required_fields = ['email', 'name', 'password', 'role']
+        required_fields = ['email', 'password', 'role']
         if not all(field in data for field in required_fields):
-            return jsonify({"error": "Email, nom, mot de passe et rôle sont requis"}), 400
+            return jsonify({"error": "Email, mot de passe et rôle sont requis"}), 400
+
+        if not data.get('name') and not (data.get('firstName') and data.get('lastName')):
+            return jsonify({"error": "Nom et prénom sont requis"}), 400
+
+        if not data.get('id_entreprise'):
+            return jsonify({"error": "Sélection d'entreprise requise"}), 400
+
+        company = Entreprise.query.filter_by(id=data.get('id_entreprise')).first()
+        if not company:
+            return jsonify({"error": "Entreprise sélectionnée introuvable"}), 404
 
         email = data.get('email')
         role = data.get('role')
-        name = data.get('name')
+        name = data.get('name') or f"{data.get('firstName', '')} {data.get('lastName', '')}".strip()
         password = generate_password_hash(data.get('password'))
-        birthday = data.get('birthday')
+        birthday = data.get('birthday') or data.get('birthDate')
         telephone = data.get('telephone')
         cin = data.get('cin')
         id_entreprise = data.get('id_entreprise')
@@ -346,53 +391,47 @@ def register_technicien():
             if not existing_user.password:
                 existing_user.password = password
                 existing_user.name = name
-                
-                #existing_user.birthday = datetime.strptime(birthday, '%Y-%m-%d') if birthday else None
-
                 if 'birthday' in data and data['birthday']:
                     try:
                         existing_user.birthday = datetime.strptime(data['birthday'], '%Y-%m-%d').date()
+                    except ValueError:
+                        return jsonify({"error": "Format de date invalide (attendu : YYYY-MM-DD)"}), 400
+                elif 'birthDate' in data and data['birthDate']:
+                    try:
+                        existing_user.birthday = datetime.strptime(data['birthDate'], '%Y-%m-%d').date()
                     except ValueError:
                         return jsonify({"error": "Format de date invalide (attendu : YYYY-MM-DD)"}), 400
                 
                 existing_user.telephone = telephone
                 existing_user.cin = cin
                 existing_user.role = role
+                existing_user.id_entreprise = id_entreprise  # Set the company ID
                 existing_user.email_valide = False
                 existing_user.verification_token = generate_token(existing_user.id)
                 
                 db.session.commit()
-                print(f"[Backend] After update - id_entreprise preserved: {existing_user.id_entreprise}")
+                print(f"[Backend] After update - id_entreprise set to: {existing_user.id_entreprise}")
                 
                 send_verification_email(existing_user)
                 
                 return jsonify({"message": "Compte technicien complété. En attente de validation d'email."}), 200
             else:
-                #  Cas oublié : utilisateur déjà complet
                 return jsonify({"message": "Cet email est déjà utilisé par un compte existant."}), 400
 
-
-
-
-        #New user
-                
+        # New user
         new_user = User(
             email=email,
             role=role,
             name=name,
             password=password,
             birthday=datetime.strptime(birthday, '%Y-%m-%d') if birthday else None,
-
             telephone=telephone,
             cin=cin,
-            id_entreprise=id_entreprise,
+            id_entreprise=id_entreprise,  # Set the company ID
             directeur_valide=False,
             email_valide=False,
-            #setup_completed=False,
-            #id_assigned=data.get('id_assigned'),
             created_at=datetime.utcnow(),
             updated_at=datetime.utcnow(),
-
         )
         
         if 'birthday' in data and data['birthday']:
@@ -400,9 +439,13 @@ def register_technicien():
                 new_user.birthday = datetime.strptime(data['birthday'], '%Y-%m-%d').date()
             except ValueError:
                 return jsonify({"error": "Format de date invalide (attendu : YYYY-MM-DD)"}), 400
+        elif 'birthDate' in data and data['birthDate']:
+            try:
+                new_user.birthday = datetime.strptime(data['birthDate'], '%Y-%m-%d').date()
+            except ValueError:
+                return jsonify({"error": "Format de date invalide (attendu : YYYY-MM-DD)"}), 400
         
-        directeur = User.query.filter_by(role='directeur', id_entreprise=1).first()
-        # reteurner une erreur si pas de directeur
+        directeur = User.query.filter_by(role='directeur', id_entreprise=id_entreprise).first()
         if not directeur:
             return jsonify({"error": "Aucun directeur trouvé pour cette entreprise."}), 404
         elif directeur:
@@ -419,9 +462,8 @@ def register_technicien():
         db.session.commit()
         
         send_verification_email(new_user)
-        return jsonify({
-            "message": "Compte technicien créé. Veuillez vérifier votre email pour activer votre compte. En attente de validation du directeur."
-        }), 201
+        
+        return jsonify({"message": "Compte technicien créé. Veuillez vérifier votre email pour activer votre compte. En attente de validation du directeur."}), 201
 
     except Exception as e:
         print("Erreur dans register_technicien:", str(e))
