@@ -32,8 +32,8 @@ def create_serre(current_user):
 
     for point in gps_points:
         # Accept both {lat,lng} and {latitude,longitude}
-        lat = point.get('lat', point.get('latitude'))
-        lng = point.get('lng', point.get('longitude'))
+        lat = point.get('latitude')
+        lng = point.get('longitude')
         if lat is None or lng is None:
             return jsonify({"message": "Chaque point doit contenir lat/lng ou latitude/longitude"}), 400
 
@@ -48,12 +48,23 @@ def create_serre(current_user):
     serre = Serre(
         nom=data['nom'],
         surface = data.get('surface'),
-        center_lat=data['center']['lat'] if data.get('center') else None,
-        center_lng=data['center']['lng'] if data.get('center') else None,
+        center_lat=data['center']['latitude'] if data.get('center') else None,
+        center_lng=data['center']['longitude'] if data.get('center') else None,
         id_group_cor=id_group_cor,
         id_domaine=domaine.id
     )
     db.session.add(serre)
+    
+    
+    db.session.flush()  # permet d'avoir domaine.id sans commit
+    
+    # Créer l'autorisation pour le directeur qui a créé le domaine
+    autorisation = Autorisation_serre(
+        id_user=current_user.id,
+        id_serre=serre.id
+    )
+    db.session.add(autorisation)
+    
     db.session.commit()
 
     return jsonify(serre.to_dict()), 201

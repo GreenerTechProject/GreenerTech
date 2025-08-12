@@ -32,7 +32,7 @@ def create_bilan(current_user):
     id_group_cor = last_id_group_cor + 1
 
 
-    gps_points = data.get('path', [])
+    gps_points = data.get('position', [])
     if not gps_points:
         return jsonify({"message": "Veuillez fournir une liste de points GPS"}), 400
 
@@ -40,8 +40,8 @@ def create_bilan(current_user):
     for point in gps_points:
         gc = GroupCor(
             id_group_cor=id_group_cor,
-            point_x=point['lat'],
-            point_y=point['lng'],
+            point_x=point['latitude'],
+            point_y=point['longitude'],
             ordre=point.get('ordre', 0)
         )
         db.session.add(gc)

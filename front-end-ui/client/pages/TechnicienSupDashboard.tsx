@@ -7,7 +7,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
 import {
   Select,
   SelectContent,
@@ -49,14 +48,6 @@ import TechnicianSidebar from "../components/TechnicianSidebar";
 import InterventionForm from "../components/InterventionForm";
 import { cn } from "@/lib/utils";
 import { getGoogleMapsAPIKey } from "@/config/maps";
-import { useToast } from "@/hooks/use-toast";
-import { serreService } from "../services/serreService";
-import { technicianService } from "../services/technicianService";
-import type { Technician as ApiTechnician } from "../services/technicianService";
-import { guideService } from "../services/guideService";
-import { domainService, Domain as BackendDomain } from "../services/domainService";
-import { AlertService } from "@/services/alertService";
-import axios from "axios";
 
 interface Serre {
   id: string;
@@ -77,6 +68,7 @@ interface Serre {
     name: string;
     email?: string;
   }[];
+
 }
 
 interface Zone {
@@ -94,9 +86,9 @@ const GOOGLE_MAPS_API_KEY = getGoogleMapsAPIKey();
 const mockSerres: Serre[] = [
   {
     id: "1",
-    nom: "Serre Nord A",
+    name: "Serre Nord A",
     variety: "Tomates",
-    surface: 450,
+    area: 450,
     location: { lat: 46.7111, lng: 1.7191 },
     status: "active",
     lastUpdate: new Date(),
@@ -133,9 +125,9 @@ const mockSerres: Serre[] = [
   },
   {
     id: "2",
-    nom: "Serre Sud B",
+    name: "Serre Sud B",
     variety: "Concombres",
-    surface: 320,
+    area: 320,
     location: { lat: 46.6991, lng: 1.7341 },
     status: "active",
     lastUpdate: new Date(),
@@ -163,9 +155,9 @@ const mockSerres: Serre[] = [
   },
   {
     id: "3",
-    nom: "Serre Est C",
+    name: "Serre Est C",
     variety: "Laitues",
-    surface: 280,
+    area: 280,
     location: { lat: 46.7051, lng: 1.7441 },
     status: "maintenance",
     lastUpdate: new Date(),
@@ -184,9 +176,9 @@ const mockSerres: Serre[] = [
   },
   {
     id: "4",
-    nom: "Serre Ouest D",
+    name: "Serre Ouest D",
     variety: "Poivrons",
-    surface: 380,
+    area: 380,
     location: { lat: 46.7121, lng: 1.7141 },
     status: "active",
     lastUpdate: new Date(),
@@ -214,32 +206,13 @@ const mockSerres: Serre[] = [
   },
 ];
 
-export default function TechnicienSupDashboard(): JSX.Element {
+export default function TechnicienSupDashboard() {
   const { user, logout } = useAuth();
-  const { toast } = useToast();
-  const [serres, setSerres] = useState<Serre[]>([]);
+  const [serres, setSerres] = useState<Serre[]>(mockSerres);
   const [selectedSerre, setSelectedSerre] = useState<Serre | null>(null);
   const [isCreatingNew, setIsCreatingNew] = useState(false);
   const [newSerreName, setNewSerreName] = useState("");
   const [map, setMap] = useState<google.maps.Map | null>(null);
-  const drawingManagerRef = useRef<google.maps.drawing.DrawingManager | null>(null);
-  const drawnPolygonRef = useRef<google.maps.Polygon | null>(null);
-  const [pendingSerrePath, setPendingSerrePath] = useState<google.maps.LatLng[]>([]);
-  const [pendingSerreArea, setPendingSerreArea] = useState<number>(0);
-  const [serreNom, setSerreNom] = useState("");
-  const [serreDomaineId, setSerreDomaineId] = useState<string>("");
-  const [selectedGuideId, setSelectedGuideId] = useState<string>("");
-  const [guides, setGuides] = useState<any[]>([]);
-  const [showCreateGuide, setShowCreateGuide] = useState(false);
-  const [createGuideForm, setCreateGuideForm] = useState({
-    nom: "",
-    variete: "",
-    rendement: "",
-    nombre_de_plants: "",
-    date_debut_saison: "",
-    date_fin_saison: "",
-  });
-  const [assignToSelf, setAssignToSelf] = useState(true);
   const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false);
   const [selectedTechnician, setSelectedTechnician] = useState("");
   const [companyTechnicians, setCompanyTechnicians] = useState<ApiTechnician[]>([]);
@@ -272,6 +245,7 @@ export default function TechnicienSupDashboard(): JSX.Element {
   };
   
 
+
   // Mock technicians list
   const mockTechnicians = [
     { id: "tech1", name: "Jean Dupont", email: "jean.dupont@example.com" },
@@ -280,7 +254,7 @@ export default function TechnicienSupDashboard(): JSX.Element {
     { id: "tech4", name: "Sophie Durand", email: "sophie.durand@example.com" },
   ];
 
-  // Initialize map (wait until Google Maps script is loaded)
+  // Initialize map
   useEffect(() => {
     if (map || !mapRef.current) return;
 
@@ -490,22 +464,27 @@ export default function TechnicienSupDashboard(): JSX.Element {
       poly.setMap(map);
     });
 
-    if (domainsRaw[0]?.center) {
-      smoothZoomToLocation(map, domainsRaw[0].center, 14);
-    }
+    setMap(newMap);
 
-    if (assignedSerresRaw.length === 0) return;
-    const uiSerres: Serre[] = [];
-    assignedSerresRaw.forEach((s: any) => {
-      const points = (s.position || []).map((p: any) => ({ lat: p.lat, lng: p.lng }));
-      if (points.length === 0) return;
-      const polygon = new google.maps.Polygon({
-        paths: points,
-        strokeColor: '#FF6B6B',
-        strokeOpacity: 1,
-        strokeWeight: 2,
-        fillColor: '#FF6B6B',
-        fillOpacity: 0.25,
+    // Add markers for all serres
+    serres.forEach((serre) => {
+      const marker = new google.maps.Marker({
+        position: serre.location,
+        map: newMap,
+        title: serre.nom,
+        icon: {
+          path: google.maps.SymbolPath.CIRCLE,
+          scale: 8,
+          fillColor:
+            serre.status === "active"
+              ? "#B4CC5F"
+              : serre.status === "maintenance"
+                ? "#f59e0b"
+                : "#ef4444",
+          fillOpacity: 1,
+          strokeWeight: 2,
+          strokeColor: "#ffffff",
+        },
       });
       polygon.setMap(map);
       const center = s.center && s.center.lat != null && s.center.lng != null ? s.center : points[0];
@@ -590,49 +569,12 @@ export default function TechnicienSupDashboard(): JSX.Element {
         strokeWeight: 2,
         editable: true,
       },
+      marker.addListener("click", () => {
+        setSelectedSerre(serre);
+        smoothZoomToLocation(newMap, serre.location, 16);
+      });
     });
-    drawingManager.setMap(map);
-    drawingManagerRef.current = drawingManager;
-
-    const overlayListener = google.maps.event.addListener(
-      drawingManager,
-      "overlaycomplete",
-      (event: google.maps.drawing.OverlayCompleteEvent) => {
-        if (event.type === google.maps.drawing.OverlayType.POLYGON) {
-          const polygon = event.overlay as google.maps.Polygon;
-          if (drawnPolygonRef.current) {
-            drawnPolygonRef.current.setMap(null);
-          }
-          drawnPolygonRef.current = polygon;
-          const path = polygon.getPath().getArray();
-          setPendingSerrePath(path);
-          try {
-            const area = google.maps.geometry.spherical.computeArea(path);
-            setPendingSerreArea(area);
-          } catch (_) {
-            setPendingSerreArea(0);
-          }
-          drawingManager.setDrawingMode(null);
-        }
-      }
-    );
-
-    // Load available guides for selection
-    (async () => {
-      try {
-        const list = await guideService.getGuides();
-        setGuides(list);
-      } catch (e) {
-        // non-blocking
-      }
-    })();
-
-    return () => {
-      google.maps.event.removeListener(overlayListener);
-      drawingManager.setMap(null);
-      drawingManagerRef.current = null;
-    };
-  }, [map]);
+  }, [mapRef.current]);
 
   const smoothZoomToLocation = (
     map: google.maps.Map,
@@ -662,98 +604,23 @@ export default function TechnicienSupDashboard(): JSX.Element {
   };
 
   const handleCreateNewSerre = () => {
-    // Start drawing mode
-    if (!drawingManagerRef.current) return;
-    drawingManagerRef.current.setDrawingMode(google.maps.drawing.OverlayType.POLYGON);
-    setPendingSerrePath([]);
-    setPendingSerreArea(0);
-  };
-
-  const cancelPendingSerre = () => {
-    if (drawnPolygonRef.current) {
-      drawnPolygonRef.current.setMap(null);
-      drawnPolygonRef.current = null;
-    }
-    setPendingSerrePath([]);
-    setPendingSerreArea(0);
-  };
-
-  const handleSaveSerreToBackend = async () => {
-    if (!user) return;
-    if (!serreNom.trim() || !serreDomaineId || pendingSerrePath.length === 0) {
-      toast({ title: "Champs manquants", description: "Nom, domaine et dessin requis", variant: "destructive" });
-      return;
-    }
-    try {
-      const positionPayload = pendingSerrePath.map((p, idx) => ({
-        latitude: p.lat(),
-        longitude: p.lng(),
-        ordre: idx + 1,
-      }));
-      const created = await serreService.createSerre({
-        nom: serreNom.trim(),
-        id_domaine: parseInt(serreDomaineId, 10),
-        position: positionPayload,
-        surface: pendingSerreArea,
-      });
-      const serreId = (typeof created.id === "number"
-        ? created.id
-        : typeof created.serreId === "string"
-          ? parseInt(created.serreId, 10)
-          : undefined) as number;
-
-      // Assign to self if requested
-      if (assignToSelf && serreId) {
-        try {
-          const userIdNum = typeof user.id === "string" ? parseInt(user.id, 10) : (user.id as unknown as number);
-          await serreService.createAutorisationSerre({ id_user: userIdNum, id_serre: serreId });
-        } catch (_) {}
-      }
-
-      // Create guide if selected or requested to create new
-      if (selectedGuideId) {
-        // nothing to do now; selecting an existing guide association would be backend-specific
-      } else if (showCreateGuide && serreId) {
-        try {
-          const req = {
-            nom: createGuideForm.nom,
-            variete: createGuideForm.variete,
-            rendement: parseFloat(createGuideForm.rendement),
-            nombre_de_plants: parseInt(createGuideForm.nombre_de_plants),
-            date_debut_saison: createGuideForm.date_debut_saison,
-            date_fin_saison: createGuideForm.date_fin_saison,
-            id_serre: serreId.toString(),
-          } as any;
-          await guideService.createGuide(req);
-        } catch (_) {}
-      }
-
-      toast({ title: "Serre créée", description: `La serre "${serreNom}" a été créée.` });
-      // Update local UI
-      const center = pendingSerrePath[0];
+    if (newSerreName.trim()) {
       const newSerre: Serre = {
-        id: serreId?.toString() || Date.now().toString(),
-        nom: serreNom.trim(),
-        variety: createGuideForm.variete || "",
-        surface: Math.round(pendingSerreArea),
-        location: { lat: center.lat(), lng: center.lng() },
+        id: Date.now().toString(),
+        name: newSerreName,
+        variety: "Non défini",
+        area: 0,
+        location: { lat: 46.7051, lng: 1.7291 },
         status: "inactive",
         zones: [],
         lastUpdate: new Date(),
-        supervisedBy: assignToSelf ? (user.name || user.email || "Moi") : undefined,
+        supervisedBy: "À assigner",
       };
-      setSerres((prev) => [newSerre, ...prev]);
-      setSelectedSerre(newSerre);
-      // reset form
-      setSerreNom("");
-      setSerreDomaineId("");
-      setSelectedGuideId("");
-      setShowCreateGuide(false);
-      setCreateGuideForm({ nom: "", variete: "", rendement: "", nombre_de_plants: "", date_debut_saison: "", date_fin_saison: "" });
-      cancelPendingSerre();
+
+      setSerres([...serres, newSerre]);
+      setNewSerreName("");
       setIsCreatingNew(false);
-    } catch (e: any) {
-      toast({ title: "Erreur", description: e?.message || "Impossible de créer la serre", variant: "destructive" });
+      setSelectedSerre(newSerre);
     }
   };
 
@@ -901,10 +768,27 @@ export default function TechnicienSupDashboard(): JSX.Element {
                             <h4 className="font-semibold text-gray-900">{serre.nom}</h4>
                             <p className="text-xs text-gray-600">Variété: {serre.variety || "—"}</p>
                           </div>
+
                         </div>
-                        <div className="flex items-center justify-between text-xs text-gray-500">
+                        <Badge
+                          variant="outline"
+                          className={cn(
+                            "text-xs",
+                            getStatusColor(serre.status),
+                          )}
+                        >
+                          {serre.status === "active"
+                            ? "Actif"
+                            : serre.status === "maintenance"
+                              ? "Maintenance"
+                              : "Inactif"}
+                        </Badge>
+                      </div>
+
+                      <div className="space-y-2 text-sm text-gray-500">
+                        <div className="flex items-center justify-between">
                           <span>{serre.surface} m²</span>
-                          <span>Bilans: {serre.bilansCount ?? 0}</span>
+                          <span>{serre.zones.length} zones</span>
                         </div>
                         {serre.assignedTechnicians && serre.assignedTechnicians.length > 0 && (
                           <div className="mt-2 pt-2 border-t border-gray-100">
@@ -934,16 +818,33 @@ export default function TechnicienSupDashboard(): JSX.Element {
 
               {/* Map Overlay Info */}
               {selectedSerre && (
-                <div className="absolute top-4 right-4 bg-white rounded-lg shadow-lg p-4 max-w-xs">
-                  <div className="flex items-center space-x-2 mb-2">
-                    <div
-                      className={cn(
-                        "w-3 h-3 rounded-full",
-                        selectedSerre.status === "active"
-                          ? "bg-green-500"
-                          : selectedSerre.status === "maintenance"
-                            ? "bg-yellow-500"
-                            : "bg-red-500",
+                <Card className="border-[#B4CC5F]">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-lg text-[#B4CC5F] flex items-center space-x-2">
+                      <Layers className="h-5 w-5" />
+                      <span>{selectedSerre.nom} - Supervision</span>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      <div className="grid grid-cols-2 gap-4 text-sm">
+                        <div>
+                          <span className="text-gray-600">Variété:</span>
+                          <p className="font-medium">{selectedSerre.variety}</p>
+                        </div>
+                        <div>
+                          <span className="text-gray-600">Surface:</span>
+                          <p className="font-medium">{selectedSerre.surface} m²</p>
+                        </div>
+                      </div>
+
+                      {selectedSerre.supervisedBy && (
+                        <div className="text-sm">
+                          <span className="text-gray-600">Supervisé par:</span>
+                          <p className="font-medium">
+                            {selectedSerre.supervisedBy}
+                          </p>
+                        </div>
                       )}
                     />
                     <h4 className="font-semibold text-gray-900">
@@ -983,30 +884,45 @@ export default function TechnicienSupDashboard(): JSX.Element {
                   </div>
                 </div>
               )}
+            </div>
+          </ScrollArea>
+        </div>
 
-              {/* Alerts Overlay Panel on Map */}
-              <div className="absolute top-4 left-4 z-10 bg-white/95 backdrop-blur rounded-lg shadow p-3 sm:p-4 border">
-                <div className="flex items-center justify-between gap-3">
-                  <div className="flex items-center gap-2">
-                    <Bell className="h-4 w-4 text-red-500" />
-                    <span className="font-semibold text-sm">Alertes</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-xs">
-                    <span className="px-1.5 py-0.5 rounded bg-green-100 text-green-700">Faible: {alertsSummary.low}</span>
-                    <span className="px-1.5 py-0.5 rounded bg-yellow-100 text-yellow-700">Moyen: {alertsSummary.medium}</span>
-                    <span className="px-1.5 py-0.5 rounded bg-red-100 text-red-700">Élevé: {alertsSummary.high}</span>
-                  </div>
-                </div>
-                <div className="mt-2 flex items-center justify-between gap-3">
-                  <label className="text-xs text-gray-600">Heatmap</label>
-                  <input type="checkbox" checked={showHeatmap} onChange={(e) => {
-                    setShowHeatmap(e.target.checked);
-                    if (heatmapRef.current) {
-                      heatmapRef.current.setMap(e.target.checked ? map! : null);
-                    }
-                  }} />
-                </div>
+        {/* Right Map Section */}
+        <div className="flex-1 relative min-h-[50vh] lg:min-h-full" data-testid="map-section">
+          <GoogleMapsWrapper apiKey={GOOGLE_MAPS_API_KEY}>
+            <div ref={mapRef} className="w-full h-full" />
+          </GoogleMapsWrapper>
+
+          {/* Map Overlay Info */}
+          {selectedSerre && (
+            <div className="absolute top-4 right-4 bg-white rounded-lg shadow-lg p-4 max-w-xs">
+              <div className="flex items-center space-x-2 mb-2">
+                <div
+                  className={cn(
+                    "w-3 h-3 rounded-full",
+                    selectedSerre.status === "active"
+                      ? "bg-green-500"
+                      : selectedSerre.status === "maintenance"
+                        ? "bg-yellow-500"
+                        : "bg-red-500",
+                  )}
+                />
+                <h4 className="font-semibold text-gray-900">
+                  {selectedSerre.nom}
+                </h4>
               </div>
+              <p className="text-sm text-gray-600 mb-1">
+                {selectedSerre.variety}
+              </p>
+              <p className="text-xs text-gray-500">
+                {selectedSerre.surface} m² • {selectedSerre.zones.length} zones
+              </p>
+              {selectedSerre.supervisedBy && (
+                <p className="text-xs text-blue-600 mt-1">
+                  {selectedSerre.supervisedBy}
+                </p>
+              )}
             </div>
           </ResizablePanel>
         </ResizablePanelGroup>
@@ -1256,6 +1172,7 @@ export default function TechnicienSupDashboard(): JSX.Element {
           </div>
         </DialogContent>
       </Dialog>
+
 
       {/* Intervention Form Modal */}
       <InterventionForm

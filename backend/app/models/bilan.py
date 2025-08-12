@@ -25,6 +25,11 @@ class Bilan(db.Model):
         return {
             "id": self.id,
             "nom": self.nom,
+            "surface": self.surface,
+            "center": {
+                "latitude": self.center_lat,
+                "longitude": self.center_lng
+            },
             #"id_group_cor": self.id_group_cor,
             #"id_entreprise": self.id_entreprise,
             "id_serre": self.id_serre,
