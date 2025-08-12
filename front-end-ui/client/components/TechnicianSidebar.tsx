@@ -80,6 +80,12 @@ export default function TechnicianSidebar({
         icon: <Bookmark className="h-5 w-5" />,
         path: userRole === "technicien_sup" ? "/technicien-sup/reports" : "/reports",
       },
+	  {
+        id: "robot-control",
+        label: "Contrôle Robot",
+        icon: <Bot className="h-5 w-5" />,
+        path: "/robot-control",
+	  },
     ];
     // Show Surveillance for all technician roles
     items.splice(2, 0, {
