@@ -458,20 +458,20 @@ export default function RobotControl() {
         }}
       />
 
-      <div className="flex h-[calc(100vh-73px)]">
+      <div className="flex h-[calc(100vh-85px)]">
         {/* Minimized Left Sidebar - Controls */}
         <div className="w-64 bg-white shadow-lg p-3 overflow-y-auto space-y-3">
           {/* Camera Selection */}
-          <Card className="text-xs">
+          <Card className="text-sm">
             <CardHeader className="pb-2">
-              <CardTitle className="text-xs flex items-center gap-1">
+              <CardTitle className="text-sm flex items-center gap-1">
                 <Camera className="h-3 w-3" />
                 Caméra
               </CardTitle>
             </CardHeader>
             <CardContent>
               <Select value={selectedCamera} onValueChange={handleCameraChange}>
-                <SelectTrigger className="h-8 text-xs">
+                <SelectTrigger className="h-8 text-sm">
                   <SelectValue placeholder="Choisir" />
                 </SelectTrigger>
                 <SelectContent>
@@ -483,16 +483,16 @@ export default function RobotControl() {
           </Card>
 
           {/* Robot Selection */}
-          <Card className="text-xs">
+          <Card className="text-sm">
             <CardHeader className="pb-2">
-              <CardTitle className="text-xs flex items-center gap-1">
+              <CardTitle className="text-sm flex items-center gap-1">
                 <Bot className="h-3 w-3" />
                 Robot
               </CardTitle>
             </CardHeader>
             <CardContent>
               <Select value={selectedRobot} onValueChange={handleRobotChange}>
-                <SelectTrigger className="h-8 text-xs">
+                <SelectTrigger className="h-8 text-sm">
                   <SelectValue placeholder="Choisir" />
                 </SelectTrigger>
                 <SelectContent>
@@ -505,15 +505,15 @@ export default function RobotControl() {
           </Card>
 
           {/* Control Actions */}
-          <Card className="text-xs">
+          <Card className="text-sm">
             <CardHeader className="pb-2">
-              <CardTitle className="text-xs">Actions</CardTitle>
+              <CardTitle className="text-sm">Actions</CardTitle>
             </CardHeader>
             <CardContent className="space-y-2">
               <Button
                 onClick={refreshConnections}
                 disabled={isRefreshing}
-                className="w-full h-8 text-xs"
+                className="w-full h-8 text-sm"
                 variant="outline"
               >
                 <RefreshCw className={`h-3 w-3 mr-1 ${isRefreshing ? 'animate-spin' : ''}`} />
@@ -522,7 +522,7 @@ export default function RobotControl() {
 
               <Button
                 onClick={toggleFullScreen}
-                className="w-full h-8 text-xs"
+                className="w-full h-8 text-sm"
                 variant="outline"
               >
                 {isFullScreen ? (
@@ -541,18 +541,18 @@ export default function RobotControl() {
           </Card>
 
           {/* Connection Status */}
-          <Card className="text-xs">
+          <Card className="text-sm">
             <CardHeader className="pb-2">
-              <CardTitle className="text-xs">Connexions</CardTitle>
+              <CardTitle className="text-sm">Connexions</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-1">
                 {Object.entries(connectionStatus).map(([key, connected]) => (
                   <div key={key} className="flex items-center justify-between">
-                    <span className="text-xs capitalize">{key}</span>
-                    <div className={`flex items-center gap-1 px-1 py-0.5 rounded text-xs ${connected ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                    <span className="text-sm capitalize">{key}</span>
+                    <div className={`flex items-center gap-1 px-1 py-0.5 rounded text-sm ${connected ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
                       <Wifi className="h-2 w-2" />
-                      <span className="text-xs">{connected ? 'OK' : 'KO'}</span>
+                      <span className="text-sm">{connected ? 'OK' : 'KO'}</span>
                     </div>
                   </div>
                 ))}
@@ -611,7 +611,7 @@ export default function RobotControl() {
               <div className="max-h-40 overflow-y-auto space-y-2 text-sm">
                 {qrCodes.length > 0 ? (
                   qrCodes.map((qr) => (
-                    <div key={qr.id} className="p-2 bg-white/10 rounded text-xs">
+                    <div key={qr.id} className="p-2 bg-white/10 rounded text-sm">
                       <div className="font-medium mb-1">QR {qr.id + 1}:</div>
                       {typeof qr.data === 'object' ? (
                         <div className="space-y-1">
@@ -680,11 +680,11 @@ export default function RobotControl() {
                   <div className="flex gap-2 justify-center">
                     <ControlButton mode="LEFT_CAM" className="bg-purple-500/90 hover:bg-purple-600/90 border-purple-400 text-white px-3 py-2">
                       <ArrowLeft className="mr-1 h-4 w-4" />
-                      <span className="text-xs">Cam</span>
+                      <span className="text-sm">Cam</span>
                     </ControlButton>
                     <ControlButton mode="RIGHT_CAM" className="bg-purple-500/90 hover:bg-purple-600/90 border-purple-400 text-white px-3 py-2">
                       <ArrowRight className="mr-1 h-4 w-4" />
-                      <span className="text-xs">Cam</span>
+                      <span className="text-sm">Cam</span>
                     </ControlButton>
                   </div>
 
@@ -694,7 +694,7 @@ export default function RobotControl() {
 
             {/* Current Robot/Camera Info Overlay - Bottom Left */}
             <div className="absolute bottom-4 left-4 bg-black/80 backdrop-blur-sm text-white p-3 rounded-lg border border-white/20">
-              <div className="text-xs space-y-1">
+              <div className="text-sm space-y-1">
                 <div className="flex items-center gap-2">
                   <Bot className="h-3 w-3 text-blue-400" />
                   <span>Robot: {selectedRobot.toUpperCase()}</span>
