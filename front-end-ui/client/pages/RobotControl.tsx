@@ -62,12 +62,11 @@ export default function RobotControl() {
   const pcRef = useRef<RTCPeerConnection | null>(null);
 
   // Initialize WebRTC for video streaming
-  const startWebRTC = async (robot?: string, camera?: string) => {
+  const startWebRTC = async () => {
     try {
       const pc = new RTCPeerConnection();
       pcRef.current = pc;
-	  
-	  const rob = selectedRobot || "1";
+      const rob = selectedRobot || "1";
       const cam = selectedCamera || "right";
 
       pc.addTransceiver("video", { direction: "recvonly" });
@@ -416,6 +415,25 @@ export default function RobotControl() {
   	window.removeEventListener("keyup", handleKeyUp);
     };
   }, []);
+  
+  
+  useEffect(() => {
+    if (qrWsRef.current) qrWsRef.current.close();
+    if (controlWsRef.current) controlWsRef.current.close();
+    if (sensorWsRef.current) sensorWsRef.current.close();
+  
+    initializeWebSockets();
+    
+    if (pcRef.current) pcRef.current.close();
+    startWebRTC();
+  
+    return () => {
+      if (qrWsRef.current) qrWsRef.current.close();
+      if (controlWsRef.current) controlWsRef.current.close();
+      if (sensorWsRef.current) sensorWsRef.current.close();
+      if (pcRef.current) pcRef.current.close();
+    };
+  }, [selectedRobot, selectedCamera]);
 
 
 
