@@ -38,6 +38,17 @@ interface ControlCommand {
   control_mode: string;
 }
 
+const updateSelectedFromUrl = () => {
+  const pathParts = window.location.pathname.split('/');
+  if (pathParts.length >= 4) {
+    const idrobot = pathParts[2] || "1";
+    const idcamera = pathParts[3] || "right";
+    if (idrobot) setSelectedRobot(idrobot);
+    if (idcamera) setSelectedCamera(idcamera);
+  }
+};
+
+
 export default function RobotControl() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [qrCodes, setQrCodes] = useState<QRData[]>([]);
@@ -338,8 +349,13 @@ export default function RobotControl() {
 
   // Initialize connections on component mount
   useEffect(() => {
-    startWebRTC("1", "right");
-    initializeWebSockets("1", "right");
+	
+	
+	updateSelectedFromUrl();
+	
+	
+    startWebRTC(selectedRobot, selectedCamera);
+    initializeWebSockets(selectedRobot, selectedCamera);
 
     // Add fullscreen event listener
     const handleFullscreenChange = () => {
