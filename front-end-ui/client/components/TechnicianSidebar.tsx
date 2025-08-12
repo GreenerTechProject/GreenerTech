@@ -14,6 +14,11 @@ import {
   Menu,
   X,
   Bot,
+  RefreshCw,
+  Maximize,
+  ChevronDown,
+  Video,
+  Settings,
 } from "lucide-react";
 
 interface SidebarItem {
@@ -34,6 +39,11 @@ export default function TechnicianSidebar({
   onInterventionClick,
 }: TechnicianSidebarProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const [selectedCamera, setSelectedCamera] = useState("left");
+  const [selectedRobot, setSelectedRobot] = useState("robot-1");
+  const [cameraDropdownOpen, setCameraDropdownOpen] = useState(false);
+  const [robotDropdownOpen, setRobotDropdownOpen] = useState(false);
+  
   const { logout } = useAuth();
   const navigate = useNavigate();
 
@@ -41,6 +51,17 @@ export default function TechnicianSidebar({
     userRole === "technicien_sup"
       ? "/technicien-sup"
       : "/technician";
+
+  const cameras = [
+    { id: "left", label: "Caméra Gauche", icon: "🎥" },
+    { id: "right", label: "Caméra Droite", icon: "📹" }
+  ];
+
+  const robots = [
+    { id: "robot-1", label: "Robot Alpha-01", status: "online" },
+    { id: "robot-2", label: "Robot Beta-02", status: "offline" },
+    { id: "robot-3", label: "Robot Gamma-03", status: "maintenance" }
+  ];
 
   const sidebarItems: SidebarItem[] = [
     {
@@ -113,6 +134,38 @@ export default function TechnicianSidebar({
     setIsOpen(false);
   };
 
+  const handleRefresh = () => {
+    window.location.reload();
+  };
+
+  const handleFullscreen = () => {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen().catch(err => {
+        console.error(`Error attempting to enable fullscreen: ${err.message}`);
+      });
+    } else {
+      document.exitFullscreen();
+    }
+  };
+
+  const handleCameraChange = (cameraId: string) => {
+    setSelectedCamera(cameraId);
+    setCameraDropdownOpen(false);
+    // Send camera selection command to robot control
+    if (window.location.pathname === '/robot-control') {
+      const command = cameraId === 'left' ? 'LEFT_CAM' : 'RIGHT_CAM';
+      // This would be handled by the RobotControl component WebSocket
+      console.log(`Switching to ${command}`);
+    }
+  };
+
+  const handleRobotChange = (robotId: string) => {
+    setSelectedRobot(robotId);
+    setRobotDropdownOpen(false);
+    // Handle robot selection logic here
+    console.log(`Selected robot: ${robotId}`);
+  };
+
   return (
     <>
       {/* Menu Button - Now positioned for header integration */}
@@ -157,6 +210,134 @@ export default function TechnicianSidebar({
                 ? "Technicien Supérieur"
                 : "Technicien"}
             </p>
+          </div>
+
+          {/* Control Panel Section */}
+          <div className="px-6 py-4 border-b border-gray-100 bg-gray-50/50">
+            <div className="space-y-4">
+              <h3 className="text-sm font-semibold text-gray-800 flex items-center gap-2">
+                <Settings className="h-4 w-4" />
+                Contrôles
+              </h3>
+              
+              {/* Quick Action Buttons */}
+              <div className="flex gap-2">
+                <Button
+                  onClick={handleRefresh}
+                  size="sm"
+                  variant="outline"
+                  className="flex-1 text-xs hover:bg-blue-50 hover:border-blue-200 hover:text-blue-700"
+                >
+                  <RefreshCw className="h-4 w-4 mr-1" />
+                  Actualiser
+                </Button>
+                <Button
+                  onClick={handleFullscreen}
+                  size="sm"
+                  variant="outline"
+                  className="flex-1 text-xs hover:bg-green-50 hover:border-green-200 hover:text-green-700"
+                >
+                  <Maximize className="h-4 w-4 mr-1" />
+                  Plein écran
+                </Button>
+              </div>
+
+              {/* Camera Selection */}
+              <div className="space-y-2">
+                <label className="text-xs font-medium text-gray-700">
+                  Sélection Caméra
+                </label>
+                <div className="relative">
+                  <button
+                    onClick={() => setCameraDropdownOpen(!cameraDropdownOpen)}
+                    className="w-full flex items-center justify-between px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm hover:border-gray-300 focus:outline-none focus:ring-2 focus:ring-greener-400/20"
+                  >
+                    <div className="flex items-center gap-2">
+                      <Video className="h-4 w-4 text-purple-500" />
+                      <span>{cameras.find(c => c.id === selectedCamera)?.label}</span>
+                    </div>
+                    <ChevronDown className={cn(
+                      "h-4 w-4 transition-transform duration-200",
+                      cameraDropdownOpen && "rotate-180"
+                    )} />
+                  </button>
+                  
+                  {cameraDropdownOpen && (
+                    <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-10">
+                      {cameras.map((camera) => (
+                        <button
+                          key={camera.id}
+                          onClick={() => handleCameraChange(camera.id)}
+                          className={cn(
+                            "w-full flex items-center gap-3 px-3 py-2 text-sm hover:bg-gray-50 first:rounded-t-lg last:rounded-b-lg",
+                            selectedCamera === camera.id && "bg-greener-50 text-greener-700"
+                          )}
+                        >
+                          <span className="text-lg">{camera.icon}</span>
+                          <span>{camera.label}</span>
+                          {selectedCamera === camera.id && (
+                            <div className="ml-auto w-2 h-2 bg-greener-500 rounded-full"></div>
+                          )}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Robot Selection */}
+              <div className="space-y-2">
+                <label className="text-xs font-medium text-gray-700">
+                  Sélection Robot
+                </label>
+                <div className="relative">
+                  <button
+                    onClick={() => setRobotDropdownOpen(!robotDropdownOpen)}
+                    className="w-full flex items-center justify-between px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm hover:border-gray-300 focus:outline-none focus:ring-2 focus:ring-greener-400/20"
+                  >
+                    <div className="flex items-center gap-2">
+                      <Bot className="h-4 w-4 text-blue-500" />
+                      <span>{robots.find(r => r.id === selectedRobot)?.label}</span>
+                    </div>
+                    <ChevronDown className={cn(
+                      "h-4 w-4 transition-transform duration-200",
+                      robotDropdownOpen && "rotate-180"
+                    )} />
+                  </button>
+                  
+                  {robotDropdownOpen && (
+                    <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-10">
+                      {robots.map((robot) => (
+                        <button
+                          key={robot.id}
+                          onClick={() => handleRobotChange(robot.id)}
+                          className={cn(
+                            "w-full flex items-center justify-between px-3 py-2 text-sm hover:bg-gray-50 first:rounded-t-lg last:rounded-b-lg",
+                            selectedRobot === robot.id && "bg-greener-50 text-greener-700"
+                          )}
+                        >
+                          <div className="flex items-center gap-3">
+                            <Bot className="h-4 w-4" />
+                            <span>{robot.label}</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <div className={cn(
+                              "w-2 h-2 rounded-full",
+                              robot.status === "online" && "bg-green-500",
+                              robot.status === "offline" && "bg-red-500",
+                              robot.status === "maintenance" && "bg-yellow-500"
+                            )}></div>
+                            {selectedRobot === robot.id && (
+                              <div className="w-2 h-2 bg-greener-500 rounded-full"></div>
+                            )}
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
           </div>
 
           {/* Navigation Items */}
