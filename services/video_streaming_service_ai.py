@@ -58,6 +58,9 @@ async def video_stream_handler(request):
 
     ws = web.WebSocketResponse()
     await ws.prepare(request)
+    
+    robot_id = request.query.get("robot", 1)
+    camera_id = request.query.get("camera", 1)
 
     async for msg in ws:
         if msg.type == WSMsgType.BINARY:
@@ -177,6 +180,8 @@ async def offer(request):
     try:
         params = await request.json()
         offer = params["offer"]
+        robot_id = params.get("robot", 1)
+        camera_id = params.get("camera", 1)
 
         pc = RTCPeerConnection()
 
@@ -184,7 +189,7 @@ async def offer(request):
         async def on_connectionstatechange():
             print("Connection state:", pc.connectionState)
 
-        pc.addTrack(RelayStreamTrack())
+        pc.addTrack(RelayStreamTrack(robot_id, camera_id))
         await pc.setRemoteDescription(
             RTCSessionDescription(sdp=offer["sdp"], type=offer["type"])
         )

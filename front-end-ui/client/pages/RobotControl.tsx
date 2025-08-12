@@ -89,7 +89,7 @@ export default function RobotControl() {
       const hostname = window.location.hostname;
       const port = "8080";
 
-      const response = await fetch(`${protocol}://${hostname}:${port}/service/video_stream_service`, {
+      const response = await fetch(`${protocol}://${hostname}:${port}/service/video_stream_service?robot=${encodeURIComponent(selectedRobot)}&camera=${encodeURIComponent(camera)}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ offer: pc.localDescription })
@@ -112,7 +112,7 @@ export default function RobotControl() {
     const port = "8080";
 
     // QR Code WebSocket
-    const qrWs = new WebSocket(`${protocol}://${hostname}:${port}/service/qr_data`);
+    const qrWs = new WebSocket(`${protocol}://${hostname}:${port}/service/qr_data?robot=${encodeURIComponent(selectedRobot)}&camera=${encodeURIComponent(camera)}`);
     qrWsRef.current = qrWs;
 
     qrWs.onopen = () => {
@@ -149,7 +149,7 @@ export default function RobotControl() {
     };
 
     // Control WebSocket
-    const controlWs = new WebSocket(`${protocol}://${hostname}:${port}/service/control`);
+    const controlWs = new WebSocket(`${protocol}://${hostname}:${port}/service/control?robot=${encodeURIComponent(selectedRobot)}&camera=${encodeURIComponent(camera)}`);
     controlWsRef.current = controlWs;
 
     controlWs.onopen = () => {
@@ -168,7 +168,7 @@ export default function RobotControl() {
     };
 
     // Sensor WebSocket
-    const sensorWs = new WebSocket(`${protocol}://${hostname}:${port}/service/sensor_data`);
+    const sensorWs = new WebSocket(`${protocol}://${hostname}:${port}/service/sensor_data?robot=${encodeURIComponent(selectedRobot)}`);
     sensorWsRef.current = sensorWs;
 
     sensorWs.onopen = () => {
