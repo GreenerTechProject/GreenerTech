@@ -48,7 +48,7 @@ export default function PageHeader({
   };
 
   const handleProfileClick = () => {
-    navigate("/profile");
+    navigate("/technicien/profile");
   };
 
   const handleLogout = () => {
