@@ -52,10 +52,12 @@ class User(db.Model):
             'telephone': self.telephone,
             'cin': self.cin,
             'id_assigned': self.id_assigned,
+            'id_entreprise':self.id_entreprise,
             'setup_completed': self.setup_completed,
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'updated_at': self.updated_at.isoformat() if self.updated_at else None,
             'directeur_valide': self.directeur_valide,
             'email_valide': self.email_valide,
             'verification_token': self.verification_token
+
         }

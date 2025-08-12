@@ -110,13 +110,13 @@ export default function DirectorSidebar({ isOpen, setIsOpen }: DirectorSidebarPr
 
       {/* Sidebar */}
       <div className={cn(
-        "fixed left-0 top-0 z-50 h-full bg-white border-r border-gray-200 shadow-lg transform transition-transform duration-300 ease-in-out",
+        "fixed left-0 top-0 z-50 h-screen bg-white border-r border-gray-200 shadow-lg transform transition-transform duration-300 ease-in-out",
         "lg:translate-x-0 lg:static lg:z-10",
         isOpen ? "translate-x-0" : "-translate-x-full",
-        "w-80"
+        "w-80 flex flex-col"
       )}>
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-200">
+        <div className="flex items-center justify-between p-6 border-b border-gray-200 flex-shrink-0">
           <div className="flex items-center space-x-3">
             <div className="w-8 h-8 bg-greener rounded-lg flex items-center justify-center">
               <LayoutDashboard className="h-5 w-5 text-white" />
@@ -137,7 +137,7 @@ export default function DirectorSidebar({ isOpen, setIsOpen }: DirectorSidebarPr
         </div>
 
         {/* Navigation */}
-        <nav className="p-4 space-y-2 overflow-y-auto h-full pb-20">
+        <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
           {navigationItems.map((item) => {
             const Icon = item.icon;
             const active = isActive(item.href);
@@ -192,7 +192,7 @@ export default function DirectorSidebar({ isOpen, setIsOpen }: DirectorSidebarPr
         </nav>
 
         {/* Footer */}
-        <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-200 bg-white">
+        <div className="p-4 border-t border-gray-200 bg-white flex-shrink-0">
           <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
             <Settings className="h-5 w-5 text-gray-500" />
             <div className="flex-1 min-w-0">

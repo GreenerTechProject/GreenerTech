@@ -159,19 +159,44 @@ def delete_serre(current_user, id):
 
 
 @token_required
-@role_required("directeur" , "technicien_superieur")
+@role_required("directeur", "technicien_superieur", "technicien")
 def get_bilans_by_serre(current_user, id_serre):
+    print(f"[DEBUG] get_bilans_by_serre called with user role: '{current_user.role}'")
+    print(f"[DEBUG] User ID: {current_user.id}, Serre ID: {id_serre}")
+    print(f"[DEBUG] Role type: {type(current_user.role)}")
+    print(f"[DEBUG] Role length: {len(current_user.role) if current_user.role else 'None'}")
+    print(f"[DEBUG] Role bytes: {current_user.role.encode('utf-8') if current_user.role else 'None'}")
+    
     entreprise = Entreprise.query.filter_by(id=current_user.id_entreprise).first()
     if not entreprise:
+        print(f"[DEBUG] No entreprise found for user {current_user.id}")
         return jsonify({"message": "Aucune entreprise associée"}), 404
 
-    # Vérifier que la serre existe et appartient bien à l'entreprise
+    # Vérifier que la serre existe
     serre = Serre.query.get_or_404(id_serre)
-    domaine = Domaine.query.get(serre.id_domaine)
-    if not domaine or domaine.id_entreprise != entreprise.id:
-        return jsonify({"message": "Non autorisé"}), 403
+    print(f"[DEBUG] Serre found: {serre.id}, Domain ID: {serre.id_domaine}")
+    
+    # Pour les techniciens, vérifier l'autorisation d'accès à la serre
+    if current_user.role == "technicien":
+        print(f"[DEBUG] User is technicien, checking serre authorization")
+        from app.models.autorisation_serre import Autorisation_serre
+        auth = Autorisation_serre.query.filter_by(id_user=current_user.id, id_serre=id_serre).first()
+        print(f"[DEBUG] Authorization found: {auth}")
+        if not auth or not auth.access_serre:
+            print(f"[DEBUG] No authorization or no access_serre permission")
+            return jsonify({"message": "Accès non autorisé à cette serre"}), 403
+        print(f"[DEBUG] Authorization check passed")
+    else:
+        # Pour les directeurs et techniciens supérieurs, vérifier l'accès au domaine
+        print(f"[DEBUG] User is {current_user.role}, checking domain access")
+        domaine = Domaine.query.get(serre.id_domaine)
+        if not domaine or domaine.id_entreprise != entreprise.id:
+            print(f"[DEBUG] Domain access check failed")
+            return jsonify({"message": "Non autorisé"}), 403
+        print(f"[DEBUG] Domain access check passed")
 
     bilans = Bilan.query.filter_by(id_serre=id_serre).all()
+    print(f"[DEBUG] Found {len(bilans)} bilans for serre {id_serre}")
     return jsonify([b.to_dict() for b in bilans]), 200
 
 @token_required

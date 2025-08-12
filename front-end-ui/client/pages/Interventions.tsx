@@ -4,14 +4,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import {
+import { 
   Search,
   ChevronDown,
   FileText,
   MapPin,
   ChevronLeft,
-  ChevronRight,
-  Plus
+  ChevronRight
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
@@ -45,7 +44,7 @@ const interventionTypes: InterventionType[] = [
   { id: 6, nom: "Éclaircissage", couleur: "bg-orange-600", icone: "🎯" }
 ];
 
-export default function InterventionManagement() {
+export default function Interventions() {
   const { user } = useAuth();
   const [interventions, setInterventions] = useState<Intervention[]>([]);
   const [filteredInterventions, setFilteredInterventions] = useState<Intervention[]>([]);
@@ -137,7 +136,7 @@ export default function InterventionManagement() {
         }
       ];
 
-    setInterventions(mockInterventions);
+      setInterventions(mockInterventions);
       setFilteredInterventions(mockInterventions);
     } catch (error) {
       console.error("Error loading interventions:", error);
@@ -218,7 +217,7 @@ export default function InterventionManagement() {
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">
             Gestion des Interventions
-              </h1>
+          </h1>
           <p className="text-gray-600 text-lg">
             Suivi et gestion des interventions entre superviseurs et techniciens
           </p>
@@ -226,17 +225,17 @@ export default function InterventionManagement() {
 
         {/* Search and Actions Bar */}
         <div className="flex flex-col sm:flex-row gap-4 mb-6">
-                <div className="flex-1">
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-                    <Input
+          <div className="flex-1">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+              <Input
                 placeholder="Rechercher une Intervention..."
-                      value={searchTerm}
+                value={searchTerm}
                 onChange={(e) => handleSearch(e.target.value)}
                 className="pl-10 bg-white border-gray-200 focus:border-green-500 focus:ring-green-500"
-                    />
-                  </div>
-                </div>
+              />
+            </div>
+          </div>
           
           <div className="flex gap-3">
             <Button variant="outline" className="bg-white border-gray-300 text-gray-700 hover:bg-gray-50">
@@ -244,12 +243,12 @@ export default function InterventionManagement() {
               <ChevronDown className="ml-2 h-4 w-4" />
             </Button>
             <Button className="bg-green-500 hover:bg-green-600 text-white">
-              <Plus className="mr-2 h-4 w-4" />
-              Nouvelle intervention
+              <FileText className="mr-2 h-4 w-4" />
+              Demande une intervention
             </Button>
-              </div>
-                          </div>
-                          
+          </div>
+        </div>
+
         {/* Interventions Table */}
         <Card className="bg-white shadow-sm border-0">
           <CardHeader className="pb-4">
@@ -275,7 +274,7 @@ export default function InterventionManagement() {
                         <div className="flex items-center space-x-3">
                           {getInterventionTypeIcon(intervention.type)}
                           <span className="text-sm font-medium text-gray-900">{intervention.type}</span>
-                            </div>
+                        </div>
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex items-center space-x-2">
@@ -283,15 +282,15 @@ export default function InterventionManagement() {
                           <span className="text-sm text-gray-700">
                             {intervention.serre_nom} / {intervention.domaine_nom} / {intervention.bilan_trimestre}
                           </span>
-                            </div>
+                        </div>
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex space-x-2">
                           {getStatusBadge(intervention.statut)}
                           {intervention.statut === "En cours" && (
                             <Badge variant="outline" className="bg-gray-100 text-gray-700 border-gray-300">Terminé</Badge>
-                            )}
-                          </div>
+                          )}
+                        </div>
                       </td>
                       <td className="px-6 py-4">
                         {getActionBadge(intervention.actions)}
@@ -300,7 +299,7 @@ export default function InterventionManagement() {
                   ))}
                 </tbody>
               </table>
-                              </div>
+            </div>
           </CardContent>
         </Card>
 
@@ -308,8 +307,8 @@ export default function InterventionManagement() {
         <div className="flex items-center justify-between mt-6">
           <div className="text-sm text-gray-700">
             Affichage de {startIndex + 1} à {Math.min(endIndex, filteredInterventions.length)} sur {filteredInterventions.length} intervention{filteredInterventions.length !== 1 ? 's' : ''}
-                        </div>
-
+          </div>
+          
           <div className="flex items-center space-x-2">
             <Button
               variant="outline"
@@ -320,13 +319,13 @@ export default function InterventionManagement() {
             >
               <ChevronLeft className="h-4 w-4 mr-1" />
               Précédent
-                                </Button>
+            </Button>
             
             {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                                      <Button
+              <Button
                 key={page}
                 variant={page === currentPage ? "default" : "outline"}
-                                        size="sm"
+                size="sm"
                 onClick={() => handlePageChange(page)}
                 className={cn(
                   page === currentPage
@@ -335,19 +334,19 @@ export default function InterventionManagement() {
                 )}
               >
                 {page}
-                                      </Button>
-                                  ))}
-
-                              <Button
-                                variant="outline"
-                                size="sm"
+              </Button>
+            ))}
+            
+            <Button
+              variant="outline"
+              size="sm"
               onClick={() => handlePageChange(currentPage + 1)}
               disabled={currentPage === totalPages}
               className="bg-white border-gray-300 text-gray-700 hover:bg-gray-50"
             >
               Suivant
               <ChevronRight className="h-4 w-4 ml-1" />
-                              </Button>
+            </Button>
           </div>
         </div>
       </div>

@@ -33,7 +33,7 @@ export interface AffiliationRequest {
   lastName: string;
   telephone: string;
   cin: string;
-  companyName: string;
+  id_entreprise: string; // Changed from companyName to id_entreprise to match backend model
   birthDate: string;
   role: string;
 }
@@ -101,9 +101,9 @@ export const tokenManager = {
     return userData ? JSON.parse(userData) : null;
   },
 
-  setUser: async(user: User): void => {
+  setUser: (user: User): void => {
     localStorage.setItem(USER_KEY, JSON.stringify(user));
-    await api.put('/user', user);
+    api.put('/user', user);
   },
 
   removeUser: (): void => {
@@ -190,6 +190,15 @@ export const authService = {
 
     return response.data;
   } catch (error: any) {
+    // Debug: Log the error details
+    console.log("Login error details:", {
+      error: error,
+      response: error?.response,
+      data: error?.response?.data,
+      message: error?.response?.data?.message,
+      status: error?.response?.status
+    });
+
     // Normalize all Axios and manual errors
     const normalizedMessage =
       error?.message ||
@@ -200,6 +209,8 @@ export const authService = {
       error?.status ||
       error?.response?.status ||
       500;
+
+    console.log("Normalized error:", { message: normalizedMessage, status });
 
     throw {
       message: normalizedMessage,
@@ -322,14 +333,17 @@ export const authService = {
     }
   },
 
-  // Get current user profile
+  // Get current user data from backend
   getCurrentUser: async (): Promise<User> => {
     try {
+      console.log("authService: Fetching current user data from backend");
       const response = await api.get(`${API_BASE_URL}/user`);
       const user = response.data;
+      console.log("authService: Received user data from backend:", user);
       tokenManager.setUser(user);
       return user;
     } catch (error: any) {
+      console.error("authService: Error fetching current user:", error);
       throw {
         message: error.response?.data?.message || "Failed to get user data",
         status: error.response?.status || 500,
@@ -402,7 +416,9 @@ export const authService = {
     password?: string;
   }>): Promise<User> => {
     try {
+      console.log("authService: Sending profile update request with data:", profileData);
       const response = await api.put("/user", profileData);
+      console.log("authService: Profile update response:", response.data);
       const updatedUser = response.data.user || response.data;
 
       // Update local storage with new user data
@@ -411,10 +427,12 @@ export const authService = {
         const mergedUser = { ...currentUser, ...profileData };
         delete mergedUser.password; // Don't store password locally
         tokenManager.setUser(mergedUser);
+        console.log("authService: Updated local user data:", mergedUser);
       }
 
       return updatedUser;
     } catch (error: any) {
+      console.error("authService: Profile update error:", error);
       throw {
         message: error.response?.data?.message || "Failed to update profile",
         status: error.response?.status || 500,

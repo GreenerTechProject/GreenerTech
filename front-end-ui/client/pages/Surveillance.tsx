@@ -1,515 +1,406 @@
-import React, { useState, useEffect } from "react";
-import { useAuth } from "../contexts/AuthContext";
+import React, { useEffect, useRef, useState } from "react";
+import TechHeader from "../components/TechHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
+import { 
+  Play, 
+  Pause, 
+  ArrowRight, 
+  ArrowLeft, 
+  ArrowUp, 
+  ArrowDown,
   Camera,
-  Play,
-  Pause,
-  Square,
-  RefreshCw,
-  AlertTriangle,
-  CheckCircle,
-  Clock,
-  Monitor,
   Settings,
-  Download,
-  Calendar,
-  Filter,
+  ChevronLeft,
+  ChevronRight,
+  Maximize2,
+  Minimize2,
+  Thermometer,
+  Droplets,
+  Leaf,
+  Sun
 } from "lucide-react";
-import TechnicianSidebar from "../components/TechnicianSidebar";
-import { cn } from "@/lib/utils";
-
-interface CameraFeed {
-  id: string;
-  name: string;
-  location: string;
-  status: "online" | "offline" | "maintenance";
-  isRecording: boolean;
-  lastActivity: Date;
-  streamUrl?: string;
-}
-
-interface Alert {
-  id: string;
-  cameraId: string;
-  type: "motion" | "anomaly" | "intrusion" | "equipment";
-  message: string;
-  timestamp: Date;
-  severity: "low" | "medium" | "high" | "critical";
-  acknowledged: boolean;
-}
-
-const mockCameras: CameraFeed[] = [
-  {
-    id: "cam1",
-    name: "Serre Nord A - Entrée",
-    location: "Serre Nord A",
-    status: "online",
-    isRecording: true,
-    lastActivity: new Date(),
-    streamUrl: "/api/camera/stream/cam1"
-  },
-  {
-    id: "cam2", 
-    name: "Serre Nord A - Zone Culture",
-    location: "Serre Nord A",
-    status: "online",
-    isRecording: true,
-    lastActivity: new Date(Date.now() - 300000), // 5 minutes ago
-  },
-  {
-    id: "cam3",
-    name: "Serre Sud B - Système Irrigation",
-    location: "Serre Sud B", 
-    status: "offline",
-    isRecording: false,
-    lastActivity: new Date(Date.now() - 3600000), // 1 hour ago
-  },
-  {
-    id: "cam4",
-    name: "Extérieur - Périmètre Ouest",
-    location: "Périmètre Extérieur",
-    status: "maintenance",
-    isRecording: false,
-    lastActivity: new Date(Date.now() - 7200000), // 2 hours ago
-  }
-];
-
-const mockAlerts: Alert[] = [
-  {
-    id: "alert1",
-    cameraId: "cam2",
-    type: "anomaly",
-    message: "Mouvement inhabituel détecté dans la zone de culture",
-    timestamp: new Date(Date.now() - 600000), // 10 minutes ago
-    severity: "medium",
-    acknowledged: false
-  },
-  {
-    id: "alert2", 
-    cameraId: "cam3",
-    type: "equipment",
-    message: "Caméra hors ligne - Vérifier la connexion",
-    timestamp: new Date(Date.now() - 3600000), // 1 hour ago
-    severity: "high",
-    acknowledged: false
-  },
-  {
-    id: "alert3",
-    cameraId: "cam1",
-    type: "motion",
-    message: "Mouvement détecté à l'entrée",
-    timestamp: new Date(Date.now() - 1800000), // 30 minutes ago
-    severity: "low",
-    acknowledged: true
-  }
-];
 
 export default function Surveillance() {
-  const { user } = useAuth();
-  const [cameras, setCameras] = useState<CameraFeed[]>(mockCameras);
-  const [alerts, setAlerts] = useState<Alert[]>(mockAlerts);
-  const [selectedCamera, setSelectedCamera] = useState<CameraFeed | null>(cameras[0]);
-  const [filterStatus, setFilterStatus] = useState<string>("all");
-  const [alertFilter, setAlertFilter] = useState<string>("all");
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "online":
-        return "bg-green-100 text-green-800 border-green-300";
-      case "offline":
-        return "bg-red-100 text-red-800 border-red-300";
-      case "maintenance":
-        return "bg-yellow-100 text-yellow-800 border-yellow-300";
-      default:
-        return "bg-gray-100 text-gray-800 border-gray-300";
-    }
-  };
-
-  const getSeverityColor = (severity: string) => {
-    switch (severity) {
-      case "low":
-        return "bg-blue-100 text-blue-800 border-blue-300";
-      case "medium":
-        return "bg-yellow-100 text-yellow-800 border-yellow-300";
-      case "high":
-        return "bg-orange-100 text-orange-800 border-orange-300";
-      case "critical":
-        return "bg-red-100 text-red-800 border-red-300";
-      default:
-        return "bg-gray-100 text-gray-800 border-gray-300";
-    }
-  };
-
-  const toggleRecording = (cameraId: string) => {
-    setCameras(prev => prev.map(cam => 
-      cam.id === cameraId 
-        ? { ...cam, isRecording: !cam.isRecording }
-        : cam
-    ));
-  };
-
-  const acknowledgeAlert = (alertId: string) => {
-    setAlerts(prev => prev.map(alert => 
-      alert.id === alertId 
-        ? { ...alert, acknowledged: true }
-        : alert
-    ));
-  };
-
-  const filteredCameras = cameras.filter(camera => 
-    filterStatus === "all" || camera.status === filterStatus
-  );
-
-  const filteredAlerts = alerts.filter(alert => {
-    if (alertFilter === "all") return true;
-    if (alertFilter === "unacknowledged") return !alert.acknowledged;
-    return alert.severity === alertFilter;
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const sensorDataRef = useRef<HTMLDivElement>(null);
+  const controlWsRef = useRef<WebSocket | null>(null);
+  const sensorWsRef = useRef<WebSocket | null>(null);
+  const [isPanelExpanded, setIsPanelExpanded] = useState(true);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [sensorData, setSensorData] = useState({
+    temperature: 25,
+    humidity: 65,
+    co2: 450,
+    luminosite: 800
   });
 
-  const onlineCameras = cameras.filter(cam => cam.status === "online").length;
-  const recordingCameras = cameras.filter(cam => cam.isRecording).length;
-  const unacknowledgedAlerts = alerts.filter(alert => !alert.acknowledged).length;
+  useEffect(() => {
+    // WebRTC connection for receiving live video stream
+    const startWebRTC = async () => {
+      try {
+        const pc = new RTCPeerConnection();
+        pc.addTransceiver("video", { direction: "recvonly" });
+        pc.ontrack = (event) => {
+          if (videoRef.current && videoRef.current.srcObject !== event.streams[0]) {
+            videoRef.current.srcObject = event.streams[0];
+          }
+        };
+
+        const offer = await pc.createOffer();
+        await pc.setLocalDescription(offer);
+
+        const response = await fetch("/service/video_stream_service", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ offer: pc.localDescription })
+        });
+
+        const answer = await response.json();
+        await pc.setRemoteDescription(new RTCSessionDescription(answer));
+      } catch (error) {
+        console.error("WebRTC error:", error);
+      }
+    };
+
+    startWebRTC();
+
+    // Control WebSocket for sending commands
+    const controlWs = new WebSocket(`${window.location.protocol === "https:" ? "wss" : "ws"}://${window.location.hostname}:8080/service/control`);
+    controlWsRef.current = controlWs;
+
+    controlWs.onopen = () => console.log("Control WebSocket connected");
+    controlWs.onerror = (err) => console.error("Control WebSocket error:", err);
+    controlWs.onclose = () => console.log("Control WebSocket disconnected");
+
+    // WebSocket for sensor data
+    const sensorWs = new WebSocket(`${window.location.protocol === "https:" ? "wss" : "ws"}://${window.location.hostname}:8080/service/sensor_data`);
+    sensorWsRef.current = sensorWs;
+
+    sensorWs.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        setSensorData({
+          temperature: data.temperature || 25,
+          humidity: data.humidity || 65,
+          co2: data.co2 || 450,
+          luminosite: data.luminosite || 800
+        });
+      } catch (error) {
+        console.error("Sensor data parse error:", error);
+      }
+    };
+
+    sensorWs.onerror = (e) => {
+      console.error("Sensor WebSocket error:", e);
+    };
+
+    // Cleanup function
+    return () => {
+      controlWs.close();
+      sensorWs.close();
+    };
+  }, []);
+
+  const sendControlCommand = (mode: string) => {
+    if (controlWsRef.current && controlWsRef.current.readyState === WebSocket.OPEN) {
+      controlWsRef.current.send(JSON.stringify({ control_mode: mode }));
+    } else {
+      console.warn("Control WebSocket not open");
+    }
+  };
+
+  const handleMouseDown = (mode: string) => {
+    sendControlCommand(mode);
+  };
+
+  const handleMouseUp = () => {
+    sendControlCommand("STOP");
+  };
+
+  const togglePanel = () => {
+    setIsPanelExpanded(!isPanelExpanded);
+  };
+
+  const toggleFullscreen = () => {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen();
+      setIsFullscreen(true);
+    } else {
+      document.exitFullscreen();
+      setIsFullscreen(false);
+    }
+  };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white shadow-sm border-b sticky top-0 z-10">
-        <div className="max-w-full px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-4">
-            <div className="flex items-center space-x-4">
-              <TechnicianSidebar 
-                userRole="technicien"
-                onInterventionClick={() => {}}
-              />
-              <h1 className="text-xl font-semibold text-gray-900">
+    <div className="min-h-screen bg-black">
+      <TechHeader role="technicien" />
+      
+      {/* Main Content */}
+      <div className="flex h-screen">
+        {/* Left Panel - Collapsible, Stretches to Header */}
+        <div className={`transition-all duration-300 ease-in-out ${
+          isPanelExpanded ? 'w-80' : 'w-16'
+        } bg-white border-r border-gray-200 relative flex flex-col`}>
+          
+          {/* Panel Toggle Button */}
+          <button
+            onClick={togglePanel}
+            className="absolute -right-3 top-6 bg-white border border-gray-200 rounded-full p-1 shadow-md hover:bg-gray-50 z-10"
+          >
+            {isPanelExpanded ? (
+              <ChevronLeft className="h-4 w-4 text-gray-600" />
+            ) : (
+              <ChevronRight className="h-4 w-4 text-gray-600" />
+            )}
+          </button>
+
+          <div className={`flex-1 p-6 ${!isPanelExpanded ? 'hidden' : ''}`}>
+            <div className="mb-8">
+              <h1 className="text-2xl font-bold text-gray-900 mb-2">
                 Surveillance
               </h1>
-              <div className="flex space-x-2">
-                <Badge
+              <p className="text-gray-600">
+                Contrôle des robots et surveillance des serres
+              </p>
+            </div>
+
+            {/* Mission Control */}
+            <div className="mb-6">
+              <h3 className="text-lg font-semibold text-gray-800 mb-3">Contrôle Mission</h3>
+              <div className="space-y-3">
+                <Button
                   variant="outline"
-                  className="bg-green-50 border-green-200 text-green-700"
+                  onMouseDown={() => handleMouseDown("PAUSE_MISSION")}
+                  onMouseUp={handleMouseUp}
+                  className="w-full flex items-center gap-2"
                 >
-                  {onlineCameras}/{cameras.length} En ligne
-                </Badge>
-                <Badge
-                  variant="outline" 
-                  className="bg-blue-50 border-blue-200 text-blue-700"
+                  <Pause className="h-4 w-4" />
+                  Pause Mission
+                </Button>
+                <Button
+                  variant="outline"
+                  onMouseDown={() => handleMouseDown("PLAY_MISSION")}
+                  onMouseUp={handleMouseUp}
+                  className="w-full flex items-center gap-2"
                 >
-                  {recordingCameras} Enregistrement
-                </Badge>
-                {unacknowledgedAlerts > 0 && (
-                  <Badge
-                    variant="outline"
-                    className="bg-red-50 border-red-200 text-red-700"
-                  >
-                    {unacknowledgedAlerts} Alertes
-                  </Badge>
-                )}
+                  <Play className="h-4 w-4" />
+                  Play Mission
+                </Button>
               </div>
             </div>
-            <div className="flex items-center space-x-4">
-              <span className="text-sm text-gray-600 hidden sm:block">
-                {user?.name || user?.email}
-              </span>
+
+            {/* Camera Control */}
+            <div className="mb-6">
+              <h3 className="text-lg font-semibold text-gray-800 mb-3">Contrôle Caméra</h3>
+              <div className="space-y-3">
+                <Button
+                  variant="outline"
+                  onMouseDown={() => handleMouseDown("RIGHT_CAM")}
+                  onMouseUp={handleMouseUp}
+                  className="w-full flex items-center gap-2"
+                >
+                  <Camera className="h-4 w-4" />
+                  Caméra Droite
+                </Button>
+                <Button
+                  variant="outline"
+                  onMouseDown={() => handleMouseDown("LEFT_CAM")}
+                  onMouseUp={handleMouseUp}
+                  className="w-full flex items-center gap-2"
+                >
+                  <Camera className="h-4 w-4" />
+                  Caméra Gauche
+                </Button>
+              </div>
+            </div>
+
+            {/* Status Info */}
+            <div className="bg-gray-50 p-4 rounded-lg">
+              <h3 className="text-sm font-medium text-gray-700 mb-2">Statut Système</h3>
+              <div className="text-sm text-gray-600 space-y-1">
+                <div>🟢 Caméra: Connectée</div>
+                <div>🟢 Robot: En ligne</div>
+                <div>🟢 Capteurs: Actifs</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Collapsed Panel Icons */}
+          {!isPanelExpanded && (
+            <div className="flex flex-col items-center pt-6 space-y-4 flex-1">
+              <button
+                onClick={() => handleMouseDown("PAUSE_MISSION")}
+                onMouseUp={handleMouseUp}
+                className="p-2 hover:bg-gray-100 rounded-lg"
+                title="Pause Mission"
+              >
+                <Pause className="h-5 w-5 text-gray-600" />
+              </button>
+              <button
+                onClick={() => handleMouseDown("PLAY_MISSION")}
+                onMouseUp={handleMouseUp}
+                className="p-2 hover:bg-gray-100 rounded-lg"
+                title="Play Mission"
+              >
+                <Play className="h-5 w-5 text-gray-600" />
+              </button>
+              <button
+                onClick={() => handleMouseDown("RIGHT_CAM")}
+                onMouseUp={handleMouseUp}
+                className="p-2 hover:bg-gray-100 rounded-lg"
+                title="Caméra Droite"
+              >
+                <Camera className="h-5 w-5 text-gray-600" />
+              </button>
+              <button
+                onClick={() => handleMouseDown("LEFT_CAM")}
+                onMouseUp={handleMouseUp}
+                className="p-2 hover:bg-gray-100 rounded-lg"
+                title="Caméra Gauche"
+              >
+                <Camera className="h-5 w-5 text-gray-600" />
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* Main Camera Area - Full Screen */}
+        <div className="flex-1 relative bg-black">
+          {/* Video Stream */}
+          <video 
+            ref={videoRef}
+            className="w-full h-full object-contain"
+            autoPlay 
+            playsInline 
+            muted
+          />
+
+          {/* Fullscreen Toggle Button */}
+          <button
+            onClick={toggleFullscreen}
+            className="absolute top-4 left-4 bg-white/90 backdrop-blur-sm rounded-lg p-2 shadow-lg hover:bg-white z-20"
+            title={isFullscreen ? "Exit Fullscreen" : "Enter Fullscreen"}
+          >
+            {isFullscreen ? (
+              <Minimize2 className="h-5 w-5 text-gray-700" />
+            ) : (
+              <Maximize2 className="h-5 w-5 text-gray-700" />
+            )}
+          </button>
+
+          {/* Individual Sensor Data Overlays - Top Right */}
+          <div className="absolute top-4 right-4 space-y-3">
+            {/* Temperature Sensor */}
+            <div className="bg-red-100/90 backdrop-blur-sm rounded-lg p-3 shadow-lg border border-red-200">
+              <div className="flex items-center gap-2">
+                <Thermometer className="h-5 w-5 text-red-600" />
+                <div className="text-sm font-medium text-red-800">
+                  {sensorData.temperature}°C
+                </div>
+              </div>
+            </div>
+
+            {/* Humidity Sensor */}
+            <div className="bg-blue-100/90 backdrop-blur-sm rounded-lg p-3 shadow-lg border border-blue-200">
+              <div className="flex items-center gap-2">
+                <Droplets className="h-5 w-5 text-blue-600" />
+                <div className="text-sm font-medium text-blue-800">
+                  {sensorData.humidity}%
+                </div>
+              </div>
+            </div>
+
+            {/* CO2 Sensor */}
+            <div className="bg-green-100/90 backdrop-blur-sm rounded-lg p-3 shadow-lg border border-green-200">
+              <div className="flex items-center gap-2">
+                <Leaf className="h-5 w-5 text-green-600" />
+                <div className="text-sm font-medium text-green-800">
+                  {sensorData.co2} ppm
+                </div>
+              </div>
+            </div>
+
+            {/* Light Sensor */}
+            <div className="bg-yellow-100/90 backdrop-blur-sm rounded-lg p-3 shadow-lg border border-yellow-200">
+              <div className="flex items-center gap-2">
+                <Sun className="h-5 w-5 text-yellow-600" />
+                <div className="text-sm font-medium text-yellow-800">
+                  {sensorData.luminosite} lux
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Control Tools Overlay - Bottom Right */}
+          <div className="absolute bottom-4 right-4 space-y-2">
+            {/* Top Button */}
+            <div className="flex justify-center">
               <Button
                 variant="outline"
                 size="sm"
-                className="flex items-center space-x-1"
+                onMouseDown={() => handleMouseDown("TOP")}
+                onMouseUp={handleMouseUp}
+                className="w-10 h-10 rounded-full bg-white/90 backdrop-blur-sm border-2 border-gray-300 hover:border-blue-500 hover:bg-blue-50 shadow-lg"
               >
-                <Settings className="h-4 w-4" />
-                <span className="hidden sm:inline">Paramètres</span>
+                <ArrowUp className="h-4 w-4" />
+              </Button>
+            </div>
+
+            {/* Left, Center, Right Buttons */}
+            <div className="flex space-x-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onMouseDown={() => handleMouseDown("LEFT")}
+                onMouseUp={handleMouseUp}
+                className="w-10 h-10 rounded-full bg-white/90 backdrop-blur-sm border-2 border-gray-300 hover:border-blue-500 hover:bg-blue-50 shadow-lg"
+              >
+                <ArrowLeft className="h-4 w-4" />
+              </Button>
+              
+              <Button
+                variant="outline"
+                size="sm"
+                onMouseDown={() => handleMouseDown("STOP")}
+                onMouseUp={handleMouseUp}
+                className="w-10 h-10 rounded-full bg-red-100/90 backdrop-blur-sm border-2 border-red-300 hover:border-red-500 hover:bg-red-50 shadow-lg"
+              >
+                <div className="w-2 h-2 bg-red-600 rounded-full"></div>
+              </Button>
+              
+              <Button
+                variant="outline"
+                size="sm"
+                onMouseDown={() => handleMouseDown("RIGHT")}
+                onMouseUp={handleMouseUp}
+                className="w-10 h-10 rounded-full bg-white/90 backdrop-blur-sm border-2 border-gray-300 hover:border-blue-500 hover:bg-blue-50 shadow-lg"
+              >
+                <ArrowRight className="h-4 w-4" />
+              </Button>
+            </div>
+
+            {/* Bottom Button */}
+            <div className="flex justify-center">
+              <Button
+                variant="outline"
+                size="sm"
+                onMouseDown={() => handleMouseDown("DOWN")}
+                onMouseUp={handleMouseUp}
+                className="w-10 h-10 rounded-full bg-white/90 backdrop-blur-sm border-2 border-gray-300 hover:border-blue-500 hover:bg-blue-50 shadow-lg"
+              >
+                <ArrowDown className="h-4 w-4" />
               </Button>
             </div>
           </div>
-        </div>
-      </header>
 
-      <div className="flex h-[calc(100vh-73px)]">
-        {/* Left Panel - Camera List & Controls */}
-        <div className="w-full lg:w-96 bg-white shadow-lg">
-          <ScrollArea className="h-full">
-            <div className="p-6 space-y-6">
-              {/* Camera Filters */}
-              <div className="space-y-3">
-                <h3 className="text-lg font-semibold text-gray-900 flex items-center space-x-2">
-                  <Camera className="h-5 w-5" />
-                  <span>Caméras ({filteredCameras.length})</span>
-                </h3>
-                
-                <Select value={filterStatus} onValueChange={setFilterStatus}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Filtrer par statut" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Toutes les caméras</SelectItem>
-                    <SelectItem value="online">En ligne</SelectItem>
-                    <SelectItem value="offline">Hors ligne</SelectItem>
-                    <SelectItem value="maintenance">Maintenance</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {/* Camera List */}
-              <div className="space-y-3">
-                {filteredCameras.map((camera) => (
-                  <Card
-                    key={camera.id}
-                    className={cn(
-                      "cursor-pointer transition-all duration-200 hover:shadow-md border",
-                      selectedCamera?.id === camera.id
-                        ? "ring-2 ring-blue-500 border-blue-500 shadow-md"
-                        : "border-gray-200 hover:border-blue-300",
-                    )}
-                    onClick={() => setSelectedCamera(camera)}
-                  >
-                    <CardContent className="p-4">
-                      <div className="flex items-start justify-between mb-3">
-                        <div className="flex-1">
-                          <h4 className="font-semibold text-gray-900 text-sm">
-                            {camera.name}
-                          </h4>
-                          <p className="text-xs text-gray-600">
-                            {camera.location}
-                          </p>
-                        </div>
-                        <div className="flex flex-col items-end space-y-1">
-                          <Badge
-                            variant="outline"
-                            className={cn("text-xs", getStatusColor(camera.status))}
-                          >
-                            {camera.status === "online" 
-                              ? "En ligne" 
-                              : camera.status === "offline"
-                                ? "Hors ligne"
-                                : "Maintenance"
-                            }
-                          </Badge>
-                          {camera.isRecording && (
-                            <div className="flex items-center space-x-1 text-red-600">
-                              <div className="w-2 h-2 bg-red-600 rounded-full animate-pulse" />
-                              <span className="text-xs">REC</span>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-
-                      <div className="flex items-center justify-between text-xs text-gray-500">
-                        <span>
-                          {camera.lastActivity.toLocaleTimeString()}
-                        </span>
-                        <div className="flex space-x-1">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              toggleRecording(camera.id);
-                            }}
-                            disabled={camera.status !== "online"}
-                            className="h-6 w-6 p-0"
-                          >
-                            {camera.isRecording ? (
-                              <Square className="h-3 w-3 text-red-600" />
-                            ) : (
-                              <Play className="h-3 w-3" />
-                            )}
-                          </Button>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-
-              {/* Recent Alerts */}
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-lg font-semibold text-gray-900 flex items-center space-x-2">
-                    <AlertTriangle className="h-5 w-5" />
-                    <span>Alertes récentes</span>
-                  </h3>
-                  <Select value={alertFilter} onValueChange={setAlertFilter}>
-                    <SelectTrigger className="w-32">
-                      <Filter className="h-4 w-4" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">Toutes</SelectItem>
-                      <SelectItem value="unacknowledged">Non lues</SelectItem>
-                      <SelectItem value="critical">Critiques</SelectItem>
-                      <SelectItem value="high">Élevées</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-2">
-                  {filteredAlerts.slice(0, 5).map((alert) => (
-                    <Card key={alert.id} className="border-l-4 border-l-orange-400">
-                      <CardContent className="p-3">
-                        <div className="flex items-start justify-between mb-2">
-                          <Badge
-                            variant="outline"
-                            className={cn("text-xs", getSeverityColor(alert.severity))}
-                          >
-                            {alert.severity === "low" ? "Faible" :
-                             alert.severity === "medium" ? "Moyenne" :
-                             alert.severity === "high" ? "Élevée" : "Critique"}
-                          </Badge>
-                          {!alert.acknowledged && (
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              onClick={() => acknowledgeAlert(alert.id)}
-                              className="h-6 px-2 text-xs"
-                            >
-                              <CheckCircle className="h-3 w-3" />
-                            </Button>
-                          )}
-                        </div>
-                        <p className="text-sm text-gray-900 mb-1">
-                          {alert.message}
-                        </p>
-                        <div className="flex items-center justify-between text-xs text-gray-500">
-                          <span>{alert.timestamp.toLocaleTimeString()}</span>
-                          <span className="capitalize">{alert.type}</span>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              </div>
+          {/* Camera Info Overlay - Bottom Left */}
+          <div className="absolute bottom-4 left-4 bg-white/90 backdrop-blur-sm rounded-lg p-3 shadow-lg">
+            <div className="text-sm text-gray-700">
+              <div className="font-medium">Caméra Live</div>
+              <div className="text-xs text-gray-500">Serre A1 - Domaine Nord</div>
             </div>
-          </ScrollArea>
-        </div>
-
-        {/* Right Panel - Video Feed */}
-        <div className="flex-1 bg-black relative">
-          {selectedCamera ? (
-            <div className="h-full flex flex-col">
-              {/* Video Feed Header */}
-              <div className="bg-white p-4 border-b">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h2 className="text-lg font-semibold text-gray-900">
-                      {selectedCamera.name}
-                    </h2>
-                    <p className="text-sm text-gray-600">
-                      {selectedCamera.location}
-                    </p>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Badge
-                      variant="outline"
-                      className={cn(getStatusColor(selectedCamera.status))}
-                    >
-                      {selectedCamera.status === "online" 
-                        ? "En ligne" 
-                        : selectedCamera.status === "offline"
-                          ? "Hors ligne"
-                          : "Maintenance"
-                      }
-                    </Badge>
-                    <Button size="sm" variant="outline">
-                      <Download className="h-4 w-4 mr-2" />
-                      Exporter
-                    </Button>
-                  </div>
-                </div>
-              </div>
-
-              {/* Video Display Area */}
-              <div className="flex-1 bg-gray-900 flex items-center justify-center">
-                {selectedCamera.status === "online" ? (
-                  <div className="text-center text-white">
-                    <Monitor className="h-16 w-16 mx-auto mb-4 opacity-50" />
-                    <p className="text-lg mb-2">Flux vidéo en direct</p>
-                    <p className="text-sm opacity-75">
-                      {selectedCamera.name}
-                    </p>
-                    {selectedCamera.isRecording && (
-                      <div className="flex items-center justify-center space-x-2 mt-4">
-                        <div className="w-3 h-3 bg-red-500 rounded-full animate-pulse" />
-                        <span className="text-red-400">ENREGISTREMENT</span>
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  <div className="text-center text-gray-400">
-                    <Camera className="h-16 w-16 mx-auto mb-4 opacity-50" />
-                    <p className="text-lg mb-2">Caméra indisponible</p>
-                    <p className="text-sm opacity-75">
-                      {selectedCamera.status === "offline" 
-                        ? "Vérifiez la connexion réseau"
-                        : "En cours de maintenance"
-                      }
-                    </p>
-                  </div>
-                )}
-              </div>
-
-              {/* Video Controls */}
-              <div className="bg-white p-4 border-t">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-4">
-                    <Button
-                      size="sm"
-                      variant={selectedCamera.isRecording ? "destructive" : "default"}
-                      onClick={() => toggleRecording(selectedCamera.id)}
-                      disabled={selectedCamera.status !== "online"}
-                    >
-                      {selectedCamera.isRecording ? (
-                        <>
-                          <Square className="h-4 w-4 mr-2" />
-                          Arrêter
-                        </>
-                      ) : (
-                        <>
-                          <Play className="h-4 w-4 mr-2" />
-                          Enregistrer
-                        </>
-                      )}
-                    </Button>
-                    
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      disabled={selectedCamera.status !== "online"}
-                    >
-                      <RefreshCw className="h-4 w-4 mr-2" />
-                      Actualiser
-                    </Button>
-                  </div>
-
-                  <div className="flex items-center space-x-2 text-sm text-gray-600">
-                    <Clock className="h-4 w-4" />
-                    <span>
-                      Dernière activité: {selectedCamera.lastActivity.toLocaleTimeString()}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          ) : (
-            <div className="h-full flex items-center justify-center text-gray-400">
-              <div className="text-center">
-                <Camera className="h-24 w-24 mx-auto mb-4 opacity-50" />
-                <p className="text-xl mb-2">Aucune caméra sélectionnée</p>
-                <p className="text-sm opacity-75">
-                  Sélectionnez une caméra dans la liste pour voir le flux vidéo
-                </p>
-              </div>
-            </div>
-          )}
+          </div>
         </div>
       </div>
     </div>
