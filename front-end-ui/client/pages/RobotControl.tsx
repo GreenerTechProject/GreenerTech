@@ -62,12 +62,13 @@ export default function RobotControl() {
   const pcRef = useRef<RTCPeerConnection | null>(null);
 
   // Initialize WebRTC for video streaming
-  const startWebRTC = async () => {
+  const startWebRTC = async (robot?: string, camera?: string) => {
     try {
       const pc = new RTCPeerConnection();
       pcRef.current = pc;
-      const rob = selectedRobot || "1";
-      const cam = selectedCamera || "right";
+	  
+      const rob = robot || "1";
+      const cam = camera || "right";
 
       pc.addTransceiver("video", { direction: "recvonly" });
       
@@ -108,13 +109,13 @@ export default function RobotControl() {
   };
 
   // Initialize WebSocket connections
-  const initializeWebSockets = () => {
+  const initializeWebSockets = (robot?: string, camera?: string) => {
     const protocol = window.location.protocol === "https:" ? "wss" : "ws";
     const hostname = window.location.hostname;
     const port = "8080";
     
-	const rob = selectedRobot || "1";
-    const cam = selectedCamera || "right";
+	const rob = robot || "1";
+    const cam = camera || "right";
 
     // QR Code WebSocket
     const qrWs = new WebSocket(`${protocol}://${hostname}:${port}/service/qr_data?robot=${encodeURIComponent(rob)}&camera=${encodeURIComponent(cam)}`);
@@ -242,8 +243,8 @@ export default function RobotControl() {
 
     // Wait a moment then reinitialize
     setTimeout(() => {
-      startWebRTC();
-      initializeWebSockets();
+      startWebRTC("1", "right");
+      initializeWebSockets("1", "right");
       setIsRefreshing(false);
     }, 1000);
   };
@@ -262,13 +263,6 @@ export default function RobotControl() {
   // Handle camera selection change
   const handleCameraChange = (camera: string) => {
     setSelectedCamera(camera);
-    // Restart video stream with new camera
-    if (pcRef.current) {
-      pcRef.current.close();
-    }
-    setTimeout(() => {
-      startWebRTC();
-    }, 500);
   };
 
   // Handle robot selection change
@@ -344,8 +338,8 @@ export default function RobotControl() {
 
   // Initialize connections on component mount
   useEffect(() => {
-    startWebRTC();
-    initializeWebSockets();
+    startWebRTC("1", "right");
+    initializeWebSockets("1", "right");
 
     // Add fullscreen event listener
     const handleFullscreenChange = () => {
@@ -422,10 +416,10 @@ export default function RobotControl() {
     if (controlWsRef.current) controlWsRef.current.close();
     if (sensorWsRef.current) sensorWsRef.current.close();
   
-    initializeWebSockets();
+    initializeWebSockets(selectedRobot, selectedCamera);
     
     if (pcRef.current) pcRef.current.close();
-    startWebRTC();
+    startWebRTC(selectedRobot, selectedCamera);
   
     return () => {
       if (qrWsRef.current) qrWsRef.current.close();
@@ -489,9 +483,9 @@ export default function RobotControl() {
                     <SelectValue placeholder="Choisir un robot" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="robot1">Robot #1</SelectItem>
-                    <SelectItem value="robot2">Robot #2</SelectItem>
-                    <SelectItem value="robot3">Robot #3</SelectItem>
+                    <SelectItem value="1">Robot #1</SelectItem>
+                    <SelectItem value="2">Robot #2</SelectItem>
+                    <SelectItem value="3">Robot #3</SelectItem>
                   </SelectContent>
                 </Select>
               </CardContent>
