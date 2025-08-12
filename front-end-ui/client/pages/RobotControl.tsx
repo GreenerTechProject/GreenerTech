@@ -277,6 +277,50 @@ export default function RobotControl() {
       }
     };
   }, []);
+  
+  useEffect(() => {
+	  const handleKeyDown = (e: KeyboardEvent) => {
+		switch (e.key) {
+		  case "ArrowUp":
+			e.preventDefault();
+			handleButtonDown("TOP");
+			break;
+		  case "ArrowDown":
+			e.preventDefault();
+			handleButtonDown("DOWN");
+			break;
+		  case "ArrowLeft":
+			e.preventDefault();
+			handleButtonDown("LEFT");
+			break;
+		  case "ArrowRight":
+			e.preventDefault();
+			handleButtonDown("RIGHT");
+			break;
+		}
+	  };
+
+	  const handleKeyUp = (e: KeyboardEvent) => {
+		switch (e.key) {
+		  case "ArrowUp":
+		  case "ArrowDown":
+		  case "ArrowLeft":
+		  case "ArrowRight":
+			e.preventDefault();
+			handleButtonUp();
+			break;
+		}
+	  };
+
+	  window.addEventListener("keydown", handleKeyDown);
+	  window.addEventListener("keyup", handleKeyUp);
+
+	  return () => {
+		window.removeEventListener("keydown", handleKeyDown);
+		window.removeEventListener("keyup", handleKeyUp);
+	  };
+	}, []);
+
 
   return (
     <div className="min-h-screen bg-gray-50">
