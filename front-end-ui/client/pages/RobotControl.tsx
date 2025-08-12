@@ -66,8 +66,9 @@ export default function RobotControl() {
     try {
       const pc = new RTCPeerConnection();
       pcRef.current = pc;
-      const rob = robot || selectedRobot;
-      const cam = camera || selectedCamera;
+	  
+	  const rob = selectedRobot || "1";
+      const cam = selectedCamera || "right";
 
       pc.addTransceiver("video", { direction: "recvonly" });
       
@@ -113,8 +114,8 @@ export default function RobotControl() {
     const hostname = window.location.hostname;
     const port = "8080";
     
-	const rob = robot || selectedRobot;
-    const cam = camera || selectedCamera;
+	const rob = selectedRobot || "1";
+    const cam = selectedCamera || "right";
 
     // QR Code WebSocket
     const qrWs = new WebSocket(`${protocol}://${hostname}:${port}/service/qr_data?robot=${encodeURIComponent(rob)}&camera=${encodeURIComponent(cam)}`);
