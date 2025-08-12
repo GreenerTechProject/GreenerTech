@@ -6,6 +6,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import DirectorSidebar from "../components/DirectorSidebar";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   Users,
   Wrench,
@@ -19,9 +21,15 @@ import {
   Activity,
   BarChart3,
   Calendar,
-  Menu
+  Menu,
+  Home,
+  Map,
+  ChevronDown,
+  User,
+  LogOut
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useNavigate } from "react-router-dom";
 
 interface StatCard {
   title: string;
@@ -36,6 +44,7 @@ interface StatCard {
 export default function DirectorDashboard() {
   const { user, logout } = useAuth();
   const { isOpen, setIsOpen, toggleSidebar } = useSidebar();
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState<StatCard[]>([
     {
@@ -177,6 +186,18 @@ export default function DirectorDashboard() {
     return colors[priority as keyof typeof colors] || colors.low;
   };
 
+  const handleProfile = () => {
+    navigate("/directeur/profile");
+  };
+
+  const handleLogout = async () => {
+    await logout();
+  };
+
+  const handleMapConfig = () => {
+    navigate("/directeur/map-config");
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex">
@@ -196,11 +217,13 @@ export default function DirectorDashboard() {
       <DirectorSidebar isOpen={isOpen} setIsOpen={setIsOpen} />
       
       <div className="flex-1 transition-all duration-300">
-        {/* Header */}
-        <header className="bg-white shadow-sm border-b sticky top-0 z-30">
-          <div className="px-4 sm:px-6 lg:px-8">
-            <div className="flex justify-between items-center py-4">
-              <div className="flex items-center space-x-4">
+        {/* Header - Updated to match TechHeader style */}
+        <header className="bg-white border-b sticky top-0 z-10">
+          <div className="max-w-full px-3 sm:px-4 lg:px-6">
+            {/* Mobile-first responsive grid */}
+            <div className="grid grid-cols-3 items-center py-2 sm:py-3">
+              {/* Left: Hamburger / Navigation */}
+              <div className="justify-self-start">
                 <Button
                   variant="ghost"
                   size="sm"
@@ -209,24 +232,75 @@ export default function DirectorDashboard() {
                 >
                   <Menu className="h-5 w-5" />
                 </Button>
-                <div>
-                  <h1 className="text-xl font-semibold text-gray-900">
-                    Tableau de bord directeur
-                  </h1>
-                  <p className="text-sm text-gray-600">
-                    Bienvenue, {user?.name || user?.email}
-                  </p>
+              </div>
+
+              {/* Center: Logo + Map icon (responsive sizing) */}
+              <div className="justify-self-center flex items-center gap-2 sm:gap-3">
+                <div 
+                  className="h-8 w-8 sm:h-9 sm:w-9 lg:h-10 lg:w-10 rounded-xl bg-[#B4CC5F] flex items-center justify-center shadow-sm cursor-pointer hover:bg-[#9BB84F] transition-colors duration-200 active:scale-95"
+                  onClick={() => navigate("/directeur")}
+                  title="Accueil - Tableau de bord"
+                >
+                  <Home className="h-4 w-4 sm:h-5 sm:w-5 lg:h-6 lg:w-6 text-white" />
+                </div>
+                <div 
+                  className="cursor-pointer hover:scale-110 transition-transform duration-200 active:scale-95"
+                  onClick={handleMapConfig}
+                  title="Configuration de la carte"
+                >
+                  <Map className="h-4 w-4 sm:h-5 sm:w-5 lg:h-6 lg:w-6 text-blue-700" />
                 </div>
               </div>
-              <div className="flex items-center space-x-3">
-                <Badge variant="outline" className="bg-green-50 border-green-200 text-green-700">
-                  <Calendar className="h-3 w-3 mr-1" />
-                  {new Date().toLocaleDateString('fr-FR')}
+
+              {/* Right: Role + User dropdown (responsive) */}
+              <div className="justify-self-end flex items-center gap-2 sm:gap-3">
+                {/* Role badge - hidden on very small screens */}
+                <Badge variant="outline" className="hidden xs:inline bg-gray-50 border-gray-200 text-gray-700 text-xs">
+                  Directeur
                 </Badge>
-                <Button size="sm" className="bg-green-600 hover:bg-green-700">
-                  <BarChart3 className="h-4 w-4 mr-1" />
-                  Rapport général
-                </Button>
+
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" className="px-2 sm:px-3 h-8 sm:h-9 lg:h-10">
+                      <div className="flex items-center gap-1 sm:gap-2">
+                        <Avatar className="h-6 w-6 sm:h-7 sm:w-7 lg:h-8 lg:w-8">
+                          <AvatarFallback className="bg-green-100 text-green-700 text-xs sm:text-sm">
+                            {(user?.name || user?.email || "U")
+                              .split(" ")
+                              .map((p) => p[0])
+                              .join("")
+                              .slice(0, 2)
+                              .toUpperCase()}
+                          </AvatarFallback>
+                        </Avatar>
+                        {/* User info - hidden on small screens */}
+                        <div className="hidden sm:block text-left">
+                          <div className="text-sm font-medium text-gray-900 leading-none">
+                            {user?.name || "Utilisateur"}
+                          </div>
+                          <div className="text-xs text-gray-500 leading-none truncate max-w-[12rem]">
+                            {user?.email}
+                          </div>
+                        </div>
+                        <ChevronDown className="h-3 w-3 sm:h-4 sm:w-4 text-gray-400" />
+                      </div>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-56">
+                    <div className="px-2 py-1.5">
+                      <div className="text-sm font-medium text-gray-900">{user?.name || "Utilisateur"}</div>
+                      <div className="text-xs text-gray-500">{user?.email}</div>
+                    </div>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={handleProfile} className="cursor-pointer">
+                      <User className="h-4 w-4 mr-2" /> Profile
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={handleLogout} className="cursor-pointer text-red-600 focus:text-red-600">
+                      <LogOut className="h-4 w-4 mr-2" /> Déconnexion
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
             </div>
           </div>
@@ -356,9 +430,9 @@ export default function DirectorDashboard() {
                   <Wrench className="h-6 w-6" />
                   <span className="text-sm">Créer intervention</span>
                 </Button>
-                <Button variant="outline" className="h-20 flex flex-col space-y-2">
-                  <AlertTriangle className="h-6 w-6" />
-                  <span className="text-sm">Voir alertes</span>
+                <Button variant="outline" className="h-20 flex flex-col space-y-2" onClick={handleMapConfig}>
+                  <Map className="h-6 w-6" />
+                  <span className="text-sm">Configuration carte</span>
                 </Button>
                 <Button variant="outline" className="h-20 flex flex-col space-y-2">
                   <FileText className="h-6 w-6" />

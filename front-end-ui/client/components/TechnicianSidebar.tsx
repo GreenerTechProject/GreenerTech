@@ -81,13 +81,15 @@ export default function TechnicianSidebar({
         path: userRole === "technicien_sup" ? "/technicien-sup/reports" : "/reports",
       },
     ];
-    // Show Surveillance for all technician roles
-    items.splice(2, 0, {
-      id: "surveillance",
-      label: "Surveillance",
-      icon: <Bot className="h-5 w-5" />,
-      path: "/surveillance",
-    });
+    // Show Surveillance only for regular technicians, not for tech-sup
+    if (userRole !== "technicien_sup") {
+      items.splice(2, 0, {
+        id: "surveillance",
+        label: "Surveillance",
+        icon: <Bot className="h-5 w-5" />,
+        path: "/surveillance",
+      });
+    }
     return items;
   })();
 

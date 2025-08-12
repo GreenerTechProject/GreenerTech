@@ -43,6 +43,7 @@ import DirectorAffiliationManagement from "./pages/DirectorAffiliationManagement
 import DirectorInterventionManagement from "./pages/DirectorInterventionManagement";
 import DirectorAlertManagement from "./pages/DirectorAlertManagement";
 import DirectorReportManagement from "./pages/DirectorReportManagement";
+import DirectorMapConfig from "./pages/DirectorMapConfig";
 
 const queryClient = new QueryClient();
 
@@ -108,6 +109,16 @@ const App = () => (
               element={
                 <ProtectedRoute requiredRole="directeur">
                   <NewDirectorDashboard />
+                </ProtectedRoute>
+              }
+            />
+
+            {/* Director Map Configuration */}
+            <Route
+              path="/directeur/map-config"
+              element={
+                <ProtectedRoute requiredRole="directeur">
+                  <DirectorMapConfig />
                 </ProtectedRoute>
               }
             />

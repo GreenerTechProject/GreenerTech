@@ -34,7 +34,7 @@ def register():
     new_user.verification_token = generate_token(new_user.id)
     db.session.commit()
     # Envoi de l'email de vérification
-    #send_verification_email(new_user)
+    send_verification_email(new_user)
     return jsonify({
         "message": "Utilisateur enregistré avec succès. Veuillez vérifier votre email pour activer votre compte.",
     }), 201
@@ -295,12 +295,14 @@ def get_technicien_by_email():
     
       # Safe handling of assigned director and company
     company_name = None
+    id_entreprise = None
     if user.id_assigned:
         director = User.query.get(user.id_assigned)
         if director:
             company = Entreprise.query.filter_by(id_user=director.id).first()
             if company:
                 company_name = company.nom
+                id_entreprise = company.id
     
     
     director = User.query.get(user.id_assigned) if user.id_assigned else None
@@ -311,8 +313,10 @@ def get_technicien_by_email():
         "email": user.email,
         "role": user.role, 
         "id_assigned": user.id_assigned,
-        "company_name": company_name
+        "company_name": company_name,
+        "id_entreprise": id_entreprise
     }
+    print(f"[Backend] Returning user data: {user_data}")
     return jsonify(user_data), 200
 
 
@@ -357,20 +361,22 @@ def verify_email():
 def register_technicien():
     try:
         data = request.get_json()
+        print(f"[Backend] Received data: {data}")
 
         required_fields = ['email', 'password', 'role']
         if not all(field in data for field in required_fields):
+            print(f"[Backend] Missing required fields. Required: {required_fields}, Received: {list(data.keys())}")
             return jsonify({"error": "Email, mot de passe et rôle sont requis"}), 400
 
         if not data.get('name') and not (data.get('firstName') and data.get('lastName')):
+            print(f"[Backend] Missing name fields. name: {data.get('name')}, firstName: {data.get('firstName')}, lastName: {data.get('lastName')}")
             return jsonify({"error": "Nom et prénom sont requis"}), 400
 
-        if not data.get('id_entreprise'):
+        # For pre-registered users, we can derive id_entreprise from their assigned director
+        print(f"[Backend] Checking id_entreprise: {data.get('id_entreprise')}, id_assigned: {data.get('id_assigned')}")
+        if not data.get('id_entreprise') and not data.get('id_assigned'):
+            print(f"[Backend] Missing id_entreprise and no id_assigned. Received: {data.get('id_entreprise')}")
             return jsonify({"error": "Sélection d'entreprise requise"}), 400
-
-        company = Entreprise.query.filter_by(id=data.get('id_entreprise')).first()
-        if not company:
-            return jsonify({"error": "Entreprise sélectionnée introuvable"}), 404
 
         email = data.get('email')
         role = data.get('role')
@@ -380,6 +386,30 @@ def register_technicien():
         telephone = data.get('telephone')
         cin = data.get('cin')
         id_entreprise = data.get('id_entreprise')
+        
+        # For pre-registered users, derive id_entreprise from assigned director if not provided
+        if not id_entreprise and data.get('id_assigned'):
+            print(f"[Backend] No id_entreprise provided, trying to derive from id_assigned: {data.get('id_assigned')}")
+            assigned_director = User.query.get(data.get('id_assigned'))
+            if assigned_director and assigned_director.role == 'directeur':
+                company = Entreprise.query.filter_by(id_user=assigned_director.id).first()
+                if company:
+                    id_entreprise = company.id
+                    print(f"[Backend] Derived id_entreprise {id_entreprise} from assigned director {assigned_director.id}")
+                else:
+                    print(f"[Backend] No company found for director {assigned_director.id}")
+            else:
+                print(f"[Backend] Assigned user {data.get('id_assigned')} not found or not a director")
+        else:
+            print(f"[Backend] Using provided id_entreprise: {id_entreprise}")
+
+        # Validate company exists (either provided directly or derived from assigned director)
+        if id_entreprise:
+            company = Entreprise.query.filter_by(id=id_entreprise).first()
+            if not company:
+                return jsonify({"error": "Entreprise sélectionnée introuvable"}), 404
+        else:
+            return jsonify({"error": "Impossible de déterminer l'entreprise. Veuillez contacter votre directeur."}), 400
 
         if role not in ["technicien", "technicien_superieur"]:
             return jsonify({"message": "Rôle invalide. Choisir 'technicien' ou 'technicien_superieur'"}), 400

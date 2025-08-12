@@ -171,7 +171,7 @@ def get_bilans_by_serre(current_user, id_serre):
         from app.models.autorisation_serre import Autorisation_serre
         auth = Autorisation_serre.query.filter_by(id_user=current_user.id, id_serre=id_serre).first()
         print(f"[DEBUG] Authorization found: {auth}")
-        if not auth or not auth.access_serre:
+        if not auth :
             print(f"[DEBUG] No authorization or no access_serre permission")
             return jsonify({"message": "Accès non autorisé à cette serre"}), 403
         print(f"[DEBUG] Authorization check passed")
