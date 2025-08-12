@@ -342,6 +342,13 @@ export default function RobotControl() {
     startWebRTC();
     initializeWebSockets();
 
+    // Add fullscreen event listener
+    const handleFullscreenChange = () => {
+      setIsFullScreen(!!document.fullscreenElement);
+    };
+
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+
     return () => {
       // Cleanup on unmount
       if (pcRef.current) {
@@ -356,6 +363,8 @@ export default function RobotControl() {
       if (sensorWsRef.current) {
         sensorWsRef.current.close();
       }
+
+      document.removeEventListener('fullscreenchange', handleFullscreenChange);
     };
   }, []);
   
