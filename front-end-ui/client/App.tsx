@@ -43,7 +43,11 @@ import DirectorAffiliationManagement from "./pages/DirectorAffiliationManagement
 import DirectorInterventionManagement from "./pages/DirectorInterventionManagement";
 import DirectorAlertManagement from "./pages/DirectorAlertManagement";
 import DirectorReportManagement from "./pages/DirectorReportManagement";
+import DirectorProfile from "./pages/DirectorProfile";
+import DirectorProfileEdit from "./pages/DirectorProfileEdit";
 import DirectorMapConfig from "./pages/DirectorMapConfig";
+import DirectorHeader from "./components/DirectorHeader";
+import { MissionManagement } from "./pages/MissionManagement";
 
 const queryClient = new QueryClient();
 
@@ -123,6 +127,25 @@ const App = () => (
               }
             />
 
+            {/* Director Profile Routes */}
+            <Route
+              path="/directeur/profile"
+              element={
+                <ProtectedRoute requiredRole="directeur">
+                  <DirectorProfile />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/directeur/profile/edit"
+              element={
+                <ProtectedRoute requiredRole="directeur">
+                  <DirectorProfileEdit />
+                </ProtectedRoute>
+              }
+            />
+
             {/* Director Management Routes */}
             <Route
               path="/director/technicians"
@@ -165,6 +188,15 @@ const App = () => (
               element={
                 <ProtectedRoute requiredRole="directeur">
                   <DirectorReportManagement />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/director/missions"
+              element={
+                <ProtectedRoute requiredRole="directeur">
+                  <MissionManagement />
                 </ProtectedRoute>
               }
             />
@@ -233,6 +265,15 @@ const App = () => (
               }
             />
 
+            <Route
+              path="/technician/missions"
+              element={
+                <ProtectedRoute requiredRole="technicien">
+                  <MissionManagement />
+                </ProtectedRoute>
+              }
+            />
+
             {/* Technicien Sup Routes with Persistent Header */}
             <Route
               path="/technicien-sup"
@@ -249,6 +290,7 @@ const App = () => (
               <Route path="alerts" element={<TechnicienSupAlerts />} />
               <Route path="interventions" element={<TechnicienSupInterventions />} />
               <Route path="reports" element={<ReportsPage />} />
+              <Route path="missions" element={<MissionManagement />} />
             </Route>
 
             <Route

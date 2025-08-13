@@ -3,7 +3,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useSidebar } from '@/hooks/useSidebar';
 import DirectorSidebar from '../components/DirectorSidebar';
 import { useToast } from '@/hooks/use-toast';
-import { technicianService, Technician as TechnicianType } from '../services/technicianService';
+import { technicianService, Technician } from '../services/technicianService';
 import {
   Menu,
   Plus,
@@ -50,24 +50,6 @@ import {
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 
-interface Technician {
-  id: number;
-  fullName: string;
-  email: string;
-  phone?: string;
-  role: 'technicien' | 'technicien_superieur';
-  status: 'active' | 'inactive' | 'pending';
-  assignedSerres: string[];
-  location?: string;
-  joinDate: string;
-  lastActivity?: string;
-  interventions: {
-    total: number;
-    completed: number;
-    inProgress: number;
-  };
-}
-
 export default function TechnicianManagement() {
   const { user } = useAuth();
   const { isOpen, setIsOpen, toggleSidebar } = useSidebar();
@@ -85,10 +67,7 @@ export default function TechnicianManagement() {
   const [formData, setFormData] = useState({
     fullName: '',
     email: '',
-    phone: '',
-    role: 'technicien' as 'technicien' | 'technicien_superieur',
-    location: '',
-    assignedSerres: [] as string[]
+    role: 'technicien' as 'technicien' | 'technicien_superieur'
   });
 
   // Fetch technicians from the backend
@@ -105,22 +84,43 @@ export default function TechnicianManagement() {
         setError(null);
         
         console.log('[TechManagement] Fetching technicians for company:', user.id_entreprise);
-        const techniciansData = await technicianService.getTechniciansByCompany(user.id_entreprise.toString());
+        const techniciansData = await technicianService.getAllTechniciansByCompany(user.id_entreprise);
         
         // Transform backend data to match our interface
-        const transformedTechnicians: Technician[] = techniciansData.map((tech: TechnicianType) => ({
-          id: tech.id,
-          fullName: tech.fullName,
-          email: tech.email,
-          phone: '', // Backend doesn't provide phone yet
-          role: tech.role,
-          status: 'active', // Default status since backend doesn't provide it
-          assignedSerres: tech.assignedSerres || [],
-          location: 'Domaine Principal', // Default location
-          joinDate: new Date().toISOString().split('T')[0], // Default join date
-          lastActivity: new Date().toISOString().split('T')[0], // Default last activity
-          interventions: { total: 0, completed: 0, inProgress: 0 } // Default interventions
-        }));
+        const transformedTechnicians: Technician[] = await Promise.all(
+          techniciansData.map(async (tech: any) => {
+            // Fetch real interventions for this technician
+            const interventions = await technicianService.getInterventionsByTechnician(tech.id);
+            
+            // Calculate intervention statistics
+            const totalInterventions = interventions.length;
+            const completedInterventions = interventions.filter(int => int.status === 'terminé').length;
+            const inProgressInterventions = interventions.filter(int => int.status === 'encours').length;
+            
+            return {
+              id: tech.id,
+              fullName: tech.fullName,
+              email: tech.email,
+              telephone: tech.telephone,
+              role: tech.role,
+              status: tech.directeur_valide ? 'active' : 'inactive',
+              assignedSerres: tech.assignedSerres || [],
+              created_at: tech.created_at,
+              updated_at: tech.updated_at,
+              id_assigned: tech.id_assigned,
+              setup_completed: tech.setup_completed,
+              directeur_valide: tech.directeur_valide,
+              email_valide: tech.email_valide,
+              id_entreprise: tech.id_entreprise,
+              birthday: tech.birthday,
+              interventions: { 
+                total: totalInterventions, 
+                completed: completedInterventions, 
+                inProgress: inProgressInterventions 
+              }
+            };
+          })
+        );
         
         console.log('[TechManagement] Transformed technicians:', transformedTechnicians);
         setTechnicians(transformedTechnicians);
@@ -139,6 +139,57 @@ export default function TechnicianManagement() {
 
     fetchTechnicians();
   }, [user?.id_entreprise, toast]);
+
+  // Function to refresh technicians list
+  const refreshTechnicians = async () => {
+    if (!user?.id_entreprise) return;
+    
+    try {
+      setLoading(true);
+      const techniciansData = await technicianService.getAllTechniciansByCompany(user.id_entreprise);
+      
+      const transformedTechnicians: Technician[] = await Promise.all(
+        techniciansData.map(async (tech: any) => {
+          // Fetch real interventions for this technician
+          const interventions = await technicianService.getInterventionsByTechnician(tech.id);
+          
+          // Calculate intervention statistics
+          const totalInterventions = interventions.length;
+          const completedInterventions = interventions.filter(int => int.status === 'terminé').length;
+          const inProgressInterventions = interventions.filter(int => int.status === 'encours').length;
+          
+          return {
+            id: tech.id,
+            fullName: tech.fullName,
+            email: tech.email,
+            telephone: tech.telephone,
+            role: tech.role,
+            status: tech.directeur_valide ? 'active' : 'inactive',
+            assignedSerres: tech.assignedSerres || [],
+            created_at: tech.created_at,
+            updated_at: tech.updated_at,
+            id_assigned: tech.id_assigned,
+            setup_completed: tech.setup_completed,
+            directeur_valide: tech.directeur_valide,
+            email_valide: tech.email_valide,
+            id_entreprise: tech.id_entreprise,
+            birthday: tech.birthday,
+            interventions: { 
+              total: totalInterventions, 
+              completed: completedInterventions, 
+              inProgress: inProgressInterventions 
+            }
+          };
+        })
+      );
+      
+      setTechnicians(transformedTechnicians);
+    } catch (error: any) {
+      console.error('Error refreshing technicians:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const filteredTechnicians = technicians.filter(tech => {
     const matchesSearch = tech.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -164,7 +215,7 @@ export default function TechnicianManagement() {
         email: formData.email,
         fullName: formData.fullName,
         role: formData.role,
-        companyId: user.id_entreprise.toString()
+        companyId: user.id_entreprise // Send as number, not string
       };
 
       // Call the backend API to create a technician
@@ -173,32 +224,37 @@ export default function TechnicianManagement() {
       if (response && response.length > 0) {
         const createdTech = response[0];
         
-        // Create the new technician object for the UI
+        // Create the new technician object for the UI with real data structure
         const newTechnician: Technician = {
           id: createdTech.id,
           fullName: formData.fullName,
           email: formData.email,
-          phone: formData.phone,
+          telephone: null, // New technicians don't have phone yet
           role: formData.role,
-          status: 'pending',
-          assignedSerres: formData.assignedSerres,
-          location: formData.location,
-          joinDate: new Date().toISOString().split('T')[0],
-          lastActivity: new Date().toISOString().split('T')[0],
-          interventions: { total: 0, completed: 0, inProgress: 0 }
+          status: 'pending', // New technicians start as pending
+          assignedSerres: [], // New technicians don't have assigned serres yet
+          created_at: new Date().toISOString(), // Today's date
+          updated_at: new Date().toISOString(), // Today's date
+          id_assigned: null, // New technicians don't have assigned user yet
+          setup_completed: false, // New technicians haven't completed setup
+          directeur_valide: false, // New technicians haven't been validated by director
+          email_valide: false, // New technicians haven't verified email
+          id_entreprise: user.id_entreprise, // Company ID from current user
+          birthday: null, // New technicians haven't set birthday
+          interventions: { total: 0, completed: 0, inProgress: 0 } // No interventions yet
         };
 
-        // Add to the local state
-        setTechnicians([...technicians, newTechnician]);
-        
-        // Close modal and reset form
+        setTechnicians(prev => [...prev, newTechnician]);
         setIsCreateModalOpen(false);
         resetForm();
         
         toast({
           title: "Technicien créé",
-          description: `${formData.fullName} a été ajouté avec succès.`,
+          description: "Le compte a été créé avec succès.",
         });
+        
+        // Refresh the list to get the latest data with real interventions
+        await refreshTechnicians();
       }
     } catch (error: any) {
       console.error('Error creating technician:', error);
@@ -210,56 +266,129 @@ export default function TechnicianManagement() {
     }
   };
 
-  const handleEditTechnician = () => {
+  const handleEditTechnician = async () => {
     if (!selectedTechnician) return;
     
-    const updatedTechnicians = technicians.map(tech =>
-      tech.id === selectedTechnician.id
-        ? { ...tech, ...formData }
-        : tech
-    );
-    
-    setTechnicians(updatedTechnicians);
-    setIsEditModalOpen(false);
-    setSelectedTechnician(null);
-    resetForm();
-    
-    toast({
-      title: "Technicien modifié",
-      description: "Les informations ont été mises à jour avec succès.",
-    });
+    try {
+      // Call the backend API to update the technician
+      const updates = {
+        email: formData.email,
+        name: formData.fullName, // Backend expects 'name' not 'fullName'
+        role: formData.role
+      };
+      
+      await technicianService.updateTechnician(selectedTechnician.id, updates);
+      
+      // Update local state
+      const updatedTechnicians = technicians.map(tech =>
+        tech.id === selectedTechnician.id
+          ? { ...tech, ...formData }
+          : tech
+      );
+      
+      setTechnicians(updatedTechnicians);
+      setIsEditModalOpen(false);
+      setSelectedTechnician(null);
+      resetForm();
+      
+      toast({
+        title: "Technicien modifié",
+        description: "Les informations ont été mises à jour avec succès.",
+      });
+      
+      // Refresh the list to get the latest data
+      await refreshTechnicians();
+    } catch (error: any) {
+      console.error('Error updating technician:', error);
+      toast({
+        title: "Erreur",
+        description: error.message || "Erreur lors de la modification du technicien",
+        variant: "destructive"
+      });
+    }
   };
 
-  const handleDeleteTechnician = (id: number) => {
-    setTechnicians(technicians.filter(tech => tech.id !== id));
-    toast({
-      title: "Technicien supprimé",
-      description: "Le compte a été supprimé avec succès.",
-      variant: "destructive"
-    });
+  const handleDeleteTechnician = async (id: number) => {
+    try {
+      // Call the backend API to delete the technician
+      await technicianService.deleteTechnician(id);
+      
+      // Update local state
+      setTechnicians(technicians.filter(tech => tech.id !== id));
+      
+      toast({
+        title: "Technicien supprimé",
+        description: "Le compte a été supprimé avec succès.",
+        variant: "destructive"
+      });
+      
+      // Refresh the list to get the latest data
+      await refreshTechnicians();
+    } catch (error: any) {
+      console.error('Error deleting technician:', error);
+      toast({
+        title: "Erreur",
+        description: error.message || "Erreur lors de la suppression du technicien",
+        variant: "destructive"
+      });
+    }
   };
 
-  const handleActivateTechnician = (id: number) => {
-    const updatedTechnicians = technicians.map(tech =>
-      tech.id === id ? { ...tech, status: 'active' as const } : tech
-    );
-    setTechnicians(updatedTechnicians);
-    toast({
-      title: "Technicien activé",
-      description: "Le compte a été activé avec succès.",
-    });
+  const handleActivateTechnician = async (id: number) => {
+    try {
+      // Call the backend API to activate the technician
+      await technicianService.updateTechnician(id, { directeur_valide: true });
+      
+      // Update local state
+      const updatedTechnicians = technicians.map(tech =>
+        tech.id === id ? { ...tech, status: 'active' as const } : tech
+      );
+      setTechnicians(updatedTechnicians);
+      
+      toast({
+        title: "Technicien activé",
+        description: "Le compte a été activé avec succès.",
+      });
+      
+      // Refresh the list to get the latest data
+      await refreshTechnicians();
+    } catch (error: any) {
+      console.error('Error activating technician:', error);
+      toast({
+        title: "Erreur",
+        description: error.message || "Erreur lors de l'activation du technicien",
+        variant: "destructive"
+      });
+    }
   };
 
-  const handleDeactivateTechnician = (id: number) => {
-    const updatedTechnicians = technicians.map(tech =>
-      tech.id === id ? { ...tech, status: 'inactive' as const } : tech
-    );
-    setTechnicians(updatedTechnicians);
-    toast({
-      title: "Technicien désactivé",
-      description: "Le compte a été désactivé.",
-      variant: "destructive"
-    });
+  const handleDeactivateTechnician = async (id: number) => {
+    try {
+      // Call the backend API to deactivate the technician
+      await technicianService.updateTechnician(id, { directeur_valide: false });
+      
+      // Update local state
+      const updatedTechnicians = technicians.map(tech =>
+        tech.id === id ? { ...tech, status: 'inactive' as const } : tech
+      );
+      setTechnicians(updatedTechnicians);
+      
+      toast({
+        title: "Technicien désactivé",
+        description: "Le compte a été désactivé.",
+        variant: "destructive"
+      });
+      
+      // Refresh the list to get the latest data
+      await refreshTechnicians();
+    } catch (error: any) {
+      console.error('Error deactivating technician:', error);
+      toast({
+        title: "Erreur",
+        description: error.message || "Erreur lors de la désactivation du technicien",
+        variant: "destructive"
+      });
+    }
   };
 
   const openEditModal = (technician: Technician) => {
@@ -267,10 +396,7 @@ export default function TechnicianManagement() {
     setFormData({
       fullName: technician.fullName,
       email: technician.email,
-      phone: technician.phone || '',
       role: technician.role,
-      location: technician.location || '',
-      assignedSerres: technician.assignedSerres
     });
     setIsEditModalOpen(true);
   };
@@ -279,10 +405,7 @@ export default function TechnicianManagement() {
     setFormData({
       fullName: '',
       email: '',
-      phone: '',
-      role: 'technicien',
-      location: '',
-      assignedSerres: []
+      role: 'technicien'
     });
   };
 
@@ -498,23 +621,40 @@ export default function TechnicianManagement() {
                           {getStatusBadge(technician.status)}
                         </div>
                         
-                        {technician.phone && (
+                        {technician.telephone && (
                           <div className="flex items-center text-sm text-gray-600">
                             <Phone className="h-4 w-4 mr-2" />
-                            {technician.phone}
-                          </div>
-                        )}
-                        
-                        {technician.location && (
-                          <div className="flex items-center text-sm text-gray-600">
-                            <MapPin className="h-4 w-4 mr-2" />
-                            {technician.location}
+                            {technician.telephone}
                           </div>
                         )}
                         
                         <div className="flex items-center text-sm text-gray-600">
                           <Calendar className="h-4 w-4 mr-2" />
-                          Membre depuis {technician.joinDate}
+                          Membre depuis {technician.created_at ? technician.created_at.split('T')[0] : 'N/A'}
+                        </div>
+                        
+                        {/* Additional technician information */}
+                        <div className="space-y-2 pt-2 border-t border-gray-100">
+                          <div className="flex items-center justify-between text-xs text-gray-500">
+                            <span>Compte configuré:</span>
+                            <Badge variant={technician.setup_completed ? "default" : "secondary"} className="text-xs">
+                              {technician.setup_completed ? "Oui" : "Non"}
+                            </Badge>
+                          </div>
+                          
+                          <div className="flex items-center justify-between text-xs text-gray-500">
+                            <span>Email vérifié:</span>
+                            <Badge variant={technician.email_valide ? "default" : "secondary"} className="text-xs">
+                              {technician.email_valide ? "Oui" : "Non"}
+                            </Badge>
+                          </div>
+                          
+                          {technician.birthday && (
+                            <div className="flex items-center justify-between text-xs text-gray-500">
+                              <span>Date de naissance:</span>
+                              <span>{technician.birthday}</span>
+                            </div>
+                          )}
                         </div>
                         
                         {technician.assignedSerres.length > 0 && (
@@ -547,6 +687,16 @@ export default function TechnicianManagement() {
                               }}
                             />
                           </div>
+                          
+                          {/* Show intervention details if there are any */}
+                          {technician.interventions.total > 0 && (
+                            <div className="mt-2 text-xs text-gray-500">
+                              <div className="flex justify-between">
+                                <span>En cours: {technician.interventions.inProgress}</span>
+                                <span>Terminées: {technician.interventions.completed}</span>
+                              </div>
+                            </div>
+                          )}
                         </div>
                       </CardContent>
                     </Card>
@@ -581,53 +731,37 @@ export default function TechnicianManagement() {
             </DialogHeader>
             <div className="space-y-4">
               <div>
-                <Label htmlFor="fullName">Nom complet</Label>
+                <Label htmlFor="fullName">Nom complet *</Label>
                 <Input
                   id="fullName"
                   value={formData.fullName}
                   onChange={(e) => setFormData({...formData, fullName: e.target.value})}
                   placeholder="Jean Dupont"
+                  required
                 />
               </div>
               <div>
-                <Label htmlFor="email">Email</Label>
+                <Label htmlFor="email">Email *</Label>
                 <Input
                   id="email"
                   type="email"
                   value={formData.email}
                   onChange={(e) => setFormData({...formData, email: e.target.value})}
                   placeholder="jean.dupont@email.com"
+                  required
                 />
               </div>
               <div>
-                <Label htmlFor="phone">Téléphone</Label>
-                <Input
-                  id="phone"
-                  value={formData.phone}
-                  onChange={(e) => setFormData({...formData, phone: e.target.value})}
-                  placeholder="+33 6 12 34 56 78"
-                />
-              </div>
-              <div>
-                <Label htmlFor="role">Rôle</Label>
+                <Label htmlFor="role">Rôle *</Label>
                 <Select value={formData.role} onValueChange={(value: 'technicien' | 'technicien_superieur') => setFormData({...formData, role: value})}>
                   <SelectTrigger>
-                    <SelectValue />
+                    <SelectValue placeholder="Sélectionner un rôle" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="technicien">Technicien</SelectItem>
                     <SelectItem value="technicien_superieur">Technicien Supérieur</SelectItem>
                   </SelectContent>
                 </Select>
-              </div>
-              <div>
-                <Label htmlFor="location">Localisation</Label>
-                <Input
-                  id="location"
-                  value={formData.location}
-                  onChange={(e) => setFormData({...formData, location: e.target.value})}
-                  placeholder="Domaine Nord"
-                />
               </div>
               <div className="flex justify-end space-x-2">
                 <Button variant="outline" onClick={() => setIsCreateModalOpen(false)}>
@@ -652,35 +786,29 @@ export default function TechnicianManagement() {
             </DialogHeader>
             <div className="space-y-4">
               <div>
-                <Label htmlFor="edit-fullName">Nom complet</Label>
+                <Label htmlFor="edit-fullName">Nom complet *</Label>
                 <Input
                   id="edit-fullName"
                   value={formData.fullName}
                   onChange={(e) => setFormData({...formData, fullName: e.target.value})}
+                  required
                 />
               </div>
               <div>
-                <Label htmlFor="edit-email">Email</Label>
+                <Label htmlFor="edit-email">Email *</Label>
                 <Input
                   id="edit-email"
                   type="email"
                   value={formData.email}
                   onChange={(e) => setFormData({...formData, email: e.target.value})}
+                  required
                 />
               </div>
               <div>
-                <Label htmlFor="edit-phone">Téléphone</Label>
-                <Input
-                  id="edit-phone"
-                  value={formData.phone}
-                  onChange={(e) => setFormData({...formData, phone: e.target.value})}
-                />
-              </div>
-              <div>
-                <Label htmlFor="edit-role">Rôle</Label>
+                <Label htmlFor="edit-role">Rôle *</Label>
                 <Select value={formData.role} onValueChange={(value: 'technicien' | 'technicien_superieur') => setFormData({...formData, role: value})}>
                   <SelectTrigger>
-                    <SelectValue />
+                    <SelectValue placeholder="Sélectionner un rôle" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="technicien">Technicien</SelectItem>
@@ -688,14 +816,41 @@ export default function TechnicianManagement() {
                   </SelectContent>
                 </Select>
               </div>
-              <div>
-                <Label htmlFor="edit-location">Localisation</Label>
-                <Input
-                  id="edit-location"
-                  value={formData.location}
-                  onChange={(e) => setFormData({...formData, location: e.target.value})}
-                />
+              
+              {/* Additional technician information (read-only) */}
+              <div className="space-y-3 pt-4 border-t">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label className="text-sm text-gray-600">Téléphone</Label>
+                    <p className="text-sm font-medium">{selectedTechnician?.telephone || 'Non renseigné'}</p>
+                  </div>
+                  <div>
+                    <Label className="text-sm text-gray-600">Date de naissance</Label>
+                    <p className="text-sm font-medium">{selectedTechnician?.birthday || 'Non renseigné'}</p>
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label className="text-sm text-gray-600">Compte configuré</Label>
+                    <Badge variant={selectedTechnician?.setup_completed ? "default" : "secondary"} className="text-xs">
+                      {selectedTechnician?.setup_completed ? "Oui" : "Non"}
+                    </Badge>
+                  </div>
+                  <div>
+                    <Label className="text-sm text-gray-600">Email vérifié</Label>
+                    <Badge variant={selectedTechnician?.email_valide ? "default" : "secondary"} className="text-xs">
+                      {selectedTechnician?.email_valide ? "Oui" : "Non"}
+                    </Badge>
+                  </div>
+                </div>
+                
+                <div>
+                  <Label className="text-sm text-gray-600">Membre depuis</Label>
+                  <p className="text-sm font-medium">{selectedTechnician?.created_at}</p>
+                </div>
               </div>
+              
               <div className="flex justify-end space-x-2">
                 <Button variant="outline" onClick={() => setIsEditModalOpen(false)}>
                   Annuler

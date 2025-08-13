@@ -18,6 +18,18 @@ export default function GoogleMapsWrapper({
   children,
   apiKey,
 }: GoogleMapsWrapperProps) {
+  console.log("GoogleMapsWrapper: API Key received:", apiKey ? "Present" : "Missing");
+  
+  if (!apiKey) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <div className="text-center">
+          <p className="text-sm text-red-600">Erreur: Clé API Google Maps manquante</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <LoadScript
       googleMapsApiKey={apiKey}

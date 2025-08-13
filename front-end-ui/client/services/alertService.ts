@@ -119,6 +119,20 @@ export class AlertService {
     }
   }
 
+  static async getAlertsByDirectorEnterprise(): Promise<Alert[]> {
+    try {
+      const response = await axios.get(`${API_BASE_URL}/alerte/director-enterprise`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching alerts by director enterprise:", error);
+      throw error;
+    }
+  }
+
   static getAlertLevel(statusAlert: number): "High" | "Medium" | "Low" {
     if (statusAlert >= 8) return "High";
     if (statusAlert >= 5) return "Medium";

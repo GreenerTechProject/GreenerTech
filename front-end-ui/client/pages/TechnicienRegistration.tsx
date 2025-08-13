@@ -30,7 +30,7 @@ const registrationSchema = z
     firstName: z.string().optional(),
     lastName: z.string().optional(),
     role: z.enum(["technicien", "technicien_superieur"]).optional(),
-    companyName: z.string().optional(),
+    companyId: z.string().optional(),
   })
   .refine((data) => data.password === data.confirmPassword, {
     message: "Les mots de passe ne correspondent pas",
@@ -138,18 +138,18 @@ export default function TechnicienRegistration() {
         error.response?.data?.error;
       setLocalError(message);
 
-      if (message === "Utilisateur non trouvé") {
-        setPreRegisteredUser(null);
-        setUserEmail(email);
-       // await fetchCompanies(); // Load company list for new users
+              if (message === "Utilisateur non trouvé") {
+          setPreRegisteredUser(null);
+          setUserEmail(email);
+          await fetchCompanies(); // Load company list for new users
 
-        toast({
-          title: "Nouvel utilisateur",
-          description: "Veuillez compléter votre inscription.",
-        });
+          toast({
+            title: "Nouvel utilisateur",
+            description: "Veuillez compléter votre inscription.",
+          });
 
-        setStep(2);
-      }
+          setStep(2);
+        }
     } finally {
       setIsLoading(false);
     }
@@ -170,7 +170,7 @@ export default function TechnicienRegistration() {
       firstName: formData.get("firstName") as string,
       lastName: formData.get("lastName") as string,
       role: getFinalRole(),
-      companyName: formData.get("companyName") as string,
+      companyId: formData.get("companyId") as string,
     };
 
     if (!data.telephone || !data.cin || !data.birthday || !data.password) {
@@ -184,7 +184,7 @@ export default function TechnicienRegistration() {
     }
 
     if (!preRegisteredUser) {
-      if (!data.firstName || !data.lastName || !data.companyName) {
+      if (!data.firstName || !data.lastName || !data.companyId) {
         setLocalError("Veuillez remplir tous les champs obligatoires");
         return;
       }
@@ -201,7 +201,7 @@ export default function TechnicienRegistration() {
     try {
       const fullName = `${data.firstName} ${data.lastName}`.trim();
 
-      const payload = {
+      const payload: any = {
         email: userEmail,
         telephone: data.telephone,
         cin: data.cin,
@@ -209,6 +209,7 @@ export default function TechnicienRegistration() {
         password: data.password,
         name: preRegisteredUser ? preRegisteredUser.name : `${data.firstName} ${data.lastName}`.trim(),
         role: preRegisteredUser ? preRegisteredUser.role : data.role,
+        id_entreprise: data.companyId,
       };
 
       if (preRegisteredUser) {
@@ -227,16 +228,15 @@ export default function TechnicienRegistration() {
       );
       const result = response.data;
 
-      if (result.success) {
+      if (result.message && !result.error) {
         toast({
           title: "Inscription réussie",
           description: result.message,
         });
         
         navigate("/email-verification");
-
       } else {
-        setLocalError(result.message || "Une erreur est survenue");
+        setLocalError(result.error || result.message || "Une erreur est survenue");
       }
     } catch (error) {
       console.log(error);
@@ -486,7 +486,7 @@ export default function TechnicienRegistration() {
                         Entreprise *
                       </label>
                       <select
-                        name="companyName"
+                        name="companyId"
                         onChange={clearError}
                         className="w-full h-10 px-4 border border-gray-300 rounded-md text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#B4CC5F] focus:border-transparent"
                         required
@@ -497,7 +497,7 @@ export default function TechnicienRegistration() {
                         </option>
                         {Array.isArray(companies) && companies.length > 0 ? (
                           companies.map((company) => (
-                            <option key={company.id} value={company.nom}>
+                            <option key={company.id} value={company.id}>
                               {company.nom}
                             </option>
                           ))

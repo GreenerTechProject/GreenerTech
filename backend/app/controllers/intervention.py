@@ -1,6 +1,7 @@
 # controllers/intervention.py
 from flask import request, jsonify
 from app.models.intervention import Intervention
+from app.models.serre import Serre
 from app.utils.security import token_required , role_required
 from database.config import db
 from app.models.user import User
@@ -149,5 +150,38 @@ def get_intervention(current_user, id):
         return jsonify(intervention.to_dict()), 200
     except Exception as e:
         return jsonify({'error': str(e)}), 400
+    
+
+@token_required
+@role_required("directeur")
+def get_interventions_by_entreprise(current_user, entreprise_id):
+    """Get all interventions for a specific enterprise"""
+    try:
+        # Get all serres for the enterprise
+        serres = Serre.query.filter_by(entreprise_id=entreprise_id).all()
+        serre_ids = [serre.id for serre in serres]
+        
+        # Get all interventions for these serres
+        interventions = Intervention.query.filter(Intervention.id_serre.in_(serre_ids)).all()
+        
+        intervention_list = []
+        for intervention in interventions:
+            intervention_data = {
+                'id': intervention.id,
+                'date_intervention': intervention.date_debut.strftime('%Y-%m-%d') if intervention.date_debut else None,
+                'description': intervention.description,
+                'statut': intervention.status.value if intervention.status else 'encours',
+                'serre_id': intervention.id_serre,
+                'technicien_id': intervention.id_user,
+                'type_tache_id': intervention.id_type_tache,
+                'created_at': intervention.date_debut.strftime('%Y-%m-%d') if intervention.date_debut else None,
+                'updated_at': intervention.date_fin.strftime('%Y-%m-%d') if intervention.date_fin else None
+            }
+            intervention_list.append(intervention_data)
+        
+        return jsonify(intervention_list), 200
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
     
 

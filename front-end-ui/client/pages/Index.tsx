@@ -80,47 +80,164 @@ export default function Index() {
           </p>
 
           {error && (
-               <div className="mb-6 p-4 bg-red-50 border-l-4 border-red-400 text-red-700 rounded-md">
+            <div className={`mb-6 p-4 rounded-md border-l-4 ${
+              error.toLowerCase().includes("votre compte n'a pas encore été validé par un directeur") ||
+              error.toLowerCase().includes("directeur") ||
+              error.toLowerCase().includes("validé") ||
+              error.toLowerCase().includes("validation") ||
+              error.toLowerCase().includes("pas encore été validé") ||
+              error.toLowerCase().includes("compte") ||
+              error.toLowerCase().includes("attente")
+                ? "bg-amber-50 border-amber-400 text-amber-700"
+                : error.toLowerCase().includes("email non vérifié") ||
+                  error.toLowerCase().includes("vérifier votre email")
+                  ? "bg-blue-50 border-blue-400 text-blue-700"
+                  : "bg-red-50 border-red-400 text-red-700"
+            }`}>
               <div className="flex items-start">
                 <div className="flex-shrink-0">
-                  <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
-                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-                  </svg>
+                  {error.toLowerCase().includes("votre compte n'a pas encore été validé par un directeur") ||
+                   error.toLowerCase().includes("directeur") ||
+                   error.toLowerCase().includes("validé") ||
+                   error.toLowerCase().includes("validation") ||
+                   error.toLowerCase().includes("pas encore été validé") ||
+                   error.toLowerCase().includes("compte") ||
+                   error.toLowerCase().includes("attente") ? (
+                    <svg className="h-5 w-5 text-amber-400" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                    </svg>
+                  ) : error.toLowerCase().includes("email non vérifié") ||
+                    error.toLowerCase().includes("vérifier votre email") ? (
+                    <svg className="h-5 w-5 text-blue-400" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                    </svg>
+                  ) : (
+                    <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                    </svg>
+                  )}
                 </div>
                 <div className="ml-3">
-                  {/* Debug: Show the actual error message */}
-                  <div className="text-xs text-gray-500 mb-2">
-                    Debug - Error received: "{error}"
-                  </div>
-                  
-                  <h3 className="text-sm font-medium text-red-800 mb-1">
+                  <h3 className="text-sm font-medium mb-2">
                     {error.toLowerCase().includes("votre compte n'a pas encore été validé par un directeur") ||
-                     error.toLowerCase().includes("directeur") || 
-                     error.toLowerCase().includes("validé") || 
-                     error.toLowerCase().includes("validation") || 
+                     error.toLowerCase().includes("directeur") ||
+                     error.toLowerCase().includes("validé") ||
+                     error.toLowerCase().includes("validation") ||
                      error.toLowerCase().includes("pas encore été validé") ||
                      error.toLowerCase().includes("compte") ||
                      error.toLowerCase().includes("attente")
-                      ? "Compte en attente de validation" 
-                      : "Erreur de connexion"}
+                      ? "⏳ Compte en attente de validation par le directeur"
+                      : error.toLowerCase().includes("email non vérifié") ||
+                        error.toLowerCase().includes("vérifier votre email")
+                        ? "📧 Email non vérifié"
+                        : "❌ Erreur de connexion"}
                   </h3>
-                  {(error.toLowerCase().includes("votre compte n'a pas encore été validé par un directeur") ||
-                    error.toLowerCase().includes("directeur") || 
-                    error.toLowerCase().includes("validé") || 
-                    error.toLowerCase().includes("validation") || 
-                    error.toLowerCase().includes("pas encore été validé") ||
-                    error.toLowerCase().includes("compte") ||
-                    error.toLowerCase().includes("attente")) && (
-                    <p className="text-xs text-red-600 mt-2">
-                      💡 Contactez votre directeur pour obtenir l'accès à votre compte.
+                  
+                  {error.toLowerCase().includes("votre compte n'a pas encore été validé par un directeur") ||
+                   error.toLowerCase().includes("directeur") ||
+                   error.toLowerCase().includes("validé") ||
+                   error.toLowerCase().includes("validation") ||
+                   error.toLowerCase().includes("pas encore été validé") ||
+                   error.toLowerCase().includes("compte") ||
+                   error.toLowerCase().includes("attente") ? (
+                    <div className="space-y-2">
+                      <p className="text-sm">
+                        {error}
+                      </p>
+                      <div className="bg-amber-100 p-3 rounded-md">
+                        <p className="text-xs font-medium text-amber-800 mb-1">
+                          💡 Que faire maintenant ?
+                        </p>
+                        <ul className="text-xs text-amber-700 space-y-1">
+                          <li>• Contactez votre directeur d'entreprise</li>
+                          <li>• Demandez-lui de valider votre compte</li>
+                          <li>• Vous recevrez un email de confirmation</li>
+                        </ul>
+                      </div>
+                    </div>
+                  ) : error.toLowerCase().includes("email non vérifié") ||
+                    error.toLowerCase().includes("vérifier votre email") ? (
+                    <div className="space-y-2">
+                      <p className="text-sm">
+                        {error}
+                      </p>
+                      <div className="bg-blue-100 p-3 rounded-md">
+                        <p className="text-xs font-medium text-blue-800 mb-1">
+                          📧 Vérifiez votre email
+                        </p>
+                        <ul className="text-xs text-blue-700 space-y-1">
+                          <li>• Vérifiez votre boîte de réception</li>
+                          <li>• Regardez dans vos spams si nécessaire</li>
+                          <li>• Cliquez sur le lien de vérification</li>
+                        </ul>
+                      </div>
+                    </div>
+                  ) : (
+                    <p className="text-sm">
+                      {error}
                     </p>
                   )}
-                  <p className="text-sm text-red-700 mt-1">
-                    {error}
-                  </p>
                 </div>
               </div>
             </div>
+          )}
+
+          {/* Additional guidance for different error types */}
+          {error && (
+            (error.toLowerCase().includes("votre compte n'a pas encore été validé par un directeur") ||
+             error.toLowerCase().includes("directeur") ||
+             error.toLowerCase().includes("validé") ||
+             error.toLowerCase().includes("validation") ||
+             error.toLowerCase().includes("pas encore été validé") ||
+             error.toLowerCase().includes("compte") ||
+             error.toLowerCase().includes("attente")) ? (
+              <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-md">
+                <div className="flex items-start">
+                  <div className="flex-shrink-0">
+                    <svg className="h-5 w-5 text-blue-400" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                    </svg>
+                  </div>
+                  <div className="ml-3">
+                    <h4 className="text-sm font-medium text-blue-800 mb-2">
+                      📞 Besoin d'aide ?
+                    </h4>
+                    <p className="text-xs text-blue-700 mb-2">
+                      Si vous ne savez pas comment contacter votre directeur ou si vous avez des questions :
+                    </p>
+                    <div className="text-xs text-blue-600 space-y-1">
+                      <p>• Vérifiez votre email pour les instructions d'inscription</p>
+                      <p>• Contactez le support technique de votre entreprise</p>
+                      <p>• Vérifiez la documentation de votre entreprise</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ) : (error.toLowerCase().includes("email non vérifié") ||
+                 error.toLowerCase().includes("vérifier votre email")) ? (
+              <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-md">
+                <div className="flex items-start">
+                  <div className="flex-shrink-0">
+                    <svg className="h-5 w-5 text-green-400" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                    </svg>
+                  </div>
+                  <div className="ml-3">
+                    <h4 className="text-sm font-medium text-green-800 mb-2">
+                      🔗 Liens utiles
+                    </h4>
+                    <p className="text-xs text-green-700 mb-2">
+                      Besoin d'aide pour vérifier votre email ?
+                    </p>
+                    <div className="text-xs text-green-600 space-y-1">
+                      <p>• Vérifiez votre boîte de réception</p>
+                      <p>• Regardez dans vos spams</p>
+                      <p>• Contactez le support si le problème persiste</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ) : null
           )}
 
           <form onSubmit={handleSubmit} className="space-y-6">

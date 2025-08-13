@@ -98,6 +98,20 @@ export class InterventionService {
     }
   }
 
+  static async getInterventionsByEnterprise(entrepriseId: number): Promise<Intervention[]> {
+    try {
+      const response = await axios.get(`${API_BASE_URL}/intervention/entreprise/${entrepriseId}`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching interventions by enterprise:", error);
+      throw error;
+    }
+  }
+
   static async deleteIntervention(id: number): Promise<void> {
     try {
       await axios.delete(`${API_BASE_URL}/intervention/${id}`, {
@@ -111,5 +125,28 @@ export class InterventionService {
     }
   }
 }
+
+// Get all interventions for a specific enterprise
+export const getInterventionsByEnterprise = async (entrepriseId: number): Promise<any[]> => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/interventions/entreprise/${entrepriseId}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem('token')}`
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error('Error fetching interventions by enterprise:', error);
+    throw error;
+  }
+};
 
 

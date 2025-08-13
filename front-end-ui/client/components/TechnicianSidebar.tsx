@@ -14,6 +14,7 @@ import {
   Menu,
   X,
   Bot,
+  Target,
 } from "lucide-react";
 
 interface SidebarItem {
@@ -79,6 +80,12 @@ export default function TechnicianSidebar({
         label: "Rapports",
         icon: <Bookmark className="h-5 w-5" />,
         path: userRole === "technicien_sup" ? "/technicien-sup/reports" : "/reports",
+      },
+      {
+        id: "missions",
+        label: "Missions",
+        icon: <Target className="h-5 w-5" />,
+        path: userRole === "technicien_sup" ? "/technicien-sup/missions" : "/technician/missions",
       },
     ];
     // Show Surveillance only for regular technicians, not for tech-sup

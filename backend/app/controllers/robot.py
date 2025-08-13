@@ -5,7 +5,9 @@ from app.utils.security import token_required, role_required
 
 #@token_required
 #@role_required("directeur", "technicien_superieur")
-def create_robot():
+@token_required
+@role_required("directeur", "technicien_superieur")
+def create_robot(current_user):
     data = request.get_json()
     try:
         robot = Robot(

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useSidebar } from '@/hooks/useSidebar';
 import DirectorSidebar from '../components/DirectorSidebar';
+import DirectorHeader from '@/components/DirectorHeader';
 import { useToast } from '@/hooks/use-toast';
 import { affiliationService, PendingTechnician } from '../services/affiliationService';
 import {
@@ -240,31 +241,7 @@ export default function DirectorAffiliationManagement() {
       <DirectorSidebar isOpen={isOpen} setIsOpen={setIsOpen} />
 
       <div className="flex-1 transition-all duration-300">
-        {/* Header */}
-        <header className="bg-white shadow-sm border-b sticky top-0 z-30">
-          <div className="px-4 sm:px-6 lg:px-8">
-            <div className="flex justify-between items-center py-4">
-              <div className="flex items-center space-x-4">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={toggleSidebar}
-                  className="lg:hidden"
-                >
-                  <Menu className="h-5 w-5" />
-                </Button>
-                <div>
-                  <h1 className="text-xl font-semibold text-gray-900">
-                    Gestion des Affiliations Techniciens
-                  </h1>
-                  <p className="text-sm text-gray-600">
-                    Valider les comptes techniciens en attente d'approbation
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </header>
+        <DirectorHeader />
 
         {/* Content */}
         <main className="p-4 sm:p-6 lg:p-8">

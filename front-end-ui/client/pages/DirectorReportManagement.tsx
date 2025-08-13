@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useSidebar } from '@/hooks/useSidebar';
 import DirectorSidebar from '../components/DirectorSidebar';
+import DirectorHeader from '@/components/DirectorHeader';
 import { useToast } from '@/hooks/use-toast';
 import {
   Menu,
@@ -427,61 +428,7 @@ export default function DirectorReportManagement() {
       <DirectorSidebar isOpen={isOpen} setIsOpen={setIsOpen} />
 
       <div className="flex-1 transition-all duration-300">
-        {/* Header */}
-        <header className="bg-white shadow-sm border-b sticky top-0 z-30">
-          <div className="px-4 sm:px-6 lg:px-8">
-            <div className="flex justify-between items-center py-4">
-              <div className="flex items-center space-x-4">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={toggleSidebar}
-                  className="lg:hidden"
-                >
-                  <Menu className="h-5 w-5" />
-                </Button>
-                <div>
-                  <h1 className="text-xl font-semibold text-gray-900">
-                    Gestion des Rapports
-                  </h1>
-                  <p className="text-sm text-gray-600">
-                    Créer, organiser et éditer les rapports avec WYSIWYG
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex items-center space-x-4">
-                <Select value={viewMode} onValueChange={(value: 'folders' | 'reports') => setViewMode(value)}>
-                  <SelectTrigger className="w-40">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="folders">Dossiers</SelectItem>
-                    <SelectItem value="reports">Rapports</SelectItem>
-                  </SelectContent>
-                </Select>
-                
-                {viewMode === 'folders' ? (
-                  <Button
-                    onClick={() => setIsCreateFolderOpen(true)}
-                    className="bg-greener hover:bg-greener-600"
-                  >
-                    <FolderPlus className="h-4 w-4 mr-2" />
-                    Nouveau Dossier
-                  </Button>
-                ) : (
-                  <Button
-                    onClick={() => setIsCreateReportOpen(true)}
-                    className="bg-greener hover:bg-greener-600"
-                  >
-                    <Plus className="h-4 w-4 mr-2" />
-                    Nouveau Rapport
-                  </Button>
-                )}
-              </div>
-            </div>
-          </div>
-        </header>
+        <DirectorHeader />
 
         {/* Content */}
         <main className="p-4 sm:p-6 lg:p-8">

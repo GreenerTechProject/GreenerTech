@@ -11,13 +11,28 @@ import { Search, MapPin } from "lucide-react";
 
 export interface DrawnShape {
   id: string;
-  type: "domain" | "serre";
+  type: "domain" | "serre" | "bilan";
   name: string;
   path: google.maps.LatLng[];
   area: number; // in square meters
   center: google.maps.LatLng;
   color?: string;
   domainId?: string; // for serres, reference to parent domain
+  serreId?: string; // for bilans, reference to parent serre
+  metadata?: {
+    domainName?: string;
+    serreName?: string;
+    bilanType?: string;
+  };
+}
+
+interface MapComponentProps {
+  onShapeComplete: (shape: DrawnShape) => void;
+  existingShapes: DrawnShape[];
+  drawingMode: "domain" | "serre" | null;
+  selectedDomainId?: string;
+  className?: string;
+  onShapeClick?: (shape: DrawnShape) => void; // New prop for shape clicks
 }
 
 interface MapComponentProps {
@@ -41,6 +56,7 @@ export default function MapComponent({
   drawingMode,
   selectedDomainId,
   className = "w-full h-full",
+  onShapeClick,
 }: MapComponentProps) {
   const searchInputRef = useRef<HTMLInputElement>(null);
   const [map, setMap] = useState<google.maps.Map | null>(null);
@@ -52,6 +68,49 @@ export default function MapComponent({
   }>({ lat: 33.9716, lng: -6.8498 }); // Default to Morocco center
   const [searchMarkers, setSearchMarkers] = useState<google.maps.Marker[]>([]);
   const [mapLoaded, setMapLoaded] = useState(false);
+  const [selectedShape, setSelectedShape] = useState<DrawnShape | null>(null);
+  const [hoveredShape, setHoveredShape] = useState<DrawnShape | null>(null);
+  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
+
+  // Function to zoom to a specific shape
+  const zoomToShape = useCallback((shape: DrawnShape) => {
+    if (map && shape.path.length > 0) {
+      const bounds = new google.maps.LatLngBounds();
+      
+      // Add all points to bounds
+      shape.path.forEach(point => bounds.extend(point));
+      
+      // Add center point to ensure it's visible
+      bounds.extend(shape.center);
+      
+      // Fit map to bounds with padding
+      map.fitBounds(bounds);
+      
+      // Add some padding and zoom out slightly for better view
+      const listener = google.maps.event.addListenerOnce(map, 'bounds_changed', () => {
+        if (map.getZoom() && map.getZoom() > 15) {
+          map.setZoom(15);
+        }
+      });
+      
+      // Trigger bounds change
+      map.setBounds(bounds);
+    }
+  }, [map]);
+
+  // Handle shape click with zoom and callback
+  const handleShapeClick = useCallback((shape: DrawnShape) => {
+    // Set selected shape for info panel
+    setSelectedShape(shape);
+    
+    // Zoom to the clicked shape
+    zoomToShape(shape);
+    
+    // Call the parent callback if provided
+    if (onShapeClick) {
+      onShapeClick(shape);
+    }
+  }, [zoomToShape, onShapeClick]);
 
   // Get user's current location
   useEffect(() => {
@@ -416,6 +475,12 @@ export default function MapComponent({
     return true;
   });
 
+  // Debug: Log what shapes are being displayed
+  console.log("MapComponent - existingShapes:", existingShapes);
+  console.log("MapComponent - shapesToDisplay:", shapesToDisplay);
+  console.log("MapComponent - drawingMode:", drawingMode);
+  console.log("MapComponent - selectedDomainId:", selectedDomainId);
+
   return (
     <div className={`relative w-full h-full min-h-[400px] ${className}`}>
       {/* Search Controls */}
@@ -464,37 +529,232 @@ export default function MapComponent({
         }}
       >
         {/* Render existing shapes only if Google Maps is loaded */}
-        {typeof google !== 'undefined' && shapesToDisplay.map((shape) => (
-          <Polygon
-            key={shape.id}
-            paths={shape.path.map((point) => ({
-              lat: point.lat(),
-              lng: point.lng(),
-            }))}
-            options={{
-              fillColor:
-                shape.color || (shape.type === "serre" ? "#FF6B6B" : "#B4CC5F"),
-              fillOpacity: 0.3,
-              strokeWeight: 2,
-              strokeColor: shape.type === "serre" ? "#E53E3E" : "#8FA53A",
-              clickable: true,
-              zIndex: shape.type === "serre" ? 2 : 1,
-            }}
-            onClick={() => {
-              if (shape.name && map && typeof google !== 'undefined') {
-                const infoWindow = new google.maps.InfoWindow({
-                  content: `<div><strong>${shape.name}</strong><br/>Type: ${shape.type}<br/>Surface: ${(shape.area / 10000).toFixed(2)} hectares</div>`,
-                  position: {
-                    lat: shape.center.lat(),
-                    lng: shape.center.lng(),
-                  },
-                });
-                infoWindow.open(map);
-              }
-            }}
-          />
-        ))}
+        {typeof google !== 'undefined' && shapesToDisplay.map((shape) => {
+          console.log("Rendering shape:", shape);
+          
+          // Enhanced colors and styling based on shape type
+          let fillColor = shape.color;
+          let strokeColor = shape.color;
+          let fillOpacity = 0.3;
+          let strokeWeight = 2;
+          let zIndex = 1;
+          let hoverColor = "#FFD700"; // Gold hover color
+          
+          if (!fillColor) {
+            switch (shape.type) {
+              case "domain":
+                fillColor = "#4CAF50"; // Green
+                strokeColor = "#2E7D32";
+                fillOpacity = 0.4;
+                zIndex = 1;
+                break;
+              case "serre":
+                fillColor = "#FF5722"; // Red-Orange
+                strokeColor = "#D84315";
+                fillOpacity = 0.5;
+                zIndex = 2;
+                break;
+              case "bilan":
+                fillColor = "#2196F3"; // Blue
+                strokeColor = "#1565C0";
+                fillOpacity = 0.6;
+                strokeWeight = 3;
+                zIndex = 3;
+                break;
+              default:
+                fillColor = "#9E9E9E";
+                strokeColor = "#616161";
+            }
+          }
+          
+          return (
+            <Polygon
+              key={shape.id}
+              paths={shape.path.map((point) => ({
+                lat: point.lat(),
+                lng: point.lng(),
+              }))}
+              options={{
+                fillColor,
+                fillOpacity,
+                strokeWeight,
+                strokeColor,
+                clickable: true,
+                zIndex,
+                // Add some cool visual effects
+                strokeOpacity: 0.8,
+                // Add a subtle shadow effect
+                strokePosition: google.maps.StrokePosition.OUTSIDE,
+              }}
+              onClick={() => handleShapeClick(shape)}
+              onMouseOver={(e) => {
+                // Set hovered shape and mouse position
+                setHoveredShape(shape);
+                if (e.domEvent) {
+                  setMousePosition({
+                    x: e.domEvent.clientX,
+                    y: e.domEvent.clientY
+                  });
+                }
+                
+                // Change color on hover
+                if (e.domEvent && e.domEvent.target) {
+                  const polygon = e.domEvent.target as any;
+                  polygon.setOptions({
+                    fillColor: hoverColor,
+                    fillOpacity: 0.7,
+                    strokeWeight: strokeWeight + 1
+                  });
+                }
+              }}
+              onMouseOut={(e) => {
+                // Clear hovered shape
+                setHoveredShape(null);
+                
+                // Restore original colors
+                if (e.domEvent && e.domEvent.target) {
+                  const polygon = e.domEvent.target as any;
+                  polygon.setOptions({
+                    fillColor: fillColor,
+                    fillOpacity: fillOpacity,
+                    strokeWeight: strokeWeight
+                  });
+                }
+              }}
+            />
+          );
+        })}
       </GoogleMap>
+
+      {/* Cool Floating Info Panel */}
+      {selectedShape && (
+        <div className="absolute top-4 right-4 bg-white rounded-lg shadow-xl border border-gray-200 p-4 max-w-sm animate-in slide-in-from-right duration-300 z-50">
+          <div className="flex items-start justify-between mb-3">
+            <div className="flex items-center space-x-2">
+              <div 
+                className="w-4 h-4 rounded-full"
+                style={{ 
+                  backgroundColor: selectedShape.type === 'domain' ? '#4CAF50' : 
+                                selectedShape.type === 'serre' ? '#FF5722' : '#2196F3' 
+                }}
+              ></div>
+              <span className="text-sm font-medium text-gray-500 uppercase tracking-wide">
+                {selectedShape.type === 'domain' ? 'Domaine' : 
+                 selectedShape.type === 'serre' ? 'Serre' : 'Bilan'}
+              </span>
+            </div>
+            <button
+              onClick={() => setSelectedShape(null)}
+              className="text-gray-400 hover:text-gray-600 transition-colors"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+          
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">{selectedShape.name}</h3>
+          
+          <div className="space-y-2 text-sm text-gray-600">
+            <div className="flex justify-between">
+              <span>Surface:</span>
+              <span className="font-medium">{(selectedShape.area / 10000).toFixed(2)} ha</span>
+            </div>
+            
+            {selectedShape.metadata?.domainName && (
+              <div className="flex justify-between">
+                <span>Domaine:</span>
+                <span className="font-medium">{selectedShape.metadata.domainName}</span>
+              </div>
+            )}
+            
+            {selectedShape.metadata?.serreName && (
+              <div className="flex justify-between">
+                <span>Serre:</span>
+                <span className="font-medium">{selectedShape.metadata.serreName}</span>
+              </div>
+            )}
+            
+            {selectedShape.metadata?.bilanType && (
+              <div className="flex justify-between">
+                <span>Type:</span>
+                <span className="font-medium">{selectedShape.metadata.bilanType}</span>
+              </div>
+            )}
+          </div>
+          
+          <div className="mt-4 pt-3 border-t border-gray-200">
+            <button
+              onClick={() => zoomToShape(selectedShape)}
+              className="w-full bg-blue-600 text-white text-sm font-medium py-2 px-3 rounded-md hover:bg-blue-700 transition-colors"
+            >
+              🔍 Zoom sur la zone
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Cool Legend Panel */}
+      <div className="absolute bottom-4 left-4 bg-white rounded-lg shadow-lg border border-gray-200 p-3 z-40 backdrop-blur-sm bg-white/90">
+        <div className="text-xs font-medium text-gray-700 mb-2 uppercase tracking-wide">Légende</div>
+        <div className="space-y-2">
+          <div className="flex items-center space-x-2">
+            <div className="w-3 h-3 rounded-full bg-green-500 shadow-sm"></div>
+            <span className="text-xs text-gray-600">Domaines</span>
+          </div>
+          <div className="flex items-center space-x-2">
+            <div className="w-3 h-3 rounded-full bg-red-500 shadow-sm"></div>
+            <span className="text-xs text-gray-600">Serres</span>
+          </div>
+          <div className="flex items-center space-x-2">
+            <div className="w-3 h-3 rounded-full bg-blue-500 shadow-sm"></div>
+            <span className="text-xs text-gray-600">Bilans</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Zoom Control Panel */}
+      <div className="absolute top-4 left-4 bg-white rounded-lg shadow-lg border border-gray-200 p-2 z-40 backdrop-blur-sm bg-white/90">
+        <div className="flex flex-col space-y-1">
+          <button
+            onClick={() => map?.setZoom((map.getZoom() || 10) + 1)}
+            className="w-8 h-8 bg-white border border-gray-300 rounded-t-md hover:bg-gray-50 transition-colors flex items-center justify-center"
+            title="Zoom In"
+          >
+            <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+            </svg>
+          </button>
+          <button
+            onClick={() => map?.setZoom((map.getZoom() || 10) - 1)}
+            className="w-8 h-8 bg-white border border-gray-300 rounded-b-md hover:bg-gray-50 transition-colors flex items-center justify-center"
+            title="Zoom Out"
+          >
+            <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" />
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      {/* Cool Hover Tooltip */}
+      {hoveredShape && (
+        <div 
+          className="absolute bg-gray-900 text-white text-xs px-2 py-1 rounded shadow-lg z-50 pointer-events-none"
+          style={{ 
+            left: mousePosition.x + 10, 
+            top: mousePosition.y - 30,
+            transform: 'translateX(-50%)'
+          }}
+        >
+          <div className="font-medium">{hoveredShape.name}</div>
+          <div className="text-gray-300">
+            {hoveredShape.type === 'domain' ? 'Domaine' : 
+             hoveredShape.type === 'serre' ? 'Serre' : 'Bilan'} • 
+            {(hoveredShape.area / 10000).toFixed(2)} ha
+          </div>
+        </div>
+      )}
 
       {/* Fallback display if map fails to load */}
       {!mapLoaded && (

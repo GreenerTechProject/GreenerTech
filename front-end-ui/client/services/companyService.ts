@@ -78,6 +78,43 @@ export const companyService = {
     }
   },
 
+  // Get company by ID
+  getCompanyById: async (id: number): Promise<CompanyInfo | null> => {
+    try {
+      const response = await axios.get(
+        `${API_BASE_URL}/entreprises`,
+        createAuthenticatedRequest(),
+      );
+
+      if (response.data) {
+        const company = response.data.find((c: any) => c.id === id);
+        return company || null;
+      }
+      return null;
+    } catch (error: any) {
+      console.error("Erreur lors de la récupération de l'entreprise:", error);
+      return null;
+    }
+  },
+
+  // Get enterprises created by a director
+  getEnterprisesByDirector: async (directorId: number): Promise<CompanyInfo[]> => {
+    try {
+      const response = await axios.get(
+        `${API_BASE_URL}/entreprise`,
+        createAuthenticatedRequest(),
+      );
+
+      if (response.data) {
+        return Array.isArray(response.data) ? response.data : [response.data];
+      }
+      return [];
+    } catch (error: any) {
+      console.error("Erreur lors de la récupération des entreprises du directeur:", error);
+      return [];
+    }
+  },
+
   // Create a new company
   createCompany: async (
     companyData: CompanyInfo,
