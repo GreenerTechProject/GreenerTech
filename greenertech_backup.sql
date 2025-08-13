@@ -480,9 +480,15 @@ CREATE TABLE public.missions_robot (
     id_serre integer NOT NULL,
     rep_jr integer,
     rep_sem integer,
+    jour  integer, 
+    heure  integer,  
+    minute  integer, 
     date_debut timestamp without time zone,
     date_fin timestamp without time zone,
-    executed boolean
+    executed boolean,
+    bilans json DEFAULT '[]'  -- par défaut un tableau vide JSON
+
+
 );
 
 
@@ -1000,8 +1006,23 @@ COPY public.intervention (id, description, status, date_debut, date_fin, total_c
 -- Data for Name: missions_robot; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.missions_robot (id, id_robot, id_serre, rep_jr, rep_sem, date_debut, date_fin, executed) FROM stdin;
-1	1	1	0	0	2025-08-05 13:33:00	2025-08-06 13:33:00	f
+COPY public.missions_robot (
+    id,
+    id_robot,
+    id_serre,
+    rep_jr,
+    rep_sem,
+    jour,
+    heure,
+    minute,
+    date_debut,
+    date_fin,
+    executed,
+    bilans
+) FROM stdin;
+
+1	1	1	0	0	5	13	33	2025-08-05 13:33:00	2025-08-06 13:33:00	f	[]
+
 \.
 
 
