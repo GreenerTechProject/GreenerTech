@@ -893,6 +893,8 @@ COPY public.alertes (id, id_bilan, status_alert, maladie, lien_image, x1, y1, da
 
 COPY public.autorisations_bilan (id, id_user, id_bilan) FROM stdin;
 1	1	1
+2	2	1
+3	3	1
 \.
 
 
@@ -902,6 +904,8 @@ COPY public.autorisations_bilan (id, id_user, id_bilan) FROM stdin;
 
 COPY public.autorisations_domaine (id, id_user, id_domaine) FROM stdin;
 1	1	1
+2	2	1
+3	3	1
 \.
 
 
@@ -911,6 +915,8 @@ COPY public.autorisations_domaine (id, id_user, id_domaine) FROM stdin;
 
 COPY public.autorisations_serre (id, id_user, id_serre) FROM stdin;
 1	1	1
+2	2	1
+3	3	1
 \.
 
 
