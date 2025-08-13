@@ -32,8 +32,8 @@ class Domaine(db.Model):
             #"position": [g.to_dict() for g in self.group_coords] if self.group_coords else [],
             "surface": self.surface,
             "center": {
-                "latitude": self.center_lat,
-                "longitude": self.center_lng
+                "lat": self.center_lat,
+                "lng": self.center_lng
             } if self.center_lat is not None and self.center_lng is not None else None,
             #"path": self.path or [],
             "id_entreprise": self.id_entreprise,
