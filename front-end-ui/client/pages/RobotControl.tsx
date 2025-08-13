@@ -1,9 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useAuth } from "../contexts/AuthContext";
+import TechHeader from "../components/TechHeader";
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import TechnicianSidebar from "../components/TechnicianSidebar";
 import PageHeader from '@/components/PageHeader';
 import {
   Play,
@@ -22,7 +21,6 @@ import {
   Maximize,
   Minimize,
   Camera,
-  LogOut,
   Bot
 } from 'lucide-react';
 
@@ -43,7 +41,6 @@ interface ControlCommand {
 
 
 export default function RobotControl() {
-  const { user, logout } = useAuth();
   const videoRef = useRef<HTMLVideoElement>(null);
   const [qrCodes, setQrCodes] = useState<QRData[]>([]);
   const [sensorData, setSensorData] = useState<SensorData | null>(null);
@@ -451,36 +448,7 @@ export default function RobotControl() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      
-      {/* Header */}
-      <header className="bg-white shadow-sm border-b sticky top-0 z-10">
-        <div className="max-w-full px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col lg:flex-row lg:justify-between lg:items-center py-4 gap-4">
-            <div className="flex items-center gap-4">
-              <TechnicianSidebar userRole="technicien" />
-              <div className="flex items-center space-x-2">
-                <h1 className="text-lg sm:text-xl font-semibold text-gray-900">
-                  Contrôle Robot
-                </h1>
-              </div>
-            </div>
-            <div className="flex items-center space-x-4">
-              <span className="text-sm text-gray-600 hidden sm:block">
-                {user?.name || user?.email}
-              </span>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => logout()}
-                className="flex items-center space-x-1"
-              >
-                <LogOut className="h-4 w-4" />
-                <span className="hidden sm:inline">Déconnexion</span>
-              </Button>
-            </div>
-          </div>
-        </div>
-      </header>
+      <TechHeader role="technicien" />
 
       <div className="flex h-[calc(100vh-85px)]">
         {/* Minimized Left Sidebar - Controls */}
