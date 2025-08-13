@@ -31,6 +31,8 @@ interface MapComponentProps {
 const mapContainerStyle = {
   width: "100%",
   height: "100%",
+  minHeight: "400px",
+  minWidth: "300px",
 };
 
 export default function MapComponent({
@@ -49,6 +51,7 @@ export default function MapComponent({
     lng: number;
   }>({ lat: 33.9716, lng: -6.8498 }); // Default to Morocco center
   const [searchMarkers, setSearchMarkers] = useState<google.maps.Marker[]>([]);
+  const [mapLoaded, setMapLoaded] = useState(false);
 
   // Get user's current location
   useEffect(() => {
@@ -69,9 +72,112 @@ export default function MapComponent({
     }
   }, []);
 
+  // Handle window resize to ensure map displays properly
+  useEffect(() => {
+    const handleResize = () => {
+      if (map && typeof google !== 'undefined' && google.maps) {
+        // Trigger a resize event on the map to ensure it renders correctly
+        google.maps.event.trigger(map, 'resize');
+        
+        // Force a repaint by temporarily changing zoom and restoring it
+        const currentZoom = map.getZoom();
+        if (currentZoom) {
+          map.setZoom(currentZoom + 0.001);
+          setTimeout(() => map.setZoom(currentZoom), 100);
+        }
+      }
+    };
+
+    // Handle both resize and orientation change
+    window.addEventListener('resize', handleResize);
+    window.addEventListener('orientationchange', handleResize);
+    
+    // Also handle when the container becomes visible
+    const observer = new ResizeObserver(handleResize);
+    const mapContainer = document.querySelector('[data-testid="map-section"]');
+    if (mapContainer) {
+      observer.observe(mapContainer);
+    }
+
+    // Initial resize after a short delay to ensure proper sizing
+    const initialResize = setTimeout(handleResize, 500);
+
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      window.removeEventListener('orientationchange', handleResize);
+      observer.disconnect();
+      clearTimeout(initialResize);
+    };
+  }, [map]);
+
   const onLoad = useCallback(
     (map: google.maps.Map) => {
       setMap(map);
+      setMapLoaded(true);
+
+      // Set map type to hybrid/satellite explicitly
+      if (typeof google !== 'undefined' && google.maps) {
+        console.log('Setting map to hybrid view');
+        console.log('Available map types:', {
+          roadmap: google.maps.MapTypeId.ROADMAP,
+          satellite: google.maps.MapTypeId.SATELLITE,
+          hybrid: google.maps.MapTypeId.HYBRID,
+          terrain: google.maps.MapTypeId.TERRAIN
+        });
+        console.log('Initial map type:', map.getMapTypeId());
+        // Try hybrid first, then satellite
+        try {
+          map.setMapTypeId('hybrid');
+          console.log('After setting hybrid, map type:', map.getMapTypeId());
+        } catch (error) {
+          console.log('Error setting hybrid, trying satellite:', error);
+          try {
+            map.setMapTypeId('satellite');
+            console.log('After setting satellite, map type:', map.getMapTypeId());
+          } catch (satelliteError) {
+            console.log('Error setting satellite view:', satelliteError);
+          }
+        }
+        
+        // Verify the change took effect
+        setTimeout(() => {
+          console.log('Verification - current map type:', map.getMapTypeId());
+        }, 100);
+      } else {
+        console.log('Google Maps API not available yet');
+      }
+
+      // Ensure the map is properly sized and set hybrid view
+      setTimeout(() => {
+        if (typeof google !== 'undefined' && google.maps) {
+          google.maps.event.trigger(map, 'resize');
+          // Double-check hybrid view is set
+          try {
+            map.setMapTypeId('hybrid');
+          } catch (error) {
+            console.log('Error setting hybrid in timeout:', error);
+          }
+        }
+      }, 100);
+
+      // Additional timeout to ensure hybrid view is set after API is fully loaded
+      setTimeout(() => {
+        if (map && typeof google !== 'undefined' && google.maps) {
+          console.log('Delayed hybrid view setting');
+          try {
+            map.setMapTypeId('hybrid');
+            console.log('Final map type (hybrid):', map.getMapTypeId());
+          } catch (error) {
+            console.log('Error setting hybrid view, trying satellite:', error);
+            try {
+              map.setMapTypeId('satellite');
+              console.log('Satellite map type set:', map.getMapTypeId());
+            } catch (satelliteError) {
+              console.log('Error setting satellite view:', satelliteError);
+            }
+          }
+        }
+      }, 500);
 
       // Initialize drawing manager only if Google Maps is loaded
       if (typeof google !== 'undefined' && google.maps && google.maps.drawing) {
@@ -265,6 +371,39 @@ export default function MapComponent({
     }
   }, [drawingMode, drawingManager]);
 
+  // Ensure hybrid/satellite view is set when map is available
+  useEffect(() => {
+    if (map && typeof google !== 'undefined' && google.maps) {
+              console.log('useEffect: Setting map to hybrid view');
+      try {
+        // Try hybrid first, then satellite
+        try {
+          map.setMapTypeId('hybrid');
+          console.log('useEffect: Current map type (hybrid):', map.getMapTypeId());
+        } catch (error) {
+          console.log('useEffect: Error setting hybrid, trying satellite:', error);
+          try {
+            map.setMapTypeId('satellite');
+            console.log('useEffect: Current map type (satellite):', map.getMapTypeId());
+          } catch (satelliteError) {
+            console.log('useEffect: Error setting satellite view:', satelliteError);
+          }
+        }
+        
+        // Add a listener to monitor map type changes
+        const listener = google.maps.event.addListener(map, 'maptypeid_changed', () => {
+          console.log('Map type changed to:', map.getMapTypeId());
+        });
+        
+        return () => {
+          google.maps.event.removeListener(listener);
+        };
+      } catch (error) {
+        console.log('useEffect: Error setting satellite view:', error);
+      }
+    }
+  }, [map]);
+
   // Filter shapes to display
   const shapesToDisplay = existingShapes.filter((shape) => {
     if (
@@ -278,7 +417,7 @@ export default function MapComponent({
   });
 
   return (
-    <div className={`relative ${className}`}>
+    <div className={`relative w-full h-full min-h-[400px] ${className}`}>
       {/* Search Controls */}
       <div className="absolute top-4 left-4 z-10 flex gap-2">
         <form onSubmit={handleSearchSubmit} className="flex gap-2">
@@ -308,14 +447,20 @@ export default function MapComponent({
         mapContainerStyle={mapContainerStyle}
         center={userLocation}
         zoom={15}
-        mapTypeId="satellite"
+        mapTypeId="hybrid"
         onLoad={onLoad}
         onUnmount={onUnmount}
         options={{
           zoomControl: true,
           streetViewControl: false,
-          mapTypeControl: true,
+          mapTypeControl: false,
           fullscreenControl: true,
+          gestureHandling: 'greedy', // Better touch handling
+          disableDefaultUI: false,
+          mapTypeId: 'hybrid',
+        }}
+        onError={(error) => {
+          console.error('Google Maps error:', error);
         }}
       >
         {/* Render existing shapes only if Google Maps is loaded */}
@@ -350,6 +495,16 @@ export default function MapComponent({
           />
         ))}
       </GoogleMap>
+
+      {/* Fallback display if map fails to load */}
+      {!mapLoaded && (
+        <div className="absolute inset-0 bg-gray-100 flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+            <p className="text-gray-600">Chargement de la carte...</p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

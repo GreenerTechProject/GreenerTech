@@ -27,8 +27,8 @@ class Bilan(db.Model):
             "nom": self.nom,
             "surface": self.surface,
             "center": {
-                "latitude": self.center_lat,
-                "longitude": self.center_lng
+                "lat": self.center_lat,
+                "lng": self.center_lng
             },
             #"id_group_cor": self.id_group_cor,
             #"id_entreprise": self.id_entreprise,

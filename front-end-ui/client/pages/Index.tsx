@@ -88,14 +88,36 @@ export default function Index() {
                   </svg>
                 </div>
                 <div className="ml-3">
+                  {/* Debug: Show the actual error message */}
+                  <div className="text-xs text-gray-500 mb-2">
+                    Debug - Error received: "{error}"
+                  </div>
+                  
                   <h3 className="text-sm font-medium text-red-800 mb-1">
-                    {error.includes("director") ? "Compte en attente de validation" : "Erreur de connexion"}
+                    {error.toLowerCase().includes("votre compte n'a pas encore été validé par un directeur") ||
+                     error.toLowerCase().includes("directeur") || 
+                     error.toLowerCase().includes("validé") || 
+                     error.toLowerCase().includes("validation") || 
+                     error.toLowerCase().includes("pas encore été validé") ||
+                     error.toLowerCase().includes("compte") ||
+                     error.toLowerCase().includes("attente")
+                      ? "Compte en attente de validation" 
+                      : "Erreur de connexion"}
                   </h3>
-                  {error.includes("director") && (
+                  {(error.toLowerCase().includes("votre compte n'a pas encore été validé par un directeur") ||
+                    error.toLowerCase().includes("directeur") || 
+                    error.toLowerCase().includes("validé") || 
+                    error.toLowerCase().includes("validation") || 
+                    error.toLowerCase().includes("pas encore été validé") ||
+                    error.toLowerCase().includes("compte") ||
+                    error.toLowerCase().includes("attente")) && (
                     <p className="text-xs text-red-600 mt-2">
                       💡 Contactez votre directeur pour obtenir l'accès à votre compte.
                     </p>
                   )}
+                  <p className="text-sm text-red-700 mt-1">
+                    {error}
+                  </p>
                 </div>
               </div>
             </div>

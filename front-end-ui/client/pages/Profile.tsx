@@ -36,7 +36,6 @@ export default function Profile() {
         // Use actual user data or provide defaults
         telephone: user.telephone || "Non renseigné",
         birthday: user.birthday ? formatBirthday(user.birthday) : "Non renseigné",
-        // For now, these would need to come from additional API calls
         domaine: "Domaine Ait Melloul", // This would come from user's assigned domaine
         serre: "Serre 1" // This would come from user's assigned serre
       };
@@ -98,7 +97,11 @@ export default function Profile() {
   };
 
   const handleEditProfile = () => {
-    navigate("/technicien/profile/edit");
+    if (userInfo.role === "technicien_superieur") {
+      navigate("/technicien-sup/profile/edit");
+    } else {
+      navigate("/technicien/profile/edit");
+    }
   };
 
   if (!userInfo) {
@@ -111,12 +114,30 @@ export default function Profile() {
 
   return (
     <div className="min-h-screen bg-white">
-      {/* Show TechHeader for technician superior users */}
-      {userInfo.role === "technicien_superieur" && (
-        <TechHeader role="technicien_sup" />
+      {/* Show TechHeader for all technician users */}
+      {(userInfo.role === "technicien" || userInfo.role === "technicien_superieur") && (
+        <TechHeader role={userInfo.role === "technicien_superieur" ? "technicien_sup" : "technicien"} />
       )}
       
       <div className="flex items-center justify-center p-4">
+        {/* Back button */}
+        <div className="absolute top-4 left-4">
+          <Button 
+            variant="ghost" 
+            onClick={() => {
+              if (userInfo.role === "technicien_superieur") {
+                navigate("/technicien-sup");
+              } else {
+                navigate("/technician");
+              }
+            }}
+            className="text-blue-600 hover:text-blue-800"
+          >
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Retour
+          </Button>
+        </div>
+        
         <Card className="w-full max-w-md shadow-lg border-0">
         {/* Blue Header with User Info */}
         <div className="bg-blue-600 rounded-t-lg p-6 relative">

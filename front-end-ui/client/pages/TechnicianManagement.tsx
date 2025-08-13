@@ -3,6 +3,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useSidebar } from '@/hooks/useSidebar';
 import DirectorSidebar from '../components/DirectorSidebar';
 import { useToast } from '@/hooks/use-toast';
+import { technicianService, Technician as TechnicianType } from '../services/technicianService';
 import {
   Menu,
   Plus,
@@ -17,7 +18,8 @@ import {
   Phone,
   MapPin,
   Calendar,
-  MoreVertical
+  MoreVertical,
+  Loader2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -49,7 +51,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 
 interface Technician {
-  id: string;
+  id: number;
   fullName: string;
   email: string;
   phone?: string;
@@ -71,46 +73,9 @@ export default function TechnicianManagement() {
   const { isOpen, setIsOpen, toggleSidebar } = useSidebar();
   const { toast } = useToast();
   
-  const [technicians, setTechnicians] = useState<Technician[]>([
-    {
-      id: '1',
-      fullName: 'Jean Dupont',
-      email: 'jean.dupont@email.com',
-      phone: '+33 6 12 34 56 78',
-      role: 'technicien_superieur',
-      status: 'active',
-      assignedSerres: ['Serre A-1', 'Serre A-2', 'Serre B-1'],
-      location: 'Domaine Nord',
-      joinDate: '2023-01-15',
-      lastActivity: '2024-01-20 14:30',
-      interventions: { total: 45, completed: 42, inProgress: 3 }
-    },
-    {
-      id: '2',
-      fullName: 'Marie Martin',
-      email: 'marie.martin@email.com',
-      phone: '+33 6 98 76 54 32',
-      role: 'technicien',
-      status: 'active',
-      assignedSerres: ['Serre C-1', 'Serre C-2'],
-      location: 'Domaine Sud',
-      joinDate: '2023-03-10',
-      lastActivity: '2024-01-20 16:15',
-      interventions: { total: 28, completed: 26, inProgress: 2 }
-    },
-    {
-      id: '3',
-      fullName: 'Pierre Lefort',
-      email: 'pierre.lefort@email.com',
-      role: 'technicien',
-      status: 'pending',
-      assignedSerres: [],
-      location: 'En attente d\'affectation',
-      joinDate: '2024-01-18',
-      interventions: { total: 0, completed: 0, inProgress: 0 }
-    }
-  ]);
-
+  const [technicians, setTechnicians] = useState<Technician[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [roleFilter, setRoleFilter] = useState<string>('all');
@@ -126,6 +91,55 @@ export default function TechnicianManagement() {
     assignedSerres: [] as string[]
   });
 
+  // Fetch technicians from the backend
+  useEffect(() => {
+    const fetchTechnicians = async () => {
+      if (!user?.id_entreprise) {
+        setError('Company ID not found');
+        setLoading(false);
+        return;
+      }
+
+      try {
+        setLoading(true);
+        setError(null);
+        
+        console.log('[TechManagement] Fetching technicians for company:', user.id_entreprise);
+        const techniciansData = await technicianService.getTechniciansByCompany(user.id_entreprise.toString());
+        
+        // Transform backend data to match our interface
+        const transformedTechnicians: Technician[] = techniciansData.map((tech: TechnicianType) => ({
+          id: tech.id,
+          fullName: tech.fullName,
+          email: tech.email,
+          phone: '', // Backend doesn't provide phone yet
+          role: tech.role,
+          status: 'active', // Default status since backend doesn't provide it
+          assignedSerres: tech.assignedSerres || [],
+          location: 'Domaine Principal', // Default location
+          joinDate: new Date().toISOString().split('T')[0], // Default join date
+          lastActivity: new Date().toISOString().split('T')[0], // Default last activity
+          interventions: { total: 0, completed: 0, inProgress: 0 } // Default interventions
+        }));
+        
+        console.log('[TechManagement] Transformed technicians:', transformedTechnicians);
+        setTechnicians(transformedTechnicians);
+      } catch (error: any) {
+        console.error('[TechManagement] Error fetching technicians:', error);
+        setError(error.message || 'Failed to fetch technicians');
+        toast({
+          title: "Erreur",
+          description: error.message || 'Failed to fetch technicians',
+          variant: "destructive"
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchTechnicians();
+  }, [user?.id_entreprise, toast]);
+
   const filteredTechnicians = technicians.filter(tech => {
     const matchesSearch = tech.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          tech.email.toLowerCase().includes(searchTerm.toLowerCase());
@@ -134,31 +148,66 @@ export default function TechnicianManagement() {
     return matchesSearch && matchesStatus && matchesRole;
   });
 
-  const handleCreateTechnician = () => {
-    // Here you would call the backend API to create a technician
-    const newTechnician: Technician = {
-      id: Date.now().toString(),
-      ...formData,
-      status: 'pending',
-      joinDate: new Date().toISOString().split('T')[0],
-      interventions: { total: 0, completed: 0, inProgress: 0 }
-    };
-    
-    //Handling Api call
-    try {
-    const response =technicienService.createTechnicians(newTechnician);
-    } catch(error){
-      console.log(error)
+  const handleCreateTechnician = async () => {
+    if (!user?.id_entreprise) {
+      toast({
+        title: "Erreur",
+        description: "Company ID not found",
+        variant: "destructive"
+      });
+      return;
     }
 
-    setTechnicians([...technicians, newTechnician]);
-    setIsCreateModalOpen(false);
-    resetForm();
-    
-    toast({
-      title: "Technicien créé",
-      description: `${formData.fullName} a été ajouté avec succès.`,
-    });
+    try {
+      // Prepare data for the backend
+      const technicianData = {
+        email: formData.email,
+        fullName: formData.fullName,
+        role: formData.role,
+        companyId: user.id_entreprise.toString()
+      };
+
+      // Call the backend API to create a technician
+      const response = await technicianService.createTechnicians([technicianData]);
+      
+      if (response && response.length > 0) {
+        const createdTech = response[0];
+        
+        // Create the new technician object for the UI
+        const newTechnician: Technician = {
+          id: createdTech.id,
+          fullName: formData.fullName,
+          email: formData.email,
+          phone: formData.phone,
+          role: formData.role,
+          status: 'pending',
+          assignedSerres: formData.assignedSerres,
+          location: formData.location,
+          joinDate: new Date().toISOString().split('T')[0],
+          lastActivity: new Date().toISOString().split('T')[0],
+          interventions: { total: 0, completed: 0, inProgress: 0 }
+        };
+
+        // Add to the local state
+        setTechnicians([...technicians, newTechnician]);
+        
+        // Close modal and reset form
+        setIsCreateModalOpen(false);
+        resetForm();
+        
+        toast({
+          title: "Technicien créé",
+          description: `${formData.fullName} a été ajouté avec succès.`,
+        });
+      }
+    } catch (error: any) {
+      console.error('Error creating technician:', error);
+      toast({
+        title: "Erreur",
+        description: error.message || "Erreur lors de la création du technicien",
+        variant: "destructive"
+      });
+    }
   };
 
   const handleEditTechnician = () => {
@@ -181,7 +230,7 @@ export default function TechnicianManagement() {
     });
   };
 
-  const handleDeleteTechnician = (id: string) => {
+  const handleDeleteTechnician = (id: number) => {
     setTechnicians(technicians.filter(tech => tech.id !== id));
     toast({
       title: "Technicien supprimé",
@@ -190,7 +239,7 @@ export default function TechnicianManagement() {
     });
   };
 
-  const handleActivateTechnician = (id: string) => {
+  const handleActivateTechnician = (id: number) => {
     const updatedTechnicians = technicians.map(tech =>
       tech.id === id ? { ...tech, status: 'active' as const } : tech
     );
@@ -201,7 +250,7 @@ export default function TechnicianManagement() {
     });
   };
 
-  const handleDeactivateTechnician = (id: string) => {
+  const handleDeactivateTechnician = (id: number) => {
     const updatedTechnicians = technicians.map(tech =>
       tech.id === id ? { ...tech, status: 'inactive' as const } : tech
     );
@@ -261,6 +310,22 @@ export default function TechnicianManagement() {
     }
   };
 
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <Loader2 className="h-12 w-12 text-greener animate-spin" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <p className="text-red-500">{error}</p>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gray-50 flex">
       <DirectorSidebar isOpen={isOpen} setIsOpen={setIsOpen} />
@@ -303,60 +368,25 @@ export default function TechnicianManagement() {
         </header>
 
         {/* Content */}
-        <main className="p-4 sm:p-6 lg:p-8">
-          {/* Stats Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-            <Card>
-              <CardContent className="p-4">
-                <div className="text-2xl font-bold text-greener-600">
-                  {technicians.length}
+        <div className="flex-1 p-4 sm:p-6 lg:p-8">
+          {/* Filters and Search */}
+          <div className="mb-6">
+            <div className="flex flex-col sm:flex-row gap-4">
+              <div className="flex-1">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                  <Input
+                    placeholder="Rechercher par nom ou email..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-10"
+                  />
                 </div>
-                <div className="text-sm text-gray-600">Total Techniciens</div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="p-4">
-                <div className="text-2xl font-bold text-green-600">
-                  {technicians.filter(t => t.status === 'active').length}
-                </div>
-                <div className="text-sm text-gray-600">Actifs</div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="p-4">
-                <div className="text-2xl font-bold text-yellow-600">
-                  {technicians.filter(t => t.status === 'pending').length}
-                </div>
-                <div className="text-sm text-gray-600">En Attente</div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="p-4">
-                <div className="text-2xl font-bold text-blue-600">
-                  {technicians.filter(t => t.role === 'technicien_superieur').length}
-                </div>
-                <div className="text-sm text-gray-600">Supérieurs</div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Filters */}
-          <Card className="mb-6">
-            <CardContent className="p-4">
-              <div className="flex flex-col md:flex-row gap-4">
-                <div className="flex-1">
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-                    <Input
-                      placeholder="Rechercher par nom ou email..."
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      className="pl-10"
-                    />
-                  </div>
-                </div>
+              </div>
+              
+              <div className="flex gap-2">
                 <Select value={statusFilter} onValueChange={setStatusFilter}>
-                  <SelectTrigger className="w-full md:w-40">
+                  <SelectTrigger className="w-32">
                     <SelectValue placeholder="Statut" />
                   </SelectTrigger>
                   <SelectContent>
@@ -366,8 +396,9 @@ export default function TechnicianManagement() {
                     <SelectItem value="pending">En attente</SelectItem>
                   </SelectContent>
                 </Select>
+                
                 <Select value={roleFilter} onValueChange={setRoleFilter}>
-                  <SelectTrigger className="w-full md:w-40">
+                  <SelectTrigger className="w-40">
                     <SelectValue placeholder="Rôle" />
                   </SelectTrigger>
                   <SelectContent>
@@ -377,104 +408,167 @@ export default function TechnicianManagement() {
                   </SelectContent>
                 </Select>
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
 
-          {/* Technicians Table */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Liste des Techniciens ({filteredTechnicians.length})</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {filteredTechnicians.map((technician) => (
-                  <div
-                    key={technician.id}
-                    className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 transition-colors"
-                  >
-                    <div className="flex items-center space-x-4">
-                      <div className="w-12 h-12 bg-greener-100 rounded-full flex items-center justify-center">
-                        <span className="text-greener-700 font-semibold">
-                          {technician.fullName.split(' ').map(n => n[0]).join('')}
-                        </span>
-                      </div>
-                      <div>
-                        <div className="font-medium text-gray-900">{technician.fullName}</div>
-                        <div className="text-sm text-gray-600 flex items-center space-x-4">
-                          <span className="flex items-center">
-                            <Mail className="h-3 w-3 mr-1" />
-                            {technician.email}
-                          </span>
-                          {technician.phone && (
-                            <span className="flex items-center">
-                              <Phone className="h-3 w-3 mr-1" />
-                              {technician.phone}
-                            </span>
-                          )}
-                          {technician.location && (
-                            <span className="flex items-center">
-                              <MapPin className="h-3 w-3 mr-1" />
-                              {technician.location}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center space-x-4">
-                      <div className="text-right">
-                        <div className="text-sm font-medium">
-                          {technician.interventions.total} interventions
-                        </div>
-                        <div className="text-xs text-gray-500">
-                          {technician.interventions.completed} terminées
-                        </div>
-                      </div>
-                      
-                      <div className="flex flex-col items-end space-y-1">
-                        {getStatusBadge(technician.status)}
-                        {getRoleBadge(technician.role)}
-                      </div>
-
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="sm">
-                            <MoreVertical className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => openEditModal(technician)}>
-                            <Edit className="h-4 w-4 mr-2" />
-                            Modifier
-                          </DropdownMenuItem>
-                          {technician.status === 'pending' && (
-                            <DropdownMenuItem onClick={() => handleActivateTechnician(technician.id)}>
-                              <UserCheck className="h-4 w-4 mr-2" />
-                              Activer
-                            </DropdownMenuItem>
-                          )}
-                          {technician.status === 'active' && (
-                            <DropdownMenuItem onClick={() => handleDeactivateTechnician(technician.id)}>
-                              <UserX className="h-4 w-4 mr-2" />
-                              Désactiver
-                            </DropdownMenuItem>
-                          )}
-                          <DropdownMenuItem 
-                            onClick={() => handleDeleteTechnician(technician.id)}
-                            className="text-red-600"
-                          >
-                            <Trash2 className="h-4 w-4 mr-2" />
-                            Supprimer
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </div>
-                  </div>
-                ))}
+          {/* Loading State */}
+          {loading && (
+            <div className="flex items-center justify-center py-12">
+              <div className="text-center">
+                <Loader2 className="h-12 w-12 text-greener animate-spin mx-auto mb-4" />
+                <p className="text-gray-600">Chargement des techniciens...</p>
               </div>
-            </CardContent>
-          </Card>
-        </main>
+            </div>
+          )}
+
+          {/* Error State */}
+          {error && !loading && (
+            <div className="flex items-center justify-center py-12">
+              <div className="text-center">
+                <div className="text-red-500 mb-4">
+                  <UserX className="h-12 w-12 mx-auto" />
+                </div>
+                <p className="text-red-600 mb-4">{error}</p>
+                <Button 
+                  onClick={() => window.location.reload()} 
+                  variant="outline"
+                >
+                  Réessayer
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {/* Technicians List */}
+          {!loading && !error && (
+            <>
+              {/* Results Summary */}
+              <div className="mb-4 text-sm text-gray-600">
+                {filteredTechnicians.length} technicien{filteredTechnicians.length !== 1 ? 's' : ''} trouvé{filteredTechnicians.length !== 1 ? 's' : ''}
+                {searchTerm && ` pour "${searchTerm}"`}
+              </div>
+
+              {/* Technicians Grid */}
+              {filteredTechnicians.length > 0 ? (
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                  {filteredTechnicians.map((technician) => (
+                    <Card key={technician.id} className="hover:shadow-md transition-shadow">
+                      <CardHeader className="pb-3">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <CardTitle className="text-lg font-semibold text-gray-900">
+                              {technician.fullName}
+                            </CardTitle>
+                            <p className="text-sm text-gray-600 mt-1">{technician.email}</p>
+                          </div>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                                <MoreVertical className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem onClick={() => openEditModal(technician)}>
+                                <Edit className="h-4 w-4 mr-2" />
+                                Modifier
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => handleActivateTechnician(technician.id)}>
+                                <UserCheck className="h-4 w-4 mr-2" />
+                                Activer
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => handleDeactivateTechnician(technician.id)}>
+                                <UserX className="h-4 w-4 mr-2" />
+                                Désactiver
+                              </DropdownMenuItem>
+                              <DropdownMenuItem 
+                                onClick={() => handleDeleteTechnician(technician.id)}
+                                className="text-red-600"
+                              >
+                                <Trash2 className="h-4 w-4 mr-2" />
+                                Supprimer
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>
+                      </CardHeader>
+                      
+                      <CardContent className="space-y-3">
+                        <div className="flex items-center justify-between">
+                          {getRoleBadge(technician.role)}
+                          {getStatusBadge(technician.status)}
+                        </div>
+                        
+                        {technician.phone && (
+                          <div className="flex items-center text-sm text-gray-600">
+                            <Phone className="h-4 w-4 mr-2" />
+                            {technician.phone}
+                          </div>
+                        )}
+                        
+                        {technician.location && (
+                          <div className="flex items-center text-sm text-gray-600">
+                            <MapPin className="h-4 w-4 mr-2" />
+                            {technician.location}
+                          </div>
+                        )}
+                        
+                        <div className="flex items-center text-sm text-gray-600">
+                          <Calendar className="h-4 w-4 mr-2" />
+                          Membre depuis {technician.joinDate}
+                        </div>
+                        
+                        {technician.assignedSerres.length > 0 && (
+                          <div>
+                            <p className="text-sm font-medium text-gray-700 mb-2">Serres assignées:</p>
+                            <div className="flex flex-wrap gap-1">
+                              {technician.assignedSerres.map((serre, index) => (
+                                <Badge key={index} variant="secondary" className="text-xs">
+                                  {serre}
+                                </Badge>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                        
+                        <div className="pt-2 border-t">
+                          <div className="flex justify-between text-sm">
+                            <span className="text-gray-600">Interventions:</span>
+                            <span className="font-medium">
+                              {technician.interventions.completed}/{technician.interventions.total}
+                            </span>
+                          </div>
+                          <div className="w-full bg-gray-200 rounded-full h-2 mt-1">
+                            <div 
+                              className="bg-greener h-2 rounded-full transition-all duration-300"
+                              style={{ 
+                                width: `${technician.interventions.total > 0 
+                                  ? (technician.interventions.completed / technician.interventions.total) * 100 
+                                  : 0}%` 
+                              }}
+                            />
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-12">
+                  <div className="text-gray-400 mb-4">
+                    <UserX className="h-16 w-16 mx-auto" />
+                  </div>
+                  <p className="text-gray-600 mb-2">Aucun technicien trouvé</p>
+                  <p className="text-sm text-gray-500">
+                    {searchTerm || statusFilter !== 'all' || roleFilter !== 'all' 
+                      ? 'Essayez de modifier vos filtres de recherche'
+                      : 'Commencez par ajouter votre premier technicien'
+                    }
+                  </p>
+                </div>
+              )}
+            </>
+          )}
+        </div>
 
         {/* Create Technician Modal */}
         <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>

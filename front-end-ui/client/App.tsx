@@ -29,11 +29,13 @@ import AlertsPage from "./pages/AlertsPage";
 import SurveillancePage from "./pages/SurveillancePage";
 import ReportsPage from "./pages/ReportsPage";
 import Alerts from "./pages/Alerts";
+import Interventions from "./pages/Interventions";
 import Surveillance from "./pages/Surveillance";
 import Profile from "./pages/Profile";
 import ProfileEdit from "./pages/ProfileEdit";
 import RobotControl from "./pages/RobotControl";
 import NotFound from "./pages/NotFound";
+import TechnicienSupProfile from "./pages/TechnicienSupProfile";
 
 // New Director Pages
 import NewDirectorDashboard from "./pages/NewDirectorDashboard";
@@ -194,6 +196,33 @@ const App = () => (
               }
             />
 
+            <Route
+              path="/technician/surveillance"
+              element={
+                <ProtectedRoute requiredRole="technicien">
+                  <Surveillance />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/technician/alerts"
+              element={
+                <ProtectedRoute requiredRole="technicien">
+                  <Alerts />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/technician/interventions"
+              element={
+                <ProtectedRoute requiredRole="technicien">
+                  <Interventions />
+                </ProtectedRoute>
+              }
+            />
+
             {/* Technicien Sup Routes with Persistent Header */}
             <Route
               path="/technicien-sup"
@@ -226,8 +255,8 @@ const App = () => (
             <Route
               path="/surveillance"
               element={
-                <ProtectedRoute requiredRole={["directeur", "technicien"]}>
-                  <SurveillancePage />
+                <ProtectedRoute requiredRole="technicien">
+                  <Surveillance />
                 </ProtectedRoute>
               }
             />
@@ -269,13 +298,30 @@ const App = () => (
               }
             />
 			
-			
-            {/* Robot Control */}
+			{/* Robot Control */}
             <Route
               path="/robot-control"
               element={
                 <ProtectedRoute>
                   <RobotControl />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/technicien-sup/profile"
+              element={
+                <ProtectedRoute requiredRole="technicien_superieur">
+                  <TechnicienSupProfile />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/technicien-sup/profile/edit"
+              element={
+                <ProtectedRoute requiredRole="technicien_superieur">
+                  <ProfileEdit />
                 </ProtectedRoute>
               }
             />
