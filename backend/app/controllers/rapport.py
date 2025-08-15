@@ -234,7 +234,6 @@ def update_rapport(id):
     if date_fin:
         rapport.date_fin = date_fin
     # Mettre à jour le rapport en base de données
-    db.session.add(rapport)  # Pas nécessaire si on modifie un objet existant
     db.session.commit()
     return jsonify({"message": "Rapport mis à jour avec succès"}), 200
 
