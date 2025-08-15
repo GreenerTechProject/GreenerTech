@@ -13,7 +13,7 @@ from app.controllers.guide_culture import create_guide_culture , update_guide_cu
 from app.controllers.intervention import create_intervention, validate_intervention, get_all_interention, get_intervention, get_interventions_by_assigned_serres
 from app.controllers.type_tache import create_type_tache , get_type_tache, get_all_type_taches
 
-from app.controllers.notification import get_notifications_by_user, get_all_notifications, mark_notification_as_seen
+from app.controllers.notification import get_notifications_by_user, mark_notification_as_seen , get_all_notifications
 from app.controllers.autorisation_domaine import create_autorisation_domaine, get_autorisation_domaine, delete_autorisation_domaine
 from app.controllers.autorisation_serre import create_autorisation_serre, get_autorisation_serre, delete_autorisation_serre
 from app.controllers.autorisation_bilan import create_autorisation_bilan, get_autorisation_bilan, delete_autorisation_bilan
@@ -156,8 +156,10 @@ all_bp.route('/alerte/<int:alerte_id>', methods=['DELETE'])(delete_alerte)
 
 
 
-all_bp.route('/notifications/<int:id_user>', methods=['GET'])(get_notifications_by_user)
-all_bp.route('/notifications', methods=['GET'])(get_all_notifications)
+# all_bp.route('/notifications/<int:id_user>', methods=['GET'])(get_notifications_by_user)
+all_bp.route('/notifications/all', methods=['GET'])(get_all_notifications)
+all_bp.route('/notifications', methods=['GET'])(get_notifications_by_user)
+
 all_bp.route('/notifications/vue/<int:id>', methods=['PUT'])(mark_notification_as_seen)
 
 
