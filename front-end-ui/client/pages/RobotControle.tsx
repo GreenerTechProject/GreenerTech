@@ -1,10 +1,9 @@
-import React, { useState, useEffect, useRef } from 'react';
+qimport React, { useState, useEffect, useRef } from 'react';
 import TechHeader from "../components/TechHeader";
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import PageHeader from '@/components/PageHeader';
-import { robotService } from '../services/robotService';
 import {
   Play,
   Pause,
@@ -40,12 +39,6 @@ interface ControlCommand {
   control_mode: string;
 }
 
-interface Robot {
-  id: number;
-  nom: string;
-  referance: string;
-}
-
 
 export default function RobotControl() {
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -63,11 +56,6 @@ export default function RobotControl() {
   const [selectedRobot, setSelectedRobot] = useState<string>('1');
   const [isFullScreen, setIsFullScreen] = useState<boolean>(false);
   const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
-
-  // Robot state
-  const [robots, setRobots] = useState<Robot[]>([]);
-  const [robotsLoading, setRobotsLoading] = useState<boolean>(false);
-  const [robotsError, setRobotsError] = useState<string | null>(null);
 
   // WebSocket references
   const qrWsRef = useRef<WebSocket | null>(null);
@@ -282,26 +270,6 @@ export default function RobotControl() {
     }
   };
 
-  // Fetch robots from the service
-  const fetchRobots = async () => {
-    try {
-      setRobotsLoading(true);
-      setRobotsError(null);
-      const fetchedRobots = await robotService.getAllRobots();
-      setRobots(fetchedRobots);
-      
-      // Set the first robot as selected if available and no robot is currently selected
-      if (fetchedRobots.length > 0 && !fetchedRobots.find(r => r.id.toString() === selectedRobot)) {
-        setSelectedRobot(fetchedRobots[0].id.toString());
-      }
-    } catch (error: any) {
-      console.error('Failed to fetch robots:', error);
-      setRobotsError(error.message || 'Failed to fetch robots');
-    } finally {
-      setRobotsLoading(false);
-    }
-  };
-
   // Handle camera selection change
   const handleCameraChange = (camera: string) => {
     setSelectedCamera(camera);
@@ -384,8 +352,6 @@ export default function RobotControl() {
 	
 	updateSelectedFromUrl();
 	
-	// Fetch robots from the service
-	fetchRobots();
 	
     startWebRTC(selectedRobot, selectedCamera);
     initializeWebSockets(selectedRobot, selectedCamera);
@@ -517,41 +483,16 @@ export default function RobotControl() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              {robotsLoading ? (
-                <div className="flex items-center justify-center h-8">
-                  <RefreshCw className="h-3 w-3 animate-spin mr-1" />
-                  <span className="text-xs text-gray-500">Chargement...</span>
-                </div>
-              ) : robotsError ? (
-                <div className="text-xs text-red-500 p-2 bg-red-50 rounded">
-                  {robotsError}
-                  <Button 
-                    onClick={fetchRobots} 
-                    variant="ghost" 
-                    size="sm" 
-                    className="h-6 px-2 ml-2 text-xs"
-                  >
-                    Réessayer
-                  </Button>
-                </div>
-              ) : robots.length === 0 ? (
-                <div className="text-xs text-gray-500 p-2 text-center">
-                  Aucun robot disponible
-                </div>
-              ) : (
-                <Select value={selectedRobot} onValueChange={handleRobotChange}>
-                  <SelectTrigger className="h-8 text-sm">
-                    <SelectValue placeholder="Choisir" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {robots.map((robot) => (
-                      <SelectItem key={robot.id} value={robot.id.toString()}>
-                        {robot.nom} ({robot.referance})
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              )}
+              <Select value={selectedRobot} onValueChange={handleRobotChange}>
+                <SelectTrigger className="h-8 text-sm">
+                  <SelectValue placeholder="Choisir" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="1">Robot #1</SelectItem>
+                  <SelectItem value="2">Robot #2</SelectItem>
+                  <SelectItem value="3">Robot #3</SelectItem>
+                </SelectContent>
+              </Select>
             </CardContent>
           </Card>
 
@@ -569,16 +510,6 @@ export default function RobotControl() {
               >
                 <RefreshCw className={`h-3 w-3 mr-1 ${isRefreshing ? 'animate-spin' : ''}`} />
                 {isRefreshing ? 'Actualise...' : 'Actualiser'}
-              </Button>
-
-              <Button
-                onClick={fetchRobots}
-                disabled={robotsLoading}
-                className="w-full h-8 text-sm"
-                variant="outline"
-              >
-                <RefreshCw className={`h-3 w-3 mr-1 ${robotsLoading ? 'animate-spin' : ''}`} />
-                {robotsLoading ? 'Chargement...' : 'Actualiser Robots'}
               </Button>
 
               <Button
@@ -758,12 +689,7 @@ export default function RobotControl() {
               <div className="text-sm space-y-1">
                 <div className="flex items-center gap-2">
                   <Bot className="h-3 w-3 text-blue-400" />
-                  <span>
-                    Robot: {robots.find(r => r.id.toString() === selectedRobot)?.nom || `Robot ${selectedRobot}`}
-                    {robots.find(r => r.id.toString() === selectedRobot)?.referance && 
-                      ` (${robots.find(r => r.id.toString() === selectedRobot)?.referance})`
-                    }
-                  </span>
+                  <span>Robot: {selectedRobot.toUpperCase()}</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <Camera className="h-3 w-3 text-green-400" />

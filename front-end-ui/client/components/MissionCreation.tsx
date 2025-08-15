@@ -71,7 +71,9 @@ export const MissionCreation: React.FC<MissionCreationProps> = ({ onMissionCreat
 
   const fetchSerres = async () => {
     try {
-      const serresData = await serreService.getAllSerres();
+      // For technicians, only show serres they have access to
+      const serresData = await serreService.getSerresByCurrentUser();
+      console.log('Serres disponibles pour l\'utilisateur:', serresData);
       setSerres(serresData);
     } catch (error: any) {
       console.error('Erreur lors de la récupération des serres:', error);
@@ -136,7 +138,7 @@ export const MissionCreation: React.FC<MissionCreationProps> = ({ onMissionCreat
       <CardHeader>
         <CardTitle>Créer une nouvelle mission</CardTitle>
         <CardDescription>
-          Configurez une mission pour un robot dans une serre spécifique
+          Configurez une mission pour un robot dans une serre à laquelle vous avez accès
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -144,41 +146,53 @@ export const MissionCreation: React.FC<MissionCreationProps> = ({ onMissionCreat
           {/* Robot Selection */}
           <div className="space-y-2">
             <Label htmlFor="robot">Robot *</Label>
-            <Select
-              value={formData.id_robot.toString()}
-              onValueChange={(value) => handleInputChange('id_robot', parseInt(value))}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Sélectionnez un robot" />
-              </SelectTrigger>
-              <SelectContent>
-                {robots.map((robot) => (
-                  <SelectItem key={robot.id} value={robot.id.toString()}>
-                    {robot.nom} - {robot.referance}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            {robots.length === 0 ? (
+              <div className="text-sm text-muted-foreground p-3 border rounded-md bg-muted/50">
+                Aucun robot disponible. Contactez votre directeur pour ajouter des robots.
+              </div>
+            ) : (
+              <Select
+                value={formData.id_robot.toString()}
+                onValueChange={(value) => handleInputChange('id_robot', parseInt(value))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Sélectionnez un robot" />
+                </SelectTrigger>
+                <SelectContent>
+                  {robots.map((robot) => (
+                    <SelectItem key={robot.id} value={robot.id.toString()}>
+                      {robot.nom} - {robot.referance}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
           </div>
 
           {/* Serre Selection */}
           <div className="space-y-2">
             <Label htmlFor="serre">Serre *</Label>
-            <Select
-              value={formData.id_serre.toString()}
-              onValueChange={(value) => handleInputChange('id_serre', parseInt(value))}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Sélectionnez une serre" />
-              </SelectTrigger>
-              <SelectContent>
-                {serres.map((serre) => (
-                  <SelectItem key={serre.id} value={serre.id.toString()}>
-                    {serre.nom}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            {serres.length === 0 ? (
+              <div className="text-sm text-muted-foreground p-3 border rounded-md bg-muted/50">
+                Aucune serre disponible. Contactez votre directeur pour obtenir l'accès à une serre.
+              </div>
+            ) : (
+              <Select
+                value={formData.id_serre.toString()}
+                onValueChange={(value) => handleInputChange('id_serre', parseInt(value))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Sélectionnez une serre" />
+                </SelectTrigger>
+                <SelectContent>
+                  {serres.map((serre) => (
+                    <SelectItem key={serre.id} value={serre.id.toString()}>
+                      {serre.nom}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
           </div>
 
           {/* Repetition Settings */}
@@ -235,9 +249,30 @@ export const MissionCreation: React.FC<MissionCreationProps> = ({ onMissionCreat
                     onSelect={(date) => handleInputChange('date_debut', date)}
                     initialFocus
                     locale={fr}
+                    className="rounded-md border"
+                    classNames={{
+                      day_selected: "bg-blue-600 text-white hover:bg-blue-700 focus:bg-blue-700",
+                      day_today: "bg-accent text-accent-foreground",
+                      day: "h-9 w-9 p-0 font-normal aria-selected:opacity-100 hover:bg-accent hover:text-accent-foreground",
+                      head_cell: "text-muted-foreground font-normal",
+                      caption: "flex justify-center pt-1 relative items-center",
+                      nav: "space-x-1 flex items-center",
+                      nav_button: "h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100",
+                      nav_button_previous: "absolute left-1",
+                      nav_button_next: "absolute right-1",
+                      table: "w-full border-collapse space-y-1",
+                      head_row: "flex",
+                      row: "flex w-full mt-2",
+                      cell: "h-9 w-9 text-center text-sm p-0 relative [&:has([aria-selected].day-range-end)]:rounded-r-md [&:has([aria-selected].day-outside)]:bg-accent/50 [&:has([aria-selected])]:bg-accent first:[&:has([aria-selected])]:rounded-l-md last:[&:has([aria-selected])]:rounded-r-md focus-within:relative focus-within:z-20",
+                    }}
                   />
                 </PopoverContent>
               </Popover>
+              {formData.date_debut && (
+                <p className="text-sm text-muted-foreground">
+                  Date sélectionnée: {format(formData.date_debut, "PPP", { locale: fr })}
+                </p>
+              )}
             </div>
 
             <div className="space-y-2">
@@ -263,13 +298,49 @@ export const MissionCreation: React.FC<MissionCreationProps> = ({ onMissionCreat
                   <Calendar
                     mode="single"
                     selected={formData.date_fin || undefined}
-                    onSelect={(date) => handleInputChange('date_fin', date)}
+                    onSelect={(date) => {
+                      if (date && (!formData.date_debut || date >= formData.date_debut)) {
+                        handleInputChange('date_fin', date);
+                      } else if (date && formData.date_debut && date < formData.date_debut) {
+                        toast.error('La date de fin doit être après la date de début');
+                      }
+                    }}
                     initialFocus
                     locale={fr}
-                    disabled={(date) => date < (formData.date_debut || new Date())}
+                    disabled={(date) => {
+                      // Disable dates before start date, but allow the calendar to show
+                      return formData.date_debut ? date < formData.date_debut : false;
+                    }}
+                    className="rounded-md border"
+                    classNames={{
+                      day_selected: "bg-blue-600 text-white hover:bg-blue-700 focus:bg-blue-700",
+                      day_today: "bg-accent text-accent-foreground",
+                      day: "h-9 w-9 p-0 font-normal aria-selected:opacity-100 hover:bg-accent hover:text-accent-foreground",
+                      day_disabled: "text-muted-foreground opacity-50 cursor-not-allowed",
+                      head_cell: "text-muted-foreground font-normal",
+                      caption: "flex justify-center pt-1 relative items-center",
+                      nav: "space-x-1 flex items-center",
+                      nav_button: "h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100",
+                      nav_button_previous: "absolute left-1",
+                      nav_button_next: "absolute right-1",
+                      table: "w-full border-collapse space-y-1",
+                      head_row: "flex",
+                      row: "flex w-full mt-2",
+                      cell: "h-9 w-9 text-center text-sm p-0 relative [&:has([aria-selected].day-range-end)]:rounded-r-md [&:has([aria-selected].day-outside)]:bg-accent/50 [&:has([aria-selected])]:bg-accent first:[&:has([aria-selected])]:rounded-l-md last:[&:has([aria-selected])]:rounded-r-md focus-within:relative focus-within:z-20",
+                    }}
                   />
                 </PopoverContent>
               </Popover>
+              {formData.date_fin && (
+                <p className="text-sm text-muted-foreground">
+                  Date sélectionnée: {format(formData.date_fin, "PPP", { locale: fr })}
+                </p>
+              )}
+              {formData.date_debut && !formData.date_fin && (
+                <p className="text-sm text-muted-foreground">
+                  Sélectionnez une date de fin après le {format(formData.date_debut, "dd/MM/yyyy", { locale: fr })}
+                </p>
+              )}
             </div>
           </div>
 
@@ -277,7 +348,7 @@ export const MissionCreation: React.FC<MissionCreationProps> = ({ onMissionCreat
           <Button
             type="submit"
             className="w-full"
-            disabled={loading || !formData.id_robot || !formData.id_serre || !formData.date_debut}
+            disabled={loading || !formData.id_robot || !formData.id_serre || !formData.date_debut || serres.length === 0 || robots.length === 0}
           >
             {loading ? 'Création en cours...' : 'Créer la mission'}
           </Button>
