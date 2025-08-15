@@ -1,18 +1,18 @@
 from flask import jsonify, request
 from app.models.notification import Notification
 from database.config import db
+from app.utils.security import token_required, role_required
 
 
 # ✅ Récupérer les notifications par utilisateur, avec option de filtrage par type
-def get_notifications_by_user(id_user):
-    type_notification = request.args.get('type')  # ?type=intervention_validee
+@token_required
+def get_notifications_by_user(current_user):
+    # type_notification = request.args.get('type')  
 
-    query = Notification.query.filter_by(id_user=id_user)
-    if type_notification:
-        query = query.filter_by(type_notification=type_notification)
-
+    query = Notification.query.filter_by(id_user=current_user.id)
+    # if type_notification:
+    #     query = query.filter_by(type_notification=type_notification)
     notifs = query.order_by(Notification.date.desc()).all()
-
     return jsonify([{
         'id': n.id,
         'description': n.description,
