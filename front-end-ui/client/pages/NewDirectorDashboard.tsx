@@ -313,6 +313,14 @@ export default function DirectorDashboard() {
       // Build monthly alerts distribution (Low, Medium, High)
       try {
         console.log('[NewDirectorDashboard] Alerts data:', alerts);
+        console.log('[NewDirectorDashboard] Total alerts received:', (alerts as any[])?.length || 0);
+        
+        // Debug: Afficher la structure de chaque alerte
+        if ((alerts as any[])?.length > 0) {
+          console.log('[NewDirectorDashboard] First alert structure:', alerts[0]);
+          console.log('[NewDirectorDashboard] Alert fields available:', Object.keys(alerts[0]));
+        }
+        
         const now = new Date();
         const monthKeys: string[] = [];
         const monthLabels: string[] = [];
@@ -325,18 +333,59 @@ export default function DirectorDashboard() {
         const L: Record<string, number> = {};
         const M: Record<string, number> = {};
         const H: Record<string, number> = {};
-        (alerts as any[]).forEach((a: any) => {
+        let processedCount = 0;
+        let skippedCount = 0;
+        let severityCounts = { 0: 0, 1: 0, 2: 0 };
+        
+        (alerts as any[]).forEach((a: any, index: number) => {
+          console.log(`[NewDirectorDashboard] Processing alert ${index + 1}:`, {
+            id: a?.id,
+            priority: a?.priority,
+            status_alert: a?.status_alert,
+            timestamp: a?.timestamp,
+            date: a?.date,
+            created_at: a?.created_at
+          });
+          
           const when = a?.timestamp || a?.date || a?.created_at;
           if (!when) {
-            console.log('[NewDirectorDashboard] Alert without date:', a);
+            console.log('[NewDirectorDashboard] Alert without date - SKIPPING:', a);
+            skippedCount++;
             return;
           }
+          
           const key = new Date(when).toISOString().slice(0, 7);
           const sev = Number(a?.priority || a?.status_alert) || 0;
-          console.log('[NewDirectorDashboard] Processing alert:', { when, key, sev, alert: a });
-          if (sev === 2) H[key] = (H[key] || 0) + 1;
-          else if (sev === 1) M[key] = (M[key] || 0) + 1;
-          else if (sev === 0) L[key] = (L[key] || 0) + 1;
+          
+          console.log('[NewDirectorDashboard] Alert processed:', { 
+            when, 
+            key, 
+            sev, 
+            monthKey: key,
+            priority_type: typeof a?.priority,
+            status_alert_type: typeof a?.status_alert
+          });
+          
+          if (sev === 2) {
+            H[key] = (H[key] || 0) + 1;
+            severityCounts[2]++;
+          } else if (sev === 1) {
+            M[key] = (M[key] || 0) + 1;
+            severityCounts[1]++;
+          } else if (sev === 0) {
+            L[key] = (L[key] || 0) + 1;
+            severityCounts[0]++;
+          }
+          
+          processedCount++;
+        });
+        
+        console.log('[NewDirectorDashboard] Processing summary:', {
+          totalAlerts: (alerts as any[])?.length || 0,
+          processedCount,
+          skippedCount,
+          severityCounts,
+          monthlyCounts: { L, M, H }
         });
         console.log('[NewDirectorDashboard] Monthly counts:', { L, M, H });
         setAlertsMonthly({
@@ -688,15 +737,6 @@ export default function DirectorDashboard() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                {/* Debug section - temporary */}
-                <div className="mb-4 p-3 bg-gray-100 rounded text-xs">
-                  <strong>Debug Info:</strong><br/>
-                  Alerts count: {alertsMonthly.labels.length > 0 ? 'Data loaded' : 'No data'}<br/>
-                  Labels: {alertsMonthly.labels.join(', ')}<br/>
-                  Low: {alertsMonthly.low.join(', ')}<br/>
-                  Medium: {alertsMonthly.medium.join(', ')}<br/>
-                  High: {alertsMonthly.high.join(', ')}
-                </div>
                 
                 <div className="w-full h-96 min-h-[24rem]">
                   {alertsMonthly.labels.length > 0 ? (

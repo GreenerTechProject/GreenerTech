@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
+import InterventionForm from "../components/InterventionForm";
 
 interface Intervention {
   id: number;
@@ -36,6 +37,15 @@ interface InterventionType {
   icone: string;
 }
 
+interface InterventionData {
+  interventionType: string;
+  serreId: string;
+  interventionDate: string;
+  functionary: string;
+  description: string;
+  priority: "basse" | "moyenne" | "haute" | "urgente";
+}
+
 const interventionTypes: InterventionType[] = [
   { id: 1, nom: "Préparation du Sol", couleur: "bg-green-500", icone: "🌱" },
   { id: 2, nom: "Plantation", couleur: "bg-blue-500", icone: "🪴" },
@@ -53,6 +63,7 @@ export default function InterventionManagement() {
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [interventionsPerPage] = useState(7);
+  const [isInterventionFormOpen, setIsInterventionFormOpen] = useState(false);
 
   useEffect(() => {
     loadInterventions();
@@ -195,6 +206,20 @@ export default function InterventionManagement() {
     return <Badge variant="outline" className="bg-gray-100 text-gray-700 border-gray-300">{action}</Badge>;
   };
 
+  const handleSubmitIntervention = (data: InterventionData) => {
+    console.log("Intervention submitted:", data);
+    // Here you would typically send the data to your backend
+    // For now, we'll just close the form
+    setIsInterventionFormOpen(false);
+  };
+
+  const handleSaveDraft = (data: InterventionData) => {
+    console.log("Intervention draft saved:", data);
+    // Here you would typically save the draft to your backend
+    // For now, we'll just close the form
+    setIsInterventionFormOpen(false);
+  };
+
   const totalPages = Math.ceil(filteredInterventions.length / interventionsPerPage);
   const startIndex = (currentPage - 1) * interventionsPerPage;
   const endIndex = startIndex + interventionsPerPage;
@@ -243,7 +268,10 @@ export default function InterventionManagement() {
               Trier par
               <ChevronDown className="ml-2 h-4 w-4" />
             </Button>
-            <Button className="bg-green-500 hover:bg-green-600 text-white">
+            <Button 
+              className="bg-green-500 hover:bg-green-600 text-white"
+              onClick={() => setIsInterventionFormOpen(true)}
+            >
               <Plus className="mr-2 h-4 w-4" />
               Nouvelle intervention
             </Button>
@@ -351,6 +379,14 @@ export default function InterventionManagement() {
           </div>
         </div>
       </div>
+
+      {/* Intervention Form Dialog */}
+      <InterventionForm
+        isOpen={isInterventionFormOpen}
+        onClose={() => setIsInterventionFormOpen(false)}
+        onSubmit={handleSubmitIntervention}
+        onSaveDraft={handleSaveDraft}
+      />
     </div>
   );
 }

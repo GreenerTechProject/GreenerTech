@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
+import InterventionForm from "../components/InterventionForm";
 
 interface Intervention {
   id: number;
@@ -44,6 +45,15 @@ const interventionTypes: InterventionType[] = [
   { id: 6, nom: "Éclaircissage", couleur: "bg-orange-600", icone: "🎯" }
 ];
 
+interface InterventionData {
+  interventionType: string;
+  serreId: string;
+  interventionDate: string;
+  functionary: string;
+  description: string;
+  priority: "basse" | "moyenne" | "haute" | "urgente";
+}
+
 export default function Interventions() {
   const { user } = useAuth();
   const [interventions, setInterventions] = useState<Intervention[]>([]);
@@ -52,6 +62,7 @@ export default function Interventions() {
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [interventionsPerPage] = useState(7);
+  const [isInterventionFormOpen, setIsInterventionFormOpen] = useState(false);
 
   useEffect(() => {
     loadInterventions();
@@ -165,6 +176,20 @@ export default function Interventions() {
     setCurrentPage(page);
   };
 
+  const handleSubmitIntervention = (data: InterventionData) => {
+    console.log("Intervention submitted:", data);
+    // Here you would typically send the data to your backend
+    // For now, we'll just close the form
+    setIsInterventionFormOpen(false);
+  };
+
+  const handleSaveDraft = (data: InterventionData) => {
+    console.log("Intervention draft saved:", data);
+    // Here you would typically save the draft to your backend
+    // For now, we'll just close the form
+    setIsInterventionFormOpen(false);
+  };
+
   const getInterventionTypeIcon = (typeName: string) => {
     const type = interventionTypes.find(t => t.nom === typeName);
     if (!type) return "📋";
@@ -242,7 +267,10 @@ export default function Interventions() {
               Trier par
               <ChevronDown className="ml-2 h-4 w-4" />
             </Button>
-            <Button className="bg-green-500 hover:bg-green-600 text-white">
+            <Button 
+              className="bg-green-500 hover:bg-green-600 text-white"
+              onClick={() => setIsInterventionFormOpen(true)}
+            >
               <FileText className="mr-2 h-4 w-4" />
               Demande une intervention
             </Button>
@@ -350,6 +378,14 @@ export default function Interventions() {
           </div>
         </div>
       </div>
+
+      {/* Intervention Form Dialog */}
+      <InterventionForm
+        isOpen={isInterventionFormOpen}
+        onClose={() => setIsInterventionFormOpen(false)}
+        onSubmit={handleSubmitIntervention}
+        onSaveDraft={handleSaveDraft}
+      />
     </div>
   );
 }

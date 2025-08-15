@@ -112,15 +112,15 @@ export default function DirecteurSetup() {
 
       // Step 2: Create domains
       const domainRequests = setupData.domains.map((domain) => ({
-        name: domain.name,
-        area: domain.area,
+        nom: domain.name,
+        surface: domain.area,
         center: {
-          lat: domain.center.lat(),
-          lng: domain.center.lng(),
+          latitude: domain.center.lat(),
+          longitude: domain.center.lng(),
         },
-        path: domain.path.map((point) => ({
-          lat: point.lat(),
-          lng: point.lng(),
+        position: domain.path.map((point) => ({
+          latitude: point.lat(),
+          longitude: point.lng(),
         })),
         companyId,
       }));

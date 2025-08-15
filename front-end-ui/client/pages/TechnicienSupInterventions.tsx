@@ -20,6 +20,7 @@ import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 import { serreService } from "../services/serreService";
 import { InterventionService, Intervention } from "../services/interventionService";
+import InterventionForm from "../components/InterventionForm";
 
 interface Serre {
   id: string;
@@ -58,6 +59,15 @@ const interventionTypes: InterventionType[] = [
   { id: 6, nom: "Éclaircissage", couleur: "bg-orange-600", icone: "🎯" }
 ];
 
+interface InterventionData {
+  interventionType: string;
+  serreId: string;
+  interventionDate: string;
+  functionary: string;
+  description: string;
+  priority: "basse" | "moyenne" | "haute" | "urgente";
+}
+
 export default function TechnicienSupInterventions() {
   const { user } = useAuth();
   const [assignedSerres, setAssignedSerres] = useState<Serre[]>([]);
@@ -68,6 +78,7 @@ export default function TechnicienSupInterventions() {
   const [currentPage, setCurrentPage] = useState(1);
   const [interventionsPerPage] = useState(7);
   const [sortBy, setSortBy] = useState("date_creation");
+  const [isInterventionFormOpen, setIsInterventionFormOpen] = useState(false);
 
   useEffect(() => {
     loadAssignedSerres();
@@ -228,6 +239,20 @@ export default function TechnicienSupInterventions() {
     return <Badge variant="outline" className="bg-gray-100 text-gray-700 border-gray-300">{action}</Badge>;
   };
 
+  const handleSubmitIntervention = (data: InterventionData) => {
+    console.log("Intervention submitted:", data);
+    // Here you would typically send the data to your backend
+    // For now, we'll just close the form
+    setIsInterventionFormOpen(false);
+  };
+
+  const handleSaveDraft = (data: InterventionData) => {
+    console.log("Intervention draft saved:", data);
+    // Here you would typically save the draft to your backend
+    // For now, we'll just close the form
+    setIsInterventionFormOpen(false);
+  };
+
   const totalPages = Math.ceil(filteredInterventions.length / interventionsPerPage);
   const startIndex = (currentPage - 1) * interventionsPerPage;
   const endIndex = startIndex + interventionsPerPage;
@@ -272,7 +297,10 @@ export default function TechnicienSupInterventions() {
             Trier par
             <ChevronDown className="ml-2 h-4 w-4" />
           </Button>
-          <Button className="bg-green-500 hover:bg-green-600 text-white">
+          <Button 
+            className="bg-green-500 hover:bg-green-600 text-white"
+            onClick={() => setIsInterventionFormOpen(true)}
+          >
             <FileText className="mr-2 h-4 w-4" />
             Demande une intervention
           </Button>
@@ -379,6 +407,14 @@ export default function TechnicienSupInterventions() {
           </Button>
         </div>
       </div>
+
+      {/* Intervention Form Dialog */}
+      <InterventionForm
+        isOpen={isInterventionFormOpen}
+        onClose={() => setIsInterventionFormOpen(false)}
+        onSubmit={handleSubmitIntervention}
+        onSaveDraft={handleSaveDraft}
+      />
     </div>
   );
 }

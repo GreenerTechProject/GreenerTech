@@ -15,6 +15,8 @@ import { robotService } from '../services/robotService';
 import { serreService } from '../services/serreService';
 import { toast } from 'sonner';
 import { MissionCreation } from '../components/MissionCreation';
+import TechHeader from '../components/TechHeader';
+import { useAuth } from '../contexts/AuthContext';
 
 interface Mission {
   id: number;
@@ -40,6 +42,7 @@ interface Serre {
 }
 
 export const MissionManagement: React.FC = () => {
+  const { user } = useAuth();
   const [missions, setMissions] = useState<Mission[]>([]);
   const [robots, setRobots] = useState<Robot[]>([]);
   const [serres, setSerres] = useState<Serre[]>([]);
@@ -48,6 +51,9 @@ export const MissionManagement: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Determine user role for header
+  const userRole = user?.role === 'technicien_superieur' ? 'technicien_sup' : 'technicien';
 
   useEffect(() => {
     fetchMissions();
@@ -101,7 +107,8 @@ export const MissionManagement: React.FC = () => {
 
   const fetchSerres = async () => {
     try {
-      const serresData = await serreService.getAllSerres();
+      // For technicians, only show serres they have access to
+      const serresData = await serreService.getSerresByCurrentUser();
       console.log('Serres data received:', serresData);
       
       if (Array.isArray(serresData)) {
@@ -159,135 +166,137 @@ export const MissionManagement: React.FC = () => {
   };
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
-      {/* Header */}
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Gestion des Missions</h1>
-          <p className="text-gray-600 mt-2">
-            Gérez les missions des robots dans vos serres
-          </p>
-        </div>
-        <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
-          <DialogTrigger asChild>
-            <Button className="flex items-center gap-2">
-              <Plus className="h-4 w-4" />
-              Nouvelle Mission
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>Créer une nouvelle mission</DialogTitle>
-              <DialogDescription>
-                Configurez une mission pour un robot dans une serre spécifique
-              </DialogDescription>
-            </DialogHeader>
-            <MissionCreation onMissionCreated={handleMissionCreated} />
-          </DialogContent>
-        </Dialog>
-      </div>
-
-             {/* Error Display */}
-       {error && (
-         <Card className="border-red-200 bg-red-50">
-           <CardContent className="pt-6">
-             <div className="flex items-center justify-between">
-               <div className="flex items-center gap-2 text-red-700">
-                 <div className="w-2 h-2 bg-red-500 rounded-full"></div>
-                 <span className="font-medium">Erreur:</span>
-                 <span>{error}</span>
-               </div>
-               <Button 
-                 variant="outline" 
-                 size="sm" 
-                 onClick={fetchMissions}
-                 disabled={loading}
-               >
-                 Réessayer
-               </Button>
-             </div>
-           </CardContent>
-         </Card>
-       )}
-
-       {/* Filters */}
-       <Card>
-        <CardHeader>
-          <CardTitle>Filtres</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="search">Rechercher</Label>
-              <div className="relative">
-                <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                <Input
-                  id="search"
-                  placeholder="Rechercher par robot ou serre..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
-                />
-              </div>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="status">Statut</Label>
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Filtrer par statut" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Toutes les missions</SelectItem>
-                  <SelectItem value="pending">En attente</SelectItem>
-                  <SelectItem value="executed">Exécutées</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label>Total des missions</Label>
-              <div className="text-2xl font-bold text-blue-600">
-                {filteredMissions.length}
-              </div>
-            </div>
+    <div className="min-h-screen bg-gray-50">
+      <TechHeader role={userRole} />
+      <div className="container mx-auto p-6 space-y-6">
+        {/* Header */}
+        <div className="flex justify-between items-center">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">Gestion des Missions</h1>
+            <p className="text-gray-600 mt-2">
+              Gérez les missions des robots dans vos serres accessibles
+            </p>
           </div>
-        </CardContent>
-      </Card>
+          <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
+            <DialogTrigger asChild>
+              <Button className="flex items-center gap-2">
+                <Plus className="h-4 w-4" />
+                Nouvelle Mission
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>Créer une nouvelle mission</DialogTitle>
+                <DialogDescription>
+                  Configurez une mission pour un robot dans une serre spécifique
+                </DialogDescription>
+              </DialogHeader>
+              <MissionCreation onMissionCreated={handleMissionCreated} />
+            </DialogContent>
+          </Dialog>
+        </div>
 
-      {/* Missions Table */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Liste des Missions</CardTitle>
-          <CardDescription>
-            {filteredMissions.length} mission(s) trouvée(s)
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {loading ? (
-            <div className="flex justify-center items-center py-8">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-            </div>
-          ) : filteredMissions.length === 0 ? (
-            <div className="text-center py-8 text-gray-500">
-              Aucune mission trouvée
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Robot</TableHead>
-                    <TableHead>Serre</TableHead>
-                    <TableHead>Répétitions</TableHead>
-                    <TableHead>Date de début</TableHead>
-                    <TableHead>Date de fin</TableHead>
-                    <TableHead>Statut</TableHead>
-                    <TableHead>Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredMissions.map((mission) => (
-                    <TableRow key={mission.id}>
-                                             <TableCell>
+        {/* Error Display */}
+        {error && (
+          <Card className="border-red-200 bg-red-50">
+            <CardContent className="pt-6">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 text-red-700">
+                  <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+                  <span className="font-medium">Erreur:</span>
+                  <span>{error}</span>
+                </div>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={fetchMissions}
+                  disabled={loading}
+                >
+                  Réessayer
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Filters */}
+        <Card>
+         <CardHeader>
+           <CardTitle>Filtres</CardTitle>
+         </CardHeader>
+         <CardContent>
+           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+             <div className="space-y-2">
+               <Label htmlFor="search">Rechercher</Label>
+               <div className="relative">
+                 <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                 <Input
+                   id="search"
+                   placeholder="Rechercher par robot ou serre..."
+                   value={searchTerm}
+                   onChange={(e) => setSearchTerm(e.target.value)}
+                   className="pl-10"
+                 />
+               </div>
+             </div>
+             <div className="space-y-2">
+               <Label htmlFor="status">Statut</Label>
+               <Select value={statusFilter} onValueChange={setStatusFilter}>
+                 <SelectTrigger>
+                   <SelectValue placeholder="Filtrer par statut" />
+                 </SelectTrigger>
+                 <SelectContent>
+                   <SelectItem value="all">Toutes les missions</SelectItem>
+                   <SelectItem value="pending">En attente</SelectItem>
+                   <SelectItem value="executed">Exécutées</SelectItem>
+                 </SelectContent>
+               </Select>
+             </div>
+             <div className="space-y-2">
+               <Label>Total des missions</Label>
+               <div className="text-2xl font-bold text-blue-600">
+                 {filteredMissions.length}
+               </div>
+             </div>
+           </div>
+         </CardContent>
+       </Card>
+
+       {/* Missions Table */}
+       <Card>
+         <CardHeader>
+           <CardTitle>Liste des Missions</CardTitle>
+           <CardDescription>
+             {filteredMissions.length} mission(s) trouvée(s)
+           </CardDescription>
+         </CardHeader>
+         <CardContent>
+           {loading ? (
+             <div className="flex justify-center items-center py-8">
+               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+             </div>
+           ) : filteredMissions.length === 0 ? (
+             <div className="text-center py-8 text-gray-500">
+               Aucune mission trouvée
+             </div>
+           ) : (
+             <div className="overflow-x-auto">
+               <Table>
+                 <TableHeader>
+                   <TableRow>
+                     <TableHead>Robot</TableHead>
+                     <TableHead>Serre</TableHead>
+                     <TableHead>Répétitions</TableHead>
+                     <TableHead>Date de début</TableHead>
+                     <TableHead>Date de fin</TableHead>
+                     <TableHead>Statut</TableHead>
+                     <TableHead>Actions</TableHead>
+                   </TableRow>
+                 </TableHeader>
+                 <TableBody>
+                   {filteredMissions.map((mission) => (
+                     <TableRow key={mission.id}>
+                                              <TableCell>
                          <div className="flex items-center gap-2">
                            <Bot className="h-4 w-4 text-blue-600" />
                            <span className="font-medium">
@@ -295,7 +304,7 @@ export const MissionManagement: React.FC = () => {
                            </span>
                          </div>
                        </TableCell>
-                                             <TableCell>
+                                              <TableCell>
                          <div className="flex items-center gap-2">
                            <Building2 className="h-4 w-4 text-green-600" />
                            <span>{getSerreName(mission.id_serre)}</span>
@@ -367,5 +376,6 @@ export const MissionManagement: React.FC = () => {
         </CardContent>
       </Card>
     </div>
+  </div>
   );
 };
