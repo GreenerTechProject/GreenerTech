@@ -5,24 +5,32 @@ from aiohttp import web, WSMsgType
 from aiortc import RTCPeerConnection, VideoStreamTrack, RTCSessionDescription
 from av import VideoFrame
 from cv2 import QRCodeDetector
-#from detectobjects import detect_frame
-#from classificationmaladies import predict_frame
 import json
 import os
 import time
-#import ast
 import requests
-
+from collections import defaultdict
 
 qr_detector = QRCodeDetector()
-latest_frame = None
-latest_qr_results = []
+
+# Data store for each robot+camera combination
+stream_data = defaultdict(lambda: {
+    "latest_frame": None,
+    "latest_qr_results": [],
+    "last_frame_time": 0
+})
+
 connected_qr_clients = set()
-last_frame_time = 0
+
+def get_key_from_request(request):
+    robot_id = request.query.get("robot", "1")
+    camera_id = request.query.get("camera", "right")
+    return f"{robot_id}_{camera_id}"
 
 class RelayStreamTrack(VideoStreamTrack):
-    def __init__(self):
+    def __init__(self, key):
         super().__init__()
+        self.key = key
         image_path = os.path.join(os.path.dirname(__file__), "no_signal.jpg")
         self.fallback_frame = cv2.imread(image_path)
         if self.fallback_frame is None:
@@ -30,16 +38,10 @@ class RelayStreamTrack(VideoStreamTrack):
         self.cached_frame = None
 
     async def recv(self):
-        global latest_frame
+        data = stream_data[self.key]
         pts, time_base = await self.next_timestamp()
+        frame_to_use = data["latest_frame"] if data["latest_frame"] is not None else self.fallback_frame
 
-        frame_to_use = latest_frame if latest_frame is not None else self.fallback_frame
-        #frame_to_use = detect_frame(latest_frame) if latest_frame is not None else self.fallback_frame
-        
-        #_, Billan_dicts = predict_frame(latest_frame) if latest_frame is not None else self.fallback_frame, 111
-        #print (Billan_dicts)
-
-        # frame_to_use = detected_frame
         if frame_to_use is None:
             raise Exception("No video stream and no fallback image found!")
 
@@ -54,7 +56,7 @@ class RelayStreamTrack(VideoStreamTrack):
 
 
 async def video_stream_handler(request):
-    global latest_frame, latest_qr_results, last_frame_time
+    key = get_key_from_request(request)
     from sensors_realtime_service import get_latest_sensor_data
 
     ws = web.WebSocketResponse()
@@ -71,43 +73,36 @@ async def video_stream_handler(request):
                 if retval and points is not None:
                     for i, text in enumerate(decoded_info):
                         if text:
-                            
                             try:
                                 data = json.loads(text)
-                                #print(data["nom"])
-                                print("Detected bilan : "+data["nom"])
-                                if latest_qr_results and text != latest_qr_results[0]:
-                                    data2 = json.loads(latest_qr_results[0])
+                                print(f"[{key}] Detected bilan: {data['nom']}")
+                                prev_qrs = stream_data[key]["latest_qr_results"]
+                                if prev_qrs and text != prev_qrs[0]:
+                                    data2 = json.loads(prev_qrs[0])
                                     if data["nom"] != data2["nom"]:
-                                        print("Old bilan : "+data2["nom"])
+                                        print(f"[{key}] Old bilan: {data2['nom']}")
                                         print(get_latest_sensor_data())
-                                        #print("Old bilan sensor data : "+str(get_latest_sensor_data()["temperature"]))
-                                        
-                                        
-                                        # Send etat_bilan
+
                                         data3 = {
-                                          "id_bilan": data2["id"],
-                                          "temperature": get_latest_sensor_data()["mean_temperature"],
-                                          "humidite": get_latest_sensor_data()["mean_humidity"],
-                                          "luminosite": get_latest_sensor_data()["mean_luminosite"],
-                                          "co2": get_latest_sensor_data()["mean_co2"],
-                                          "nombre_tomates_maladies": 0,
-                                          "nombre_tomates_non_maladies": 0,
-                                          "nombre_malade1": 0,
-                                          "nombre_malade2": 0,
-                                          "rendement": 0
+                                            "id_bilan": data2["id"],
+                                            "temperature": get_latest_sensor_data()["mean_temperature"],
+                                            "humidite": get_latest_sensor_data()["mean_humidity"],
+                                            "luminosite": get_latest_sensor_data()["mean_luminosite"],
+                                            "co2": get_latest_sensor_data()["mean_co2"],
+                                            "nombre_tomates_maladies": 0,
+                                            "nombre_tomates_non_maladies": 0,
+                                            "nombre_malade1": 0,
+                                            "nombre_malade2": 0,
+                                            "rendement": 0
                                         }
-                                        print(data3)
                                         try:
                                             response = requests.post("http://greenertech.mywire.org:5000/api/etat_bilan", json=data3)
-                                            print("✅ etat_bilan sent:", response.status_code, response.text)
+                                            print(f"[{key}] ✅ etat_bilan sent:", response.status_code, response.text)
                                         except Exception as e:
-                                            print("❌ Failed to send etat_bilan:", e)
-                            
+                                            print(f"[{key}] ❌ Failed to send etat_bilan:", e)
                             except json.JSONDecodeError:
-                                print("No json", text)
+                                print(f"[{key}] No json", text)
 
-                            #print("Detected bilan : "+decoded_info[0])
                             pts = points[i].astype(int)
                             for j in range(4):
                                 pt1 = tuple(pts[j])
@@ -117,61 +112,42 @@ async def video_stream_handler(request):
                             cv2.putText(frame, text, (x, y - 10),
                                         cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
                             qr_results.append(text)
-                
-                
-                latest_frame = frame
-                
+
+                stream_data[key]["latest_frame"] = frame
                 if qr_results:
-                    if qr_results != latest_qr_results:
-                        latest_qr_results = qr_results
-                last_frame_time = time.time()
+                    if qr_results != stream_data[key]["latest_qr_results"]:
+                        stream_data[key]["latest_qr_results"] = qr_results
+                stream_data[key]["last_frame_time"] = time.time()
 
             except Exception as e:
-                print(f"❌ Error decoding video frame: {e}")
+                print(f"[{key}] ❌ Error decoding video frame: {e}")
 
     return ws
 
+
 async def qr_data_handler(request):
+    key = get_key_from_request(request)
     ws = web.WebSocketResponse()
     await ws.prepare(request)
-
     connected_qr_clients.add(ws)
     try:
         previous_qr = None
         while not ws.closed:
-            if latest_qr_results != previous_qr:
+            current_qrs = stream_data[key]["latest_qr_results"]
+            if current_qrs != previous_qr:
                 try:
-                    await ws.send_str(json.dumps({"qr_codes": latest_qr_results}))
-                    previous_qr = latest_qr_results.copy()
+                    await ws.send_str(json.dumps({"qr_codes": current_qrs}))
+                    previous_qr = current_qrs.copy()
                 except Exception as e:
-                    print(f"❌ Failed to send QR data: {e}")
+                    print(f"[{key}] ❌ Failed to send QR data: {e}")
             await asyncio.sleep(0.8)
-
-
     finally:
         connected_qr_clients.discard(ws)
-
     return ws
 
 
-def get_latest_qr_results():
-    return latest_qr_results
-
-def get_latest_frame():
-    return latest_frame
-
-
-async def index(request):
-    return web.Response(content_type="text/html", text=open("index.html", encoding="utf-8").read())
-
-def set_cors_headers(resp):
-    resp.headers["Access-Control-Allow-Origin"] = "*"
-    resp.headers["Access-Control-Allow-Methods"] = "GET, POST, OPTIONS"
-    resp.headers["Access-Control-Allow-Headers"] = "*"
-    return resp
-
-
 async def offer(request):
+    key = get_key_from_request(request)
     if request.method == "OPTIONS":
         return set_cors_headers(web.Response())
 
@@ -180,15 +156,12 @@ async def offer(request):
         offer = params["offer"]
 
         pc = RTCPeerConnection()
-
         @pc.on("connectionstatechange")
         async def on_connectionstatechange():
-            print("Connection state:", pc.connectionState)
+            print(f"[{key}] Connection state:", pc.connectionState)
 
-        pc.addTrack(RelayStreamTrack())
-        await pc.setRemoteDescription(
-            RTCSessionDescription(sdp=offer["sdp"], type=offer["type"])
-        )
+        pc.addTrack(RelayStreamTrack(key))
+        await pc.setRemoteDescription(RTCSessionDescription(sdp=offer["sdp"], type=offer["type"]))
         answer = await pc.createAnswer()
         await pc.setLocalDescription(answer)
 
@@ -196,14 +169,22 @@ async def offer(request):
             "sdp": pc.localDescription.sdp,
             "type": pc.localDescription.type
         }))
-
     except Exception as e:
         return set_cors_headers(web.json_response({"error": str(e)}, status=500))
 
 
+
+def set_cors_headers(resp):
+    resp.headers["Access-Control-Allow-Origin"] = "*"
+    resp.headers["Access-Control-Allow-Methods"] = "GET, POST, OPTIONS"
+    resp.headers["Access-Control-Allow-Headers"] = "*"
+    return resp
+
+
 async def monitor_video_timeout():
-    global latest_frame, last_frame_time
     while True:
-        if time.time() - last_frame_time > 3:
-            latest_frame = None
+        now = time.time()
+        for key, data in stream_data.items():
+            if now - data["last_frame_time"] > 3:
+                data["latest_frame"] = None
         await asyncio.sleep(1)
