@@ -19,11 +19,11 @@ import {
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 import { serreService } from "../services/serreService";
-import { InterventionService, Intervention } from "../services/interventionService";
+import { InterventionService } from "../services/interventionService";
 import InterventionForm from "../components/InterventionForm";
 
 interface Serre {
-  id: string;
+  id: number;
   nom: string;
   domaine?: {
     nom: string;
@@ -88,7 +88,7 @@ export default function TechnicienSupInterventions() {
   const loadAssignedSerres = async () => {
     try {
       if (user?.id) {
-        const serres = await serreService.getSerresByUser(user.id);
+        const serres = await serreService.getSerresByUser();
         setAssignedSerres(serres);
       }
     } catch (error) {
@@ -176,7 +176,7 @@ export default function TechnicienSupInterventions() {
       ];
 
       // Filter interventions to only include those from assigned serres
-      const assignedSerreIds = assignedSerres.map(serre => parseInt(serre.id));
+      const assignedSerreIds = assignedSerres.map(serre => serre.id);
       const filteredInterventions = mockInterventions.filter(intervention => 
         assignedSerreIds.includes(intervention.id_serre)
       );

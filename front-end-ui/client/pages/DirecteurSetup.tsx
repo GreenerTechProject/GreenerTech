@@ -112,15 +112,15 @@ export default function DirecteurSetup() {
 
       // Step 2: Create domains
       const domainRequests = setupData.domains.map((domain) => ({
-        nom: domain.name,
-        surface: domain.area,
+        name: domain.name,
+        area: domain.area,
         center: {
-          latitude: domain.center.lat(),
-          longitude: domain.center.lng(),
+          lat: domain.center.lat(),
+          lng: domain.center.lng(),
         },
-        position: domain.path.map((point) => ({
-          latitude: point.lat(),
-          longitude: point.lng(),
+        path: domain.path.map((point) => ({
+          lat: point.lat(),
+          lng: point.lng(),
         })),
         companyId,
       }));
@@ -221,7 +221,7 @@ export default function DirecteurSetup() {
           email: technician.email,
           role: technician.role,
           assignedSerres: technician.assignedSerres,
-          companyId: companyId,
+          companyId: parseInt(companyId.toString(), 10),
         }));
 
         console.log("Creating technicians:", technicianRequests);

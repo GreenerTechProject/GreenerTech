@@ -11,10 +11,10 @@ export interface Domain {
 }
 
 export interface CreateDomainRequest {
-  nom: string;
-  surface: number;
-  center: { latitude: number; longitude: number };
-  position: { latitude: number; longitude: number }[];
+  name: string;
+  area: number;
+  center: { lat: number; lng: number };
+  path: { lat: number; lng: number }[];
   companyId: string;
 }
 

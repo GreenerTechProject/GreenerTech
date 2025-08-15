@@ -20,7 +20,6 @@ import { MapPin, Navigation, Target, Play, Pause, Square, CheckCircle, XCircle, 
 import { BilanPoint, bilanService } from '../services/bilanService';
 import { lineString, buffer, simplify } from '@turf/turf';
 import BilanMapComponent from './BilanMapComponent';
-import GoogleMapsErrorBoundary from './GoogleMapsErrorBoundary';
 
 interface BilanCreationProps {
   serreId: number;
@@ -746,16 +745,14 @@ export default function BilanCreation({
 
               {/* Right Panel - Map */}
               <div className="lg:col-span-2 h-full min-h-[300px] sm:min-h-[400px]">
-                <GoogleMapsErrorBoundary>
-                  <BilanMapComponent
-                    serreLocation={serreLocation}
-                    selectedPoints={selectedPoints}
-                    currentLocation={currentLocation}
-                    isTracking={isTracking}
-                    className="h-full"
-                    onMapClick={handleMapClick}
-                  />
-                </GoogleMapsErrorBoundary>
+                <BilanMapComponent
+                  serreLocation={serreLocation}
+                  selectedPoints={selectedPoints}
+                  currentLocation={currentLocation}
+                  isTracking={isTracking}
+                  className="h-full"
+                  onMapClick={handleMapClick}
+                />
               </div>
             </div>
           </CardContent>

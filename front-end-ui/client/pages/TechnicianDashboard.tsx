@@ -43,6 +43,7 @@ import InterventionForm from "../components/InterventionForm";
 import TechHeader from "../components/TechHeader";
 import BilanCreation from "../components/BilanCreation";
 import BilanMapComponent from "../components/BilanMapComponent";
+import GoogleMapsErrorBoundary from "../components/GoogleMapsErrorBoundary";
 import { cn } from "@/lib/utils";
 import { getGoogleMapsAPIKey } from "@/config/maps";
 
@@ -487,61 +488,65 @@ export default function TechnicianDashboard() {
         {/* Right Map Section */}
         <div className="flex-1 relative min-h-[50vh] lg:min-h-full" data-testid="map-section">
           {isCreatingBilan && selectedSerre ? (
-            <BilanMapComponent
-              serreLocation={selectedSerre.location}
-              selectedPoints={[]}
-              currentLocation={null}
-              isTracking={false}
-              className="h-full"
-            />
+            <GoogleMapsErrorBoundary>
+              <BilanMapComponent
+                serreLocation={selectedSerre.location}
+                selectedPoints={[]}
+                currentLocation={null}
+                isTracking={false}
+                className="h-full"
+              />
+            </GoogleMapsErrorBoundary>
           ) : selectedSerre ? (
-          <GoogleMapsWrapper apiKey={GOOGLE_MAPS_API_KEY}>
-              <GoogleMap
-                mapContainerStyle={{
-                  width: "100%",
-                  height: "100%",
-                }}
-                center={selectedSerre.location}
-                zoom={15}
-                onLoad={(map) => {
-                  if (map) {
-                    smoothZoomToLocation(map, selectedSerre.location, 16);
-                  }
-                }}
-                options={{
-                  mapTypeId: "satellite",
-                  tilt: 0,
-                  streetViewControl: false,
-                  fullscreenControl: true,
-                  mapTypeControl: true,
-                  zoomControl: true,
-                  scaleControl: true,
-                }}
-              >
-                {/* Serre Marker */}
-                <Marker
-                  position={selectedSerre.location}
-                  title={selectedSerre.nom}
-                />
-
-                {/* Serre Info Window */}
-                <InfoWindow
-                  position={selectedSerre.location}
+            <GoogleMapsErrorBoundary>
+              <GoogleMapsWrapper apiKey={GOOGLE_MAPS_API_KEY}>
+                <GoogleMap
+                  mapContainerStyle={{
+                    width: "100%",
+                    height: "100%",
+                  }}
+                  center={selectedSerre.location}
+                  zoom={15}
+                  onLoad={(map) => {
+                    if (map) {
+                      smoothZoomToLocation(map, selectedSerre.location, 16);
+                    }
+                  }}
+                  options={{
+                    mapTypeId: "satellite",
+                    tilt: 0,
+                    streetViewControl: false,
+                    fullscreenControl: true,
+                    mapTypeControl: true,
+                    zoomControl: true,
+                    scaleControl: true,
+                  }}
                 >
-                  <div className="p-2">
-                    <h3 className="font-semibold text-gray-900 text-sm">
-                  {selectedSerre.nom}
-                    </h3>
-                    <p className="text-xs text-gray-600">
-                {selectedSerre.variety}
-              </p>
-              <p className="text-xs text-gray-500">
-                      {selectedSerre.surface} m² • Zones: {selectedSerre.zones ? selectedSerre.zones.length : 0}
-                    </p>
-                  </div>
-                </InfoWindow>
-              </GoogleMap>
-            </GoogleMapsWrapper>
+                  {/* Serre Marker */}
+                  <Marker
+                    position={selectedSerre.location}
+                    title={selectedSerre.nom}
+                  />
+
+                  {/* Serre Info Window */}
+                  <InfoWindow
+                    position={selectedSerre.location}
+                  >
+                    <div className="p-2">
+                      <h3 className="font-semibold text-gray-900 text-sm">
+                    {selectedSerre.nom}
+                      </h3>
+                      <p className="text-xs text-gray-600">
+                  {selectedSerre.variety}
+                </p>
+                <p className="text-xs text-gray-500">
+                        {selectedSerre.surface} m² • Zones: {selectedSerre.zones ? selectedSerre.zones.length : 0}
+                      </p>
+                    </div>
+                  </InfoWindow>
+                </GoogleMap>
+              </GoogleMapsWrapper>
+            </GoogleMapsErrorBoundary>
           ) : (
             <div className="flex items-center justify-center h-full bg-gray-100">
               <div className="text-center text-gray-500">

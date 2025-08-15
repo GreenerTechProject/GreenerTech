@@ -30,7 +30,7 @@ import Interventions from "./pages/Interventions";
 import Surveillance from "./pages/Surveillance";
 import Profile from "./pages/Profile";
 import ProfileEdit from "./pages/ProfileEdit";
-import RobotControl from "./pages/RobotControl";
+import RobotControl from "./pages/RobotControle";
 import NotFound from "./pages/NotFound";
 import TechnicienSupProfile from "./pages/TechnicienSupProfile";
 
@@ -47,7 +47,6 @@ import DirectorProfileEdit from "./pages/DirectorProfileEdit";
 import DirectorMapConfig from "./pages/DirectorMapConfig";
 import DirectorHeader from "./components/DirectorHeader";
 import { MissionManagement } from "./pages/MissionManagement";
-import RobotControl from "./pages/RobotControle";
 
 const queryClient = new QueryClient();
 
