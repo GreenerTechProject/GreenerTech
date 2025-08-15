@@ -222,7 +222,7 @@ async def main():
     robot_ref = get_or_create_robot_referance()
     await asyncio.gather(
         send_video("right"),
-        send_video("left"),
+        #send_video("left"),
         receive_controls(),
         simulate_sensor_data(),
         listen_missions(robot_ref) 
