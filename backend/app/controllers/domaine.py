@@ -6,6 +6,17 @@ from app.utils.security import token_required, role_required
 from app.models.entreprise import Entreprise
 from sqlalchemy import func
 from app.models.serre import Serre
+from sqlalchemy.exc import IntegrityError
+from app.models.autorisation_domaine import Autorisation_domaine
+from app.models.bilan import Bilan
+from app.models.alerte import Alerte
+from app.models.autorisation_bilan import Autorisation_bilan
+from app.models.etat_bilan import Etat_bilan
+from app.models.guide_culture import GuideCulture
+from app.models.intervention import Intervention
+from app.models.notification import Notification
+from app.models.mission_robot import MissionRobot
+from app.models.autorisation_serre import Autorisation_serre
 
 @token_required
 @role_required("directeur")
@@ -78,13 +89,6 @@ def create_domaine(current_user):
 @token_required
 @role_required("directeur", "technicien_superieur", "technicien")
 def get_all_domaines(current_user):
-    """
-    Returns all domains for the entreprise of the current user.
-    - directeur: entreprise is looked up by id_user = current_user.id
-    - technicien/technicien_superieur: use current_user.id_entreprise if set,
-      otherwise fallback to the director via current_user.id_assigned and
-      get entreprise where id_user = director.id
-    """
     entreprise = None
 
     if getattr(current_user, 'role', None) == 'directeur':
@@ -153,11 +157,57 @@ def delete_domaine(current_user, id):
     if not entreprise or domaine.id_entreprise != entreprise.id:
         return jsonify({"message": "Non autorisé"}), 403
 
-    GroupCor.query.filter_by(id_group_cor=domaine.id_group_cor).delete()
-    db.session.delete(domaine)
-    db.session.commit()
-    
-    return jsonify({"message": "Domaine supprimé"}), 200
+    try:
+        db.session.rollback()
+    except Exception:
+        pass
+
+    try:
+        Autorisation_domaine.query.filter_by(id_domaine=domaine.id).delete()
+        db.session.flush()       
+
+        serres = Serre.query.filter_by(id_domaine=domaine.id).all()
+        for s in serres:
+            # Remove autorisations for this serre
+            Autorisation_serre.query.filter_by(id_serre=s.id).delete()
+            db.session.flush()
+
+            # Remove bilans and their dependents
+            bilans = Bilan.query.filter_by(id_serre=s.id).all()
+            for b in bilans:
+                Alerte.query.filter_by(id_bilan=b.id).delete()
+                Autorisation_bilan.query.filter_by(id_bilan=b.id).delete()
+                Etat_bilan.query.filter_by(id_bilan=b.id).delete()
+                GroupCor.query.filter_by(id_group_cor=b.id_group_cor).delete()
+                db.session.delete(b)
+
+            # Delete guides, interventions (with notifications), missions
+            GuideCulture.query.filter_by(id_serre=s.id).delete()
+            interventions = Intervention.query.filter_by(id_serre=s.id).all()
+            for iv in interventions:
+                Notification.query.filter_by(id_intervention=iv.id).delete()
+                db.session.delete(iv)
+            MissionRobot.query.filter_by(id_serre=s.id).delete()
+
+            # Delete serre geometry and the serre itself
+            GroupCor.query.filter_by(id_group_cor=s.id_group_cor).delete()
+            db.session.delete(s)
+
+        # 3) Delete associated group coordinates and then the domaine
+        GroupCor.query.filter_by(id_group_cor=domaine.id_group_cor).delete()
+        db.session.delete(domaine)
+        db.session.commit()
+
+        return jsonify({"message": "Domaine supprimé"}), 200
+    except IntegrityError as e:
+        db.session.rollback()
+        return jsonify({
+            "message": "Impossible de supprimer le domaine: des éléments y sont encore liés",
+            "detail": str(e)
+        }), 409
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"message": f"Delete failed: {str(e)}"}), 500
 
 
 @token_required

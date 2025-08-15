@@ -4,11 +4,13 @@ from app.models.user import User
 from app.utils.security import token_required, role_required
 from database.config import db
 from weasyprint import HTML
+from app.models.bilan import Bilan
 from datetime import datetime, date
 import os
 import uuid
 from  app.models.alerte import Alerte  
 from app.models.etat_bilan import Etat_bilan  # Assure-toi que c'est bien importé
+from sqlalchemy import text
 
 # @token_required
 # @role_required("technicien", "directeur")
@@ -134,7 +136,7 @@ def create_rapport(current_user):
         if date_fin_str:
             date_fin = datetime.strptime(date_fin_str, "%d/%m/%Y %H:%M")
     except ValueError:
-        return jsonify({"message": "Format de date invalide, attendu YYYY-MM-DDTHH:MM:SS"}), 400
+        return jsonify({"message": "Format de date invalide, attendu YYYY-MM-DDTHH:MM"}), 400
 
     # Construire la requête pour récupérer les derniers états de bilan
     query_etat = Etat_bilan.query.filter(Etat_bilan.id_bilan.in_(id_bilan))
@@ -202,15 +204,40 @@ def get_rapport(id, current_user):
 def update_rapport(id):
     data = request.get_json()
     desctripion = data.get("description")
+    id_serre = data.get("id_serre")
+    id_bilans = data.get("ids_bilans", [])
+    date_debut_str = data.get("date_debut")
+    date_fin_str = data.get("date_fin")
+    if date_debut_str:
+        try:
+            date_debut = datetime.strptime(date_debut_str, "%d/%m/%Y %H:%M")
+        except ValueError:
+            return jsonify({"message": "Format de date de début invalide, attendu YYYY-MM-DDTHH:MM"}), 400
+    else:
+        date_debut = None
+
+    if date_fin_str:
+        try:
+            date_fin = datetime.strptime(date_fin_str, "%d/%m/%Y %H:%M")
+        except ValueError:
+            return jsonify({"message": "Format de date de fin invalide, attendu YYYY-MM-DDTHH:MM"}), 400
+    
+
     if not desctripion:
         return jsonify({"message": "Champs requis manquants"}), 400
     rapport = Rapport.query.get(id)
     if not rapport:
         return jsonify({"message": "Rapport non trouvé"}), 404
     rapport.description = desctripion
+    rapport.id_serre = id_serre
+    rapport.id_bilans = id_bilans
+    if date_debut:
+        rapport.date_debut = date_debut
+    if date_fin:
+        rapport.date_fin = date_fin
+    # Mettre à jour le rapport en base de données
     db.session.commit()
     return jsonify({"message": "Rapport mis à jour avec succès"}), 200
-
 
 
 
@@ -225,4 +252,55 @@ def generer_pdf_rapport(description, nom, id_serre, output_path, etat_bilan, ale
         alertes=alertes
     )
     HTML(string=html).write_pdf(output_path)
+
+
+@token_required
+@role_required("directeur")
+def get_rapports_by_director_entreprise(current_user):
+    try:
+        query = """
+            SELECT 
+                r.id,
+                r.date,
+                r.description,
+                r.lien_pdf,
+                s.nom AS serre_nom,
+                s.id AS serre_id,
+                d.nom AS domaine_nom,
+                e.nom AS entreprise_nom
+            FROM rapport r
+            JOIN serres s ON r.id_serre = s.id
+            JOIN domaines d ON s.id_domaine = d.id
+            JOIN entreprises e ON d.id_entreprise = e.id
+            WHERE e.id_user = :user_id
+            ORDER BY r.date DESC
+        """
+        result = db.session.execute(text(query), {"user_id": current_user.id})
+
+        rapports = []
+        for row in result.mappings():
+            # Récupérer les bilans de la serre liée (le modèle ne stocke pas les bilans spécifiques au rapport)
+            try:
+                bilans_for_serre = Bilan.query.filter_by(id_serre=row["serre_id"]).all()
+                bilan_names = [b.nom for b in bilans_for_serre]
+            except Exception:
+                bilan_names = []
+
+            rapports.append({
+                "id": row["id"],
+                "date": row["date"].isoformat() if row["date"] else None,
+                "description": row["description"],
+                "lien_pdf": row["lien_pdf"],
+                "serre": row["serre_nom"],
+                "serre_id": row["serre_id"],
+                "domaine": row["domaine_nom"],
+                "entreprise": row["entreprise_nom"],
+                "bilans": bilan_names,
+            })
+
+        return jsonify(rapports), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"status": "error", "message": str(e)}), 500
+
 
