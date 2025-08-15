@@ -1,9 +1,9 @@
 import asyncio
 from aiohttp import web, WSMsgType
-from multirobotcam.video_streaming_service_ai import index, offer, video_stream_handler, qr_data_handler, monitor_video_timeout
-from multirobotcam.robotcontrole_service import control_handler
-from multirobotcam.sensors_realtime_service import sensor_data_handler
-from multirobotcam.mission_data_handler import mission_data_handler
+from video_streaming_service_ai import index, offer, video_stream_handler, qr_data_handler, monitor_video_timeout
+from robotcontrole_service import control_handler
+from sensors_realtime_service import sensor_data_handler
+from mission_data_handler import mission_data_handler
 
 async def start_all():
     app = web.Application()
