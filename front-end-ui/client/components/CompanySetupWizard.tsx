@@ -210,11 +210,6 @@ export default function CompanySetupWizard({
         onContinue={handleDomainsComplete}
         onBack={handleBackToCompany}
         initialDomains={domains}
-        createDomain={async (domainData) => {
-          // Mock function for now - this would typically call a backend service
-          const mockId = `domain-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-          return { id: mockId };
-        }}
       />
     );
   }
@@ -242,33 +237,11 @@ export default function CompanySetupWizard({
   }
 
   if (currentStep === "overview") {
-    // Transform companyInfo to match FinalOverview's expected CompanyInfo interface
-    const transformedCompanyInfo = {
-      companyName: companyInfo?.nom || "",
-      companyAddress: companyInfo?.adresse || "",
-      cie: companyInfo?.cie || "",
-      legalStatus: companyInfo?.status_juridique || "",
-      companyEmail: companyInfo?.email || "",
-    };
-
-    // Transform technicians to match FinalOverview's expected Technician interface
-    const transformedTechnicians = technicians.map(tech => ({
-      id: tech.id,
-      fullName: tech.fullName,
-      birthday: new Date(), // Mock birthday since it's not in the source data
-      telephone: "", // Mock telephone since it's not in the source data
-      cin: "", // Mock cin since it's not in the source data
-      email: tech.email,
-      password: "", // Mock password since it's not in the source data
-      role: tech.role,
-      assignedSerres: tech.assignedSerres,
-    }));
-
     return (
       <FinalOverview
-        companyInfo={transformedCompanyInfo}
+        companyInfo={companyInfo!}
         domains={domains}
-        technicians={transformedTechnicians}
+        technicians={technicians}
         onComplete={handleFinalComplete}
         onBack={handleBackToTechnicians}
         isSubmitting={isSubmitting}

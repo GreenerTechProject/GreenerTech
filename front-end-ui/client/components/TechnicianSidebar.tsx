@@ -6,7 +6,6 @@ import { cn } from "@/lib/utils";
 import {
   Home,
   Map,
-  Camera,
   AlertTriangle,
   Bell,
   Bookmark,
@@ -55,13 +54,7 @@ export default function TechnicianSidebar({
         id: "carte",
         label: "Carte",
         icon: <Map className="h-5 w-5" />,
-        path: userRole === "technicien_sup" ? "/technicien-sup/map" : undefined,
-        onClick: userRole === "technicien_sup" ? undefined : () => {
-          const mapElement = document.querySelector('[data-testid="map-section"]');
-          if (mapElement) {
-            mapElement.scrollIntoView({ behavior: "smooth" });
-          }
-        },
+        path: userRole === "technicien_sup" ? "/technicien-sup/map" : "/technician",
       },
       {
         id: "missions",
@@ -87,12 +80,7 @@ export default function TechnicianSidebar({
         icon: <Bookmark className="h-5 w-5" />,
         path: userRole === "technicien_sup" ? "/technicien-sup/reports" : "/reports",
       },
-	  {
-        id: "robot-control",
-        label: "Contrôle Robot",
-        icon: <Bot className="h-5 w-5" />,
-        path: "/robot-control",
-	  },
+	
     ];
     // Show Surveillance only for regular technicians, not for tech-sup
     if (userRole !== "technicien_sup") {
@@ -100,7 +88,7 @@ export default function TechnicianSidebar({
         id: "robot-control",
         label: "Contrôle Robot",
         icon: <Bot className="h-5 w-5" />,
-        path: "/technician/robot-control",
+        path: "/robot-control",
 	  });
     }
     return items;
