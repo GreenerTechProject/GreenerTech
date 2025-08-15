@@ -20,6 +20,9 @@ stream_data = defaultdict(lambda: {
     "last_frame_time": 0
 })
 
+def get_stream_data():
+    return stream_data
+
 connected_qr_clients = set()
 
 def get_key_from_request(request):

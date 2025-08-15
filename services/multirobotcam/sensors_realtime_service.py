@@ -1,12 +1,14 @@
 from aiohttp import web, WSMsgType
 import json
-from video_streaming_service_ai import stream_data  # use the updated dict
+from video_streaming_service_ai import get_stream_data  # use the updated dict
 from PIL import Image
 from datetime import datetime
 import requests
 import asyncio
 import os
 from dotenv import load_dotenv
+
+stream_data = get_stream_data()
 
 # Load environment variables
 load_dotenv()
