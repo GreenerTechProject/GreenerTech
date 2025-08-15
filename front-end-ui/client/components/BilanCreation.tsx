@@ -16,8 +16,9 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { MapPin, Navigation, Target, Play, Pause, Square, CheckCircle, XCircle, RotateCcw, X } from 'lucide-react';
+import { MapPin, Navigation, Target, Play, Pause, Square, CheckCircle, XCircle, RotateCcw, X, Move, Square as SquareIcon } from 'lucide-react';
 import { BilanPoint, bilanService } from '../services/bilanService';
+import { lineString, buffer, simplify } from '@turf/turf';
 import BilanMapComponent from './BilanMapComponent';
 
 interface BilanCreationProps {
@@ -36,13 +37,19 @@ export default function BilanCreation({
   onCancel,
 }: BilanCreationProps) {
   const [isTracking, setIsTracking] = useState(false);
-  const [currentLocation, setCurrentLocation] = useState<{ lat: number; lng: number } | null>(null);
+  const [currentLocation, setCurrentLocation] = useState<{ lat: number; lng: number; accuracy?: number } | null>(null);
   const [selectedPoints, setSelectedPoints] = useState<BilanPoint[]>([]);
   const [isCreating, setIsCreating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [bilanName, setBilanName] = useState('');
   const [showConfirmation, setShowConfirmation] = useState(false);
+  const [snapEnabled, setSnapEnabled] = useState<boolean>(false);
+  const [useCenterlineBuffer, setUseCenterlineBuffer] = useState<boolean>(false);
+  const [rowWidthMeters, setRowWidthMeters] = useState<number>(0.8);
+  const [creationMode, setCreationMode] = useState<'gps' | 'manual' | 'rectangleCenterline'>('manual');
+  const [rectangleParams, setRectangleParams] = useState<{ length: number; width: number }>({ length: 10, width: 0.8 });
+  const lastAcceptedPositionRef = useRef<{ lat: number; lng: number } | null>(null);
   
   const watchIdRef = useRef<number | null>(null);
   const locationHistoryRef = useRef<{ lat: number; lng: number; timestamp: number }[]>([]);
@@ -67,8 +74,8 @@ export default function BilanCreation({
 
     navigator.geolocation.getCurrentPosition(
       (position) => {
-        const { latitude, longitude } = position.coords;
-        setCurrentLocation({ lat: latitude, lng: longitude });
+        const { latitude, longitude, accuracy } = position.coords;
+        setCurrentLocation({ lat: latitude, lng: longitude, accuracy });
         setError(null);
       },
       (error) => {
@@ -96,8 +103,25 @@ export default function BilanCreation({
     // Start watching position
     watchIdRef.current = navigator.geolocation.watchPosition(
       (position) => {
-        const { latitude, longitude } = position.coords;
-        const newLocation = { lat: latitude, lng: longitude };
+        const { latitude, longitude, accuracy } = position.coords;
+        // Basic filtering: ignore very low-quality readings (> 30m)
+        if (typeof accuracy === 'number' && accuracy > 30) {
+          return;
+        }
+
+        const newLocation = { lat: latitude, lng: longitude, accuracy };
+
+        // Optional minimal movement threshold (2m) to reduce jitter
+        const last = lastAcceptedPositionRef.current;
+        if (last) {
+          const movedMeters = haversineDistanceMeters(last, newLocation);
+          if (movedMeters < 2) {
+            // Too little movement; skip update
+            return;
+          }
+        }
+
+        lastAcceptedPositionRef.current = { lat: latitude, lng: longitude };
         setCurrentLocation(newLocation);
         
         // Add to history for path tracking
@@ -133,15 +157,42 @@ export default function BilanCreation({
     setSuccess("Suivi GPS arrêté");
   };
 
+  const metersPerDegLat = 111320;
+  const metersPerDegLng = (lat: number) => 111320 * Math.cos((lat * Math.PI) / 180) || 1e-9;
+
+  function snapToGrid(lat: number, lng: number, gridMeters = 0.8) {
+    const dLat = gridMeters / metersPerDegLat;
+    const dLng = gridMeters / metersPerDegLng(lat);
+    const snappedLat = Math.round(lat / dLat) * dLat;
+    const snappedLng = Math.round(lng / dLng) * dLng;
+    return { lat: snappedLat, lng: snappedLng };
+  }
+
+  function haversineDistanceMeters(a: { lat: number; lng: number }, b: { lat: number; lng: number }) {
+    const R = 6371000;
+    const dLat = (b.lat - a.lat) * Math.PI / 180;
+    const dLng = (b.lng - a.lng) * Math.PI / 180;
+    const lat1 = a.lat * Math.PI / 180;
+    const lat2 = b.lat * Math.PI / 180;
+    const sinDLat = Math.sin(dLat / 2);
+    const sinDLng = Math.sin(dLng / 2);
+    const aa = sinDLat * sinDLat + Math.cos(lat1) * Math.cos(lat2) * sinDLng * sinDLng;
+    const c = 2 * Math.atan2(Math.sqrt(aa), Math.sqrt(1 - aa));
+    return R * c;
+  }
+
   const addCurrentPosition = () => {
     if (!currentLocation) {
       setError("Position actuelle non disponible");
       return;
     }
 
+    const base = { lat: currentLocation.lat, lng: currentLocation.lng };
+    const p = snapEnabled ? snapToGrid(base.lat, base.lng, 0.8) : base;
+
     const newPoint: BilanPoint = {
-      lat: currentLocation.lat,
-      lng: currentLocation.lng,
+      lat: p.lat,
+      lng: p.lng,
       ordre: selectedPoints.length + 1,
     };
 
@@ -168,6 +219,52 @@ export default function BilanCreation({
     setSuccess("Tous les points ont été réinitialisés");
     setError(null);
   };
+
+  // Manual map click handler: add point directly (with optional snapping)
+  const handleMapClick = (lat: number, lng: number) => {
+    if (creationMode !== 'manual') return;
+    const base = { lat, lng };
+    const p = snapEnabled ? snapToGrid(base.lat, base.lng, 0.8) : base;
+    const newPoint: BilanPoint = { lat: p.lat, lng: p.lng, ordre: selectedPoints.length + 1 };
+    setSelectedPoints(prev => [...prev, newPoint]);
+  };
+
+  // Rectangle from centerline: user clicks two points defining a centerline and length; we build a rectangle with width
+  useEffect(() => {
+    if (creationMode !== 'rectangleCenterline') return;
+    // This mode relies on two first selected points defining the centerline
+    if (selectedPoints.length === 2) {
+      const [p1, p2] = selectedPoints;
+      const rect = buildRectangleFromCenterline(p1, p2, rectangleParams.width);
+      if (rect) {
+        setSelectedPoints(rect);
+      }
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedPoints.length, creationMode, rectangleParams.width]);
+
+  function buildRectangleFromCenterline(p1: BilanPoint, p2: BilanPoint, widthMeters: number): BilanPoint[] | null {
+    // Compute a perpendicular offset of half-width on both sides to create 4 corners
+    const half = widthMeters / 2;
+    const metersLng = metersPerDegLng((p1.lat + p2.lat) / 2);
+    const dx = (p2.lng - p1.lng) * metersLng;
+    const dy = (p2.lat - p1.lat) * metersPerDegLat;
+    const len = Math.hypot(dx, dy) || 1e-9;
+    const ux = dx / len;
+    const uy = dy / len;
+    // Perpendicular unit vector
+    const px = -uy;
+    const py = ux;
+    // Half-width offsets in degrees
+    const dLng = (px * half) / metersLng;
+    const dLat = (py * half) / metersPerDegLat;
+    // Build 4 corners around endpoints: p1-left, p2-left, p2-right, p1-right
+    const c1 = { lat: p1.lat + dLat, lng: p1.lng + dLng };
+    const c2 = { lat: p2.lat + dLat, lng: p2.lng + dLng };
+    const c3 = { lat: p2.lat - dLat, lng: p2.lng - dLng };
+    const c4 = { lat: p1.lat - dLat, lng: p1.lng - dLng };
+    return [c1, c2, c3, c4].map((c, idx) => ({ lat: c.lat, lng: c.lng, ordre: idx + 1 }));
+  }
 
   const calculateArea = (): number => {
     if (selectedPoints.length < 3) return 0;
@@ -200,9 +297,39 @@ export default function BilanCreation({
       return;
     }
 
-    if (selectedPoints.length < 3) {
-      setError("Vous devez sélectionner au moins 3 points pour créer un bilan");
-      return;
+    let pointsToSend: BilanPoint[] = selectedPoints;
+
+    // Option: Build polygon from tracked centerline using buffer (rowWidthMeters/2)
+    if (creationMode === 'gps' && useCenterlineBuffer) {
+      const history = locationHistoryRef.current.map(p => [p.lat, p.lng]) as [number, number][];
+      if (history.length < 2) {
+        setError("Parcours insuffisant pour générer le polygone. Marchez davantage avant de créer le bilan.");
+        return;
+      }
+
+      try {
+        // Build line from history (lat,lng) → GeoJSON expects [lng,lat]
+        const line = lineString(history.map(([lat, lng]) => [lng, lat]));
+        const halfWidth = Math.max(0.1, rowWidthMeters / 2);
+        const buffered = buffer(line, halfWidth, { units: 'meters' });
+        const simplified = simplify(buffered, { tolerance: 0.05, highQuality: false });
+        const geom: any = simplified.geometry;
+        const coords: number[][][] = geom.type === 'Polygon' ? geom.coordinates : (geom.type === 'MultiPolygon' ? geom.coordinates[0] : []);
+        const ring: number[][] = coords && coords[0] ? coords[0] : [];
+        if (!ring || ring.length < 3) {
+          setError("Impossible de générer un polygone valide à partir du parcours.");
+          return;
+        }
+        pointsToSend = ring.map(([lng, lat], idx) => ({ lat, lng, ordre: idx + 1 }));
+      } catch (e: any) {
+        setError("Erreur lors de la génération du polygone à partir du parcours");
+        return;
+      }
+    } else if (creationMode === 'manual' || creationMode === 'rectangleCenterline') {
+      if (selectedPoints.length < 3) {
+        setError("Vous devez sélectionner au moins 3 points pour créer un bilan");
+        return;
+      }
     }
 
     setIsCreating(true);
@@ -213,7 +340,7 @@ export default function BilanCreation({
       const bilanData = {
         name: bilanName.trim(),
         id_serre: serreId,
-        path: selectedPoints,
+        path: pointsToSend,
         area: calculateArea(),
         center: calculateCenter() || undefined,
       };
@@ -342,6 +469,12 @@ export default function BilanCreation({
                         <div className="text-xs text-gray-500 bg-white p-2 rounded border">
                           Lat: {currentLocation.lat.toFixed(6)}<br />
                           Lng: {currentLocation.lng.toFixed(6)}
+                          {currentLocation.accuracy !== undefined && (
+                            <>
+                              <br />
+                              Précision: ±{Math.round(currentLocation.accuracy)} m
+                            </>
+                          )}
                         </div>
                       )}
                     </div>
@@ -350,7 +483,7 @@ export default function BilanCreation({
 
                     {/* GPS Controls */}
                     <div className="space-y-2 sm:space-y-3">
-                      <h3 className="font-semibold text-base sm:text-lg">Contrôles GPS</h3>
+                      <h3 className="font-semibold text-base sm:text-lg">Contrôles</h3>
                       
                       <div className="grid grid-cols-2 gap-2">
                         {!isTracking ? (
@@ -394,15 +527,26 @@ export default function BilanCreation({
                       <h3 className="font-semibold text-base sm:text-lg">Gestion des Points</h3>
                       
                       <div className="space-y-2">
-                        <Button 
-                          onClick={addCurrentPosition}
-                          className="w-full text-xs sm:text-sm"
-                          disabled={!currentLocation || !isTracking || selectedPoints.length >= 4}
-                          size="sm"
-                        >
-                          <MapPin className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
-                          Ajouter Point {selectedPoints.length + 1}
-                        </Button>
+                        <div className="grid grid-cols-2 gap-2">
+                          <Button 
+                            onClick={addCurrentPosition}
+                            className="w-full text-xs sm:text-sm"
+                            disabled={creationMode !== 'gps' || !currentLocation || !isTracking || selectedPoints.length >= 4}
+                            size="sm"
+                          >
+                            <MapPin className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                            Ajouter (GPS)
+                          </Button>
+                          <Button 
+                            onClick={() => setCreationMode(m => m === 'manual' ? 'gps' : 'manual')}
+                            variant="outline"
+                            className="w-full text-xs sm:text-sm"
+                            size="sm"
+                          >
+                            <Move className="h-3 w-3 mr-1" />
+                            Mode: {creationMode === 'manual' ? 'Manuel' : 'GPS'}
+                          </Button>
+                        </div>
                         
                         <div className="grid grid-cols-2 gap-2">
                           <Button 
@@ -426,6 +570,31 @@ export default function BilanCreation({
                             <RotateCcw className="h-3 w-3 mr-1" />
                             Réinitialiser
                           </Button>
+                        </div>
+                        
+                        {/* Snap Toggle */}
+                        <div className="flex items-center justify-between text-xs text-gray-700">
+                          <span>Aligner sur grille 0,8 m</span>
+                          <Button onClick={() => setSnapEnabled(v => !v)} variant={snapEnabled ? 'default' : 'outline'} size="sm">
+                            {snapEnabled ? 'Activé' : 'Désactivé'}
+                          </Button>
+                        </div>
+
+                        {/* Rectangle Centerline Mode */}
+                        <div className="space-y-2 text-xs text-gray-700 mt-2">
+                          <div className="flex items-center justify-between">
+                            <span>Rectangle (centre + largeur)</span>
+                            <Button onClick={() => setCreationMode(m => m === 'rectangleCenterline' ? 'manual' : 'rectangleCenterline')} variant={creationMode === 'rectangleCenterline' ? 'default' : 'outline'} size="sm">
+                              <SquareIcon className="h-3 w-3 mr-1" /> {creationMode === 'rectangleCenterline' ? 'Activé' : 'Désactivé'}
+                            </Button>
+                          </div>
+                          {creationMode === 'rectangleCenterline' && (
+                            <div className="flex items-center gap-2">
+                              <Label htmlFor="rectWidth">Largeur (m)</Label>
+                              <Input id="rectWidth" type="number" step="0.1" value={rectangleParams.width} onChange={(e) => setRectangleParams(s => ({ ...s, width: Math.max(0.1, parseFloat(e.target.value) || 0.8) }))} className="w-24" />
+                              <span className="text-gray-500">Cliquez 2 points sur la carte (ligne centrale)</span>
+                            </div>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -466,6 +635,27 @@ export default function BilanCreation({
                           </div>
                         </div>
                       )}
+                    </div>
+
+                    <Separator />
+
+                    {/* Generation Options */}
+                    <div className="space-y-2 sm:space-y-3">
+                      <h3 className="font-semibold text-base sm:text-lg">Options de génération</h3>
+                      <div className="space-y-2 text-sm">
+                        <div className="flex items-center justify-between">
+                          <span>Générer polygone depuis le parcours (centre + largeur)</span>
+                          <Button onClick={() => setUseCenterlineBuffer(v => !v)} variant={useCenterlineBuffer ? 'default' : 'outline'} size="sm">
+                            {useCenterlineBuffer ? 'Activé' : 'Désactivé'}
+                          </Button>
+                        </div>
+                        {useCenterlineBuffer && (
+                          <div className="flex items-center gap-2">
+                            <Label htmlFor="rowWidth">Largeur (m)</Label>
+                            <Input id="rowWidth" type="number" step="0.1" value={rowWidthMeters} onChange={(e) => setRowWidthMeters(Math.max(0.1, parseFloat(e.target.value) || 0.8))} className="w-24" />
+                          </div>
+                        )}
+                      </div>
                     </div>
 
                     <Separator />
@@ -561,6 +751,7 @@ export default function BilanCreation({
                   currentLocation={currentLocation}
                   isTracking={isTracking}
                   className="h-full"
+                  onMapClick={handleMapClick}
                 />
               </div>
             </div>

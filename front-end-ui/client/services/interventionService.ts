@@ -1,10 +1,23 @@
 import axios from "axios";
+import { tokenManager } from "./authService";
 
 const API_BASE_URL = `${window.location.protocol}//${window.location.hostname}:5000/api`;
+
+// Create axios request config with Authorization header (aligned with domainService)
+const createAuthenticatedRequest = () => {
+  const token = tokenManager.getToken();
+  return {
+    headers: {
+      "Content-Type": "application/json",
+      ...(token && { Authorization: `Bearer ${token}` }),
+    },
+  };
+};
 
 export interface Intervention {
   id: number;
   description: string;
+  status: 'encours' | 'terminé';
   id_user: number;
   id_serre: number;
   id_type_tache: number;
@@ -15,8 +28,8 @@ export interface Intervention {
   serre_nom?: string;
   domaine_nom?: string;
   type_nom?: string;
-  created_at: string;
-  updated_at: string;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface CreateInterventionRequest {
@@ -31,11 +44,7 @@ export interface CreateInterventionRequest {
 export class InterventionService {
   static async getAllInterventions(): Promise<Intervention[]> {
     try {
-      const response = await axios.get(`${API_BASE_URL}/intervention`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      });
+      const response = await axios.get(`${API_BASE_URL}/intervention`, createAuthenticatedRequest());
       return response.data;
     } catch (error) {
       console.error("Error fetching interventions:", error);
@@ -45,11 +54,7 @@ export class InterventionService {
 
   static async getInterventionsByAssignedSerres(): Promise<Intervention[]> {
     try {
-      const response = await axios.get(`${API_BASE_URL}/intervention/assigned`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      });
+      const response = await axios.get(`${API_BASE_URL}/intervention/assigned`, createAuthenticatedRequest());
       return response.data;
     } catch (error) {
       console.error("Error fetching interventions by assigned serres:", error);
@@ -59,11 +64,7 @@ export class InterventionService {
 
   static async getIntervention(id: number): Promise<Intervention> {
     try {
-      const response = await axios.get(`${API_BASE_URL}/intervention/${id}`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      });
+      const response = await axios.get(`${API_BASE_URL}/intervention/${id}`, createAuthenticatedRequest());
       return response.data;
     } catch (error) {
       console.error("Error fetching intervention:", error);
@@ -73,11 +74,7 @@ export class InterventionService {
 
   static async createIntervention(intervention: CreateInterventionRequest): Promise<Intervention> {
     try {
-      const response = await axios.post(`${API_BASE_URL}/intervention`, intervention, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      });
+      const response = await axios.post(`${API_BASE_URL}/intervention`, intervention, createAuthenticatedRequest());
       return response.data;
     } catch (error) {
       console.error("Error creating intervention:", error);
@@ -87,11 +84,7 @@ export class InterventionService {
 
   static async validateIntervention(id: number): Promise<void> {
     try {
-      await axios.put(`${API_BASE_URL}/intervention/${id}`, {}, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      });
+      await axios.put(`${API_BASE_URL}/intervention/${id}`, {}, createAuthenticatedRequest());
     } catch (error) {
       console.error("Error validating intervention:", error);
       throw error;
@@ -100,11 +93,7 @@ export class InterventionService {
 
   static async getInterventionsByEnterprise(entrepriseId: number): Promise<Intervention[]> {
     try {
-      const response = await axios.get(`${API_BASE_URL}/intervention/entreprise/${entrepriseId}`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      });
+      const response = await axios.get(`${API_BASE_URL}/intervention/entreprise/${entrepriseId}`, createAuthenticatedRequest());
       return response.data;
     } catch (error) {
       console.error("Error fetching interventions by enterprise:", error);
@@ -114,39 +103,11 @@ export class InterventionService {
 
   static async deleteIntervention(id: number): Promise<void> {
     try {
-      await axios.delete(`${API_BASE_URL}/intervention/${id}`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      });
+      await axios.delete(`${API_BASE_URL}/intervention/${id}`, createAuthenticatedRequest());
     } catch (error) {
       console.error("Error deleting intervention:", error);
       throw error;
     }
   }
 }
-
-// Get all interventions for a specific enterprise
-export const getInterventionsByEnterprise = async (entrepriseId: number): Promise<any[]> => {
-  try {
-    const response = await fetch(`${API_BASE_URL}/interventions/entreprise/${entrepriseId}`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${localStorage.getItem('token')}`
-      }
-    });
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    const data = await response.json();
-    return data;
-  } catch (error) {
-    console.error('Error fetching interventions by enterprise:', error);
-    throw error;
-  }
-};
-
 

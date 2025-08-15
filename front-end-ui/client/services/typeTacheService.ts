@@ -2,7 +2,6 @@ import { z } from 'zod';
 import axios from 'axios';
 import { tokenManager } from "./authService";
 
-// Zod schema for validation
 export const TypeTacheSchema = z.object({
   id: z.number(),
   nom: z.string(),
@@ -10,7 +9,6 @@ export const TypeTacheSchema = z.object({
 
 export type TypeTache = z.infer<typeof TypeTacheSchema>;
 
-// Auth headers helper
 const createAuthenticatedRequest = () => {
   const token = tokenManager.getToken();
   return {
@@ -24,7 +22,6 @@ const createAuthenticatedRequest = () => {
 class TypeTacheService {
   private baseUrl = `${window.location.protocol}//${window.location.hostname}:5000/api`;
 
-  // GET all types
   async getAllTypeTaches(): Promise<TypeTache[]> {
     try {
       const response = await axios.get(`${this.baseUrl}/types-tache`, createAuthenticatedRequest());
@@ -34,7 +31,6 @@ class TypeTacheService {
     }
   }
 
-  // GET by ID
   async getTypeTache(id: number): Promise<TypeTache> {
     try {
       const response = await axios.get(`${this.baseUrl}/types-tache/${id}`, createAuthenticatedRequest());
@@ -44,7 +40,6 @@ class TypeTacheService {
     }
   }
 
-  // POST new type
   async createTypeTache(nom: string): Promise<TypeTache> {
     try {
       const response = await axios.post(
@@ -58,7 +53,6 @@ class TypeTacheService {
     }
   }
 
-  // Style color mapping
   getTypeColor(nom: string): string {
     const colors: Record<string, string> = {
       'Préparation du Sol': 'bg-green-100 text-green-800 border-green-200',

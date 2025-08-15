@@ -15,6 +15,8 @@ import { useLoadScript } from "@react-google-maps/api";
 import MapComponent, { DrawnShape } from "@/components/MapComponent";
 import { getGoogleMapsAPIKey } from "@/config/maps";
 import { companyMapService, CompanyMapData, DomainWithSerresAndBilans } from "@/services/companyMapService";
+import { domainService } from "@/services/domainService";
+import { serreService } from "@/services/serreService";
 
 interface ExtendedSerre {
   id: string;
@@ -24,6 +26,7 @@ interface ExtendedSerre {
   position: google.maps.LatLng[];
   center: google.maps.LatLng;
   bilans: any[];
+  guideId: string; // Add missing guideId property
 }
 
 interface DomainWithSerres extends DomainWithSerresAndBilans {
@@ -62,7 +65,6 @@ export default function DirectorMapConfig() {
     try {
       setIsLoading(true);
       
-      // Use the optimized service to fetch all data at once
       const data = await companyMapService.getCompanyMapData(user.id_entreprise.toString());
       setCompanyData(data);
       
@@ -85,11 +87,14 @@ export default function DirectorMapConfig() {
   // Google Maps loading is now handled by useLoadScript hook
 
   const handleShapeComplete = (shape: DrawnShape) => {
+    // Keep the form visible and store the shape to render it until Save/Cancel
     setPendingShape(shape);
     if (shape.type === "domain") {
-      setIsCreatingDomain(false);
-    } else if (shape.type === "serre") {
+      setIsCreatingDomain(true);
       setIsCreatingSerre(false);
+    } else if (shape.type === "serre") {
+      setIsCreatingSerre(true);
+      setIsCreatingDomain(false);
     }
   };
 
@@ -136,7 +141,7 @@ export default function DirectorMapConfig() {
 
         setCompanyData(prev => prev ? {
           ...prev,
-          domains: [...prev.domains, newDomain]
+          domains: [...prev.domains, newDomain as DomainWithSerresAndBilans]
         } : null);
         
         setNewDomainName("");
@@ -146,6 +151,8 @@ export default function DirectorMapConfig() {
           title: "Domaine créé",
           description: `Le domaine "${newDomainName.trim()}" a été créé avec succès`,
         });
+        // Close the creation form after successful save
+        setIsCreatingDomain(false);
       }
     } catch (error: any) {
       console.error("Error creating domain:", error);
@@ -180,7 +187,7 @@ export default function DirectorMapConfig() {
         }
       };
 
-      const response = await companyMapService.createSerre(serreRequest);
+      const response = await serreService.createSerre(serreRequest);
       
       if (response.id || response.serreId) {
         const newSerre: ExtendedSerre = {
@@ -190,7 +197,8 @@ export default function DirectorMapConfig() {
           domainId: selectedDomainId,
           position: pendingShape.path,
           center: pendingShape.center,
-          bilans: []
+          bilans: [],
+          guideId: "" // Add default guideId
         };
 
         // Add the new serre to the selected domain
@@ -198,7 +206,7 @@ export default function DirectorMapConfig() {
           ...prev,
           domains: prev.domains.map(domain => 
           domain.id === selectedDomainId 
-            ? { ...domain, serres: [...domain.serres, newSerre] }
+            ? { ...domain, serres: [...domain.serres, newSerre as any] }
             : domain
           )
         } : null);
@@ -210,6 +218,8 @@ export default function DirectorMapConfig() {
           title: "Serre créée",
           description: `La serre "${newSerreName.trim()}" a été créée avec succès`,
         });
+        // Close the creation form after successful save
+        setIsCreatingSerre(false);
       }
     } catch (error: any) {
       console.error("Error creating serre:", error);
@@ -224,38 +234,66 @@ export default function DirectorMapConfig() {
   };
 
   const handleDeleteDomain = async (domainId: string) => {
-    // Note: This would require a delete endpoint in the backend
-    // For now, we'll just remove it from the local state
-    setCompanyData(prev => prev ? {
-      ...prev,
-      domains: prev.domains.filter(d => d.id !== domainId)
-    } : null);
-    
-    if (selectedDomainId === domainId) {
-      setSelectedDomainId(null);
+    try {
+      setIsLoading(true);
+      // Call backend to delete the domain
+      await domainService.deleteDomain(domainId);
+
+      // Update local state to remove the domain
+      setCompanyData(prev => prev ? {
+        ...prev,
+        domains: prev.domains.filter(d => d.id !== domainId)
+      } : null);
+
+      if (selectedDomainId === domainId) {
+        setSelectedDomainId(null);
+      }
+
+      toast({
+        title: "Domaine supprimé",
+        description: "Le domaine a été supprimé avec succès",
+      });
+    } catch (error: any) {
+      console.error('Erreur suppression domaine:', error);
+      toast({
+        title: "Erreur",
+        description: error?.message || "Impossible de supprimer le domaine",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
     }
-    toast({
-      title: "Domaine supprimé",
-      description: "Le domaine a été supprimé de la liste",
-    });
   };
 
   const handleDeleteSerre = async (serreId: string, domainId: string) => {
-    // Note: This would require a delete endpoint in the backend
-    // For now, we'll just remove it from the local state
-    setCompanyData(prev => prev ? {
-      ...prev,
-      domains: prev.domains.map(domain => 
-      domain.id === domainId 
-        ? { ...domain, serres: domain.serres.filter(s => s.id !== serreId) }
-        : domain
-      )
-    } : null);
-    
-    toast({
-      title: "Serre supprimée",
-      description: "La serre a été supprimée de la liste",
-    });
+    try {
+      setIsLoading(true);
+      await serreService.deleteSerre(serreId, domainId);
+
+      // Update local state after successful deletion
+      setCompanyData(prev => prev ? {
+        ...prev,
+        domains: prev.domains.map(domain => 
+          domain.id === domainId 
+            ? { ...domain, serres: domain.serres.filter(s => s.id !== serreId) }
+            : domain
+        )
+      } : null);
+
+      toast({
+        title: "Serre supprimée",
+        description: "La serre a été supprimée avec succès",
+      });
+    } catch (error: any) {
+      console.error('Erreur suppression serre:', error);
+      toast({
+        title: "Erreur",
+        description: error?.message || "Impossible de supprimer la serre",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleDomainSelect = (domainId: string) => {
@@ -304,107 +342,81 @@ export default function DirectorMapConfig() {
     }
     
     console.log('[DirectorMapConfig] Generating shapes with Google Maps available');
+    console.log('[DirectorMapConfig] Company data:', companyData);
     const shapes: DrawnShape[] = [];
     
-    // Generate domain shapes with actual polygon data
+    // Build polygon shapes for each domain
     if (companyData && companyData.domains) {
-      companyData.domains.forEach((domain, domainIndex) => {
-        if (domain.path && domain.path.length > 0) {
-          try {
-            // Create polygon path from domain coordinates
-            const path = domain.path.map(point => 
-              new google.maps.LatLng(point.lat, point.lng)
+      console.log('[DirectorMapConfig] Found domains:', companyData.domains.length);
+      const palette = [
+        '#4CAF50', '#8BC34A', '#CDDC39', '#FFEB3B', '#FFC107',
+        '#FF9800', '#FF5722', '#795548', '#9C27B0', '#673AB7',
+        '#3F51B5', '#2196F3', '#03A9F4', '#00BCD4', '#009688'
+      ];
+
+      companyData.domains.forEach((domain, index) => {
+        if (!domain.path || domain.path.length === 0) return;
+
+        const pathLatLng: google.maps.LatLng[] = domain.path.map((p: any) =>
+          new google.maps.LatLng(p.lat, p.lng)
+        );
+
+        const centerLatLng = domain.center
+          ? new google.maps.LatLng(domain.center.lat, domain.center.lng)
+          : pathLatLng[0];
+
+        shapes.push({
+          id: String(domain.id),
+          type: 'domain',
+          name: (domain as any).name || (domain as any).nom || 'Domaine',
+          path: pathLatLng,
+          area: (domain as any).area || 0,
+          center: centerLatLng,
+          color: palette[index % palette.length],
+          metadata: { domainName: (domain as any).name || (domain as any).nom }
+        });
+
+        // Render serres inside domains when toggled on
+        if (showSerres && (domain as any).serres && (domain as any).serres.length > 0) {
+          (domain as any).serres.forEach((serre: any) => {
+            if (!serre.position || serre.position.length === 0) return;
+            const serrePath: google.maps.LatLng[] = serre.position.map((p: any) =>
+              new google.maps.LatLng(p.lat ?? p.latitude, p.lng ?? p.longitude)
             );
-            
-            // Calculate center if not provided
-            let center: google.maps.LatLng;
-            if (domain.center && domain.center.lat && domain.center.lng) {
-              center = new google.maps.LatLng(domain.center.lat, domain.center.lng);
-            } else {
-              // Calculate center from path points
-              const bounds = new google.maps.LatLngBounds();
-              path.forEach(point => bounds.extend(point));
-              center = bounds.getCenter()!;
-            }
-            
-            // Generate unique color for each domain
-            const domainColors = [
-              "#4CAF50", "#8BC34A", "#CDDC39", "#FFEB3B", "#FFC107",
-              "#FF9800", "#FF5722", "#795548", "#9C27B0", "#673AB7",
-              "#3F51B5", "#2196F3", "#03A9F4", "#00BCD4", "#009688"
-            ];
-            const color = domainColors[domainIndex % domainColors.length];
-            
+            const serreCenter = serre.center
+              ? new google.maps.LatLng(serre.center.lat, serre.center.lng)
+              : serrePath[0];
+
             shapes.push({
-              id: domain.id,
-              type: "domain",
-              name: domain.name,
-              path: path,
-              area: domain.area || 10000,
-              center: center,
-              color: color,
-              metadata: { domainName: domain.name }
+              id: String(serre.id),
+              type: 'serre',
+              name: serre.nom || 'Serre',
+              path: serrePath,
+              area: serre.surface || 0,
+              center: serreCenter,
+              color: '#FF5722',
+              domainId: String(domain.id),
+              metadata: {
+                domainName: (domain as any).name || (domain as any).nom,
+                serreName: serre.nom,
+                // Optional extra info for hover tooltip
+                variety: serre?.guide?.variete ?? (serre as any)?.variete,
+                surfaceHa: serre?.surface ? (serre.surface / 10000).toFixed(2) : undefined,
+              } as any
             });
-            
-            // Generate serre shapes within the domain if showSerres is true
-            if (showSerres && domain.serres) {
-              domain.serres.forEach((serre, serreIndex) => {
-                if (serre.position && serre.position.length > 0) {
-                  try {
-                    // Create polygon path from serre coordinates
-                    const serrePath = serre.position.map(point => 
-                      new google.maps.LatLng(point.lat(), point.lng())
-                    );
-                    
-                    // Calculate serre center if not provided
-                    let serreCenter: google.maps.LatLng;
-                    if (serre.center && serre.center.lat && serre.center.lng) {
-                      serreCenter = new google.maps.LatLng(serre.center.lat, serre.center.lng);
-                    } else {
-                      // Calculate center from path points
-                      const serreBounds = new google.maps.LatLngBounds();
-                      serrePath.forEach(point => serreBounds.extend(point));
-                      serreCenter = serreBounds.getCenter();
-                    }
-                    
-                    // Generate unique color for each serre (different from domain colors)
-                    const serreColors = [
-                      "#FF6B6B", "#FF8E8E", "#FFB3B3", "#FFD8D8", "#FF6B9A",
-                      "#FF8EBC", "#FFB3D9", "#FFD8F0", "#9A6BFF", "#BC8EFF",
-                      "#D9B3FF", "#F0D8FF", "#6B9AFF", "#8EBCFF", "#B3D9FF"
-                    ];
-                    const serreColor = serreColors[serreIndex % serreColors.length];
-                    
-                    shapes.push({
-                      id: serre.id,
-                      type: "serre",
-                      name: serre.nom,
-                      path: serrePath,
-                      area: serre.surface || 1000,
-                      center: serreCenter,
-                      color: serreColor,
-                      metadata: { 
-                        serreName: serre.nom,
-                        domainName: domain.name
-                      }
-                    });
-                  } catch (error) {
-                    console.warn('[DirectorMapConfig] Error creating serre shape:', error);
-                  }
-                }
-              });
-            }
-            
-          } catch (error) {
-            console.warn('[DirectorMapConfig] Error creating domain shape:', error);
-          }
+          });
         }
       });
     }
     
+    // Show the in-progress shape (pending) like in setup flows
+    if (pendingShape) {
+      shapes.push(pendingShape);
+    }
+
     console.log('[DirectorMapConfig] Generated shapes:', shapes.length);
     return shapes;
-  }, [companyData, isLoaded, showSerres, showBilans]);
+  }, [companyData, isLoaded, showSerres, showBilans, pendingShape]);
 
   const selectedDomain = companyData?.domains.find(d => d.id === selectedDomainId);
   const currentDrawingMode = isCreatingDomain ? "domain" : isCreatingSerre ? "serre" : null;
@@ -412,7 +424,7 @@ export default function DirectorMapConfig() {
   if (isLoading && !companyData) {
     return (
       <div className="min-h-screen bg-gray-50">
-        <DirectorHeader />
+        <DirectorHeader isSidebarOpen={isOpen} onMenuClick={() => setIsOpen(!isOpen)} />
         <div className="flex">
           <DirectorSidebar isOpen={isOpen} setIsOpen={setIsOpen} />
           <div className="flex-1 flex items-center justify-center h-64">
@@ -428,16 +440,16 @@ export default function DirectorMapConfig() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <DirectorHeader />
+      <DirectorHeader isSidebarOpen={isOpen} onMenuClick={() => setIsOpen(!isOpen)} />
       
       <div className="flex h-[calc(100vh-80px)]">
         {/* Sidebar */}
         <DirectorSidebar isOpen={isOpen} setIsOpen={setIsOpen} />
         
         {/* Left Panel - Controls and Info */}
-        <div className="w-96 bg-white border-r border-gray-200 flex flex-col">
+        <div className="w-120 bg-white border-r border-gray-200 flex flex-col">
           {/* Header */}
-          <div className="p-6 border-b border-gray-200">
+          <div className="p-4 border-b border-gray-200">
             <div className="flex items-center justify-between mb-4">
               <h1 className="text-2xl font-bold text-gray-900">Configuration de la Carte</h1>
               <Button
@@ -502,7 +514,7 @@ export default function DirectorMapConfig() {
               >
                 <BarChart3 className="h-4 w-4 mr-2" />
                 {showBilans ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
-                Bilans
+                Billons
               </Button>
             </div>
           </div>
@@ -523,7 +535,7 @@ export default function DirectorMapConfig() {
               <p className="text-sm text-blue-700">
                 <strong>Domaines:</strong> Cliquez sur "Nouveau Domaine" pour dessiner un nouveau domaine sur la carte.<br/>
                 <strong>Serres:</strong> Sélectionnez d'abord un domaine, puis cliquez sur "Nouvelle Serre" pour dessiner une serre à l'intérieur du domaine sélectionné.<br/>
-                <strong>Bilans:</strong> Les bilans de culture sont automatiquement affichés sur la carte pour chaque serre.
+                <strong>Billons:</strong> Les billons de culture sont automatiquement affichés sur la carte pour chaque serre.
               </p>
             </div>
           )}
@@ -636,7 +648,7 @@ export default function DirectorMapConfig() {
               }`}
             >
               <BarChart3 className="h-4 w-4 inline mr-2" />
-              Bilans ({companyData?.domains.reduce((acc, d) => acc + d.serres.reduce((sacc, s) => sacc + s.bilans.length, 0), 0) || 0})
+              Billon ({companyData?.domains.reduce((acc, d) => acc + d.serres.reduce((sacc, s) => sacc + s.bilans.length, 0), 0) || 0})
             </button>
           </div>
 
@@ -722,7 +734,7 @@ export default function DirectorMapConfig() {
                                   </div>
                                   <div className="flex items-center space-x-2">
                                     <BarChart3 className="h-3 w-3 text-blue-500" />
-                                    <span className="text-xs text-gray-500">{serre.bilans.length} bilan{serre.bilans.length > 1 ? 's' : ''}</span>
+                                    <span className="text-xs text-gray-500">{serre.bilans.length} billon{serre.bilans.length > 1 ? 's' : ''}</span>
                                   </div>
                                 </div>
                               </div>
@@ -749,7 +761,7 @@ export default function DirectorMapConfig() {
               <div className="p-4">
                 {!companyData || companyData.domains.reduce((acc, d) => acc + d.serres.reduce((sacc, s) => sacc + s.bilans.length, 0), 0) === 0 ? (
                   <p className="text-sm text-gray-500 text-center py-8">
-                    Aucun bilan disponible. Les bilans apparaîtront automatiquement pour chaque serre.
+                    Aucun billon disponible. Les billons apparaîtront automatiquement pour chaque serre.
                   </p>
                 ) : (
                   <div className="space-y-3">
@@ -819,7 +831,7 @@ export default function DirectorMapConfig() {
                         {(serre.surface / 10000).toFixed(2)} ha
                       </Badge>
                         <Badge variant="outline" className="text-xs text-blue-600">
-                          {serre.bilans.length} bilan{serre.bilans.length > 1 ? 's' : ''}
+                          {serre.bilans.length} billon{serre.bilans.length > 1 ? 's' : ''}
                         </Badge>
                       </div>
                     </div>
@@ -849,20 +861,17 @@ export default function DirectorMapConfig() {
                 console.log('Shape clicked:', shape);
                 // You can add additional logic here if needed
               }}
+              hideZoomControls
+              hideInfoPanel
+              focusPath={selectedDomain ? (selectedDomain.path?.map(p => ({ lat: p.lat, lng: p.lng })) || []) : null}
+              focusCenter={selectedDomain?.center || null}
+              focusZoom={16}
             />
         
-            {companyData && (
-              <div className="absolute top-4 right-4 bg-white rounded-lg shadow-lg border border-gray-200 p-4 z-40 text-sm">
+        {companyData && (
+              <div className="absolute bottom-4 left-4 bg-white rounded-lg shadow-lg border border-gray-200 p-4 z-40 text-sm">
                 <div className="font-medium mb-3 text-gray-900">Légende de la Carte</div>
-                <div className="space-y-2">
-                  <div className="flex items-center space-x-2">
-                    <div className="w-4 h-4 rounded border-2 border-gray-300" style={{ backgroundColor: '#4CAF50' }}></div>
-                    <span className="text-gray-700">Domaines</span>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <div className="w-4 h-4 rounded border-2 border-gray-300" style={{ backgroundColor: '#FF6B6B' }}></div>
-                    <span className="text-gray-700">Serres</span>
-                  </div>
+                <div className="space-y-1">
                   {companyData.domains.map((domain, index) => (
                     <div key={domain.id} className="flex items-center space-x-2">
                       <div 
@@ -878,18 +887,15 @@ export default function DirectorMapConfig() {
                       <span className="text-xs text-gray-600">{domain.name}</span>
                     </div>
                   ))}
+                  {/* Serres legend entry */}
+                  <div className="pt-1 mt-1 border-gray-100" />
+                  <div className="flex items-center space-x-2">
+                    <div className="w-3 h-3 rounded bg-[#FF5722] border border-gray-300"></div>
+                    <span className="text-xs text-gray-600">Serres</span>
+                  </div>
                 </div>
               </div>
             )}
-
-            {/* Debug Info */}
-            <div className="absolute bottom-20 left-4 bg-white rounded-lg shadow-lg border border-gray-200 p-3 z-40 text-xs">
-              <div className="font-medium mb-1">Debug Info:</div>
-              <div>Shapes: {allShapes.length}</div>
-              <div>Domains: {companyData?.domains.length || 0}</div>
-              <div>Serres: {companyData?.domains.reduce((acc, d) => acc + d.serres.length, 0) || 0}</div>
-              <div>Bilans: {companyData?.domains.reduce((acc, d) => acc + d.serres.reduce((sacc, s) => sacc + s.bilans.length, 0), 0) || 0}</div>
-            </div>
             </>
           ) : loadError ? (
             <div className="w-full h-full flex items-center justify-center bg-red-50">

@@ -5,9 +5,14 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Map, ChevronDown, User, LogOut, Home, LayoutDashboard } from "lucide-react";
+import { Map, ChevronDown, User, LogOut, Home, LayoutDashboard, Menu, X } from "lucide-react";
 
-export default function DirectorHeader() {
+interface DirectorHeaderProps {
+  isSidebarOpen?: boolean;
+  onMenuClick?: () => void;
+}
+
+export default function DirectorHeader({ isSidebarOpen, onMenuClick }: DirectorHeaderProps) {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
 
@@ -49,11 +54,25 @@ export default function DirectorHeader() {
         <div className="grid grid-cols-3 items-center py-2 sm:py-3 min-h-[44px] sm:min-h-[48px] md:min-h-[52px] lg:min-h-[56px]">
           {/* Left: Sidebar toggle button */}
           <div className="justify-self-start">
-           
+            {onMenuClick && (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={onMenuClick}
+                className="lg:hidden h-8 w-8 sm:h-9 sm:w-9 hover:bg-gray-100"
+                title="Ouvrir le menu"
+              >
+                {isSidebarOpen ? (
+                  <X className="h-5 w-5 text-gray-700" />
+                ) : (
+                  <Menu className="h-5 w-5 text-gray-700" />
+                )}
+              </Button>
+            )}
           </div>
 
           {/* Center: Navigation icons (responsive sizing) */}
-          <div className="justify-self-start flex items-center gap-1 sm:gap-2 md:gap-3">
+          <div className="justify-self-center flex items-center gap-1 sm:gap-2 md:gap-3">
             <div 
               className="h-7 w-7 sm:h-8 sm:w-8 md:h-9 md:w-9 lg:h-10 lg:w-10 rounded-xl bg-[#B4CC5F] flex items-center justify-center shadow-sm cursor-pointer hover:bg-[#9BB84F] transition-all duration-200 active:scale-95 touch-manipulation focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
               onClick={() => navigate("/directeur")}

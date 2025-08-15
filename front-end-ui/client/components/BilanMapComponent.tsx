@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { GoogleMap, Marker, Polygon, Polyline } from '@react-google-maps/api';
+import { GoogleMap, Marker, Polygon, Polyline, Circle } from '@react-google-maps/api';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { MapPin, Navigation, Target, Route } from 'lucide-react';
@@ -10,9 +10,10 @@ import { getGoogleMapsAPIKey } from '@/config/maps';
 interface BilanMapComponentProps {
   serreLocation: { lat: number; lng: number };
   selectedPoints: BilanPoint[];
-  currentLocation: { lat: number; lng: number } | null;
+  currentLocation: { lat: number; lng: number; accuracy?: number } | null;
   isTracking: boolean;
   className?: string;
+  onMapClick?: (lat: number, lng: number) => void;
 }
 
 const mapContainerStyle = {
@@ -27,6 +28,7 @@ export default function BilanMapComponent({
   currentLocation,
   isTracking,
   className = 'w-full',
+  onMapClick,
 }: BilanMapComponentProps) {
   const [map, setMap] = useState<google.maps.Map | null>(null);
   const [mapLoaded, setMapLoaded] = useState(false);
@@ -49,14 +51,11 @@ export default function BilanMapComponent({
 
   // Update user path when current location changes during tracking
   useEffect(() => {
-    if (currentLocation && isTracking) {
-      setUserPath(prev => [...prev, currentLocation]);
-      
-      // Keep only last 200 points to avoid performance issues
-      if (userPath.length > 200) {
-        setUserPath(prev => prev.slice(-200));
-      }
-    }
+    if (!currentLocation || !isTracking) return;
+    setUserPath(prev => {
+      const next = [...prev, { lat: currentLocation.lat, lng: currentLocation.lng }];
+      return next.length > 200 ? next.slice(-200) : next;
+    });
   }, [currentLocation, isTracking]);
 
   // Reset user path when tracking starts
@@ -146,6 +145,11 @@ export default function BilanMapComponent({
               zoom={18}
               onLoad={onMapLoad}
               onUnmount={onMapUnmount}
+              onClick={(e) => {
+                if (onMapClick && e.latLng) {
+                  onMapClick(e.latLng.lat(), e.latLng.lng());
+                }
+              }}
               options={{
                 mapTypeId: 'satellite', // Satellite view for better field visualization
                 tilt: 0,
@@ -201,6 +205,22 @@ export default function BilanMapComponent({
                     scaledSize: new google.maps.Size(32, 32),
                   }}
                   title="Votre position actuelle"
+                />
+              )}
+
+              {/* Accuracy Circle */}
+              {currentLocation?.accuracy !== undefined && currentLocation.accuracy > 0 && (
+                <Circle
+                  center={{ lat: currentLocation.lat, lng: currentLocation.lng }}
+                  radius={currentLocation.accuracy}
+                  options={{
+                    strokeColor: '#3B82F6',
+                    strokeOpacity: 0.4,
+                    strokeWeight: 1,
+                    fillColor: '#3B82F6',
+                    fillOpacity: 0.1,
+                    clickable: false,
+                  }}
                 />
               )}
 

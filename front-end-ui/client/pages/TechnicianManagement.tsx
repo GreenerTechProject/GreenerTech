@@ -334,63 +334,6 @@ export default function TechnicianManagement() {
     }
   };
 
-  const handleActivateTechnician = async (id: number) => {
-    try {
-      // Call the backend API to activate the technician
-      await technicianService.updateTechnician(id, { directeur_valide: true });
-      
-      // Update local state
-      const updatedTechnicians = technicians.map(tech =>
-        tech.id === id ? { ...tech, status: 'active' as const } : tech
-      );
-      setTechnicians(updatedTechnicians);
-      
-      toast({
-        title: "Technicien activé",
-        description: "Le compte a été activé avec succès.",
-      });
-      
-      // Refresh the list to get the latest data
-      await refreshTechnicians();
-    } catch (error: any) {
-      console.error('Error activating technician:', error);
-      toast({
-        title: "Erreur",
-        description: error.message || "Erreur lors de l'activation du technicien",
-        variant: "destructive"
-      });
-    }
-  };
-
-  const handleDeactivateTechnician = async (id: number) => {
-    try {
-      // Call the backend API to deactivate the technician
-      await technicianService.updateTechnician(id, { directeur_valide: false });
-      
-      // Update local state
-      const updatedTechnicians = technicians.map(tech =>
-        tech.id === id ? { ...tech, status: 'inactive' as const } : tech
-      );
-      setTechnicians(updatedTechnicians);
-      
-      toast({
-        title: "Technicien désactivé",
-        description: "Le compte a été désactivé.",
-        variant: "destructive"
-      });
-      
-      // Refresh the list to get the latest data
-      await refreshTechnicians();
-    } catch (error: any) {
-      console.error('Error deactivating technician:', error);
-      toast({
-        title: "Erreur",
-        description: error.message || "Erreur lors de la désactivation du technicien",
-        variant: "destructive"
-      });
-    }
-  };
-
   const openEditModal = (technician: Technician) => {
     setSelectedTechnician(technician);
     setFormData({
@@ -595,14 +538,6 @@ export default function TechnicianManagement() {
                                 <Edit className="h-4 w-4 mr-2" />
                                 Modifier
                               </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => handleActivateTechnician(technician.id)}>
-                                <UserCheck className="h-4 w-4 mr-2" />
-                                Activer
-                              </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => handleDeactivateTechnician(technician.id)}>
-                                <UserX className="h-4 w-4 mr-2" />
-                                Désactiver
-                              </DropdownMenuItem>
                               <DropdownMenuItem 
                                 onClick={() => handleDeleteTechnician(technician.id)}
                                 className="text-red-600"
@@ -757,7 +692,7 @@ export default function TechnicianManagement() {
                   <SelectTrigger>
                     <SelectValue placeholder="Sélectionner un rôle" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent position="item-aligned" className="z-[70] overflow-auto">
                     <SelectItem value="technicien">Technicien</SelectItem>
                     <SelectItem value="technicien_superieur">Technicien Supérieur</SelectItem>
                   </SelectContent>
@@ -817,7 +752,6 @@ export default function TechnicianManagement() {
                 </Select>
               </div>
               
-              {/* Additional technician information (read-only) */}
               <div className="space-y-3 pt-4 border-t">
                 <div className="grid grid-cols-2 gap-4">
                   <div>

@@ -33,6 +33,11 @@ interface MapComponentProps {
   selectedDomainId?: string;
   className?: string;
   onShapeClick?: (shape: DrawnShape) => void; // New prop for shape clicks
+  hideZoomControls?: boolean;
+  hideInfoPanel?: boolean;
+  focusPath?: { lat: number; lng: number }[] | null;
+  focusCenter?: { lat: number; lng: number } | null;
+  focusZoom?: number;
 }
 
 interface MapComponentProps {
@@ -41,6 +46,11 @@ interface MapComponentProps {
   drawingMode: "domain" | "serre" | null;
   selectedDomainId?: string;
   className?: string;
+  hideZoomControls?: boolean;
+  hideInfoPanel?: boolean;
+  focusPath?: { lat: number; lng: number }[] | null;
+  focusCenter?: { lat: number; lng: number } | null;
+  focusZoom?: number;
 }
 
 const mapContainerStyle = {
@@ -57,6 +67,11 @@ export default function MapComponent({
   selectedDomainId,
   className = "w-full h-full",
   onShapeClick,
+  hideZoomControls = false,
+  hideInfoPanel = false,
+  focusPath = null,
+  focusCenter = null,
+  focusZoom = 16,
 }: MapComponentProps) {
   const searchInputRef = useRef<HTMLInputElement>(null);
   const [map, setMap] = useState<google.maps.Map | null>(null);
@@ -71,6 +86,7 @@ export default function MapComponent({
   const [selectedShape, setSelectedShape] = useState<DrawnShape | null>(null);
   const [hoveredShape, setHoveredShape] = useState<DrawnShape | null>(null);
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
+  const [hoveredPolygonId, setHoveredPolygonId] = useState<string | null>(null);
 
   // Function to zoom to a specific shape
   const zoomToShape = useCallback((shape: DrawnShape) => {
@@ -93,10 +109,31 @@ export default function MapComponent({
         }
       });
       
-      // Trigger bounds change
-      map.setBounds(bounds);
+      // No explicit setBounds API; fitBounds is sufficient
     }
   }, [map]);
+
+  // Programmatic focus to a given path or center
+  useEffect(() => {
+    if (!map || typeof google === 'undefined' || !google.maps) return;
+
+    if (focusPath && focusPath.length > 0) {
+      const bounds = new google.maps.LatLngBounds();
+      focusPath.forEach((pt) => bounds.extend(new google.maps.LatLng(pt.lat, pt.lng)));
+      map.fitBounds(bounds);
+      google.maps.event.addListenerOnce(map, 'bounds_changed', () => {
+        if (map.getZoom() && map.getZoom() > focusZoom) {
+          map.setZoom(focusZoom);
+        }
+      });
+      return;
+    }
+
+    if (focusCenter) {
+      map.panTo(focusCenter);
+      map.setZoom(focusZoom);
+    }
+  }, [map, focusPath, focusCenter, focusZoom]);
 
   // Handle shape click with zoom and callback
   const handleShapeClick = useCallback((shape: DrawnShape) => {
@@ -257,44 +294,7 @@ export default function MapComponent({
         newDrawingManager.setMap(map);
         setDrawingManager(newDrawingManager);
 
-        // Handle polygon completion
-        google.maps.event.addListener(
-          newDrawingManager,
-          "polygoncomplete",
-          (polygon: google.maps.Polygon) => {
-            const path = polygon.getPath();
-            const pathArray: google.maps.LatLng[] = [];
-
-            for (let i = 0; i < path.getLength(); i++) {
-              pathArray.push(path.getAt(i));
-            }
-
-            // Calculate area using Google Maps geometry library
-            const area = google.maps.geometry.spherical.computeArea(path);
-
-            // Calculate center point
-            const bounds = new google.maps.LatLngBounds();
-            pathArray.forEach((point) => bounds.extend(point));
-            const center = bounds.getCenter();
-
-            const shape: DrawnShape = {
-              id: Date.now().toString(),
-              type: drawingMode || "domain",
-              name: "",
-              path: pathArray,
-              area,
-              center,
-              color: drawingMode === "serre" ? "#FF6B6B" : "#B4CC5F",
-              domainId: drawingMode === "serre" ? selectedDomainId : undefined,
-            };
-
-            onShapeComplete(shape);
-
-            // Remove the drawing
-            polygon.setMap(null);
-            newDrawingManager.setDrawingMode(null);
-          },
-        );
+        // Listener is attached in the drawing mode effect to keep latest mode
       }
     },
     [drawingMode, selectedDomainId, onShapeComplete],
@@ -425,10 +425,48 @@ export default function MapComponent({
       drawingManager.setOptions({
         polygonOptions: options,
       });
+
+      // Rebind polygoncomplete listener with current drawingMode
+      google.maps.event.clearListeners(drawingManager, 'polygoncomplete');
+      google.maps.event.addListener(
+        drawingManager,
+        'polygoncomplete',
+        (polygon: google.maps.Polygon) => {
+          const path = polygon.getPath();
+          const pathArray: google.maps.LatLng[] = [];
+          for (let i = 0; i < path.getLength(); i++) {
+            pathArray.push(path.getAt(i));
+          }
+
+          const area = google.maps.geometry.spherical.computeArea(path);
+          const bounds = new google.maps.LatLngBounds();
+          pathArray.forEach((point) => bounds.extend(point));
+          const center = bounds.getCenter();
+
+          const shape: DrawnShape = {
+            id: Date.now().toString(),
+            type: drawingMode,
+            name: "",
+            path: pathArray,
+            area,
+            center,
+            color: drawingMode === 'serre' ? '#FF6B6B' : '#B4CC5F',
+            domainId: drawingMode === 'serre' ? selectedDomainId : undefined,
+          };
+
+          onShapeComplete(shape);
+
+          // Clean up polygon and stop drawing
+          polygon.setMap(null);
+          drawingManager.setDrawingMode(null);
+        }
+      );
     } else {
       drawingManager.setDrawingMode(null);
+      // Clear listeners when not drawing
+      google.maps.event.clearListeners(drawingManager, 'polygoncomplete');
     }
-  }, [drawingMode, drawingManager]);
+  }, [drawingMode, drawingManager, selectedDomainId, onShapeComplete]);
 
   // Ensure hybrid/satellite view is set when map is available
   useEffect(() => {
@@ -524,9 +562,6 @@ export default function MapComponent({
           disableDefaultUI: false,
           mapTypeId: 'hybrid',
         }}
-        onError={(error) => {
-          console.error('Google Maps error:', error);
-        }}
       >
         {/* Render existing shapes only if Google Maps is loaded */}
         {typeof google !== 'undefined' && shapesToDisplay.map((shape) => {
@@ -590,36 +625,20 @@ export default function MapComponent({
               onMouseOver={(e) => {
                 // Set hovered shape and mouse position
                 setHoveredShape(shape);
-                if (e.domEvent) {
+                const domEvent = (e as any).domEvent as MouseEvent | undefined;
+                if (domEvent) {
                   setMousePosition({
-                    x: e.domEvent.clientX,
-                    y: e.domEvent.clientY
+                    x: domEvent.clientX,
+                    y: domEvent.clientY
                   });
                 }
-                
-                // Change color on hover
-                if (e.domEvent && e.domEvent.target) {
-                  const polygon = e.domEvent.target as any;
-                  polygon.setOptions({
-                    fillColor: hoverColor,
-                    fillOpacity: 0.7,
-                    strokeWeight: strokeWeight + 1
-                  });
-                }
+                // Use state-driven hover styling instead of mutating polygon instance
+                setHoveredPolygonId(shape.id);
               }}
               onMouseOut={(e) => {
                 // Clear hovered shape
                 setHoveredShape(null);
-                
-                // Restore original colors
-                if (e.domEvent && e.domEvent.target) {
-                  const polygon = e.domEvent.target as any;
-                  polygon.setOptions({
-                    fillColor: fillColor,
-                    fillOpacity: fillOpacity,
-                    strokeWeight: strokeWeight
-                  });
-                }
+                setHoveredPolygonId((curr) => (curr === shape.id ? null : curr));
               }}
             />
           );
@@ -627,7 +646,7 @@ export default function MapComponent({
       </GoogleMap>
 
       {/* Cool Floating Info Panel */}
-      {selectedShape && (
+      {!hideInfoPanel && selectedShape && (
         <div className="absolute top-4 right-4 bg-white rounded-lg shadow-xl border border-gray-200 p-4 max-w-sm animate-in slide-in-from-right duration-300 z-50">
           <div className="flex items-start justify-between mb-3">
             <div className="flex items-center space-x-2">
@@ -694,26 +713,9 @@ export default function MapComponent({
         </div>
       )}
 
-      {/* Cool Legend Panel */}
-      <div className="absolute bottom-4 left-4 bg-white rounded-lg shadow-lg border border-gray-200 p-3 z-40 backdrop-blur-sm bg-white/90">
-        <div className="text-xs font-medium text-gray-700 mb-2 uppercase tracking-wide">Légende</div>
-        <div className="space-y-2">
-          <div className="flex items-center space-x-2">
-            <div className="w-3 h-3 rounded-full bg-green-500 shadow-sm"></div>
-            <span className="text-xs text-gray-600">Domaines</span>
-          </div>
-          <div className="flex items-center space-x-2">
-            <div className="w-3 h-3 rounded-full bg-red-500 shadow-sm"></div>
-            <span className="text-xs text-gray-600">Serres</span>
-          </div>
-          <div className="flex items-center space-x-2">
-            <div className="w-3 h-3 rounded-full bg-blue-500 shadow-sm"></div>
-            <span className="text-xs text-gray-600">Bilans</span>
-          </div>
-        </div>
-      </div>
 
       {/* Zoom Control Panel */}
+      {!hideZoomControls && (
       <div className="absolute top-4 left-4 bg-white rounded-lg shadow-lg border border-gray-200 p-2 z-40 backdrop-blur-sm bg-white/90">
         <div className="flex flex-col space-y-1">
           <button
@@ -736,6 +738,7 @@ export default function MapComponent({
           </button>
         </div>
       </div>
+      )}
 
       {/* Cool Hover Tooltip */}
       {hoveredShape && (

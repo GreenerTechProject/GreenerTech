@@ -435,7 +435,7 @@ export default function TechnicienSupDashboard(): JSX.Element {
         console.log('[TechSup] User ID:', user?.id);
         console.log('[TechSup] User company ID:', user?.id_entreprise);
         
-        const companyId = user?.id_entreprise?.toString();
+        const companyId = user?.id_entreprise;
         console.log('[TechSup] Company ID extracted:', companyId);
         
         if (companyId) {

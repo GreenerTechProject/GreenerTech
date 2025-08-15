@@ -19,6 +19,7 @@ export default function GoogleMapsWrapper({
   apiKey,
 }: GoogleMapsWrapperProps) {
   console.log("GoogleMapsWrapper: API Key received:", apiKey ? "Present" : "Missing");
+  const isAlreadyLoaded = typeof window !== "undefined" && (window as any).google && (window as any).google.maps;
   
   if (!apiKey) {
     return (
@@ -28,6 +29,12 @@ export default function GoogleMapsWrapper({
         </div>
       </div>
     );
+  }
+
+  // If Google Maps API is already present on the page, avoid re-loading to prevent
+  // "google api is already presented" errors from @react-google-maps/api.
+  if (isAlreadyLoaded) {
+    return <>{children}</>;
   }
 
   return (

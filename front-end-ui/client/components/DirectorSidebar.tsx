@@ -101,21 +101,12 @@ export default function DirectorSidebar({ isOpen, setIsOpen }: DirectorSidebarPr
         />
       )}
 
-      {/* Floating action button for very small screens */}
-      <div className="fixed bottom-4 left-4 z-50 lg:hidden">
-        <Button
-          onClick={() => setIsOpen(!isOpen)}
-          className="h-12 w-12 rounded-full bg-greener shadow-lg hover:bg-greener/90"
-          title="Menu de navigation"
-        >
-          <Menu className="h-6 w-6 text-white" />
-        </Button>
-      </div>
+      {/* Floating action button removed; toggled via header on small screens */}
 
       {/* Sidebar */}
       <div className={cn(
-        "fixed left-0 top-0 z-50 h-screen bg-white border-r border-gray-200 shadow-lg transform transition-all duration-300 ease-in-out",
-        "lg:translate-x-0 lg:static lg:z-10",
+        "fixed left-0 top-0 z-50 h-[100dvh] bg-white border-r border-gray-200 shadow-lg transform transition-all duration-300 ease-in-out overflow-hidden",
+        "lg:translate-x-0 lg:sticky lg:top-0 lg:z-10 lg:h-[100dvh]",
         isOpen ? "translate-x-0" : "-translate-x-full",
         "w-80",
         "lg:w-20 lg:min-w-20 lg:max-w-20",
@@ -145,15 +136,7 @@ export default function DirectorSidebar({ isOpen, setIsOpen }: DirectorSidebarPr
             >
               {isOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
             </Button>
-            {/* Close button for mobile */}
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setIsOpen(false)}
-              className="lg:hidden"
-            >
-              <X className="h-5 w-5" />
-            </Button>
+           
           </div>
         </div>
 

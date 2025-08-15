@@ -1,4 +1,5 @@
 import axios from "axios";
+import { tokenManager } from "./authService";
 import {
   Alert,
   CreateAlertRequest,
@@ -8,6 +9,17 @@ import {
 } from "@/types/alert";
 
 const API_BASE_URL = `${window.location.protocol}//${window.location.hostname}:5000/api`;
+
+// Create axios instance with auth headers (aligned with domainService)
+const createAuthenticatedRequest = () => {
+  const token = tokenManager.getToken();
+  return {
+    headers: {
+      "Content-Type": "application/json",
+      ...(token && { Authorization: `Bearer ${token}` }),
+    },
+  };
+};
 
 export class AlertService {
   static async getAllAlerts(
@@ -27,7 +39,10 @@ export class AlertService {
       if (filters?.dateFrom) params.dateFrom = filters.dateFrom;
       if (filters?.dateTo) params.dateTo = filters.dateTo;
 
-      const response = await axios.get(`${API_BASE_URL}/alerte`, { params });
+      const response = await axios.get(
+        `${API_BASE_URL}/alerte`,
+        { ...createAuthenticatedRequest(), params }
+      );
 
       const data = response.data;
       return {
@@ -42,11 +57,10 @@ export class AlertService {
 
   static async getAlertsByAssignedSerres(): Promise<Alert[]> {
     try {
-      const response = await axios.get(`${API_BASE_URL}/alerte/assigned`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      });
+      const response = await axios.get(
+        `${API_BASE_URL}/alerte/assigned`,
+        createAuthenticatedRequest()
+      );
       return response.data;
     } catch (error) {
       console.error("Error fetching alerts by assigned serres:", error);
@@ -56,7 +70,10 @@ export class AlertService {
 
   static async getAlert(id: number): Promise<Alert> {
     try {
-      const response = await axios.get(`${API_BASE_URL}/alerte/${id}`);
+      const response = await axios.get(
+        `${API_BASE_URL}/alerte/${id}`,
+        createAuthenticatedRequest()
+      );
       return response.data;
     } catch (error) {
       console.error("Error fetching alert:", error);
@@ -66,7 +83,11 @@ export class AlertService {
 
   static async createAlert(alert: CreateAlertRequest): Promise<Alert> {
     try {
-      const response = await axios.post(`${API_BASE_URL}/alerte`, alert);
+      const response = await axios.post(
+        `${API_BASE_URL}/alerte`,
+        alert,
+        createAuthenticatedRequest()
+      );
       return response.data;
     } catch (error) {
       console.error("Error creating alert:", error);
@@ -79,7 +100,11 @@ export class AlertService {
     alert: UpdateAlertRequest
   ): Promise<Alert> {
     try {
-      const response = await axios.put(`${API_BASE_URL}/alerte/${id}`, alert);
+      const response = await axios.put(
+        `${API_BASE_URL}/alerte/${id}`,
+        alert,
+        createAuthenticatedRequest()
+      );
       return response.data;
     } catch (error) {
       console.error("Error updating alert:", error);
@@ -89,7 +114,10 @@ export class AlertService {
 
   static async deleteAlert(id: number): Promise<void> {
     try {
-      await axios.delete(`${API_BASE_URL}/alerte/${id}`);
+      await axios.delete(
+        `${API_BASE_URL}/alerte/${id}`,
+        createAuthenticatedRequest()
+      );
     } catch (error) {
       console.error("Error deleting alert:", error);
       throw error;
@@ -119,13 +147,25 @@ export class AlertService {
     }
   }
 
+  static async getAlertsByEnterprise(entrepriseId: number): Promise<Alert[]> {
+    try {
+      const response = await axios.get(
+        `${API_BASE_URL}/alerte/entreprise/${entrepriseId}`,
+        createAuthenticatedRequest()
+      );
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching alerts by enterprise:", error);
+      throw error;
+    }
+  }
+
   static async getAlertsByDirectorEnterprise(): Promise<Alert[]> {
     try {
-      const response = await axios.get(`${API_BASE_URL}/alerte/director-enterprise`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      });
+      const response = await axios.get(
+      `${API_BASE_URL}/alerte/director-enterprise`,
+      createAuthenticatedRequest()
+      );
       return response.data;
     } catch (error) {
       console.error("Error fetching alerts by director enterprise:", error);
@@ -134,9 +174,10 @@ export class AlertService {
   }
 
   static getAlertLevel(statusAlert: number): "High" | "Medium" | "Low" {
-    if (statusAlert >= 8) return "High";
-    if (statusAlert >= 5) return "Medium";
-    return "Low";
+    if (statusAlert === 2) return "High";
+    if (statusAlert === 1) return "Medium";
+    if (statusAlert === 0) return "Low";
+    return "Low"; // default fallback
   }
 
   static getAlertLevelColor(level: "High" | "Medium" | "Low"): string {
