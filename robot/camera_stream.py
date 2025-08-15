@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 import cv2
 import asyncio
 import websockets
@@ -10,11 +11,11 @@ host = "greenertech2.mywire.org"
 
 def gstreamer_pipeline(
     sensor_id=0,
-    capture_width=1280,
-    capture_height=720,
-    display_width=1280,
-    display_height=720,
-    framerate=30,
+    capture_width=640,
+    capture_height=480,
+    display_width=640,
+    display_height=480,
+    framerate=15,
     flip_method=0,
 ):
     return (
@@ -28,9 +29,9 @@ def gstreamer_pipeline(
     )
 
 
-async def send_video():
+async def send_video(camera):
 
-    pipeline = gstreamer_pipeline()
+    pipeline = gstreamer_pipeline(camera)
     cap = cv2.VideoCapture(pipeline, cv2.CAP_GSTREAMER)
 
 
@@ -244,7 +245,8 @@ async def main():
     #robot_ref = "robot_123"
     robot_ref = get_or_create_robot_referance()
     await asyncio.gather(
-        send_video(),
+        send_video(0),
+        send_video(1),
         receive_controls(),
         simulate_sensor_data(),
         listen_missions(robot_ref) 
