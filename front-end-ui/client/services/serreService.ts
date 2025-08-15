@@ -81,6 +81,34 @@ export const serreService = {
     }
   },
 
+  getSerre: async (id: string | number): Promise<any> => {
+    try {
+      const response = await axios.get(`${API_BASE_URL}/serre/${id}`, createAuthenticatedRequest());
+      return response.data;
+    } catch (error: any) {
+      const errorMessage = error.response?.data?.message || "Erreur lors de la récupération de la serre";
+      throw { message: errorMessage, status: error.response?.status || 500 } as ApiError;
+    }
+  },
+
+
+  deleteSerre: async (id: string | number, id_domaine: string | number): Promise<{ message: string }> => {
+    try {
+      const auth = createAuthenticatedRequest();
+      const response = await axios.delete<{ message: string }>(
+        `${API_BASE_URL}/serre/${id}`,
+        {
+          ...auth,
+          data: { id_domaine: typeof id_domaine === 'string' ? parseInt(id_domaine, 10) : id_domaine },
+        }
+      );
+      return response.data;
+    } catch (error: any) {
+      const errorMessage = error.response?.data?.message || "Erreur lors de la suppression de la serre";
+      throw { message: errorMessage, status: error.response?.status || 500 } as ApiError;
+    }
+  },
+
   // Get serres assigned to a given user (by autorisations)
   getSerresAssignedToUser: async (userId: number): Promise<any[]> => {
     try {
@@ -97,7 +125,6 @@ export const serreService = {
       const serreIds: number[] = autorisations.map((a: any) => a.id_serre);
       if (serreIds.length === 0) return [];
 
-      // Fetch details for each serre (position needed to draw polygon)
       const results: any[] = [];
       for (const id of serreIds) {
         try {
@@ -116,14 +143,11 @@ export const serreService = {
     }
   },
 
-  // Get serres with their assigned technician information
   getSerresWithTechnicians: async (): Promise<any[]> => {
     try {
-      // Fetch all serres that the current user has access to
       const userResponse = await axios.get(`${API_BASE_URL}/user`, createAuthenticatedRequest());
       const currentUser = userResponse.data;
       
-      // Get serres assigned to current user (by autorisations)
       const authzResp = await axios.get(
         `${API_BASE_URL}/autorisation_serre`,
         {
@@ -180,7 +204,6 @@ export const serreService = {
             console.log(`[SerreService] Found ${technicianAuths.length} technician assignments for serre ${id}:`, technicianAuths);
             
             if (technicianAuths.length > 0) {
-              // Match technician IDs with company technicians data
               const assignedTechnicians = [];
               for (const techAuth of technicianAuths) {
                 const companyTech = companyTechnicians.find((ct: any) => ct.id === techAuth.id_user);
@@ -311,7 +334,6 @@ export const serreService = {
     }
   },
 
-  // Add this to your serreService.ts
 getAllSerres: async (): Promise<ExtendedSerre[]> => {
     try {
         const response = await axios.get<ExtendedSerre[]>(

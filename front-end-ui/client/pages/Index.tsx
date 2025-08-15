@@ -6,6 +6,7 @@ import { useAuthRedirect } from "../hooks/useAuthRedirect";
 export default function Index() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [errorMsg, setErrorMsg] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const { login, error, clearError } = useAuth();
@@ -37,8 +38,10 @@ export default function Index() {
       setIsSubmitting(true);
       await login({ email, password });
     } catch (error) {
-      // Error is handled by AuthContext
-    } finally {
+      if (error.status===403) {
+        setErrorMsg("Votre compte n'a pas encore été validé par un directeur. Veuillez contacter votre directeur pour plus d'informations.");
+      }
+      } finally {
       setIsSubmitting(false);
     }
   };
@@ -79,49 +82,33 @@ export default function Index() {
             Se connecter avec votre compte
           </p>
 
-          {error && (
-               <div className="mb-6 p-4 bg-red-50 border-l-4 border-red-400 text-red-700 rounded-md">
-              <div className="flex items-start">
-                <div className="flex-shrink-0">
-                  <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
-                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-                  </svg>
-                </div>
-                <div className="ml-3">
-                  {/* Debug: Show the actual error message */}
-                  <div className="text-xs text-gray-500 mb-2">
-                    Debug - Error received: "{error}"
-                  </div>
-                  
-                  <h3 className="text-sm font-medium text-red-800 mb-1">
-                    {error.toLowerCase().includes("votre compte n'a pas encore été validé par un directeur") ||
-                     error.toLowerCase().includes("directeur") || 
-                     error.toLowerCase().includes("validé") || 
-                     error.toLowerCase().includes("validation") || 
-                     error.toLowerCase().includes("pas encore été validé") ||
-                     error.toLowerCase().includes("compte") ||
-                     error.toLowerCase().includes("attente")
-                      ? "Compte en attente de validation" 
-                      : "Erreur de connexion"}
-                  </h3>
-                  {(error.toLowerCase().includes("votre compte n'a pas encore été validé par un directeur") ||
-                    error.toLowerCase().includes("directeur") || 
-                    error.toLowerCase().includes("validé") || 
-                    error.toLowerCase().includes("validation") || 
-                    error.toLowerCase().includes("pas encore été validé") ||
-                    error.toLowerCase().includes("compte") ||
-                    error.toLowerCase().includes("attente")) && (
-                    <p className="text-xs text-red-600 mt-2">
-                      💡 Contactez votre directeur pour obtenir l'accès à votre compte.
-                    </p>
-                  )}
-                  <p className="text-sm text-red-700 mt-1">
-                    {error}
+         {error && errorMsg && (
+          <div className="mb-6 p-4 rounded-md border-l-4 bg-amber-50 border-amber-400 text-amber-700">
+            <div className="flex items-start">
+              <div className="flex-shrink-0">
+                <svg className="h-5 w-5 text-amber-400" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16..." clipRule="evenodd" />
+                </svg>
+              </div>
+              <div className="ml-3">
+                <h3 className="text-sm font-medium mb-2">
+                  ⏳ COMPTE NON ACTIVÉ
+                </h3>
+                <p className="text-sm">{errorMsg}</p>
+                <div className="bg-amber-100 p-3 rounded-md mt-2">
+                  <p className="text-xs font-medium text-amber-800 mb-1">
+                    💡 Que faire maintenant ?
                   </p>
+                  <ul className="text-xs text-amber-700 space-y-1">
+                    <li>• Vérifiez votre email et cliquez sur le lien de confirmation</li>
+                    <li>• Si l’email est déjà validé, contactez votre directeur pour activer votre compte</li>
+                  </ul>
                 </div>
               </div>
             </div>
+          </div>
           )}
+        
 
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Email Field */}

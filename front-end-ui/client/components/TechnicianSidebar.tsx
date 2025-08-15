@@ -14,6 +14,7 @@ import {
   Menu,
   X,
   Bot,
+  Target,
 } from "lucide-react";
 
 interface SidebarItem {
@@ -63,6 +64,12 @@ export default function TechnicianSidebar({
         },
       },
       {
+        id: "missions",
+        label: "Missions",
+        icon: <Target className="h-5 w-5" />,
+        path: userRole === "technicien_sup" ? "/technicien-sup/missions" : "/technician/missions",
+      },
+      {
         id: "alertes",
         label: "Alertes",
         icon: <AlertTriangle className="h-5 w-5" />,
@@ -87,13 +94,15 @@ export default function TechnicianSidebar({
         path: "/robot-control",
 	  },
     ];
-    // Show Surveillance for all technician roles
-    items.splice(2, 0, {
-      id: "surveillance",
-      label: "Surveillance",
-      icon: <Bot className="h-5 w-5" />,
-      path: "/surveillance",
-    });
+    // Show Surveillance only for regular technicians, not for tech-sup
+    if (userRole !== "technicien_sup") {
+      items.splice(2, 0,  {
+        id: "robot-control",
+        label: "Contrôle Robot",
+        icon: <Bot className="h-5 w-5" />,
+        path: "/technician/robot-control",
+	  });
+    }
     return items;
   })();
 

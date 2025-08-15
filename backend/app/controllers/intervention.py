@@ -1,9 +1,12 @@
 # controllers/intervention.py
 from flask import request, jsonify
 from app.models.intervention import Intervention
+from app.models.serre import Serre
 from app.utils.security import token_required , role_required
 from database.config import db
 from app.models.user import User
+from app.models.serre import Serre
+from app.models.type_tache import Type_tache
 
 # controllers/intervention.py
 from app.utils.notifications import envoyer_notification
@@ -113,11 +116,7 @@ def get_interventions_by_assigned_serres(current_user):
         
         # Get interventions from assigned serres
         interventions = Intervention.query.filter(Intervention.id_serre.in_(assigned_serre_ids)).all()
-        
-        # Get additional data for each intervention
-        from app.models.serre import Serre
-        from app.models.type_tache import Type_tache
-        
+         
         result = []
         for intervention in interventions:
             intervention_data = intervention.to_dict()
@@ -149,5 +148,49 @@ def get_intervention(current_user, id):
         return jsonify(intervention.to_dict()), 200
     except Exception as e:
         return jsonify({'error': str(e)}), 400
+    
+
+@token_required
+@role_required("directeur")
+def get_interventions_by_entreprise(current_user, entreprise_id):
+    try:
+        # Get all serres for the enterprise by first resolving domaines
+        from app.models.domaine import Domaine
+
+        domaines = Domaine.query.filter_by(id_entreprise=entreprise_id).all()
+        domaine_ids = [d.id for d in domaines]
+
+        if not domaine_ids:
+            return jsonify([]), 200
+
+        serres = Serre.query.filter(Serre.id_domaine.in_(domaine_ids)).all()
+        serre_ids = [serre.id for serre in serres]
+
+        if not serre_ids:
+            return jsonify([]), 200
+        
+        # Get all interventions for these serres
+        interventions = Intervention.query.filter(Intervention.id_serre.in_(serre_ids)).all()
+        
+        intervention_list = []
+        for intervention in interventions:
+            intervention_data = {
+                'id': intervention.id,
+                'date_intervention': intervention.date_debut.strftime('%Y-%m-%d') if intervention.date_debut else None,
+                'description': intervention.description,
+                'statut': intervention.status.value if intervention.status else 'encours',
+                'serre_id': intervention.id_serre,
+                'technicien_id': intervention.id_user,
+                'type_tache_id': intervention.id_type_tache,
+                'total_charges': intervention.total_charges,
+                'created_at': intervention.date_debut.strftime('%Y-%m-%d') if intervention.date_debut else None,
+                'updated_at': intervention.date_fin.strftime('%Y-%m-%d') if intervention.date_fin else None
+            }
+            intervention_list.append(intervention_data)
+        
+        return jsonify(intervention_list), 200
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
     
 

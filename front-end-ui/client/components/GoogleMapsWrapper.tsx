@@ -18,6 +18,25 @@ export default function GoogleMapsWrapper({
   children,
   apiKey,
 }: GoogleMapsWrapperProps) {
+  console.log("GoogleMapsWrapper: API Key received:", apiKey ? "Present" : "Missing");
+  const isAlreadyLoaded = typeof window !== "undefined" && (window as any).google && (window as any).google.maps;
+  
+  if (!apiKey) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <div className="text-center">
+          <p className="text-sm text-red-600">Erreur: Clé API Google Maps manquante</p>
+        </div>
+      </div>
+    );
+  }
+
+  // If Google Maps API is already present on the page, avoid re-loading to prevent
+  // "google api is already presented" errors from @react-google-maps/api.
+  if (isAlreadyLoaded) {
+    return <>{children}</>;
+  }
+
   return (
     <LoadScript
       googleMapsApiKey={apiKey}

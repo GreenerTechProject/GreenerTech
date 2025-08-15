@@ -17,7 +17,6 @@ import AffiliationRequest from "./pages/AffiliationRequest";
 import EmailVerification from "./pages/EmailVerification";
 import VerifyEmail from "./pages/VerifyEmail";
 import TechnicienRegistration from "./pages/TechnicienRegistration";
-import Dashboard from "./pages/Dashboard";
 import DirecteurSetup from "./pages/DirecteurSetup";
 import TechnicianDashboard from "./pages/TechnicianDashboard";
 import TechnicienSupDashboard from "./pages/TechnicienSupDashboard";
@@ -25,8 +24,6 @@ import TechnicienSupAlerts from "./pages/TechnicienSupAlerts";
 import TechnicienSupInterventions from "./pages/TechnicienSupInterventions";
 import TechnicienSupLayout from "./components/TechnicienSupLayout";
 import Accueil from "./pages/Accueil";
-import AlertsPage from "./pages/AlertsPage";
-import SurveillancePage from "./pages/SurveillancePage";
 import ReportsPage from "./pages/ReportsPage";
 import Alerts from "./pages/Alerts";
 import Interventions from "./pages/Interventions";
@@ -43,7 +40,14 @@ import TechnicianManagement from "./pages/TechnicianManagement";
 import DirectorAffiliationManagement from "./pages/DirectorAffiliationManagement";
 import DirectorInterventionManagement from "./pages/DirectorInterventionManagement";
 import DirectorAlertManagement from "./pages/DirectorAlertManagement";
+import DirectorAlertMap from "./pages/DirectorAlertMap";
 import DirectorReportManagement from "./pages/DirectorReportManagement";
+import DirectorProfile from "./pages/DirectorProfile";
+import DirectorProfileEdit from "./pages/DirectorProfileEdit";
+import DirectorMapConfig from "./pages/DirectorMapConfig";
+import DirectorHeader from "./components/DirectorHeader";
+import { MissionManagement } from "./pages/MissionManagement";
+import RobotControl from "./pages/RobotControle";
 
 const queryClient = new QueryClient();
 
@@ -113,6 +117,35 @@ const App = () => (
               }
             />
 
+            {/* Director Map Configuration */}
+            <Route
+              path="/directeur/map-config"
+              element={
+                <ProtectedRoute requiredRole="directeur">
+                  <DirectorMapConfig />
+                </ProtectedRoute>
+              }
+            />
+
+            {/* Director Profile Routes */}
+            <Route
+              path="/directeur/profile"
+              element={
+                <ProtectedRoute requiredRole="directeur">
+                  <DirectorProfile />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/directeur/profile/edit"
+              element={
+                <ProtectedRoute requiredRole="directeur">
+                  <DirectorProfileEdit />
+                </ProtectedRoute>
+              }
+            />
+
             {/* Director Management Routes */}
             <Route
               path="/director/technicians"
@@ -140,12 +173,20 @@ const App = () => (
                 </ProtectedRoute>
               }
             />
-
             <Route
               path="/director/alerts"
               element={
                 <ProtectedRoute requiredRole="directeur">
                   <DirectorAlertManagement />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/director/alerts/:alertId/map"
+              element={
+                <ProtectedRoute requiredRole="directeur">
+                  <DirectorAlertMap />
                 </ProtectedRoute>
               }
             />
@@ -160,22 +201,14 @@ const App = () => (
             />
 
             <Route
-              path="/director/analytics"
+              path="/director/missions"
               element={
                 <ProtectedRoute requiredRole="directeur">
-                  <NewDirectorDashboard />
+                  <MissionManagement />
                 </ProtectedRoute>
               }
             />
 
-            <Route
-              path="/director/locations"
-              element={
-                <ProtectedRoute requiredRole="directeur">
-                  <NewDirectorDashboard />
-                </ProtectedRoute>
-              }
-            />
 
             {/* Technician Routes */}
             <Route
@@ -197,10 +230,10 @@ const App = () => (
             />
 
             <Route
-              path="/technician/surveillance"
+              path="/technician/robot-control"
               element={
                 <ProtectedRoute requiredRole="technicien">
-                  <Surveillance />
+                  <RobotControl/>
                 </ProtectedRoute>
               }
             />
@@ -223,6 +256,15 @@ const App = () => (
               }
             />
 
+            <Route
+              path="/technician/missions"
+              element={
+                <ProtectedRoute requiredRole="technicien">
+                  <MissionManagement />
+                </ProtectedRoute>
+              }
+            />
+
             {/* Technicien Sup Routes with Persistent Header */}
             <Route
               path="/technicien-sup"
@@ -239,6 +281,7 @@ const App = () => (
               <Route path="alerts" element={<TechnicienSupAlerts />} />
               <Route path="interventions" element={<TechnicienSupInterventions />} />
               <Route path="reports" element={<ReportsPage />} />
+              <Route path="missions" element={<MissionManagement />} />
             </Route>
 
             <Route

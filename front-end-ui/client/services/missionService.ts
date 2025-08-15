@@ -1,68 +1,139 @@
-export interface MissionRobot {
-  id?: number;
+import axios from 'axios';
+
+const API_BASE_URL = `${window.location.protocol}//${window.location.hostname}:5000/api`;
+
+interface Mission {
+  id: number;
   id_robot: number;
   id_serre: number;
   rep_jr: number;
   rep_sem: number;
-  date_debut?: string;
-  date_fin?: string;
+  date_debut: string;
+  date_fin: string | null;
+  executed: boolean;
+}
+
+interface CreateMissionRequest {
+  id_robot: number;
+  id_serre: number;
+  rep_jr: number;
+  rep_sem: number;
+  date_debut: string;
+  date_fin?: string | null;
   executed?: boolean;
 }
 
-export interface MissionResponse {
-  status: string;
-  message?: string;
-  mission?: MissionRobot;
+interface ApiError {
+  message: string;
+  status: number;
 }
 
-const API_BASE_URL = '/api';
+const createAuthenticatedRequest = () => {
+  const token = localStorage.getItem('authToken');
+  console.log('Auth token:', token ? 'Present' : 'Missing');
+  return {
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token && { Authorization: `Bearer ${token}` }),
+    },
+  };
+};
 
-class MissionService {
-  private async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
-    const token = localStorage.getItem('authToken');
-    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-      ...options,
-      headers: {
-        'Content-Type': 'application/json',
-        ...(token && { Authorization: `Bearer ${token}` }),
-        ...options.headers,
-      },
-    });
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+export const missionService = {
+  // Get all missions
+  getAllMissions: async (): Promise<Mission[]> => {
+    try {
+      console.log('Fetching missions from:', `${API_BASE_URL}/mission_robot`);
+      console.log('Auth headers:', createAuthenticatedRequest());
+      
+      const response = await axios.get<Mission[]>(
+        `${API_BASE_URL}/mission_robot`,
+        createAuthenticatedRequest()
+      );
+      
+      console.log('Mission response:', response);
+      return response.data;
+    } catch (error: any) {
+      console.error('Mission API error:', error);
+      const errorMessage = error.response?.data?.message || 
+        "Erreur lors de la récupération des missions";
+      throw {
+        message: errorMessage,
+        status: error.response?.status || 500,
+      } as ApiError;
     }
+  },
 
-    return response.json();
+  // Get mission by ID
+  getMission: async (missionId: number): Promise<Mission> => {
+    try {
+      const response = await axios.get<Mission>(
+        `${API_BASE_URL}/mission_robot/${missionId}`,
+        createAuthenticatedRequest()
+      );
+      return response.data;
+    } catch (error: any) {
+      const errorMessage = error.response?.data?.message || 
+        "Erreur lors de la récupération de la mission";
+      throw {
+        message: errorMessage,
+        status: error.response?.status || 500,
+      } as ApiError;
+    }
+  },
+
+  // Create new mission
+  createMission: async (missionData: CreateMissionRequest): Promise<Mission> => {
+    try {
+      const response = await axios.post<Mission>(
+        `${API_BASE_URL}/mission_robot`,
+        missionData,
+        createAuthenticatedRequest()
+      );
+      return response.data;
+    } catch (error: any) {
+      const errorMessage = error.response?.data?.message || 
+        "Erreur lors de la création de la mission";
+      throw {
+        message: errorMessage,
+        status: error.response?.status || 500,
+      } as ApiError;
+    }
+  },
+
+  // Update mission
+  updateMission: async (missionId: number, missionData: Partial<CreateMissionRequest>): Promise<Mission> => {
+    try {
+      const response = await axios.put<Mission>(
+        `${API_BASE_URL}/mission_robot/${missionId}`,
+        missionData,
+        createAuthenticatedRequest()
+      );
+      return response.data;
+    } catch (error: any) {
+      const errorMessage = error.response?.data?.message || 
+        "Erreur lors de la mise à jour de la mission";
+      throw {
+        message: errorMessage,
+        status: error.response?.status || 500,
+      } as ApiError;
+    }
+  },
+
+  // Delete mission
+  deleteMission: async (missionId: number): Promise<void> => {
+    try {
+      await axios.delete(
+        `${API_BASE_URL}/mission_robot/${missionId}`,
+        createAuthenticatedRequest()
+      );
+    } catch (error: any) {
+      const errorMessage = error.response?.data?.message || 
+        "Erreur lors de la suppression de la mission";
+      throw {
+        message: errorMessage,
+        status: error.response?.status || 500,
+      } as ApiError;
+    }
   }
-
-  async createMission(mission: Omit<MissionRobot, 'id'>): Promise<MissionResponse> {
-    return this.request<MissionResponse>('/missions', {
-      method: 'POST',
-      body: JSON.stringify(mission),
-    });
-  }
-
-  async getAllMissions(): Promise<MissionRobot[]> {
-    return this.request<MissionRobot[]>('/missions');
-  }
-
-  async getMission(missionId: number): Promise<MissionRobot> {
-    return this.request<MissionRobot>(`/missions/${missionId}`);
-  }
-
-  async updateMission(missionId: number, mission: Partial<MissionRobot>): Promise<MissionResponse> {
-    return this.request<MissionResponse>(`/missions/${missionId}`, {
-      method: 'PUT',
-      body: JSON.stringify(mission),
-    });
-  }
-
-  async deleteMission(missionId: number): Promise<MissionResponse> {
-    return this.request<MissionResponse>(`/missions/${missionId}`, {
-      method: 'DELETE',
-    });
-  }
-}
-
-export const missionService = new MissionService();
+};

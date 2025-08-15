@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useSidebar } from '@/hooks/useSidebar';
 import DirectorSidebar from '../components/DirectorSidebar';
+import DirectorHeader from '@/components/DirectorHeader';
 import { useToast } from '@/hooks/use-toast';
 import {
   Menu,
@@ -50,6 +51,7 @@ import {
 } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { ReportService, ApiReport } from '@/services/reportService';
 
 interface ReportFolder {
   id: string;
@@ -196,6 +198,10 @@ export default function DirectorReportManagement() {
   const { isOpen, setIsOpen, toggleSidebar } = useSidebar();
   const { toast } = useToast();
   
+  const [enterpriseReports, setEnterpriseReports] = useState<ApiReport[]>([]);
+  const [loadingEnterpriseReports, setLoadingEnterpriseReports] = useState<boolean>(false);
+  const [viewPdfUrl, setViewPdfUrl] = useState<string | null>(null);
+
   const [folders, setFolders] = useState<ReportFolder[]>(mockFolders);
   const [reports, setReports] = useState<Report[]>(mockReports);
   const [selectedFolder, setSelectedFolder] = useState<string | null>(null);
@@ -230,6 +236,16 @@ export default function DirectorReportManagement() {
     const matchesStatus = statusFilter === 'all' || report.status === statusFilter;
     const matchesFolder = !selectedFolder || report.folderId === selectedFolder;
     return matchesSearch && matchesType && matchesStatus && matchesFolder;
+  });
+
+  const filteredEnterpriseReports = enterpriseReports.filter((r) => {
+    const term = searchTerm.toLowerCase();
+    return (
+      (r.description || '').toLowerCase().includes(term) ||
+      (r.serre || '').toLowerCase().includes(term) ||
+      (r.domaine || '').toLowerCase().includes(term) ||
+      (r.entreprise || '').toLowerCase().includes(term)
+    );
   });
 
   const handleCreateFolder = () => {
@@ -415,106 +431,79 @@ export default function DirectorReportManagement() {
   };
 
   const stats = {
-    totalReports: reports.length,
-    totalFolders: folders.length,
-    drafts: reports.filter(r => r.status === 'draft').length,
-    published: reports.filter(r => r.status === 'published').length,
-    totalSize: reports.reduce((sum, r) => sum + r.size, 0)
+    totalReports: enterpriseReports.length,
+    serres: new Set(enterpriseReports.map(r => (r.serre_id ?? r.serre))).size,
+    domaines: new Set(enterpriseReports.map(r => r.domaine).filter(Boolean)).size,
+    withPdf: enterpriseReports.filter(r => r.lien_pdf).length,
+    last30Days: enterpriseReports.filter(r => {
+      if (!r.date) return false;
+      const d = new Date(r.date);
+      const now = new Date();
+      const diff = (now.getTime() - d.getTime()) / (1000 * 60 * 60 * 24);
+      return diff <= 30;
+    }).length,
   };
+
+  useEffect(() => {
+    const fetchEnterpriseReports = async () => {
+      try {
+        setLoadingEnterpriseReports(true);
+        const data = await ReportService.getReportsByDirectorEnterprise();
+        setEnterpriseReports(data);
+      } catch (error: any) {
+        console.error('Erreur lors du chargement des rapports:', error);
+        toast({
+          title: 'Erreur',
+          description: "Impossible de récupérer les rapports de l'entreprise",
+          variant: 'destructive'
+        });
+      } finally {
+        setLoadingEnterpriseReports(false);
+      }
+    };
+
+    fetchEnterpriseReports();
+  }, []);
 
   return (
     <div className="min-h-screen bg-gray-50 flex">
       <DirectorSidebar isOpen={isOpen} setIsOpen={setIsOpen} />
 
       <div className="flex-1 transition-all duration-300">
-        {/* Header */}
-        <header className="bg-white shadow-sm border-b sticky top-0 z-30">
-          <div className="px-4 sm:px-6 lg:px-8">
-            <div className="flex justify-between items-center py-4">
-              <div className="flex items-center space-x-4">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={toggleSidebar}
-                  className="lg:hidden"
-                >
-                  <Menu className="h-5 w-5" />
-                </Button>
-                <div>
-                  <h1 className="text-xl font-semibold text-gray-900">
-                    Gestion des Rapports
-                  </h1>
-                  <p className="text-sm text-gray-600">
-                    Créer, organiser et éditer les rapports avec WYSIWYG
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex items-center space-x-4">
-                <Select value={viewMode} onValueChange={(value: 'folders' | 'reports') => setViewMode(value)}>
-                  <SelectTrigger className="w-40">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="folders">Dossiers</SelectItem>
-                    <SelectItem value="reports">Rapports</SelectItem>
-                  </SelectContent>
-                </Select>
-                
-                {viewMode === 'folders' ? (
-                  <Button
-                    onClick={() => setIsCreateFolderOpen(true)}
-                    className="bg-greener hover:bg-greener-600"
-                  >
-                    <FolderPlus className="h-4 w-4 mr-2" />
-                    Nouveau Dossier
-                  </Button>
-                ) : (
-                  <Button
-                    onClick={() => setIsCreateReportOpen(true)}
-                    className="bg-greener hover:bg-greener-600"
-                  >
-                    <Plus className="h-4 w-4 mr-2" />
-                    Nouveau Rapport
-                  </Button>
-                )}
-              </div>
-            </div>
-          </div>
-        </header>
+        <DirectorHeader isSidebarOpen={isOpen} onMenuClick={() => setIsOpen(!isOpen)} />
 
         {/* Content */}
         <main className="p-4 sm:p-6 lg:p-8">
-          {/* Stats Cards */}
+          {/* Stats Cards (from backend data) */}
           <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
             <Card>
               <CardContent className="p-4">
                 <div className="text-2xl font-bold text-greener-600">{stats.totalReports}</div>
-                <div className="text-sm text-gray-600">Total Rapports</div>
+                <div className="text-sm text-gray-600">Rapports</div>
               </CardContent>
             </Card>
             <Card>
               <CardContent className="p-4">
-                <div className="text-2xl font-bold text-blue-600">{stats.totalFolders}</div>
-                <div className="text-sm text-gray-600">Dossiers</div>
+                <div className="text-2xl font-bold text-blue-600">{stats.serres}</div>
+                <div className="text-sm text-gray-600">Serres couvertes</div>
               </CardContent>
             </Card>
             <Card>
               <CardContent className="p-4">
-                <div className="text-2xl font-bold text-gray-600">{stats.drafts}</div>
-                <div className="text-sm text-gray-600">Brouillons</div>
+                <div className="text-2xl font-bold text-gray-600">{stats.domaines}</div>
+                <div className="text-sm text-gray-600">Domaines</div>
               </CardContent>
             </Card>
             <Card>
               <CardContent className="p-4">
-                <div className="text-2xl font-bold text-green-600">{stats.published}</div>
-                <div className="text-sm text-gray-600">Publiés</div>
+                <div className="text-2xl font-bold text-green-600">{stats.withPdf}</div>
+                <div className="text-sm text-gray-600">Avec PDF</div>
               </CardContent>
             </Card>
             <Card>
               <CardContent className="p-4">
-                <div className="text-2xl font-bold text-purple-600">{formatFileSize(stats.totalSize)}</div>
-                <div className="text-sm text-gray-600">Taille totale</div>
+                <div className="text-2xl font-bold text-purple-600">{stats.last30Days}</div>
+                <div className="text-sm text-gray-600">Sur 30 jours</div>
               </CardContent>
             </Card>
           </div>
@@ -536,248 +525,75 @@ export default function DirectorReportManagement() {
             </div>
           )}
 
-          {viewMode === 'folders' ? (
-            /* Folders View */
-            <Card>
-              <CardHeader>
-                <CardTitle>Dossiers de Rapports ({folders.length})</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {folders.map((folder) => (
-                    <div
-                      key={folder.id}
-                      className="relative p-4 border-2 rounded-lg cursor-pointer hover:shadow-lg transition-all group"
-                      style={{
-                        borderColor: folder.color + '40',
-                        backgroundColor: folder.color + '10'
-                      }}
-                      onClick={() => {
-                        setSelectedFolder(folder.id);
-                        setViewMode('reports');
-                      }}
-                    >
-                      <div className="flex items-center justify-between mb-3">
-                        <div className="flex items-center space-x-3">
-                          <div
-                            className="w-10 h-10 rounded-lg flex items-center justify-center"
-                            style={{ backgroundColor: folder.color }}
-                          >
-                            <Folder className="h-5 w-5 text-white" />
-                          </div>
-                          <div>
-                            <h3 className="font-semibold text-gray-900">{folder.name}</h3>
-                            <p className="text-sm text-gray-600">{folder.reportCount} rapport(s)</p>
-                          </div>
-                        </div>
-                        
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-                            <Button variant="ghost" size="sm" className="opacity-0 group-hover:opacity-100">
-                              <MoreVertical className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem 
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleDeleteFolder(folder.id);
-                              }}
-                              className="text-red-600"
-                            >
-                              <Trash2 className="h-4 w-4 mr-2" />
-                              Supprimer
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </div>
-                      
-                      {folder.description && (
-                        <p className="text-sm text-gray-600 mb-3">{folder.description}</p>
-                      )}
-                      
-                      <div className="text-xs text-gray-500">
-                        Créé par {folder.createdBy} le {new Date(folder.createdDate).toLocaleDateString('fr-FR')}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          ) : (
-            <>
-              {/* Filters for Reports */}
-              <Card className="mb-6">
-                <CardContent className="p-4">
-                  <div className="flex flex-col lg:flex-row gap-4">
-                    <div className="flex-1">
-                      <div className="relative">
-                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-                        <Input
-                          placeholder="Rechercher par titre, description ou tags..."
-                          value={searchTerm}
-                          onChange={(e) => setSearchTerm(e.target.value)}
-                          className="pl-10"
-                        />
-                      </div>
-                    </div>
-                    <Select value={typeFilter} onValueChange={setTypeFilter}>
-                      <SelectTrigger className="w-full lg:w-40">
-                        <SelectValue placeholder="Type" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">Tous les types</SelectItem>
-                        <SelectItem value="weekly">Hebdomadaire</SelectItem>
-                        <SelectItem value="monthly">Mensuel</SelectItem>
-                        <SelectItem value="quarterly">Trimestriel</SelectItem>
-                        <SelectItem value="annual">Annuel</SelectItem>
-                        <SelectItem value="custom">Personnalisé</SelectItem>
-                        <SelectItem value="incident">Incident</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <Select value={statusFilter} onValueChange={setStatusFilter}>
-                      <SelectTrigger className="w-full lg:w-40">
-                        <SelectValue placeholder="Statut" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">Tous les statuts</SelectItem>
-                        <SelectItem value="draft">Brouillon</SelectItem>
-                        <SelectItem value="review">En révision</SelectItem>
-                        <SelectItem value="approved">Approuvé</SelectItem>
-                        <SelectItem value="published">Publié</SelectItem>
-                        <SelectItem value="archived">Archivé</SelectItem>
-                      </SelectContent>
-                    </Select>
+          {/* Filters for Enterprise Reports */}
+          <Card className="mb-6">
+            <CardContent className="p-4">
+              <div className="flex flex-col lg:flex-row gap-4">
+                <div className="flex-1">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                    <Input
+                      placeholder="Rechercher par description, serre, domaine ou entreprise..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="pl-10"
+                    />
                   </div>
-                </CardContent>
-              </Card>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
 
-              {/* Reports List */}
-              <Card>
+          {/* Enterprise Reports from Backend */}
+          <Card>
                 <CardHeader>
-                  <CardTitle>
-                    Rapports ({filteredReports.length})
-                    {selectedFolder && ` - ${folders.find(f => f.id === selectedFolder)?.name}`}
-                  </CardTitle>
+                  <CardTitle>Rapports de l'entreprise ({filteredEnterpriseReports.length})</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-4">
-                    {filteredReports.map((report) => (
-                      <div
-                        key={report.id}
-                        className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 transition-colors"
-                      >
-                        <div className="flex items-center space-x-4 flex-1">
-                          <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                            <FileText className="h-6 w-6 text-blue-600" />
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="font-medium text-gray-900">{report.title}</div>
-                            <div className="text-sm text-gray-600 truncate">
-                              {report.description}
+                  {loadingEnterpriseReports ? (
+                    <div className="text-sm text-gray-500">Chargement...</div>
+                  ) : filteredEnterpriseReports.length === 0 ? (
+                    <div className="text-sm text-gray-500">Aucun rapport</div>
+                  ) : (
+                    <div className="space-y-3">
+                      {filteredEnterpriseReports.map((r) => (
+                        <div key={r.id} className="flex items-center justify-between p-3 border rounded-lg">
+                          <div className="min-w-0">
+                            <div className="font-medium text-gray-900 truncate">{r.description}</div>
+                            <div className="text-xs text-gray-600">
+                              {r.date ? new Date(r.date).toLocaleDateString('fr-FR') : '—'} • Serre: {r.serre || '—'} • Domaine: {r.domaine || '—'}
                             </div>
-                            <div className="text-sm text-gray-500 flex items-center space-x-4 mt-1">
-                              <span className="flex items-center">
-                                <User className="h-3 w-3 mr-1" />
-                                {report.createdBy}
-                              </span>
-                              <span className="flex items-center">
-                                <Calendar className="h-3 w-3 mr-1" />
-                                {new Date(report.createdDate).toLocaleDateString('fr-FR')}
-                              </span>
-                              <span className="flex items-center">
-                                <Clock className="h-3 w-3 mr-1" />
-                                {new Date(report.lastModified).toLocaleDateString('fr-FR')}
-                              </span>
-                              <span>{formatFileSize(report.size)}</span>
-                            </div>
+                            {Array.isArray(r.bilans) && r.bilans.length > 0 && (
+                              <div className="text-xs text-gray-600 mt-1 truncate">Bilans: {r.bilans.join(', ')}</div>
+                            )}
                           </div>
-                        </div>
-
-                        <div className="flex items-center space-x-4">
-                          <div className="text-right">
-                            <div className="text-sm font-medium">
-                              {report.viewCount} vues
-                            </div>
-                            <div className="text-xs text-gray-500">
-                              {report.downloadCount} téléchargements
-                            </div>
-                          </div>
-                          
-                          <div className="flex flex-col items-end space-y-1">
-                            {getStatusBadge(report.status)}
-                            {getTypeBadge(report.type)}
-                          </div>
-
-                          <div className="flex space-x-2">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => openReportDetail(report)}
-                            >
-                              <Eye className="h-4 w-4" />
-                            </Button>
-                            
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => openEditor(report)}
-                            >
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                            
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="sm">
-                                  <MoreVertical className="h-4 w-4" />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end">
-                                <DropdownMenuItem>
-                                  <Download className="h-4 w-4 mr-2" />
-                                  Télécharger PDF
-                                </DropdownMenuItem>
-                                <DropdownMenuItem>
-                                  <Share className="h-4 w-4 mr-2" />
-                                  Partager
-                                </DropdownMenuItem>
-                                
-                                {report.status === 'draft' && (
-                                  <DropdownMenuItem onClick={() => handleUpdateReportStatus(report.id, 'review')}>
-                                    Soumettre à révision
-                                  </DropdownMenuItem>
-                                )}
-                                
-                                {report.status === 'review' && (
-                                  <DropdownMenuItem onClick={() => handleUpdateReportStatus(report.id, 'approved')}>
-                                    Approuver
-                                  </DropdownMenuItem>
-                                )}
-                                
-                                {report.status === 'approved' && (
-                                  <DropdownMenuItem onClick={() => handleUpdateReportStatus(report.id, 'published')}>
-                                    Publier
-                                  </DropdownMenuItem>
-                                )}
-                                
-                                <DropdownMenuItem 
-                                  onClick={() => handleDeleteReport(report.id)}
-                                  className="text-red-600"
+                          <div className="flex items-center gap-2">
+                            {r.lien_pdf && (
+                              <>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => setViewPdfUrl(ReportService.getReportPdfUrl(r.lien_pdf))}
                                 >
-                                  <Trash2 className="h-4 w-4 mr-2" />
-                                  Supprimer
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
+                                  <Eye className="h-4 w-4 mr-1" /> Voir PDF
+                                </Button>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => ReportService.downloadReport(r.lien_pdf!, `rapport_${r.id}.pdf`)}
+                                >
+                                  <Download className="h-4 w-4 mr-1" /> Télécharger
+                                </Button>
+                              </>
+                            )}
                           </div>
                         </div>
-                      </div>
-                    ))}
-                  </div>
+                      ))}
+                    </div>
+                  )}
                 </CardContent>
               </Card>
-            </>
-          )}
+          
         </main>
 
         {/* Create Folder Modal */}
@@ -1117,6 +933,20 @@ export default function DirectorReportManagement() {
                 Sauvegarder
               </Button>
             </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* PDF Viewer Modal */}
+        <Dialog open={!!viewPdfUrl} onOpenChange={() => setViewPdfUrl(null)}>
+          <DialogContent className="sm:max-w-5xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Prévisualisation du PDF</DialogTitle>
+            </DialogHeader>
+            {viewPdfUrl && (
+              <div className="h-[75vh]">
+                <iframe src={viewPdfUrl} title="Rapport PDF" className="w-full h-full" />
+              </div>
+            )}
           </DialogContent>
         </Dialog>
       </div>
