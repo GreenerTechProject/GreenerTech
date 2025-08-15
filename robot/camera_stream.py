@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 import cv2
 import asyncio
 import websockets
@@ -10,11 +11,11 @@ host = "greenertech2.mywire.org"
 
 def gstreamer_pipeline(
     sensor_id=0,
-    capture_width=1280,
-    capture_height=720,
-    display_width=1280,
-    display_height=720,
-    framerate=30,
+    capture_width=640,
+    capture_height=480,
+    display_width=640,
+    display_height=480,
+    framerate=15,
     flip_method=0,
 ):
     return (
@@ -28,16 +29,16 @@ def gstreamer_pipeline(
     )
 
 
-async def send_video():
+async def send_video(camera):
 
-    pipeline = gstreamer_pipeline()
+    pipeline = gstreamer_pipeline(camera)
     cap = cv2.VideoCapture(pipeline, cv2.CAP_GSTREAMER)
 
 
     while True:
         try:
             print("Tentative de connexion au serveur vidéo...")
-            video_uri = "ws://"+host+":8080/service/video_stream_handler"
+            video_uri = "ws://"+host+":8080/service/video_stream_handler?robot=2&camera="+camera
             async with websockets.connect(video_uri) as websocket:
                 print("Connecté au serveur vidéo avec succès")
                 while True:
@@ -121,7 +122,7 @@ async def receive_controls():
     while True:
         try:
             print("Tentative de connexion au serveur contrôle...")
-            control_uri = "ws://"+host+":8080/service/control"
+            control_uri = "ws://"+host+":8080/service/control?robot=2"
             async with websockets.connect(control_uri) as websocket:
                 print("Connecté au serveur contrôle avec succès")
                 async for message in websocket:
@@ -145,7 +146,7 @@ async def receive_controls():
 import random
 
 async def simulate_sensor_data():
-    uri = "ws://"+host+":8080/service/sensor_data"
+    uri = "ws://"+host+":8080/service/sensor_data?robot=2"
     async with websockets.connect(uri) as ws:
         while True:
             data = {
@@ -214,7 +215,7 @@ async def listen_missions(robot_referance):
     while True:
         try:
             print("Tentative de connexion au serveur mission...")
-            control_uri = "ws://"+host+":8080/service/missions?referance="+robot_referance
+            control_uri = "ws://"+host+":8080/service/missions?robot=2&referance="+robot_referance
             async with websockets.connect(control_uri) as websocket:
                 print(f"Connected to mission websocket for robot '{robot_referance}'")
                 async for msg in websocket:
@@ -244,7 +245,8 @@ async def main():
     #robot_ref = "robot_123"
     robot_ref = get_or_create_robot_referance()
     await asyncio.gather(
-        send_video(),
+        send_video("right"),
+        send_video("left"),
         receive_controls(),
         simulate_sensor_data(),
         listen_missions(robot_ref) 
