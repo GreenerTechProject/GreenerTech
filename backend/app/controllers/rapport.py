@@ -134,7 +134,7 @@ def create_rapport(current_user):
         if date_fin_str:
             date_fin = datetime.strptime(date_fin_str, "%d/%m/%Y %H:%M")
     except ValueError:
-        return jsonify({"message": "Format de date invalide, attendu YYYY-MM-DDTHH:MM:SS"}), 400
+        return jsonify({"message": "Format de date invalide, attendu YYYY-MM-DDTHH:MM"}), 400
 
     # Construire la requête pour récupérer les derniers états de bilan
     query_etat = Etat_bilan.query.filter(Etat_bilan.id_bilan.in_(id_bilan))
@@ -202,15 +202,41 @@ def get_rapport(id, current_user):
 def update_rapport(id):
     data = request.get_json()
     desctripion = data.get("description")
+    id_serre = data.get("id_serre")
+    id_bilans = data.get("ids_bilans", [])
+    date_debut_str = data.get("date_debut")
+    date_fin_str = data.get("date_fin")
+    if date_debut_str:
+        try:
+            date_debut = datetime.strptime(date_debut_str, "%d/%m/%Y %H:%M")
+        except ValueError:
+            return jsonify({"message": "Format de date de début invalide, attendu YYYY-MM-DDTHH:MM"}), 400
+    else:
+        date_debut = None
+
+    if date_fin_str:
+        try:
+            date_fin = datetime.strptime(date_fin_str, "%d/%m/%Y %H:%M")
+        except ValueError:
+            return jsonify({"message": "Format de date de fin invalide, attendu YYYY-MM-DDTHH:MM"}), 400
+    
+
     if not desctripion:
         return jsonify({"message": "Champs requis manquants"}), 400
     rapport = Rapport.query.get(id)
     if not rapport:
         return jsonify({"message": "Rapport non trouvé"}), 404
     rapport.description = desctripion
+    rapport.id_serre = id_serre
+    rapport.id_bilans = id_bilans
+    if date_debut:
+        rapport.date_debut = date_debut
+    if date_fin:
+        rapport.date_fin = date_fin
+    # Mettre à jour le rapport en base de données
+    db.session.add(rapport)  # Pas nécessaire si on modifie un objet existant
     db.session.commit()
     return jsonify({"message": "Rapport mis à jour avec succès"}), 200
-
 
 
 
