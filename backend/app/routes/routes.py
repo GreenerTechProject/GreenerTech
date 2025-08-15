@@ -25,7 +25,7 @@ from app.controllers.alerte import (
     get_alertes, get_alerte, update_alerte,
     get_alertes_by_entreprise, get_alertes_by_director_entreprise
 )
-from app.controllers.rapport import create_rapport, get_all_rapports, get_rapport, update_rapport, delete_rapport, get_rapports_by_director_entreprise
+from app.controllers.rapport import create_rapport, get_all_rapports, get_rapport, update_rapport, delete_rapport, get_rapports_by_director_entreprise, get_rapports_by_user
 
 
 all_bp = Blueprint('all_bp', __name__)
