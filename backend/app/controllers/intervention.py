@@ -6,7 +6,7 @@ from app.utils.security import token_required , role_required
 from database.config import db
 from app.models.user import User
 from app.models.serre import Serre
-from app.models.type_tache import Type_tache
+from app.models.type_tache import Typetache
 
 # controllers/intervention.py
 from app.utils.notifications import envoyer_notification
