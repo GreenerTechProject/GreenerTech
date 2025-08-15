@@ -1,6 +1,6 @@
 from aiohttp import web, WSMsgType
 import json
-from video_streaming_service_ai import get_stream_data  # use the updated dict
+from multirobotcam.video_streaming_service_ai import get_stream_data  # use the updated dict
 from PIL import Image
 from datetime import datetime
 import requests
