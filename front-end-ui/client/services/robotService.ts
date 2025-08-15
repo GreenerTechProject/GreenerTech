@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { tokenManager } from './authService';
 
 const API_BASE_URL = `${window.location.protocol}//${window.location.hostname}:5000/api`;
 
@@ -14,7 +15,7 @@ interface ApiError {
 }
 
 const createAuthenticatedRequest = () => {
-  const token = localStorage.getItem('authToken');
+  const token = tokenManager.getToken();
   return {
     headers: {
       'Content-Type': 'application/json',
