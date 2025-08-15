@@ -1019,10 +1019,11 @@ COPY public.missions_robot (
     date_fin,
     executed,
     bilans
-) FROM stdin;
+) FROM stdin WITH (FORMAT text, NULL '\N');
 
 1   1   1   0   0   5   13   33   2025-08-05 13:33:00   2025-08-06 13:33:00   f   []
 \.
+
 
 
 
