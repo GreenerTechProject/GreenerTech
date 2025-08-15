@@ -87,12 +87,6 @@ export default function TechnicianSidebar({
         icon: <Bookmark className="h-5 w-5" />,
         path: userRole === "technicien_sup" ? "/technicien-sup/reports" : "/reports",
       },
-	  {
-        id: "robot-control",
-        label: "Contrôle Robot",
-        icon: <Bot className="h-5 w-5" />,
-        path: "/robot-control",
-	  },
     ];
     // Show Surveillance only for regular technicians, not for tech-sup
     if (userRole !== "technicien_sup") {
