@@ -6,7 +6,7 @@ import json
 #import serial
 
 
-host = "greenertech.mywire.org"
+host = "greenertech2.mywire.org"
 
 async def send_video():
     cap = cv2.VideoCapture(1)
