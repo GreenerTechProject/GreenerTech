@@ -55,7 +55,7 @@ export default function DirectorAlertManagement() {
         return { label: 'Faible', color: 'bg-blue-100 text-blue-800 border-blue-200' };
       case 1:
         return { label: 'Moyenne', color: 'bg-yellow-100 text-yellow-800 border-yellow-200' };
-      case 3:
+      case 2:
         return { label: 'Critique', color: 'bg-red-600 text-white' };
       default:
         return { label: 'Faible', color: 'bg-blue-100 text-blue-800 border-blue-200' };
@@ -75,7 +75,7 @@ export default function DirectorAlertManagement() {
     total: alerts.length,
     faible: alerts.filter(a => a.status_alert === 0).length,
     moyenne: alerts.filter(a => a.status_alert === 1).length,
-    critique: alerts.filter(a => a.status_alert === 3).length,
+    critique: alerts.filter(a => a.status_alert === 2).length,
     resolues: alerts.filter(a => a.status === 'résolue').length,
   };
 
