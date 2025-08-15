@@ -21,26 +21,39 @@ def create_mission_robot(current_user):
         executed = data.get('executed')
         bilans = data.get('bilans', [])
 
-        if date_debut:
-            date_debut = datetime.fromisoformat(date_debut)
-        else:
-            date_debut = None
-        
+        if date_debut and (rep_jr or rep_sem):
+            return jsonify({"status": "error", "message": "Vous ne pouvez pas sélectionner la date et la répétition en même temps."}), 400
 
         mission = MissionRobot(
         id_robot=id_robot,
         id_serre=id_serre,
         rep_jr=rep_jr,
         rep_sem=rep_sem,
-        jour = jour , # 'lundi'=1 , 'mardi'=2, etc.
-        heure = heure , 
-        minute = minute,
+        # jour = jour , # 'lundi'=1 , 'mardi'=2, etc.
+        # heure = heure , 
+        # minute = minute,
         date_debut=date_debut,
         date_fin=date_fin,
         executed=executed,
         bilans=bilans # <-- récupérer la liste de bilans
-
         )
+        if rep_sem and rep_sem!=0 :
+            if not jour or not heure or not minute:
+                return jsonify({"status": "error", "message": "Vous devez sélectionner un jour, une heure et une minute pour la répétition hebdomadaire."}), 400
+            else:
+                mission.jour = jour
+                mission.heure = heure
+                mission.minute = minute
+
+        if rep_jr and rep_jr!=0 :
+            if  not heure or not minute:
+                return jsonify({"status": "error", "message": "Vous devez sélectionner  une heure et une minute pour la répétition hebdomadaire."}), 400
+            else:
+                mission.heure = heure , 
+                mission.minute = minute ,
+        # else :
+        #     return jsonify({"status": "error", "message": "Vous devez sélectionner une répétition hebdomadaire."}), 400
+            
         db.session.add(mission)
         db.session.commit()
         return jsonify(mission.to_dict()), 201
@@ -69,17 +82,46 @@ def update_mission_robot(current_user, mission_id):
     mission = MissionRobot.query.get(mission_id)
     if not mission:
         return jsonify({"status": "error", "message": "Mission introuvable"}), 404
+    
+
+
 
     data = request.get_json()
+    date_debut = data.get('date_debut')
+    rep_jr = data.get('rep_jr' , 0)  # Default to 0 if not provided
+    rep_sem = data.get('rep_sem' , 0)  # Default to 0 if not provided
+    jour = data.get('jour' , None)  # Default to None if not provided
+    heure = data.get('heure' , None)  # Default to None if not provided
+    minute = data.get('minute' , None)  # Default to None if not provided
+
+    if date_debut and (rep_jr or rep_sem):
+        return jsonify({"status": "error", "message": "Vous ne pouvez pas sélectionner la date et la répétition en même temps."}), 400
+    if rep_sem and rep_sem!=0 :
+        if not jour or not heure or not minute:
+            return jsonify({"status": "error", "message": "Vous devez sélectionner un jour, une heure et une minute pour la répétition hebdomadaire."}), 400
+        else:
+            mission.jour =  jour, # 'lundi'=1 , 'mardi'=2, etc.
+            mission.heure = heure , 
+            mission.minute = minute ,
+    
+    if rep_jr and rep_jr!=0 :
+        if  not heure or not minute:
+            return jsonify({"status": "error", "message": "Vous devez sélectionner  une heure et une minute pour la répétition hebdomadaire."}), 400
+        else:
+            mission.heure = heure , 
+            mission.minute = minute ,
+    if date_debut:
+        mission.jour =  None, # 'lundi'=1 , 'mardi'=2, etc.
+        mission.heure = None , 
+        mission.minute = None ,
+
     try:
         mission.id_robot = data.get('id_robot', mission.id_robot)
         mission.id_serre = data.get('id_serre', mission.id_serre)
-        mission.rep_jr = data.get('rep_jr', mission.rep_jr)
-        mission.rep_sem = data.get('rep_sem', mission.rep_sem)
-        mission.jour = data.get('jour', mission.jour) , # 'lundi'=1 , 'mardi'=2, etc.
-        mission.heure = data.get('heure' ,mission.heure) , 
-        mission.minute = data.get('minute' ,mission.minute) ,
-        mission.date_debut = data.get('date_debut', mission.date_debut)
+        mission.rep_jr = rep_jr 
+        mission.rep_sem = rep_sem
+
+        mission.date_debut = date_debut
         mission.date_fin = data.get('date_fin', mission.date_fin)
         mission.executed = data.get('executed', mission.executed)
         mission.bilans = data.get('bilans', mission.bilans)
