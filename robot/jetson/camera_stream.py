@@ -8,8 +8,8 @@ import json
 
 host = "greenertech2.mywire.org"
 
-async def send_video(camera):
-    cap = cv2.VideoCapture(1)
+async def send_video(robot_ref, camera, idcamera):
+    cap = cv2.VideoCapture(idcamera)
 
     while True:
         try:
@@ -94,7 +94,7 @@ async def send_video(camera):
 # Ouvre le port série vers Arduino (adapter le port si besoin)
 #arduino = serial.Serial('/dev/ttyACM0', 9600)
 
-async def receive_controls():
+async def receive_controls(robot_ref):
     while True:
         try:
             print("Tentative de connexion au serveur contrôle...")
@@ -121,7 +121,7 @@ async def receive_controls():
 
 import random
 
-async def simulate_sensor_data():
+async def simulate_sensor_data(robot_ref):
     uri = "ws://"+host+":8080/service/sensor_data?robot=2"
     async with websockets.connect(uri) as ws:
         while True:
@@ -221,10 +221,10 @@ async def main():
     #robot_ref = "robot_123"
     robot_ref = get_or_create_robot_referance()
     await asyncio.gather(
-        send_video("right"),
-        #send_video("left"),
-        receive_controls(),
-        simulate_sensor_data(),
+        send_video(robot_ref, "right", 0),
+        #send_video("left", 1),
+        receive_controls(robot_ref),
+        simulate_sensor_data(robot_ref),
         listen_missions(robot_ref) 
         )
     
