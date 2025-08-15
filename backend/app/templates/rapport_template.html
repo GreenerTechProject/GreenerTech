@@ -82,7 +82,7 @@
         <h2 style="color: #2980b9;">🩺 États des Bilans</h2>
         {% if etat_bilan %}
             {% for etat in etat_bilan %}
-                <div style="margin-bottom: 20px;">
+                <div style="margin-bottom: 20px; border-left: 5px solid #2980b9; padding-left: 10px;">
                     <p><strong>Date :</strong> {{ etat.date.strftime('%d/%m/%Y %H:%M') }}</p>
                     <p><strong>Nombre de tomates malades :</strong> {{ etat.nombre_tomates_maladies }}</p>
                     <p><strong>Nombre de tomates saines :</strong> {{ etat.nombre_tomates_non_maladies }}</p>
@@ -114,7 +114,7 @@
                     <p><strong>Status de traitement :</strong> {{ alerte.status }}</p>
                     {% if alerte.lien_image %}
                         <p><strong>Image :</strong><br>
-                            <img src="{{ alerte.lien_image }}" alt="Image alerte" style="max-width: 300px; border: 1px solid #ccc;">
+                            <img src="file:///app/app/{{ alerte.lien_image }}" alt="Image alerte" style="max-width: 300px; border: 1px solid #ccc;">
                         </p>
                     {% endif %}
                 </div>

@@ -11,6 +11,7 @@ RUN apt-get update && apt-get install -y \
     gir1.2-glib-2.0 \
     fonts-liberation \
     fonts-freefont-ttf \
+    procps \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app

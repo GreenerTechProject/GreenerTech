@@ -1,232 +1,255 @@
-# -*- coding: utf-8 -*-
-# Python 2 compatible code
-import threading
-import time
+import cv2
+import asyncio
+import websockets
 import json
+
+#import serial
+
+
+host = "greenertech2.mywire.org"
+
+def gstreamer_pipeline(
+    sensor_id=0,
+    capture_width=1280,
+    capture_height=720,
+    display_width=1280,
+    display_height=720,
+    framerate=30,
+    flip_method=0,
+):
+    return (
+        f"nvarguscamerasrc sensor-id={sensor_id} ! "
+        f"video/x-raw(memory:NVMM), width={capture_width}, height={capture_height}, "
+        f"format=NV12, framerate={framerate}/1 ! "
+        f"nvvidconv flip-method={flip_method} ! "
+        f"video/x-raw, width={display_width}, height={display_height}, format=BGRx ! "
+        f"videoconvert ! "
+        f"video/x-raw, format=BGR ! appsink"
+    )
+
+
+async def send_video():
+
+    pipeline = gstreamer_pipeline()
+    cap = cv2.VideoCapture(pipeline, cv2.CAP_GSTREAMER)
+
+
+    while True:
+        try:
+            print("Tentative de connexion au serveur vidéo...")
+            video_uri = "ws://"+host+":8080/service/video_stream_handler"
+            async with websockets.connect(video_uri) as websocket:
+                print("Connecté au serveur vidéo avec succès")
+                while True:
+                    ret, frame = cap.read()
+                    if not ret:
+                        print("Échec de la lecture de la trame depuis la caméra")
+                        break
+
+                    _, buffer = cv2.imencode(".jpg", frame)
+                    await websocket.send(buffer.tobytes())
+                    await asyncio.sleep(0.03)  # 1/0.03=33 ~30fps
+                    #await asyncio.sleep(0.06)  # 1/0.06=16 ~15fps
+                    #await asyncio.sleep(0.12)  # 1/0.12=8 ~8
+
+        except (websockets.exceptions.ConnectionClosedError, ConnectionRefusedError) as e:
+            print(f"❌ Connexion vidéo échouée ou perdue : {e}. Nouvelle tentative dans 2 secondes...")
+            await asyncio.sleep(2)
+
+        except Exception as e:
+            print(f"❌ Erreur vidéo inattendue : {e}. Nouvelle tentative dans 2 secondes...")
+            await asyncio.sleep(2)
+
+
+# import asyncio
+# import websockets
+# import serial
+# import json
+
+# # Configuration du port série (à adapter selon ton OS ou port réel)
+# try:
+#     arduino = serial.Serial('/dev/ttyACM0', 9600)
+#     print("✅ Port série vers Arduino ouvert.")
+# except Exception as e:
+#     print(f"❌ Erreur ouverture port série : {e}")
+#     arduino = None
+
+# host = "192.168.10.237" # adresse IP de ton serveur de contrôle ou localhost si en local
+
+# async def receive_controls():
+#     while True:
+#         try:
+#             print("Tentative de connexion au serveur contrôle...")
+#             control_uri = f"ws://{host}:8080/service/control"
+#             async with websockets.connect(control_uri) as websocket:
+#                 print("✅ Connecté au serveur contrôle.")
+#                 async for message in websocket:
+#                     print("Message reçu du serveur contrôle :", message)
+#                     try:
+#                         data = json.loads(message)
+#                         if "control_mode" in data:
+#                             commande = data["control_mode"]
+#                             print(f"➡️ Commande contrôle reçue : {commande}")
+
+#                             if arduino and arduino.is_open:
+#                                 arduino.write((commande + "\n").encode())
+#                                 print("✅ Commande envoyée à Arduino.")
+#                             else:
+#                                 print("⚠️ Port série non disponible.")
+#                     except json.JSONDecodeError:
+#                         print("❌ Erreur de décodage JSON.")
+#         except (websockets.exceptions.ConnectionClosedError, ConnectionRefusedError) as e:
+#             print(f"❌ Connexion contrôle échouée/perdue : {e} → Nouvelle tentative dans 2 sec.")
+#             await asyncio.sleep(2)
+#         except Exception as e:
+#             print(f"❌ Erreur inattendue : {e} → Nouvelle tentative dans 2 sec.")
+#             await asyncio.sleep(2)
+
+# async def main():
+#     #robot_ref = "robot_123"
+
+#     await asyncio.gather(
+#         receive_controls()
+#     )
+
+
+
+# Ouvre le port série vers Arduino (adapter le port si besoin)
+#arduino = serial.Serial('/dev/ttyACM0', 9600)
+
+async def receive_controls():
+    while True:
+        try:
+            print("Tentative de connexion au serveur contrôle...")
+            control_uri = "ws://"+host+":8080/service/control"
+            async with websockets.connect(control_uri) as websocket:
+                print("Connecté au serveur contrôle avec succès")
+                async for message in websocket:
+
+                    data = json.loads(message)
+                    if "control_mode" in data:
+                        print(f"Commande contrôle reçue: {data['control_mode']}")
+                        
+
+                        #arduino.write((data['control_mode'] + "\n").encode())
+
+
+        except (websockets.exceptions.ConnectionClosedError, ConnectionRefusedError) as e:
+            print(f"❌ Connexion contrôle échouée ou perdue : {e}. Nouvelle tentative dans 2 secondes...")
+            await asyncio.sleep(2)
+        except Exception as e:
+            print(f"❌ Erreur contrôle inattendue : {e}. Nouvelle tentative dans 2 secondes...")
+            await asyncio.sleep(2)
+
+
 import random
+
+async def simulate_sensor_data():
+    uri = "ws://"+host+":8080/service/sensor_data"
+    async with websockets.connect(uri) as ws:
+        while True:
+            data = {
+                "temperature": round(random.uniform(20, 30000), 2),
+                "humidity": round(random.uniform(50, 80), 2),
+                "co2": round(random.uniform(300, 800), 2),
+                "luminosite": round(random.uniform(100, 1000), 2),
+                "x": round(random.uniform(-180.0, 180.0), 6),  # longitude
+                "y": round(random.uniform(-90.0, 90.0), 6)     # latitude
+            }
+            await ws.send(json.dumps(data))
+            #print(f"📤 Données envoyées : {data}")
+            await asyncio.sleep(2)
+
+
+
 import uuid
 import os
 import requests
-import base64
 
-import serial
 
-# Configuration du port série (à adapter selon ton OS ou port réel)
-try:
-    arduino = serial.Serial('/dev/ttyACM0', 9600)
-    print("Port série vers Arduino ouvert.")
-except Exception as e:
-    print("Erreur ouverture port série : {}".format(e))
-    arduino = None
-
-import websocket
-import gi
-
-gi.require_version('Gst', '1.0')
-from gi.repository import Gst, GLib
-
-# Initialize GStreamer
-Gst.init(None)
-
-host = "greenertech.mywire.org"
 REFERENCE_FILE = "robot_ref.txt"
 
-
-
-
-def send_video():
-    uri = "ws://{}:8080/service/video_stream_handler".format(host)
-
-    pipeline_str = (
-        "nvarguscamerasrc sensor-id=0 ! "
-        "video/x-raw(memory:NVMM), width=640, height=480, framerate=8/1 ! "
-        "nvjpegenc ! "
-        "appsink name=sink emit-signals=true max-buffers=1 drop=true sync=false"
-    )
-
-    pipeline = Gst.parse_launch(pipeline_str)
-    appsink = pipeline.get_by_name("sink")
-
-    pipeline.set_state(Gst.State.PLAYING)
-    time.sleep(1)  # Camera warm-up
-
+def send_referance_to_api(referance):
+    data = {"nom": "R1", "referance": referance}
     try:
-        ws = websocket.create_connection(uri, ping_interval=None)
-        while True:
-            sample = appsink.emit("try-pull-sample", 500000000)
-            if not sample:
-                print("No sample received, retrying...")
-                time.sleep(0.01)
-                continue
-
-            buf = sample.get_buffer()
-            result, mapinfo = buf.map(Gst.MapFlags.READ)
-            if result:
-                jpeg_bytes = mapinfo.data
-                ws.send_binary(jpeg_bytes)  # send raw bytes
-                buf.unmap(mapinfo)
-
-            time.sleep(0.02)
-
-    except Exception as e:
-        print("Error: {}".format(e))
-
-    finally:
-        pipeline.set_state(Gst.State.NULL)
-        try:
-            ws.close()
-        except:
-            pass
-
-
-
-
-# -------------------- Video Streaming --------------------
-def send_video222():
-    uri = "ws://{}:8080/service/video_stream_handler".format(host)
-
-    # Pipeline GStreamer: capture CSI, encode en JPEG, sortie appsink
-    pipeline_str = (
-        "nvarguscamerasrc sensor-id=0 ! "
-        "video/x-raw(memory:NVMM), width=640, height=480, framerate=15/1 ! "
-        "nvjpegenc ! "
-        "appsink name=sink emit-signals=true max-buffers=1 drop=true"
-    )
-
-    pipeline = Gst.parse_launch(pipeline_str)
-    appsink = pipeline.get_by_name("sink")
-
-    # Start pipeline
-    pipeline.set_state(Gst.State.PLAYING)
-
-    try:
-        ws = websocket.create_connection(uri)
-        print("Video websocket connected")
-
-        while True:
-            sample = appsink.emit("try-pull-sample", 1000000000)  # 1s timeout
-            if sample:
-                buf = sample.get_buffer()
-                result, mapinfo = buf.map(Gst.MapFlags.READ)
-                if result:
-                    jpeg_bytes = mapinfo.data
-                    jpg_as_text = base64.b64encode(jpeg_bytes)
-                    ws.send(jpg_as_text)
-                    buf.unmap(mapinfo)
-                    time.sleep(0.06)  # ~30fps
-                else:
-                    print("No sample received, exiting.")
-                    break
-            else:
-                print("No sample received, retrying...")
-                time.sleep(1)
-
-    except Exception as e:
-        print("Video connection error: {}".format(e))
-
-    finally:
-        pipeline.set_state(Gst.State.NULL)
-        try:
-            ws.close()
-        except:
-            pass
-
-# -------------------- Control Reception --------------------
-def receive_controls():
-    uri = "ws://{}:8080/service/control".format(host)
-    while True:
-        try:
-            print("Connecting to control server...")
-            ws = websocket.create_connection(uri)
-            print("Connected to control server")
-
-            while True:
-                message = ws.recv()
-                data = json.loads(message)
-                if "control_mode" in data:
-                    print("Control command received: {}".format(data['control_mode']))
-                    # Send to Arduino if needed
-                    arduino.write((data['control_mode'] + "\n").encode())
-
-        except Exception as e:
-            print("Control connection error: {}. Retrying in 2s...".format(e))
-            time.sleep(2)
-
-# -------------------- Sensor Data Simulation --------------------
-def simulate_sensor_data():
-    uri = "ws://{}:8080/service/sensor_data".format(host)
-    while True:
-        try:
-            ws = websocket.create_connection(uri)
-            while True:
-                data = {
-                    "temperature": round(random.uniform(20, 30000), 2),
-                    "humidity": round(random.uniform(50, 80), 2),
-                    "co2": round(random.uniform(300, 800), 2),
-                    "luminosite": round(random.uniform(100, 1000), 2),
-                    "x": round(random.uniform(-180.0, 180.0), 6),
-                    "y": round(random.uniform(-90.0, 90.0), 6)
-                }
-                ws.send(json.dumps(data))
-                time.sleep(2)
-        except Exception as e:
-            print("Sensor websocket error: {}. Retrying in 2s...".format(e))
-            time.sleep(2)
-
-# -------------------- Robot Reference --------------------
-def send_reference_to_api(reference):
-    data = {"nom": "R1", "referance": reference}
-    try:
-        response = requests.post("http://{}:5000/api/robot".format(host), json=data)
+        response = requests.post("http://"+host+":5000/api/robot", json=data)
         response.raise_for_status()
-        print("Reference sent successfully: {}".format(response.status_code))
+        print(f"Reference sent successfully: {response.status_code}")
     except requests.RequestException as e:
-        print("Failed to send reference: {}".format(e))
+        print(f"Failed to send referance: {e}")
 
-def get_or_create_robot_reference():
+def get_or_create_robot_referance():
     if os.path.exists(REFERENCE_FILE):
         with open(REFERENCE_FILE, "r") as f:
             ref = f.read().strip()
             if ref:
                 return ref
 
+    # Generate new referance if not found
     new_ref = str(uuid.uuid4())
-    send_reference_to_api(new_ref)
+    send_referance_to_api(new_ref)
     with open(REFERENCE_FILE, "w") as f:
         f.write(new_ref)
     return new_ref
+    
+    
+#async def listen_missions(robot_referance):
+#    uri = f"ws://"+host+":8080/service/missions?referance={robot_referance}"
+#    async with websockets.connect(uri) as websocket:
+#        print(f"Connected to mission websocket for robot '{robot_referance}'")
+#        while True:
+#            msg = await websocket.recv()
+#            data = json.loads(msg)
+#            mission = data.get("mission")
+#            if mission:
+#                print("Received mission:", mission)
+#                # Here you can add code to handle the mission (e.g., start tasks)
+#            else:
+#                print("No mission at this time.")
+#            await asyncio.sleep(1)  # adjust sleep if needed
 
-# -------------------- Mission Listening --------------------
-def listen_missions(robot_reference):
-    uri = "ws://{}:8080/service/missions?referance={}".format(host, robot_reference)
+
+
+async def listen_missions(robot_referance):
     while True:
         try:
-            print("Connecting to mission server...")
-            ws = websocket.create_connection(uri)
-            print("Connected to mission websocket for robot '{}'".format(robot_reference))
+            print("Tentative de connexion au serveur mission...")
+            control_uri = "ws://"+host+":8080/service/missions?referance="+robot_referance
+            async with websockets.connect(control_uri) as websocket:
+                print(f"Connected to mission websocket for robot '{robot_referance}'")
+                async for msg in websocket:
 
-            while True:
-                msg = ws.recv()
-                data = json.loads(msg)
-                mission = data.get("mission")
-                if mission:
-                    print("Received mission: {}".format(mission))
-                    # Send to Arduino if needed
-                    # arduino.write((mission + "\n").encode())
-                else:
-                    print("No mission at this time.")
-                time.sleep(1)
+                    #data = json.loads(msg)
+                    data = msg
+                    #mission = data.get("mission")
+                    mission = data
+                    if mission:
+                        print("Received mission:", mission)
+                        # Here you can add code to handle the mission (e.g., start tasks)
+                        
+                        # Ouvre le port série vers Arduino (adapter le port si besoin)
+                        #arduino = serial.Serial('/dev/ttyACM0', 9600)
+                        #arduino.write((mission+ "\n").encode())
+                    else:
+                        print("No mission at this time.")
+        except (websockets.exceptions.ConnectionClosedError, ConnectionRefusedError) as e:
+            print(f"❌ Connexion mission échouée ou perdue : {e}. Nouvelle tentative dans 2 secondes...")
+            await asyncio.sleep(2)
         except Exception as e:
-            print("Mission connection error: {}. Retrying in 2s...".format(e))
-            time.sleep(2)
+            print(f"❌ Erreur mission inattendue : {e}. Nouvelle tentative dans 2 secondes...")
+            await asyncio.sleep(2)
 
-# -------------------- Main --------------------
+
+async def main():
+    #robot_ref = "robot_123"
+    robot_ref = get_or_create_robot_referance()
+    await asyncio.gather(
+        send_video(),
+        receive_controls(),
+        simulate_sensor_data(),
+        listen_missions(robot_ref) 
+        )
+    
+
 if __name__ == "__main__":
-    robot_ref = get_or_create_robot_reference()
-
-    # Start threads for all tasks
-    threading.Thread(target=send_video).start()
-    threading.Thread(target=receive_controls).start()
-    threading.Thread(target=simulate_sensor_data).start()
-    threading.Thread(target=listen_missions, args=(robot_ref,)).start()
-
+    asyncio.run(main())
