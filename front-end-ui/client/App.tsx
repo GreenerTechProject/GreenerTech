@@ -47,7 +47,6 @@ import DirectorProfileEdit from "./pages/DirectorProfileEdit";
 import DirectorMapConfig from "./pages/DirectorMapConfig";
 import DirectorHeader from "./components/DirectorHeader";
 import { MissionManagement } from "./pages/MissionManagement";
-import RobotControl from "./pages/RobotControle";
 
 const queryClient = new QueryClient();
 
