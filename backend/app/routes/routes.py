@@ -27,6 +27,7 @@ from app.controllers.alerte import (
 )
 from app.controllers.rapport import create_rapport, get_all_rapports, get_rapport, update_rapport, delete_rapport, get_rapports_by_director_entreprise
 
+
 all_bp = Blueprint('all_bp', __name__)
 all_bp.route('/register', methods=['POST'])(register)
 all_bp.route('/login', methods=['POST'])(login)
@@ -170,11 +171,12 @@ all_bp.route('/notifications/vue/<int:id>', methods=['PUT'])(mark_notification_a
 
 
 all_bp.route('/rapport', methods=['POST'])(create_rapport)
-all_bp.route('/rapport', methods=['GET'])(get_all_rapports)
-all_bp.route('/rapport/<int:id>', methods=['GET'])(get_rapport)
+# all_bp.route('/rapport', methods=['GET'])(get_all_rapports)
+all_bp.route('/rapport', methods=['GET'])(get_rapports_by_user)
 all_bp.route('/rapport/<int:id>', methods=['PUT'])(update_rapport)
 all_bp.route('/rapport/<int:id>', methods=['DELETE'])(delete_rapport)
 all_bp.route('/rapport/director-enterprise', methods=['GET'])(get_rapports_by_director_entreprise)
+
 
 
 

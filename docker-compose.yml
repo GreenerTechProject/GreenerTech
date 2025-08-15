@@ -22,7 +22,8 @@ services:
     ports:
       - "5000:5000"
     volumes:
-      - rapports_data:/app/static/rapports
+      - rapports_data:/app/app/static/rapports
+      - ./backend/app/static/images:/app/app/static/images  # ✅ bind mount host folder
     environment:
       - FLASK_ENV=development
       - DATABASE_URL=postgresql://postgres:postgres@db:5432/greenertech
@@ -43,15 +44,15 @@ services:
     ports:
       - "5433:5432"
 
-  # frontend:
-  #   build:
-  #     context: ./
-  #     dockerfile: ./frontend.Dockerfile
-  #   container_name: greenertech-frontend
-  #   ports:
-  #     - "3000:3000"
-  #   depends_on:
-  #     - backend
+  frontend:
+    build:
+      context: ./
+      dockerfile: ./frontend.Dockerfile
+    container_name: greenertech-frontend
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
 
   pgadmin:
       image: dpage/pgadmin4
