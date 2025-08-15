@@ -146,6 +146,17 @@ async def qr_data_handler(request):
     return ws
 
 
+
+
+def get_latest_qr_results():
+    return stream_data[key]["latest_qr_results"]
+
+def get_latest_frame():
+    return stream_data[key]["latest_frame"]
+
+async def index(request):
+    return web.Response(content_type="text/html", text=open("index.html", encoding="utf-8").read())
+
 async def offer(request):
     key = get_key_from_request(request)
     if request.method == "OPTIONS":
