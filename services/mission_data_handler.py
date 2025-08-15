@@ -56,7 +56,7 @@ async def mission_data_handler(request):
                 rows = await conn.fetch("""
                     SELECT * FROM missions_robot 
                     WHERE id_robot = $1 AND ( (
-                      AND EXTRACT(YEAR FROM date_debut) = $2
+                      EXTRACT(YEAR FROM date_debut) = $2
                       AND EXTRACT(MONTH FROM date_debut) = $3
                       AND EXTRACT(DAY FROM date_debut) = $4
                       AND EXTRACT(HOUR FROM date_debut) = $5
@@ -64,9 +64,9 @@ async def mission_data_handler(request):
                       AND executed = False) 
                       
                       
-                      OR rep_jour = 1 AND heure = $5 AND minute <= $6 
+                      OR ( rep_jr = 1 AND heure = $5 AND minute <= $6 )
                       
-                      OR rep_semaine = 1 AND jour = DAYOFWEEK(NOW()) AND heure = $5 AND minute <= $6 )
+                      OR ( rep_sem = 1 AND jour = EXTRACT(DOW FROM NOW()) AND heure = $5 AND minute <= $6 ) )
                     ORDER BY id DESC 
                     LIMIT 1
                     """,
