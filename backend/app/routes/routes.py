@@ -166,7 +166,7 @@ all_bp.route('/rapport', methods=['POST'])(create_rapport)
 # all_bp.route('/rapport', methods=['GET'])(get_all_rapports)
 all_bp.route('/rapport', methods=['GET'])(get_rapports_by_user)
 all_bp.route('/rapport/<int:id>', methods=['PUT'])(update_rapport)
-#all_bp.route('/rapport/<int:id>', methods=['DELETE'])(delete_rapport)
+# all_bp.route('/rapport/<int:id>', methods=['DELETE'])(delete_rapport)
 
 
 
