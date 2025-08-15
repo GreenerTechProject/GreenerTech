@@ -24,8 +24,8 @@ sensor_bounds = {}
 
 def get_key_from_request(request):
     robot_id = request.query.get("robot", "1")
-    camera_id = request.query.get("camera", "right")
-    return f"{robot_id}_{camera_id}"
+    #camera_id = request.query.get("camera", "right")
+    return f"{robot_id}"
 
 def init_bounds_for_key(key):
     if key not in sensor_bounds:
@@ -130,7 +130,7 @@ async def sensor_data_handler(request):
                     # Broadcast to all other clients
                     for client in sensor_clients:
                         if client != ws and not client.closed:
-                            await client.send_str(json.dumps({key: latest_sensor_data[key]}))
+                            await client.send_str(json.dumps(latest_sensor_data[key]))
                 except Exception as e:
                     print(f"[{key}] ❌ JSON error: {e}")
     finally:
