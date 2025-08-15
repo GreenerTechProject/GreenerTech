@@ -107,7 +107,7 @@ export default function Profile() {
   if (!userInfo) {
     return (
       <div className="min-h-screen bg-white flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600"></div>
       </div>
     );
   }
@@ -131,7 +131,7 @@ export default function Profile() {
                 navigate("/technician");
               }
             }}
-            className="text-blue-600 hover:text-blue-800"
+            className="text-green-600 hover:text-green-800"
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
             Retour
@@ -139,11 +139,11 @@ export default function Profile() {
         </div>
         
         <Card className="w-full max-w-md shadow-lg border-0">
-        {/* Blue Header with User Info */}
-        <div className="bg-blue-600 rounded-t-lg p-6 relative">
+        {/* Green Header with User Info */}
+        <div className="bg-green-600 rounded-t-lg p-6 relative">
           {/* Profile Picture Placeholder - No actual image as requested */}
           <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center mb-4 relative">
-            <div className="text-2xl font-bold text-blue-600">
+            <div className="text-2xl font-bold text-green-600">
               {userInfo.firstName ? userInfo.firstName[0] : 'U'}
               {userInfo.lastName ? userInfo.lastName[0] : ''}
             </div>
@@ -222,7 +222,7 @@ export default function Profile() {
           </Button>
           <Button
             onClick={handleEditProfile}
-            className="flex-1 bg-blue-600 hover:bg-blue-700 text-white"
+            className="flex-1 bg-green-600 hover:bg-green-700 text-white"
           >
             <Edit className="w-4 h-4 mr-2" />
             Modifier le profil
