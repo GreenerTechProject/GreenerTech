@@ -22,10 +22,10 @@ from app.controllers.mission_robot import create_mission_robot, get_mission_robo
 from app.controllers.robot import create_robot, get_robot, update_robot, get_all_robots, delete_robot
 from app.controllers.etat_bilan import create_etat_bilan, get_etat_bilan, update_etat_bilan, get_etat_bilan_by_bilan, get_last_etat_bilan_by_serre, delete_etat_bilan
 from app.controllers.alerte import (
-    get_alertes, get_alerte, create_alerte, update_alerte, delete_alerte,
+    get_alertes, get_alerte, update_alerte,
     get_alertes_by_entreprise, get_alertes_by_director_entreprise
 )
-from app.controllers.rapport import create_rapport, get_all_rapports, get_rapport, update_rapport, delete_rapport
+from app.controllers.rapport import create_rapport, get_all_rapports, get_rapport, update_rapport, delete_rapport, get_rapports_by_director_entreprise
 
 all_bp = Blueprint('all_bp', __name__)
 all_bp.route('/register', methods=['POST'])(register)
@@ -157,9 +157,7 @@ all_bp.route('/etat_bilan/<int:etat_bilan_id>', methods=['DELETE'])(delete_etat_
 
 all_bp.route('/alerte', methods=['GET'])(get_alertes)
 all_bp.route('/alerte/<int:alerte_id>', methods=['GET'])(get_alerte)
-all_bp.route('/alerte', methods=['POST'])(create_alerte)
 all_bp.route('/alerte/<int:alerte_id>', methods=['PUT'])(update_alerte)
-all_bp.route('/alerte/<int:alerte_id>', methods=['DELETE'])(delete_alerte)
 all_bp.route('/alerte/entreprise/<int:entreprise_id>', methods=['GET'])(get_alertes_by_entreprise)
 all_bp.route('/alerte/director-enterprise', methods=['GET'])(get_alertes_by_director_entreprise)
 
@@ -176,6 +174,7 @@ all_bp.route('/rapport', methods=['GET'])(get_all_rapports)
 all_bp.route('/rapport/<int:id>', methods=['GET'])(get_rapport)
 all_bp.route('/rapport/<int:id>', methods=['PUT'])(update_rapport)
 all_bp.route('/rapport/<int:id>', methods=['DELETE'])(delete_rapport)
+all_bp.route('/rapport/director-enterprise', methods=['GET'])(get_rapports_by_director_entreprise)
 
 
 

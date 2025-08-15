@@ -8,6 +8,13 @@ from sqlalchemy import func
 from app.utils.security import token_required, role_required, access_domaine_required
 from app.models.bilan import Bilan
 from app.models.guide_culture import GuideCulture
+from app.models.alerte import Alerte
+from app.models.autorisation_bilan import Autorisation_bilan
+from app.models.autorisation_serre import Autorisation_serre
+from app.models.etat_bilan import Etat_bilan
+from app.models.intervention import Intervention
+from app.models.notification import Notification
+from app.models.mission_robot import MissionRobot
 
 
 @token_required
@@ -140,52 +147,75 @@ def delete_serre(current_user, id):
     if not entreprise or domaine.id_entreprise != entreprise.id:
         return jsonify({"message": "Non autorisé"}), 403
 
-    GroupCor.query.filter_by(id_group_cor=serre.id_group_cor).delete()
-    db.session.delete(serre)
-    db.session.commit()
+    # Ensure we start with a clean transaction
+    try:
+        db.session.rollback()
+    except Exception:
+        pass
 
-    return jsonify({"message": "Serre supprimée"}), 200
+    try:
+        # Remove autorisations that reference this serre to satisfy FK constraints
+        try:
+            Autorisation_serre.query.filter_by(id_serre=serre.id).delete()
+        except Exception:
+            pass
+
+        # Remove bilans that are attached to this serre (and their coordinates)
+       
+        bilans = Bilan.query.filter_by(id_serre=serre.id).all()
+        for b in bilans:
+            # Delete alerts referencing this bilan first to satisfy FK alertes.id_bilan -> bilans.id
+            Alerte.query.filter_by(id_bilan=b.id).delete()
+            # Delete autorisations referencing this bilan to satisfy FK autorisations_bilan.id_bilan -> bilans.id
+            Autorisation_bilan.query.filter_by(id_bilan=b.id).delete()
+            # Delete etat_bilans referencing this bilan
+            Etat_bilan.query.filter_by(id_bilan=b.id).delete()
+            # Then delete the bilan's coordinates and the bilan itself
+            GroupCor.query.filter_by(id_group_cor=b.id_group_cor).delete()
+            db.session.delete(b)
+
+        # Delete culture guides linked to this serre
+        GuideCulture.query.filter_by(id_serre=serre.id).delete()
+
+        # Delete interventions linked to this serre (and notifications referencing them)
+        interventions = Intervention.query.filter_by(id_serre=serre.id).all()
+        for iv in interventions:
+            Notification.query.filter_by(id_intervention=iv.id).delete()
+            db.session.delete(iv)
+
+        # Delete robot missions linked to this serre
+        MissionRobot.query.filter_by(id_serre=serre.id).delete()
+
+        GroupCor.query.filter_by(id_group_cor=serre.id_group_cor).delete()
+        db.session.delete(serre)
+        db.session.commit()
+
+        return jsonify({"message": "Serre supprimée"}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"message": f"Delete failed: {str(e)}"}), 500
 
 
 @token_required
 @role_required("directeur", "technicien_superieur", "technicien")
-def get_bilans_by_serre(current_user, id_serre):
-    print(f"[DEBUG] get_bilans_by_serre called with user role: '{current_user.role}'")
-    print(f"[DEBUG] User ID: {current_user.id}, Serre ID: {id_serre}")
-    print(f"[DEBUG] Role type: {type(current_user.role)}")
-    print(f"[DEBUG] Role length: {len(current_user.role) if current_user.role else 'None'}")
-    print(f"[DEBUG] Role bytes: {current_user.role.encode('utf-8') if current_user.role else 'None'}")
-    
+def get_bilans_by_serre(current_user, id_serre):  
     entreprise = Entreprise.query.filter_by(id=current_user.id_entreprise).first()
     if not entreprise:
-        print(f"[DEBUG] No entreprise found for user {current_user.id}")
         return jsonify({"message": "Aucune entreprise associée"}), 404
 
     # Vérifier que la serre existe
-    serre = Serre.query.get_or_404(id_serre)
-    print(f"[DEBUG] Serre found: {serre.id}, Domain ID: {serre.id_domaine}")
-    
+    serre = Serre.query.get_or_404(id_serre)    
     # Pour les techniciens, vérifier l'autorisation d'accès à la serre
     if current_user.role == "technicien":
-        print(f"[DEBUG] User is technicien, checking serre authorization")
-        from app.models.autorisation_serre import Autorisation_serre
         auth = Autorisation_serre.query.filter_by(id_user=current_user.id, id_serre=id_serre).first()
-        print(f"[DEBUG] Authorization found: {auth}")
         if not auth :
-            print(f"[DEBUG] No authorization or no access_serre permission")
             return jsonify({"message": "Accès non autorisé à cette serre"}), 403
-        print(f"[DEBUG] Authorization check passed")
     else:
-        # Pour les directeurs et techniciens supérieurs, vérifier l'accès au domaine
-        print(f"[DEBUG] User is {current_user.role}, checking domain access")
         domaine = Domaine.query.get(serre.id_domaine)
         if not domaine or domaine.id_entreprise != entreprise.id:
-            print(f"[DEBUG] Domain access check failed")
             return jsonify({"message": "Non autorisé"}), 403
-        print(f"[DEBUG] Domain access check passed")
 
     bilans = Bilan.query.filter_by(id_serre=id_serre).all()
-    print(f"[DEBUG] Found {len(bilans)} bilans for serre {id_serre}")
     return jsonify([b.to_dict() for b in bilans]), 200
 
 @token_required
@@ -208,11 +238,6 @@ def get_guides_by_serre(current_user, id_serre):
 @token_required
 @role_required("technicien", "technicien_superieur", "directeur")
 def get_serres_by_user(current_user):
-    """
-    Get all serres assigned to the current user through autorisation_serre
-    """
-    from app.models.autorisation_serre import Autorisation_serre
-    
     # Get all autorisations for the current user
     autorisations = Autorisation_serre.query.filter_by(id_user=current_user.id).all()
     
