@@ -97,6 +97,7 @@ def update_mission_robot(current_user, mission_id):
     if date_debut and (rep_jr or rep_sem):
         return jsonify({"status": "error", "message": "Vous ne pouvez pas sélectionner la date et la répétition en même temps."}), 400
     if rep_sem and rep_sem!=0 :
+        mission.date_debut = None  
         if not jour or not heure or not minute:
             return jsonify({"status": "error", "message": "Vous devez sélectionner un jour, une heure et une minute pour la répétition hebdomadaire."}), 400
         else:
@@ -105,12 +106,14 @@ def update_mission_robot(current_user, mission_id):
             mission.minute = minute ,
     
     if rep_jr and rep_jr!=0 :
+        mission.date_debut = None
         if  not heure or not minute:
             return jsonify({"status": "error", "message": "Vous devez sélectionner  une heure et une minute pour la répétition hebdomadaire."}), 400
         else:
             mission.heure = heure , 
             mission.minute = minute ,
     if date_debut:
+        mission.date_debut = date_debut
         mission.jour =  None, # 'lundi'=1 , 'mardi'=2, etc.
         mission.heure = None , 
         mission.minute = None ,
@@ -121,7 +124,6 @@ def update_mission_robot(current_user, mission_id):
         mission.rep_jr = rep_jr 
         mission.rep_sem = rep_sem
 
-        mission.date_debut = date_debut
         mission.date_fin = data.get('date_fin', mission.date_fin)
         mission.executed = data.get('executed', mission.executed)
         mission.bilans = data.get('bilans', mission.bilans)
