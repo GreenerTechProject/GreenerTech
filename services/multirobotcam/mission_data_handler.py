@@ -66,7 +66,7 @@ async def mission_data_handler(request):
                       
                       OR ( rep_jr = 1 AND heure = $5 AND minute = $6 )
                       
-                      OR ( rep_sem = 1 AND jour = DAYOFWEEK(NOW()) AND heure = $5 AND minute = $6 ) )
+                      OR ( rep_sem = 1 AND jour = EXTRACT(DOW FROM NOW()) AND heure = $5 AND minute = $6 ) )
                     ORDER BY id DESC 
                     LIMIT 1
                     """,
