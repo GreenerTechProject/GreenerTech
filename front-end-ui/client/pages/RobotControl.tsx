@@ -540,7 +540,7 @@ export default function RobotControl() {
 			    <SelectContent>
 				  {robots.map((robot) => (
 				    <SelectItem key={robot.id} value={robot.id}>
-				  	{robot.name}
+				  	{robot.nom}
 				    </SelectItem>
 				  ))}
 			    </SelectContent>
