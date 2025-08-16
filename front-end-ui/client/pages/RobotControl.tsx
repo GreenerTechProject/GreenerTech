@@ -23,6 +23,8 @@ import {
   Camera,
   Bot
 } from 'lucide-react';
+import axios from 'axios';
+import { tokenManager } from "../services/authService";
 
 interface QRData {
   [key: string]: any;
@@ -71,30 +73,33 @@ export default function RobotControl() {
   // Add this state variable with your other state declarations
   const [robots, setRobots] = useState<Robot[]>([]);
   
+  const createAuthenticatedRequest = () => {
+  const token = tokenManager.getToken();
+  return {
+      headers: {
+        "Content-Type": "application/json",
+        ...(token && { Authorization: `Bearer ${token}` }),
+      },
+    };
+  };
+  
   // Add this function to fetch robots
   const fetchRobots = async () => {
     try {
-      const response = await fetch(`${window.location.protocol}//${window.location.hostname}:5000/api/robot`);
-      if (response.ok) {
-        const data = await response.json();
-        setRobots(data);
+      const response = await axios.get(
+        `${window.location.protocol}//${window.location.hostname}:5000/api/robot`,
+        createAuthenticatedRequest()
+      );
+      
+      if (response.data) {
+        setRobots(response.data);
       } else {
-        console.error('Failed to fetch robots');
-        // Fallback to default robots if API fails
-        setRobots([
-          { id: '1', name: 'Robot #1' },
-          { id: '2', name: 'Robot #2' },
-          { id: '3', name: 'Robot #3' }
-        ]);
+        console.error('No data received from robots API');
+        setDefaultRobots();
       }
     } catch (error) {
       console.error('Error fetching robots:', error);
-      // Fallback to default robots if API fails
-      setRobots([
-        { id: '1', name: 'Robot #1' },
-        { id: '2', name: 'Robot #2' },
-        { id: '3', name: 'Robot #3' }
-      ]);
+      setDefaultRobots();
     }
   };
   
