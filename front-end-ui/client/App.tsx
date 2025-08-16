@@ -19,6 +19,7 @@ import VerifyEmail from "./pages/VerifyEmail";
 import TechnicienRegistration from "./pages/TechnicienRegistration";
 import DirecteurSetup from "./pages/DirecteurSetup";
 import TechnicianDashboard from "./pages/TechnicianDashboard";
+import TechnicianMap from "./pages/TechnicianMap";
 import TechnicienSupDashboard from "./pages/TechnicienSupDashboard";
 import TechnicienSupAlerts from "./pages/TechnicienSupAlerts";
 import TechnicienSupInterventions from "./pages/TechnicienSupInterventions";
@@ -214,13 +215,24 @@ const App = () => (
               path="/technician"
               element={
                 <ProtectedRoute requiredRole="technicien">
-                  <TechnicianDashboard />
+                  <TechnicianMap />
                 </ProtectedRoute>
               }
             />
 
             <Route
-              path="/technician-dashboard"
+              path="/technician/map"
+              element={
+                <ProtectedRoute requiredRole="technicien">
+                  <Navigate to="/technician" replace />
+                </ProtectedRoute>
+              }
+            />
+
+           
+
+            <Route
+              path="/technician/dashboard"
               element={
                 <ProtectedRoute requiredRole="technicien">
                   <TechnicianDashboard />

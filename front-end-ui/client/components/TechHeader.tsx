@@ -53,14 +53,14 @@ export default function TechHeader({ role }: TechHeaderProps) {
           <div className="justify-self-center flex items-center gap-2 sm:gap-3">
             <div 
               className="h-8 w-8 sm:h-9 sm:w-9 lg:h-10 lg:w-10 rounded-xl bg-[#B4CC5F] flex items-center justify-center shadow-sm cursor-pointer hover:bg-[#9BB84F] transition-colors duration-200 active:scale-95"
-              onClick={() => navigate(role === "technicien_sup" ? "/technicien-sup/home" : "/technician")}
+              onClick={() => navigate(role === "technicien_sup" ? "/technicien-sup/home" : "/technician/dashboard")}
               title="Accueil - Tableau de bord"
             >
               <Home className="h-4 w-4 sm:h-5 sm:w-5 lg:h-6 lg:w-6 text-white" />
             </div>
             <div 
               className="cursor-pointer hover:scale-110 transition-transform duration-200 active:scale-95"
-              onClick={() => navigate(role === "technicien_sup" ? "/technicien-sup" : "/technician")}
+              onClick={() => navigate(role === "technicien_sup" ? "/technicien-sup" : "/technician/map")}
               title="Carte - Vue d'ensemble"
             >
               <Map className="h-4 w-4 sm:h-5 sm:w-5 lg:h-6 lg:w-6 text-blue-700" />

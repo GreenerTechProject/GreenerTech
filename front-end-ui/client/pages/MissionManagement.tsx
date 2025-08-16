@@ -16,10 +16,11 @@ import { serreService } from '../services/serreService';
 import { toast } from 'sonner';
 import { MissionCreation } from '../components/MissionCreation';
 
+// Define Mission interface to match the service
 interface Mission {
   id: number;
   id_robot: number;
-  id_serre: number;
+  id_serre: string;
   rep_jr: number;
   rep_sem: number;
   date_debut: string;
@@ -34,9 +35,23 @@ interface Robot {
 }
 
 interface Serre {
-  id: number;
+  id: string;
   nom: string;
-  id_domaine: number;
+  surface: number;
+  domainId: string;
+  guideId: string;
+  position: google.maps.LatLng[];
+  center: google.maps.LatLng;
+  guide?: {
+    id: string;
+    nom: string;
+    variete: string;
+    rendement: number;
+    date_debut_saison: Date | string;
+    date_fin_saison: Date | string;
+    irrigationType?: string;
+    notes?: string;
+  };
 }
 
 export const MissionManagement: React.FC = () => {
@@ -62,9 +77,13 @@ export const MissionManagement: React.FC = () => {
       const missionsData = await missionService.getAllMissions();
       console.log('Missions data received:', missionsData);
       
-      // Ensure missionsData is an array
+      // Ensure missionsData is an array and convert id_serre to string
       if (Array.isArray(missionsData)) {
-        setMissions(missionsData);
+        const convertedMissions = missionsData.map(mission => ({
+          ...mission,
+          id_serre: mission.id_serre.toString()
+        }));
+        setMissions(convertedMissions);
       } else {
         console.error('Expected array but received:', typeof missionsData, missionsData);
         setMissions([]);
@@ -135,7 +154,7 @@ export const MissionManagement: React.FC = () => {
     return robot ? `${robot.nom} (${robot.referance})` : 'Robot inconnu';
   };
 
-  const getSerreName = (serreId: number) => {
+  const getSerreName = (serreId: string) => {
     if (!Array.isArray(serres)) return 'Serre inconnue';
     const serre = serres.find(s => s.id === serreId);
     return serre ? serre.nom : 'Serre inconnue';

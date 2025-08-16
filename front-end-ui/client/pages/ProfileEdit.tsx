@@ -184,7 +184,7 @@ export default function ProfileEdit() {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto"></div>
           <p className="mt-4 text-gray-600">Chargement du profil...</p>
         </div>
       </div>
@@ -232,7 +232,7 @@ export default function ProfileEdit() {
               navigate("/technicien/profile");
             }
           }}
-          className="mb-6 text-primary hover:text-primary/80"
+          className="mb-6 text-green-600 hover:text-green-800"
         >
           <ChevronLeft className="w-4 h-4 mr-2" />
           Retour au profil
@@ -458,7 +458,7 @@ export default function ProfileEdit() {
                 <Button 
                   type="submit"
                   disabled={saving}
-                  className="bg-[#004AB3] hover:bg-[#003d96] text-white font-medium"
+                  className="bg-green-600 hover:bg-green-700 text-white font-medium"
                 >
                   {saving ? (
                     <>

@@ -221,7 +221,7 @@ export default function DirecteurSetup() {
           email: technician.email,
           role: technician.role,
           assignedSerres: technician.assignedSerres,
-          companyId: companyId,
+          companyId: parseInt(companyId.toString(), 10),
         }));
 
         console.log("Creating technicians:", technicianRequests);

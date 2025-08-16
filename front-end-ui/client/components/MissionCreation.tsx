@@ -28,8 +28,9 @@ interface Robot {
 interface Serre {
   id: number;
   nom: string;
-  id_domaine: number;
+  id_domaine?: number; // Make optional since ExtendedSerre doesn't have it
   surface?: number;
+  domaine_nom?: string; // Add this property that ExtendedSerre has
 }
 
 interface MissionFormData {
@@ -71,7 +72,9 @@ export const MissionCreation: React.FC<MissionCreationProps> = ({ onMissionCreat
 
   const fetchSerres = async () => {
     try {
-      const serresData = await serreService.getAllSerres();
+      // For technicians, only show serres they have access to
+      const serresData = await serreService.getSerresByCurrentUser();
+      console.log('Serres disponibles pour l\'utilisateur:', serresData);
       setSerres(serresData);
     } catch (error: any) {
       console.error('Erreur lors de la récupération des serres:', error);
@@ -136,7 +139,7 @@ export const MissionCreation: React.FC<MissionCreationProps> = ({ onMissionCreat
       <CardHeader>
         <CardTitle>Créer une nouvelle mission</CardTitle>
         <CardDescription>
-          Configurez une mission pour un robot dans une serre spécifique
+          Configurez une mission pour un robot dans une serre à laquelle vous avez accès
         </CardDescription>
       </CardHeader>
       <CardContent>
