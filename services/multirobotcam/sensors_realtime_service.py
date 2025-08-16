@@ -14,7 +14,7 @@ stream_data = get_stream_data()
 load_dotenv()
 
 # Set of connected sensor/dashboard clients
-sensor_clients = set()
+sensor_clients = {}
 
 # Latest sensor data per robot-camera key
 latest_sensor_data = {}
@@ -23,9 +23,7 @@ latest_sensor_data = {}
 sensor_bounds = {}
 
 def get_key_from_request(request):
-    robot_id = request.query.get("robot", "1")
-    #camera_id = request.query.get("camera", "right")
-    return f"{robot_id}"
+    return request.query.get("robot", "1")
 
 def init_bounds_for_key(key):
     if key not in sensor_bounds:
@@ -53,7 +51,7 @@ async def sensor_data_handler(request):
     init_bounds_for_key(key)
     ws = web.WebSocketResponse()
     await ws.prepare(request)
-    sensor_clients.add(ws)
+    sensor_clients[ws] = key
     print(f"📡 New sensor/dashboard client connected ({key})")
     try:
         async for msg in ws:
@@ -128,13 +126,13 @@ async def sensor_data_handler(request):
                             await asyncio.sleep(5)
 
                     # Broadcast to all other clients
-                    for client in sensor_clients:
-                        if client != ws and not client.closed:
-                            await client.send_str(json.dumps(latest_sensor_data[key]))
+                    for client_ws, client_robot_id in sensor_clients.items():
+                        if client_ws != ws and not client_ws.closed and client_robot_id == key:
+                            await client_ws.send_str(json.dumps(latest_sensor_data[key]))
                 except Exception as e:
                     print(f"[{key}] ❌ JSON error: {e}")
     finally:
-        sensor_clients.discard(ws)
+        control_clients.pop(ws, None)
         print(f"🔌 Client disconnected ({key})")
     return ws
 
