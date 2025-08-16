@@ -74,8 +74,7 @@ export default function RobotControl() {
   // Add this function to fetch robots
   const fetchRobots = async () => {
     try {
-      //const response = await fetch(`${window.location.protocol}//${window.location.hostname}:5000/api/robot`);
-      const response = await fetch(`http://greenertech2.mywire.org:5000/api/robot`);
+      const response = await fetch(`${window.location.protocol}//${window.location.hostname}:5000/api/robot`);
       if (response.ok) {
         const data = await response.json();
         setRobots(data);
