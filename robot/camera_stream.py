@@ -49,8 +49,8 @@ async def send_video(robot_ref, camera, idcamera):
                     _, buffer = cv2.imencode(".jpg", frame)
                     await websocket.send(buffer.tobytes())
                     #await asyncio.sleep(0.03)  # 1/0.03=33 ~30fps
-                    #await asyncio.sleep(0.06)  # 1/0.06=16 ~15fps
-                    await asyncio.sleep(0.12)  # 1/0.12=8 ~8
+                    await asyncio.sleep(0.06)  # 1/0.06=16 ~15fps
+                    #await asyncio.sleep(0.12)  # 1/0.12=8 ~8
 
         except (websockets.exceptions.ConnectionClosedError, ConnectionRefusedError) as e:
             print(f"❌ Connexion vidéo échouée ou perdue : {e}. Nouvelle tentative dans 2 secondes...")
