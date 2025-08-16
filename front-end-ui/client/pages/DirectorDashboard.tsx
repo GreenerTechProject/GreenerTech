@@ -6,6 +6,9 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import DirectorSidebar from "../components/DirectorSidebar";
+import DirectorHeader from "@/components/DirectorHeader";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   Users,
   Wrench,
@@ -19,9 +22,23 @@ import {
   Activity,
   BarChart3,
   Calendar,
-  Menu
+  Menu,
+  Home,
+  Map,
+  ChevronDown,
+  User,
+  LogOut,
+  Building2,
+  Leaf
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useNavigate } from "react-router-dom";
+import { technicianService, Technician } from "../services/technicianService";
+import { InterventionService, Intervention } from "../services/interventionService";
+import { AlertService } from "../services/alertService";
+import { domainService, Domain } from "../services/domainService";
+import { serreService } from "../services/serreService";
+import { ResponsiveContainer, AreaChart, Area, CartesianGrid, XAxis, YAxis, Tooltip, Legend } from "recharts";
 
 interface StatCard {
   title: string;
@@ -33,106 +50,239 @@ interface StatCard {
   description?: string;
 }
 
+interface DashboardStats {
+  totalTechnicians: number;
+  activeTechnicians: number;
+  pendingTechnicians: number;
+  totalInterventions: number;
+  completedInterventions: number;
+  pendingInterventions: number;
+  totalAlerts: number;
+  criticalAlerts: number;
+  totalDomains: number;
+  totalSerres: number;
+}
+
 export default function DirectorDashboard() {
   const { user, logout } = useAuth();
   const { isOpen, setIsOpen, toggleSidebar } = useSidebar();
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
-  const [stats, setStats] = useState<StatCard[]>([
-    {
-      title: "Techniciens actifs",
-      value: 24,
-      change: "+2 ce mois",
-      trend: "up",
-      icon: Users,
-      color: "blue",
-      description: "Techniciens et superviseurs"
-    },
-    {
-      title: "Interventions en cours",
-      value: 18,
-      change: "+5 aujourd'hui",
-      trend: "up",
-      icon: Wrench,
-      color: "green",
-      description: "Interventions assignées"
-    },
-    {
-      title: "Alertes actives",
-      value: 7,
-      change: "-3 depuis hier",
-      trend: "down",
-      icon: AlertTriangle,
-      color: "red",
-      description: "Nécessitent attention"
-    },
-    {
-      title: "Rapports générés",
-      value: 156,
-      change: "+12 cette semaine",
-      trend: "up",
-      icon: FileText,
-      color: "purple",
-      description: "Rapports d'intervention"
-    }
-  ]);
-
-  const recentActivities = [
-    {
-      id: 1,
-      type: "intervention",
-      message: "Nouvelle intervention assignée à Marie Dubois",
-      time: "Il y a 2 heures",
-      status: "info"
-    },
-    {
-      id: 2,
-      type: "alert",
-      message: "Alerte température critique - Serre B23",
-      time: "Il y a 3 heures",
-      status: "warning"
-    },
-    {
-      id: 3,
-      type: "affiliation",
-      message: "Demande d'affiliation approuvée - Jean Martin",
-      time: "Il y a 5 heures",
-      status: "success"
-    },
-    {
-      id: 4,
-      type: "report",
-      message: "Rapport d'intervention complété",
-      time: "Il y a 1 jour",
-      status: "info"
-    }
-  ];
-
-  const pendingTasks = [
-    {
-      id: 1,
-      title: "Valider 3 demandes d'affiliation",
-      priority: "high",
-      dueDate: "Aujourd'hui"
-    },
-    {
-      id: 2,
-      title: "Réviser les alertes de température",
-      priority: "medium",
-      dueDate: "Demain"
-    },
-    {
-      id: 3,
-      title: "Approuver les rapports hebdomadaires",
-      priority: "low",
-      dueDate: "Cette semaine"
-    }
-  ];
+  const [refreshing, setRefreshing] = useState(false);
+  const [stats, setStats] = useState<StatCard[]>([]);
+  const [recentActivities, setRecentActivities] = useState<any[]>([]);
+  const [pendingTasks, setPendingTasks] = useState<any[]>([]);
+  const [error, setError] = useState<string | null>(null);
+  const [monthlyCharges, setMonthlyCharges] = useState<{ month: string; amount: number }[]>([]);
+  const [dashboardStats, setDashboardStats] = useState<DashboardStats>({
+    totalTechnicians: 0,
+    activeTechnicians: 0,
+    pendingTechnicians: 0,
+    totalInterventions: 0,
+    completedInterventions: 0,
+    pendingInterventions: 0,
+    totalAlerts: 0,
+    criticalAlerts: 0,
+    totalDomains: 0,
+    totalSerres: 0
+  });
 
   useEffect(() => {
-    // Simulate loading data
-    const timer = setTimeout(() => setLoading(false), 1000);
-    return () => clearTimeout(timer);
+    fetchDashboardData();
   }, []);
+
+  const fetchDashboardData = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      // Fetch all data in parallel
+      const [
+        technicians,
+        interventions,
+        alerts,
+        domains,
+        serres
+      ] = await Promise.all([
+        technicianService.getTechniciansByCompany(user?.id_entreprise || 0),
+        InterventionService.getAllInterventions(),
+        AlertService.getAllAlerts(1, 100),
+        domainService.getMyCompanyDomains(),
+        serreService.getAllSerres()
+      ]);
+
+      // Calculate statistics
+      const totalTechnicians = technicians.length;
+      const activeTechnicians = technicians.filter(t => t.directeur_valide && t.email_valide).length;
+      const pendingTechnicians = technicians.filter(t => !t.directeur_valide).length;
+
+      const totalInterventions = interventions.length;
+      const completedInterventions = interventions.filter(i => (i as any).status === 'terminé' || (i as any).statut === 'terminé').length;
+      const pendingInterventions = interventions.filter(i => (i as any).status === 'encours' || (i as any).statut === 'encours').length;
+
+      const totalAlerts = alerts.alerts?.length || 0;
+      const criticalAlerts = alerts.alerts?.filter((a: any) => a.status_alert === 2).length || 0;
+
+      const totalDomains = domains.length;
+      const totalSerres = serres.length || 0;
+
+      const newStats: StatCard[] = [
+        {
+          title: "Techniciens actifs",
+          value: activeTechnicians,
+          change: `${pendingTechnicians} en attente`,
+          trend: pendingTechnicians > 0 ? "up" : "neutral",
+          icon: Users,
+          color: "blue",
+          description: `${totalTechnicians} total`
+        },
+        {
+          title: "Interventions en cours",
+          value: pendingInterventions,
+          change: `${completedInterventions} terminées`,
+          trend: pendingInterventions > 0 ? "up" : "neutral",
+          icon: Wrench,
+          color: "green",
+          description: `${totalInterventions} total`
+        },
+        {
+          title: "Alertes actives",
+          value: totalAlerts,
+          change: `${criticalAlerts} critiques`,
+          trend: criticalAlerts > 0 ? "up" : "down",
+          icon: AlertTriangle,
+          color: "red",
+          description: "Nécessitent attention"
+        },
+        {
+          title: "Infrastructure",
+          value: totalDomains + totalSerres,
+          change: `${totalDomains} domaines, ${totalSerres} serres`,
+          trend: "up",
+          icon: Building2,
+          color: "purple",
+          description: "Domaines et serres"
+        }
+      ];
+
+      setStats(newStats);
+      setDashboardStats({
+        totalTechnicians,
+        activeTechnicians,
+        pendingTechnicians,
+        totalInterventions,
+        completedInterventions,
+        pendingInterventions,
+        totalAlerts,
+        criticalAlerts,
+        totalDomains,
+        totalSerres
+      });
+
+      // Compute monthly charges from interventions
+      try {
+        const monthlyMap: Record<string, number> = {};
+        (interventions as any[]).forEach((i: any) => {
+          const when = i?.date_fin || i?.date_debut || i?.created_at;
+          if (!when) return;
+          const key = new Date(when).toISOString().slice(0, 7); // YYYY-MM
+          const amount = Number(i?.total_charges) || 0;
+          monthlyMap[key] = (monthlyMap[key] || 0) + amount;
+        });
+        const months = Object.keys(monthlyMap).sort();
+        const monthlyData = months.map((m) => ({
+          month: new Date(`${m}-01T00:00:00Z`).toLocaleString("fr-FR", { month: "short", year: "numeric" }),
+          amount: monthlyMap[m],
+        }));
+        setMonthlyCharges(monthlyData);
+      } catch (_) {
+        setMonthlyCharges([]);
+      }
+
+      // Generate recent activities from real data
+      const activities = [];
+      
+      if (pendingTechnicians > 0) {
+        activities.push({
+          id: 1,
+          type: "affiliation",
+          message: `${pendingTechnicians} demande(s) d'affiliation en attente`,
+          time: "À traiter",
+          status: "warning"
+        });
+      }
+
+      if (criticalAlerts > 0) {
+        activities.push({
+          id: 2,
+          type: "alert",
+          message: `${criticalAlerts} alerte(s) critique(s) nécessitent attention`,
+          time: "Urgent",
+          status: "warning"
+        });
+      }
+
+      if (pendingInterventions > 0) {
+        activities.push({
+          id: 3,
+          type: "intervention",
+          message: `${pendingInterventions} intervention(s) en cours`,
+          time: "En cours",
+          status: "info"
+        });
+      }
+
+      if (completedInterventions > 0) {
+        activities.push({
+          id: 4,
+          type: "report",
+          message: `${completedInterventions} intervention(s) terminée(s) ce mois`,
+          time: "Ce mois",
+          status: "success"
+        });
+      }
+
+      setRecentActivities(activities);
+
+      // Generate pending tasks from real data
+      const tasks = [];
+      
+      if (pendingTechnicians > 0) {
+        tasks.push({
+          id: 1,
+          title: `Valider ${pendingTechnicians} demande(s) d'affiliation`,
+          priority: "high",
+          dueDate: "Aujourd'hui"
+        });
+      }
+
+      if (criticalAlerts > 0) {
+        tasks.push({
+          id: 2,
+          title: `Traiter ${criticalAlerts} alerte(s) critique(s)`,
+          priority: "high",
+          dueDate: "Immédiat"
+        });
+      }
+
+      if (pendingInterventions > 0) {
+        tasks.push({
+          id: 3,
+          title: `Suivre ${pendingInterventions} intervention(s) en cours`,
+          priority: "medium",
+          dueDate: "Cette semaine"
+        });
+      }
+
+      setPendingTasks(tasks);
+
+    } catch (error: any) {
+      console.error("Error fetching dashboard data:", error);
+      setError(error.message || "Erreur lors du chargement des données");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const getStatColor = (color: string) => {
     const colors = {
@@ -177,6 +327,37 @@ export default function DirectorDashboard() {
     return colors[priority as keyof typeof colors] || colors.low;
   };
 
+  const handleProfile = () => {
+    navigate("/directeur/profile");
+  };
+
+  const handleLogout = async () => {
+    await logout();
+  };
+
+  const handleMapConfig = () => {
+    navigate("/directeur/map-config");
+  };
+
+  const handleAddTechnician = () => {
+    navigate("/directeur/technician-management");
+  };
+
+  const handleCreateIntervention = () => {
+    navigate("/directeur/intervention-management");
+  };
+
+  const handleGenerateReport = () => {
+    navigate("/directeur/report-management");
+  };
+
+  const handleRefresh = async () => {
+    if (refreshing) return;
+    setRefreshing(true);
+    await fetchDashboardData();
+    setRefreshing(false);
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex">
@@ -196,44 +377,38 @@ export default function DirectorDashboard() {
       <DirectorSidebar isOpen={isOpen} setIsOpen={setIsOpen} />
       
       <div className="flex-1 transition-all duration-300">
-        {/* Header */}
-        <header className="bg-white shadow-sm border-b sticky top-0 z-30">
-          <div className="px-4 sm:px-6 lg:px-8">
-            <div className="flex justify-between items-center py-4">
-              <div className="flex items-center space-x-4">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={toggleSidebar}
-                  className="lg:hidden"
-                >
-                  <Menu className="h-5 w-5" />
-                </Button>
-                <div>
-                  <h1 className="text-xl font-semibold text-gray-900">
-                    Tableau de bord directeur
-                  </h1>
-                  <p className="text-sm text-gray-600">
-                    Bienvenue, {user?.name || user?.email}
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-center space-x-3">
-                <Badge variant="outline" className="bg-green-50 border-green-200 text-green-700">
-                  <Calendar className="h-3 w-3 mr-1" />
-                  {new Date().toLocaleDateString('fr-FR')}
-                </Badge>
-                <Button size="sm" className="bg-green-600 hover:bg-green-700">
-                  <BarChart3 className="h-4 w-4 mr-1" />
-                  Rapport général
-                </Button>
-              </div>
-            </div>
-          </div>
-        </header>
+        <DirectorHeader isSidebarOpen={isOpen} onMenuClick={() => setIsOpen(!isOpen)} />
 
         {/* Dashboard Content */}
         <main className="p-4 sm:p-6 lg:p-8 space-y-6">
+          {/* Header with Refresh Button */}
+          <div className="flex justify-between items-center">
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">Tableau de bord</h1>
+              <p className="text-gray-600">Vue d'ensemble de votre entreprise</p>
+            </div>
+            <div className="flex items-center space-x-4">
+              {error && (
+                <div className="px-4 py-2 bg-red-50 border border-red-200 rounded-lg">
+                  <p className="text-sm text-red-700">{error}</p>
+                </div>
+              )}
+              <Button onClick={handleRefresh} variant="outline" className="flex items-center space-x-2" disabled={refreshing}>
+                {refreshing ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-green-600"></div>
+                    <span>Actualisation...</span>
+                  </>
+                ) : (
+                  <>
+                    <Activity className="h-4 w-4" />
+                    <span>Actualiser</span>
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
+
           {/* Statistics Cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {stats.map((stat, index) => {
@@ -258,11 +433,13 @@ export default function DirectorDashboard() {
                       <div className="flex items-center space-x-1">
                         <TrendIcon className={cn(
                           "h-4 w-4",
-                          stat.trend === "up" ? "text-green-600" : "text-red-600"
+                          stat.trend === "up" ? "text-green-600" : 
+                          stat.trend === "down" ? "text-red-600" : "text-gray-600"
                         )} />
                         <span className={cn(
                           "text-sm font-medium",
-                          stat.trend === "up" ? "text-green-600" : "text-red-600"
+                          stat.trend === "up" ? "text-green-600" : 
+                          stat.trend === "down" ? "text-red-600" : "text-gray-600"
                         )}>
                           {stat.change}
                         </span>
@@ -277,6 +454,37 @@ export default function DirectorDashboard() {
             })}
           </div>
 
+          {/* Monthly Charges Chart - placed first after stats */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Charges mensuelles des interventions (MAD)</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {monthlyCharges.length > 0 ? (
+                <div className="w-full h-80">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={monthlyCharges} margin={{ top: 10, right: 24, left: 0, bottom: 0 }}>
+                      <defs>
+                        <linearGradient id="colorCharges" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="0%" stopColor="#0ea5e9" stopOpacity={0.35} />
+                          <stop offset="100%" stopColor="#0ea5e9" stopOpacity={0.05} />
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                      <XAxis dataKey="month" tickMargin={8} />
+                      <YAxis tickMargin={8} tickFormatter={(v) => `MAD ${Number(v).toLocaleString("fr-MA")}`} />
+                      <Tooltip formatter={(value: any) => [`MAD ${Number(value).toLocaleString("fr-MA")}`, "Charges"]} />
+                      <Legend />
+                      <Area type="monotone" dataKey="amount" name="Charges (MAD)" stroke="#0ea5e9" strokeWidth={2} fill="url(#colorCharges)" />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </div>
+              ) : (
+                <div className="text-sm text-gray-500">Aucune donnée de charges disponible.</div>
+              )}
+            </CardContent>
+          </Card>
+
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Recent Activities */}
             <Card className="lg:col-span-2">
@@ -287,30 +495,37 @@ export default function DirectorDashboard() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
-                  {recentActivities.map((activity) => {
-                    const ActivityIcon = getActivityIcon(activity.type);
-                    return (
-                      <div key={activity.id} className="flex items-start space-x-3 p-3 hover:bg-gray-50 rounded-lg">
-                        <div className={cn(
-                          "p-2 rounded-full",
-                          activity.status === "warning" ? "bg-yellow-100" :
-                          activity.status === "success" ? "bg-green-100" : "bg-blue-100"
-                        )}>
-                          <ActivityIcon className={cn(
-                            "h-4 w-4",
-                            activity.status === "warning" ? "text-yellow-600" :
-                            activity.status === "success" ? "text-green-600" : "text-blue-600"
-                          )} />
+                {recentActivities.length > 0 ? (
+                  <div className="space-y-4">
+                    {recentActivities.map((activity) => {
+                      const ActivityIcon = getActivityIcon(activity.type);
+                      return (
+                        <div key={activity.id} className="flex items-start space-x-3 p-3 hover:bg-gray-50 rounded-lg">
+                          <div className={cn(
+                            "p-2 rounded-full",
+                            activity.status === "warning" ? "bg-yellow-100" :
+                            activity.status === "success" ? "bg-green-100" : "bg-blue-100"
+                          )}>
+                            <ActivityIcon className={cn(
+                              "h-4 w-4",
+                              activity.status === "warning" ? "text-yellow-600" :
+                              activity.status === "success" ? "text-green-600" : "text-blue-600"
+                            )} />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-gray-900">{activity.message}</p>
+                            <p className="text-xs text-gray-500">{activity.time}</p>
+                          </div>
                         </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium text-gray-900">{activity.message}</p>
-                          <p className="text-xs text-gray-500">{activity.time}</p>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="text-center py-8 text-gray-500">
+                    <Activity className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                    <p>Aucune activité récente</p>
+                  </div>
+                )}
               </CardContent>
             </Card>
 
@@ -323,23 +538,128 @@ export default function DirectorDashboard() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-3">
-                  {pendingTasks.map((task) => (
-                    <div key={task.id} className="p-3 border border-gray-200 rounded-lg hover:border-gray-300 transition-colors">
-                      <div className="flex items-center justify-between mb-2">
-                        <Badge variant="outline" className={getPriorityColor(task.priority)}>
-                          {task.priority === "high" ? "Urgent" : 
-                           task.priority === "medium" ? "Moyen" : "Bas"}
-                        </Badge>
-                        <span className="text-xs text-gray-500">{task.dueDate}</span>
+                {pendingTasks.length > 0 ? (
+                  <div className="space-y-3">
+                    {pendingTasks.map((task) => (
+                      <div key={task.id} className="p-3 border border-gray-200 rounded-lg hover:border-gray-300 transition-colors">
+                        <div className="flex items-center justify-between mb-2">
+                          <Badge variant="outline" className={getPriorityColor(task.priority)}>
+                            {task.priority === "high" ? "Urgent" : 
+                             task.priority === "medium" ? "Moyen" : "Bas"}
+                          </Badge>
+                          <span className="text-xs text-gray-500">{task.dueDate}</span>
+                        </div>
+                        <p className="text-sm font-medium text-gray-900">{task.title}</p>
                       </div>
-                      <p className="text-sm font-medium text-gray-900">{task.title}</p>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8 text-gray-500">
+                    <CheckCircle className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                    <p>Aucune tâche en attente</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Additional Real-time Data */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Recent Interventions */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center space-x-2">
+                  <Wrench className="h-5 w-5" />
+                  <span>Interventions récentes</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {dashboardStats.pendingInterventions > 0 ? (
+                    <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-medium text-yellow-800">
+                          {dashboardStats.pendingInterventions} intervention(s) en cours
+                        </span>
+                        <Badge variant="outline" className="bg-yellow-100 text-yellow-700">
+                          En cours
+                        </Badge>
+                      </div>
                     </div>
-                  ))}
+                  ) : (
+                    <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-medium text-green-800">
+                          Toutes les interventions sont terminées
+                        </span>
+                        <Badge variant="outline" className="bg-green-100 text-green-700">
+                          À jour
+                        </Badge>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {dashboardStats.completedInterventions > 0 && (
+                    <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-medium text-blue-800">
+                          {dashboardStats.completedInterventions} intervention(s) terminée(s)
+                        </span>
+                        <Badge variant="outline" className="bg-blue-100 text-blue-700">
+                          Terminé
+                        </Badge>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Infrastructure Overview */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center space-x-2">
+                  <Building2 className="h-5 w-5" />
+                  <span>Infrastructure</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                    <div className="flex items-center space-x-2">
+                      <Map className="h-5 w-5 text-blue-600" />
+                      <span className="text-sm font-medium text-blue-800">Domaines</span>
+                    </div>
+                    <Badge variant="outline" className="bg-blue-100 text-blue-700">
+                      {dashboardStats.totalDomains}
+                    </Badge>
+                  </div>
+                  
+                  <div className="flex items-center justify-between p-3 bg-green-50 border border-green-200 rounded-lg">
+                    <div className="flex items-center space-x-2">
+                      <Leaf className="h-5 w-5 text-green-600" />
+                      <span className="text-sm font-medium text-green-800">Serres</span>
+                    </div>
+                    <Badge variant="outline" className="bg-green-100 text-green-700">
+                      {dashboardStats.totalSerres}
+                    </Badge>
+                  </div>
+                  
+                  <div className="flex items-center justify-between p-3 bg-purple-50 border border-purple-200 rounded-lg">
+                    <div className="flex items-center space-x-2">
+                      <Users className="h-5 w-5 text-purple-600" />
+                      <span className="text-sm font-medium text-purple-800">Techniciens</span>
+                    </div>
+                    <Badge variant="outline" className="bg-purple-100 text-purple-700">
+                      {dashboardStats.totalTechnicians}
+                    </Badge>
+                  </div>
                 </div>
               </CardContent>
             </Card>
           </div>
+
+          
 
           {/* Quick Actions */}
           <Card>
@@ -348,19 +668,19 @@ export default function DirectorDashboard() {
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                <Button variant="outline" className="h-20 flex flex-col space-y-2">
+                <Button variant="outline" className="h-20 flex flex-col space-y-2" onClick={handleAddTechnician}>
                   <Users className="h-6 w-6" />
                   <span className="text-sm">Ajouter technicien</span>
                 </Button>
-                <Button variant="outline" className="h-20 flex flex-col space-y-2">
+                <Button variant="outline" className="h-20 flex flex-col space-y-2" onClick={handleCreateIntervention}>
                   <Wrench className="h-6 w-6" />
                   <span className="text-sm">Créer intervention</span>
                 </Button>
-                <Button variant="outline" className="h-20 flex flex-col space-y-2">
-                  <AlertTriangle className="h-6 w-6" />
-                  <span className="text-sm">Voir alertes</span>
+                <Button variant="outline" className="h-20 flex flex-col space-y-2" onClick={handleMapConfig}>
+                  <Map className="h-6 w-6" />
+                  <span className="text-sm">Configuration carte</span>
                 </Button>
-                <Button variant="outline" className="h-20 flex flex-col space-y-2">
+                <Button variant="outline" className="h-20 flex flex-col space-y-2" onClick={handleGenerateReport}>
                   <FileText className="h-6 w-6" />
                   <span className="text-sm">Générer rapport</span>
                 </Button>

@@ -3,7 +3,9 @@ from app.models.bilan import Bilan
 from app.models.points_gps import GroupCor
 from database.config import db
 from app.utils.security import token_required, role_required, access_serre_required, access_bilan_required
-#from app.models.entreprise import Entreprise
+from app.models.alerte import Alerte
+from app.models.autorisation_bilan import Autorisation_bilan
+from app.models.etat_bilan import Etat_bilan
 from app.models.serre import Serre
 from sqlalchemy import func
 
@@ -131,6 +133,10 @@ def delete_bilan(current_user, id):
     #if not entreprise or bilan.id_entreprise != entreprise.id:
     #    return jsonify({"message": "Non autorisé"}), 403
 
+    # Cascade: alertes, autorisations_bilan, etat_bilans, then coords and bilan
+    Alerte.query.filter_by(id_bilan=bilan.id).delete()
+    Autorisation_bilan.query.filter_by(id_bilan=bilan.id).delete()
+    Etat_bilan.query.filter_by(id_bilan=bilan.id).delete()
     GroupCor.query.filter_by(id_group_cor=bilan.id_group_cor).delete()
     db.session.delete(bilan)
     db.session.commit()

@@ -3,6 +3,12 @@ from datetime import datetime, timedelta, timezone
 from functools import wraps
 from flask import request, jsonify, current_app
 from app.models.user import User
+from app.models.autorisation_domaine import Autorisation_domaine
+from app.models.autorisation_serre import Autorisation_serre
+from app.models.domaine import Domaine
+from app.models.entreprise import Entreprise
+from app.models.autorisation_bilan import Autorisation_bilan
+
 
 # === Générer un token ===
 def generate_token(user_id):
@@ -66,27 +72,11 @@ def role_required(*allowed_roles):
     def decorator(f):
         @wraps(f)
         def decorated(current_user, *args, **kwargs):
-            print(f"[DEBUG] role_required decorator - User role: '{current_user.role}'")
-            print(f"[DEBUG] role_required decorator - Allowed roles: {allowed_roles}")
-            print(f"[DEBUG] role_required decorator - Role in allowed: {current_user.role in allowed_roles}")
-            
             if current_user.role not in allowed_roles:
-                print(f"[DEBUG] role_required decorator - Access denied for role '{current_user.role}'")
-                return jsonify({"message": "Accès refusé : rôle non autorisé"}), 403
-            
-            print(f"[DEBUG] role_required decorator - Access granted for role '{current_user.role}'")
+                return jsonify({"message": "Accès refusé : rôle non autorisé"}), 403   
             return f(current_user, *args, **kwargs)
         return decorated
     return decorator
-
-
-
-
-
-
-
-
-from app.models.autorisation_domaine import Autorisation_domaine
 
 def access_domaine_required(f):
     @wraps(f)
@@ -98,23 +88,24 @@ def access_domaine_required(f):
         if not id_domaine:
             return jsonify({"message": "ID de la domaine manquant"}), 400
 
-        # Check access authorization
-        has_access = Autorisation_domaine.query.filter_by(id_user=current_user.id, id_domaine=id_domaine).first()
+        # Directors should be able to manage their own company's domaines without explicit autorisation
+        if getattr(current_user, 'role', None) == 'directeur':
+            try:
+                domaine = Domaine.query.get(int(id_domaine))
+                entreprise = Entreprise.query.filter_by(id_user=current_user.id).first()
+                if domaine and entreprise and domaine.id_entreprise == entreprise.id:
+                    return f(current_user, *args, **kwargs)
+            except Exception:
+                # Fall back to standard authorization check below
+                pass
 
+        # Check access authorization for non-directors (or if director check above failed)
+        has_access = Autorisation_domaine.query.filter_by(id_user=current_user.id, id_domaine=id_domaine).first()
         if not has_access:
             return jsonify({"message": "Accès non autorisé à cette domaine"}), 403
 
         return f(current_user, *args, **kwargs)
     return decorated
-
-
-
-
-
-
-
-
-from app.models.autorisation_serre import Autorisation_serre
 
 def access_serre_required(f):
     @wraps(f)
@@ -135,16 +126,6 @@ def access_serre_required(f):
         return f(current_user, *args, **kwargs)
     return decorated
 
-
-
-
-
-
-
-
-
-from app.models.autorisation_bilan import Autorisation_bilan
-
 def access_bilan_required(f):
     @wraps(f)
     def decorated(current_user, *args, **kwargs):
@@ -155,9 +136,25 @@ def access_bilan_required(f):
         if not id_bilan:
             return jsonify({"message": "ID de la bilan manquant"}), 400
 
-        # Check access authorization
-        has_access = Autorisation_bilan.query.filter_by(id_user=current_user.id, id_bilan=id_bilan).first()
+        # Directors should access any bilan in their entreprise
+        if getattr(current_user, 'role', None) == 'directeur':
+            try:
+                from app.models.bilan import Bilan
+                from app.models.serre import Serre
+                from app.models.domaine import Domaine
+                from app.models.entreprise import Entreprise
+                bilan = Bilan.query.get(int(id_bilan))
+                if bilan:
+                    serre = Serre.query.get(bilan.id_serre)
+                    domaine = Domaine.query.get(serre.id_domaine) if serre else None
+                    entreprise = Entreprise.query.filter_by(id_user=current_user.id).first()
+                    if domaine and entreprise and domaine.id_entreprise == entreprise.id:
+                        return f(current_user, *args, **kwargs)
+            except Exception:
+                pass
 
+        # Check access authorization for others
+        has_access = Autorisation_bilan.query.filter_by(id_user=current_user.id, id_bilan=id_bilan).first()
         if not has_access:
             return jsonify({"message": "Accès non autorisé à cette bilan"}), 403
 

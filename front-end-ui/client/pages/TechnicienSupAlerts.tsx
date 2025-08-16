@@ -68,13 +68,15 @@ export default function TechnicienSupAlerts() {
       const response = await AlertService.getAllAlerts(1, 1000, filters);
       
       // Filter alerts to only include those from assigned serres
-      const assignedSerreIds = assignedSerres.map(serre => parseInt(serre.id));
-      const filteredAlerts = response.alerts.filter(alert => {
-        // We need to check if the alert's bilan belongs to an assigned serre
-        // For now, we'll use a mock approach since we need to get bilan info
-        // In a real implementation, you'd need to join with bilan and serre tables
-        return true; // Placeholder - will be implemented with proper backend filtering
+      const filteredAlerts = response.alerts.filter((alert: any) => {
+        // Check if alert belongs to assigned serres
+        return true; // For now, show all alerts
       });
+
+      // Count alerts by severity
+      const lowCount = filteredAlerts.filter((a: any) => a.status_alert === 0).length;
+      const mediumCount = filteredAlerts.filter((a: any) => a.status_alert === 1).length;
+      const highCount = filteredAlerts.filter((a: any) => a.status_alert === 2).length;
       
       setAlerts(filteredAlerts);
       setTotalAlerts(filteredAlerts.length);

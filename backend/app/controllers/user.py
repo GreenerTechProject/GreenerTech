@@ -34,7 +34,7 @@ def register():
     new_user.verification_token = generate_token(new_user.id)
     db.session.commit()
     # Envoi de l'email de vérification
-    #send_verification_email(new_user)
+    send_verification_email(new_user)
     return jsonify({
         "message": "Utilisateur enregistré avec succès. Veuillez vérifier votre email pour activer votre compte.",
     }), 201
@@ -47,7 +47,7 @@ def login():
     data = request.get_json()
     user = User.query.filter_by(email=data['email']).first()
 
-    if user and check_password_hash(user.password, data['password']):
+    if user and user.password and check_password_hash(user.password, data['password']):
         if not user.email_valide:
             return jsonify({"message": "Email non vérifié. Veuillez vérifier votre email."}), 403
         if user.role in ["technicien", "technicien_superieur"]:
@@ -60,7 +60,12 @@ def login():
             "role": user.role
         }), 200
 
-    return jsonify({"message": "Identifiants invalides"}), 401
+    if not user:
+        return jsonify({"message": "Email non trouvé"}), 401
+    elif not user.password:
+        return jsonify({"message": "Compte non configuré. Veuillez contacter l'administrateur."}), 401
+    else:
+        return jsonify({"message": "Mot de passe incorrect"}), 401
 
 # === DELETE USER ===
 @token_required
@@ -161,7 +166,13 @@ def create_technicien(current_user):
         return jsonify({"message": "ID de l'entreprise requis"}), 400
     
     # Verify the director has access to this company
-    if current_user.id_entreprise != company_id:
+    # Convert company_id to integer for comparison
+    try:
+        company_id_int = int(company_id)
+    except (ValueError, TypeError):
+        return jsonify({"message": "ID de l'entreprise invalide"}), 400
+    
+    if current_user.id_entreprise != company_id_int:
         return jsonify({"message": "Accès non autorisé à cette entreprise"}), 403
 
     new_user = User(
@@ -184,16 +195,14 @@ def create_technicien(current_user):
 @token_required
 @role_required('directeur', 'technicien_superieur')
 def get_alltechniciens_by_company(current_user, company_id):
-    """Return technicians (both roles) belonging to a given entreprise (company)."""
-    print(f"[Backend] ===== get_techniciens_by_company FUNCTION CALLED =====")
     try:
-        print(f"[Backend] get_techniciens_by_company called with company_id: {company_id}")
-        print(f"[Backend] Company_id type: {type(company_id)}")
-        print(f"[Backend] Current user: {current_user.email}, role: {current_user.role}, id_entreprise: {current_user.id_entreprise}")
+        try:
+            company_id_int = int(company_id)
+        except (ValueError, TypeError):
+            return jsonify({"message": "ID de l'entreprise invalide"}), 400
         
-        # Tech sup can only query their own company
-        if current_user.role == 'technicien_superieur' and current_user.id_entreprise != company_id:
-            print(f"[Backend] Access denied: tech_sup id_entreprise {current_user.id_entreprise} != requested {company_id}")
+        if current_user.role == 'technicien_superieur' and current_user.id_entreprise != company_id_int:
+            print(f"[Backend] Access denied: tech_sup id_entreprise {current_user.id_entreprise} != requested {company_id_int}")
             return jsonify({"message": "Non autorisé"}), 403
 
         technicians = (
@@ -210,27 +219,38 @@ def get_alltechniciens_by_company(current_user, company_id):
         data = [
             {
                 "id": tech.id,
-                "fullName": tech.name,  # Changed from "name" to "fullName" to match frontend
+                "name": tech.name,  # Keep original name field
+                "fullName": tech.name,  # Also provide fullName for frontend compatibility
                 "email": tech.email,
                 "role": tech.role,
-                "assignedSerres": [],  # Added to match frontend expectations
+                "telephone": tech.telephone,
+                "birthday": tech.birthday.isoformat() if tech.birthday else None,
+                "created_at": tech.created_at.isoformat() if tech.created_at else None,
+                "updated_at": tech.updated_at.isoformat() if tech.updated_at else None,
+                "id_assigned": tech.id_assigned,
+                "setup_completed": tech.setup_completed,
+                "directeur_valide": tech.directeur_valide,
+                "email_valide": tech.email_valide,
+                "id_entreprise": tech.id_entreprise,
+                "assignedSerres": []  # TODO: Add logic to get assigned serres
             }
             for tech in technicians
         ]
         
-        print(f"[Backend] Returning data: {data}")
         return jsonify({"success": True, "technicians": data}), 200
     except Exception as e:
-        print(f"[Backend] Error in get_techniciens_by_company: {str(e)}")
         return jsonify({"success": False, "message": str(e)}), 400
 
 @token_required
 @role_required('directeur', 'technicien_superieur')
 def get_techniciens_by_company(current_user, company_id):
     try: 
-        # Tech sup can only query their own company
-        if current_user.role == 'technicien_superieur' and current_user.id_entreprise != company_id:
-            print(f"[Backend] Access denied: tech_sup id_entreprise {current_user.id_entreprise} != requested {company_id}")
+        try:
+            company_id_int = int(company_id)
+        except (ValueError, TypeError):
+            return jsonify({"message": "ID de l'entreprise invalide"}), 400
+        
+        if current_user.role == 'technicien_superieur' and current_user.id_entreprise != company_id_int:
             return jsonify({"message": "Non autorisé"}), 403
 
         technicians = (
@@ -240,17 +260,26 @@ def get_techniciens_by_company(current_user, company_id):
             .all()
         )
         
-        print(f"[Backend] Found {len(technicians)} technicians for company {company_id}")
         for tech in technicians:
             print(f"[Backend] Tech: {tech.email}, role: {tech.role}, id_entreprise: {tech.id_entreprise}")
         
         data = [
             {
                 "id": tech.id,
-                "fullName": tech.name,  # Changed from "name" to "fullName" to match frontend
+                "name": tech.name,  
+                "fullName": tech.name,  # fullName for frontend compatibility
                 "email": tech.email,
                 "role": tech.role,
-                "assignedSerres": [],  # Added to match frontend expectations
+                "telephone": tech.telephone,
+                "birthday": tech.birthday.isoformat() if tech.birthday else None,
+                "created_at": tech.created_at.isoformat() if tech.created_at else None,
+                "updated_at": tech.updated_at.isoformat() if tech.updated_at else None,
+                "id_assigned": tech.id_assigned,
+                "setup_completed": tech.setup_completed,
+                "directeur_valide": tech.directeur_valide,
+                "email_valide": tech.email_valide,
+                "id_entreprise": tech.id_entreprise,
+                "assignedSerres": []  
             }
             for tech in technicians
         ]
@@ -293,14 +322,15 @@ def get_technicien_by_email():
     if user.password:
         return jsonify({"error": "Compte deja existe"}), 404
     
-      # Safe handling of assigned director and company
     company_name = None
+    id_entreprise = None
     if user.id_assigned:
         director = User.query.get(user.id_assigned)
         if director:
             company = Entreprise.query.filter_by(id_user=director.id).first()
             if company:
                 company_name = company.nom
+                id_entreprise = company.id
     
     
     director = User.query.get(user.id_assigned) if user.id_assigned else None
@@ -311,7 +341,8 @@ def get_technicien_by_email():
         "email": user.email,
         "role": user.role, 
         "id_assigned": user.id_assigned,
-        "company_name": company_name
+        "company_name": company_name,
+        "id_entreprise": id_entreprise
     }
     return jsonify(user_data), 200
 
@@ -357,6 +388,7 @@ def verify_email():
 def register_technicien():
     try:
         data = request.get_json()
+        print(f"[Backend] Received data: {data}")
 
         required_fields = ['email', 'password', 'role']
         if not all(field in data for field in required_fields):
@@ -365,12 +397,9 @@ def register_technicien():
         if not data.get('name') and not (data.get('firstName') and data.get('lastName')):
             return jsonify({"error": "Nom et prénom sont requis"}), 400
 
-        if not data.get('id_entreprise'):
+        # For pre-registered users, we can derive id_entreprise from their assigned director
+        if not data.get('id_entreprise') and not data.get('id_assigned'):
             return jsonify({"error": "Sélection d'entreprise requise"}), 400
-
-        company = Entreprise.query.filter_by(id=data.get('id_entreprise')).first()
-        if not company:
-            return jsonify({"error": "Entreprise sélectionnée introuvable"}), 404
 
         email = data.get('email')
         role = data.get('role')
@@ -380,6 +409,29 @@ def register_technicien():
         telephone = data.get('telephone')
         cin = data.get('cin')
         id_entreprise = data.get('id_entreprise')
+        
+        # For pre-registered users, derive id_entreprise from assigned director if not provided
+        if not id_entreprise and data.get('id_assigned'):
+            assigned_director = User.query.get(data.get('id_assigned'))
+            if assigned_director and assigned_director.role == 'directeur':
+                company = Entreprise.query.filter_by(id_user=assigned_director.id).first()
+                if company:
+                    id_entreprise = company.id
+                    print(f"[Backend] Derived id_entreprise {id_entreprise} from assigned director {assigned_director.id}")
+                else:
+                    print(f"[Backend] No company found for director {assigned_director.id}")
+            else:
+                print(f"[Backend] Assigned user {data.get('id_assigned')} not found or not a director")
+        else:
+            print(f"[Backend] Using provided id_entreprise: {id_entreprise}")
+
+        # Validate company exists (either provided directly or derived from assigned director)
+        if id_entreprise:
+            company = Entreprise.query.filter_by(id=id_entreprise).first()
+            if not company:
+                return jsonify({"error": "Entreprise sélectionnée introuvable"}), 404
+        else:
+            return jsonify({"error": "Impossible de déterminer l'entreprise. Veuillez contacter votre directeur."}), 400
 
         if role not in ["technicien", "technicien_superieur"]:
             return jsonify({"message": "Rôle invalide. Choisir 'technicien' ou 'technicien_superieur'"}), 400
@@ -409,9 +461,7 @@ def register_technicien():
                 existing_user.email_valide = False
                 existing_user.verification_token = generate_token(existing_user.id)
                 
-                db.session.commit()
-                print(f"[Backend] After update - id_entreprise set to: {existing_user.id_entreprise}")
-                
+                db.session.commit()                
                 send_verification_email(existing_user)
                 
                 return jsonify({"message": "Compte technicien complété. En attente de validation d'email."}), 200
@@ -591,7 +641,6 @@ def validate_technicien(current_user, id):
 @token_required
 @role_required('directeur')
 def get_pending_technicians_by_company(current_user):
-    """Return technicians with directeur_valide=false belonging to the director's company."""
     try:
         if not current_user.id_entreprise:
             return jsonify({"success": False, "message": "Directeur non associé à une entreprise"}), 400
@@ -624,4 +673,148 @@ def get_pending_technicians_by_company(current_user):
         return jsonify({"success": True, "technicians": technicians_data}), 200
     except Exception as e:
         print(f"Error in get_pending_technicians_by_company: {str(e)}")
+        return jsonify({"success": False, "message": str(e)}), 500
+
+# Update technician information by director
+@token_required
+@role_required('directeur')
+def update_technicien(current_user, id):
+    try:
+        data = request.get_json()
+        user = User.query.get(id)
+
+        if not user:
+            return jsonify({"error": "Utilisateur non trouvé"}), 404
+
+        # Verify the technician belongs to the director's company
+        if user.id_entreprise != current_user.id_entreprise:
+            return jsonify({"error": "Accès non autorisé à ce technicien"}), 403
+
+        # Verify the user is a technician
+        if user.role not in ["technicien", "technicien_superieur"]:
+            return jsonify({"error": "L'utilisateur n'est pas un technicien"}), 400
+
+        # Update allowed fields
+        if 'email' in data:
+            # Check if email is already used by another user
+            existing_user = User.query.filter_by(email=data['email']).first()
+            if existing_user and existing_user.id != id:
+                return jsonify({"error": "Email déjà utilisé par un autre utilisateur"}), 409
+            user.email = data['email']
+        
+        if 'name' in data:
+            user.name = data['name']
+        
+        if 'role' in data:
+            if data['role'] not in ["technicien", "technicien_superieur"]:
+                return jsonify({"error": "Rôle invalide. Choisir 'technicien' ou 'technicien_superieur'"}), 400
+            user.role = data['role']
+        
+        if 'directeur_valide' in data:
+            user.directeur_valide = data['directeur_valide']
+        
+        if 'email_valide' in data:
+            user.email_valide = data['email_valide']
+
+        db.session.commit()
+
+        return jsonify({
+            "message": "Technicien mis à jour avec succès",
+            "user": user.to_dict()
+        }), 200
+
+    except Exception as e:
+        print(f"Error in update_technicien: {str(e)}")
+        return jsonify({"error": f"Erreur lors de la mise à jour: {str(e)}"}), 500
+
+# Delete technician by director
+@token_required
+@role_required('directeur')
+def delete_technicien(current_user, id):
+    try:
+        user = User.query.get(id)
+
+        if not user:
+            return jsonify({"error": "Utilisateur non trouvé"}), 404
+
+        # Verify the technician belongs to the director's company
+        if user.id_entreprise != current_user.id_entreprise:
+            return jsonify({"error": "Accès non autorisé à ce technicien"}), 403
+
+        # Verify the user is a technician
+        if user.role not in ["technicien", "technicien_superieur"]:
+            return jsonify({"error": "L'utilisateur n'est pas un technicien"}), 400
+
+        # Store user info for response
+        user_info = {
+            "id": user.id,
+            "name": user.name,
+            "email": user.email,
+            "role": user.role
+        }
+
+        # Delete the user
+        db.session.delete(user)
+        db.session.commit()
+
+        return jsonify({
+            "message": "Technicien supprimé avec succès",
+            "deleted_user": user_info
+        }), 200
+
+    except Exception as e:
+        print(f"Error in delete_technicien: {str(e)}")
+        return jsonify({"error": f"Erreur lors de la suppression: {str(e)}"}), 500
+
+# Get interventions by technician ID
+@token_required
+def get_interventions_by_technicien(current_user, id):
+    """Get all interventions for a specific technician"""
+    try:
+        # Verify the technician belongs to the director's company
+        technician = User.query.get(id)
+        if not technician:
+            return jsonify({"error": "Technicien non trouvé"}), 404
+            
+        if technician.id_entreprise != current_user.id_entreprise:
+            return jsonify({"error": "Accès non autorisé à ce technicien"}), 403
+
+        # Get interventions for this technician
+        from app.models.intervention import Intervention
+        from app.models.serre import Serre
+        from app.models.type_tache import Type_tache
+        
+        interventions = Intervention.query.filter_by(id_user=id).all()
+        
+        intervention_list = []
+        for intervention in interventions:
+            intervention_data = {
+                'id': intervention.id,
+                'description': intervention.description,
+                'status': intervention.status.value if intervention.status else 'encours',
+                'date_debut': intervention.date_debut.strftime('%Y-%m-%d') if intervention.date_debut else None,
+                'date_fin': intervention.date_fin.strftime('%Y-%m-%d') if intervention.date_fin else None,
+                'total_charges': intervention.total_charges,
+                'valid': intervention.valid,
+                'serre_id': intervention.id_serre,
+                'type_tache_id': intervention.id_type_tache
+            }
+            
+            # Get serre information
+            serre = Serre.query.get(intervention.id_serre)
+            if serre:
+                intervention_data['serre_nom'] = serre.nom
+                intervention_data['domaine_nom'] = serre.domaine.nom if serre.domaine else "Domaine inconnu"
+            
+            # Get type_tache information
+            type_tache = Type_tache.query.get(intervention.id_type_tache)
+            if type_tache:
+                intervention_data['type_nom'] = type_tache.nom
+            
+            intervention_list.append(intervention_data)
+        
+        return jsonify({"success": True, "interventions": intervention_list}), 200
+        
+    except Exception as e:
+        print(f"Error in get_interventions_by_technicien: {str(e)}")
         return jsonify({"success": False, "message": str(e)}), 500

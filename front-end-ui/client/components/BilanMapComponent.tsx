@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { GoogleMap, Marker, Polygon, Polyline } from '@react-google-maps/api';
+import { GoogleMap, Marker, Polygon, Polyline, Circle } from '@react-google-maps/api';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { MapPin, Navigation, Target, Route } from 'lucide-react';
@@ -10,9 +10,10 @@ import { getGoogleMapsAPIKey } from '@/config/maps';
 interface BilanMapComponentProps {
   serreLocation: { lat: number; lng: number };
   selectedPoints: BilanPoint[];
-  currentLocation: { lat: number; lng: number } | null;
+  currentLocation: { lat: number; lng: number; accuracy?: number } | null;
   isTracking: boolean;
   className?: string;
+  onMapClick?: (lat: number, lng: number) => void;
 }
 
 const mapContainerStyle = {
@@ -27,6 +28,7 @@ export default function BilanMapComponent({
   currentLocation,
   isTracking,
   className = 'w-full',
+  onMapClick,
 }: BilanMapComponentProps) {
   const [map, setMap] = useState<google.maps.Map | null>(null);
   const [mapLoaded, setMapLoaded] = useState(false);
@@ -49,14 +51,11 @@ export default function BilanMapComponent({
 
   // Update user path when current location changes during tracking
   useEffect(() => {
-    if (currentLocation && isTracking) {
-      setUserPath(prev => [...prev, currentLocation]);
-      
-      // Keep only last 200 points to avoid performance issues
-      if (userPath.length > 200) {
-        setUserPath(prev => prev.slice(-200));
-      }
-    }
+    if (!currentLocation || !isTracking) return;
+    setUserPath(prev => {
+      const next = [...prev, { lat: currentLocation.lat, lng: currentLocation.lng }];
+      return next.length > 200 ? next.slice(-200) : next;
+    });
   }, [currentLocation, isTracking]);
 
   // Reset user path when tracking starts
@@ -69,6 +68,11 @@ export default function BilanMapComponent({
   const onMapLoad = (map: google.maps.Map) => {
     setMap(map);
     setMapLoaded(true);
+  };
+
+  // Safety check to ensure Google Maps API is loaded
+  const isGoogleMapsLoaded = () => {
+    return typeof window !== 'undefined' && window.google && window.google.maps;
   };
 
   const onMapUnmount = () => {
@@ -123,6 +127,34 @@ export default function BilanMapComponent({
     return totalDistance;
   };
 
+  // Don't render the map if Google Maps API isn't loaded
+  if (typeof window === 'undefined' || !window.google || !window.google.maps) {
+    return (
+      <Card className={className}>
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-lg">
+            <Route className="h-5 w-5" />
+            Carte Interactive du Bilan
+            {isTracking && (
+              <Badge variant="secondary" className="ml-2 animate-pulse">
+                <Navigation className="h-3 w-3 mr-1" />
+                Suivi actif
+              </Badge>
+            )}
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="p-0">
+          <div className="flex items-center justify-center h-full min-h-[500px]">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600 mx-auto mb-2"></div>
+              <p className="text-sm text-gray-600">Chargement de Google Maps...</p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
     <Card className={className}>
       <CardHeader className="pb-3">
@@ -140,12 +172,26 @@ export default function BilanMapComponent({
       <CardContent className="p-0">
         <div className="relative">
           <GoogleMapsWrapper apiKey={getGoogleMapsAPIKey()}>
+          {(!mapLoaded || !isGoogleMapsLoaded()) && (
+            <div className="flex items-center justify-center h-full min-h-[500px]">
+              <div className="text-center">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600 mx-auto mb-2"></div>
+                <p className="text-sm text-gray-600">Chargement de la carte...</p>
+              </div>
+            </div>
+          )}
+          {mapLoaded && isGoogleMapsLoaded() && (
             <GoogleMap
               mapContainerStyle={mapContainerStyle}
               center={getMapCenter()}
               zoom={18}
               onLoad={onMapLoad}
               onUnmount={onMapUnmount}
+              onClick={(e) => {
+                if (onMapClick && e.latLng) {
+                  onMapClick(e.latLng.lat(), e.latLng.lng());
+                }
+              }}
               options={{
                 mapTypeId: 'satellite', // Satellite view for better field visualization
                 tilt: 0,
@@ -168,7 +214,7 @@ export default function BilanMapComponent({
                       <text x="16" y="20" text-anchor="middle" fill="white" font-size="12" font-weight="bold">S</text>
                     </svg>
                   `),
-                  scaledSize: new google.maps.Size(32, 32),
+                  scaledSize: mapLoaded && isGoogleMapsLoaded() ? new window.google.maps.Size(32, 32) : undefined,
                 }}
                 title="Serre"
               />
@@ -198,9 +244,25 @@ export default function BilanMapComponent({
                         <text x="16" y="20" text-anchor="middle" fill="white" font-size="12" font-weight="bold">T</text>
                       </svg>
                     `),
-                    scaledSize: new google.maps.Size(32, 32),
+                    scaledSize: mapLoaded && isGoogleMapsLoaded() ? new window.google.maps.Size(32, 32) : undefined,
                   }}
                   title="Votre position actuelle"
+                />
+              )}
+
+              {/* Accuracy Circle */}
+              {currentLocation?.accuracy !== undefined && currentLocation.accuracy > 0 && (
+                <Circle
+                  center={{ lat: currentLocation.lat, lng: currentLocation.lng }}
+                  radius={currentLocation.accuracy}
+                  options={{
+                    strokeColor: '#3B82F6',
+                    strokeOpacity: 0.4,
+                    strokeWeight: 1,
+                    fillColor: '#3B82F6',
+                    fillOpacity: 0.1,
+                    clickable: false,
+                  }}
                 />
               )}
 
@@ -217,7 +279,7 @@ export default function BilanMapComponent({
                         <text x="16" y="20" text-anchor="middle" fill="white" font-size="12" font-weight="bold">${point.ordre}</text>
                       </svg>
                     `),
-                    scaledSize: new google.maps.Size(32, 32),
+                    scaledSize: mapLoaded && isGoogleMapsLoaded() ? new window.google.maps.Size(32, 32) : undefined,
                   }}
                   title={`Point ${point.ordre} du bilan`}
                 />
@@ -237,6 +299,7 @@ export default function BilanMapComponent({
                 />
               )}
             </GoogleMap>
+          )}
           </GoogleMapsWrapper>
 
           {/* Map Legend and Stats */}
@@ -267,7 +330,7 @@ export default function BilanMapComponent({
                 <>
                   <div className="border-t pt-2">
                     <div className="text-xs text-gray-600">
-                      Distance parcourue: {(calculateTotalDistance() / 1000).toFixed(2)} km
+                      Distance parcourue: {((calculateTotalDistance() || 0) / 1000).toFixed(2)} km
                     </div>
                     <div className="text-xs text-gray-600">
                       Points du bilan: {selectedPoints.length}/4

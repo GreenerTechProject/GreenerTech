@@ -36,6 +36,7 @@
     "client/**/*",
     "server/**/*",
     "shared/**/*",
+    "client/types/**/*",
     "vite.config.ts",
     "vite.config.server.ts"
   ],

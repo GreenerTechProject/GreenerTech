@@ -113,6 +113,7 @@ export default function DomainCreation({
       // Add serres for this domain
       domain.serres.forEach((serre) => {
         shapes.push({
+          id: `serre-${domain.id}-${serre.id || Math.random().toString(36).substr(2, 9)}`,
           type: "serre",
           name: serre.nom,
           path: serre.position,

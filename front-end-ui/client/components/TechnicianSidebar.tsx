@@ -6,7 +6,6 @@ import { cn } from "@/lib/utils";
 import {
   Home,
   Map,
-  Camera,
   AlertTriangle,
   Bell,
   Bookmark,
@@ -14,6 +13,7 @@ import {
   Menu,
   X,
   Bot,
+  Target,
 } from "lucide-react";
 
 interface SidebarItem {
@@ -54,13 +54,13 @@ export default function TechnicianSidebar({
         id: "carte",
         label: "Carte",
         icon: <Map className="h-5 w-5" />,
-        path: userRole === "technicien_sup" ? "/technicien-sup/map" : undefined,
-        onClick: userRole === "technicien_sup" ? undefined : () => {
-          const mapElement = document.querySelector('[data-testid="map-section"]');
-          if (mapElement) {
-            mapElement.scrollIntoView({ behavior: "smooth" });
-          }
-        },
+        path: userRole === "technicien_sup" ? "/technicien-sup/map" : "/technician",
+      },
+      {
+        id: "missions",
+        label: "Missions",
+        icon: <Target className="h-5 w-5" />,
+        path: userRole === "technicien_sup" ? "/technicien-sup/missions" : "/technician/missions",
       },
       {
         id: "alertes",
@@ -80,20 +80,17 @@ export default function TechnicianSidebar({
         icon: <Bookmark className="h-5 w-5" />,
         path: userRole === "technicien_sup" ? "/technicien-sup/reports" : "/reports",
       },
-	  {
+
+    ];
+    // Show Surveillance only for regular technicians, not for tech-sup
+    if (userRole !== "technicien_sup") {
+      items.splice(2, 0,  {
         id: "robot-control",
         label: "Contrôle Robot",
         icon: <Bot className="h-5 w-5" />,
-        path: "/robot-control",
-	  },
-    ];
-    // Show Surveillance for all technician roles
-    items.splice(2, 0, {
-      id: "surveillance",
-      label: "Surveillance",
-      icon: <Bot className="h-5 w-5" />,
-      path: "/surveillance",
-    });
+        path: "/technician/robot-control",
+	  });
+    }
     return items;
   })();
 

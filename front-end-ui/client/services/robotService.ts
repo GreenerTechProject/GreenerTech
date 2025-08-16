@@ -1,6 +1,7 @@
 import axios from 'axios';
+import { tokenManager } from './authService';
 
-const API_BASE_URL = '/api';
+const API_BASE_URL = `${window.location.protocol}//${window.location.hostname}:5000/api`;
 
 interface Robot {
   id: number;
@@ -14,7 +15,7 @@ interface ApiError {
 }
 
 const createAuthenticatedRequest = () => {
-  const token = localStorage.getItem('authToken');
+  const token = tokenManager.getToken();
   return {
     headers: {
       'Content-Type': 'application/json',
@@ -27,12 +28,15 @@ export const robotService = {
   // Get all robots
   getAllRobots: async (): Promise<Robot[]> => {
     try {
+      console.log('Fetching robots from:', `${API_BASE_URL}/robot`);
       const response = await axios.get<Robot[]>(
         `${API_BASE_URL}/robot`,
         createAuthenticatedRequest()
       );
+      console.log('Robot response:', response);
       return response.data;
     } catch (error: any) {
+      console.error('Robot API error:', error);
       const errorMessage = error.response?.data?.message || 
         "Erreur lors de la récupération des robots";
       throw {

@@ -2,8 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useSidebar } from '@/hooks/useSidebar';
 import DirectorSidebar from '../components/DirectorSidebar';
+import DirectorHeader from '@/components/DirectorHeader';
 import { useToast } from '@/hooks/use-toast';
 import { affiliationService, PendingTechnician } from '../services/affiliationService';
+import { technicianService } from '../services/technicianService';
 import {
   Menu,
   Search,
@@ -161,31 +163,30 @@ export default function DirectorAffiliationManagement() {
     }
   };
 
-  const handleRejectTechnician = async () => {
-    if (!selectedTechnician) return;
+  const handleRejectTechnician = async (technician?: PendingTechnician) => {
+    const target = technician ?? selectedTechnician;
+    if (!target) return;
     
     try {
-      await affiliationService.rejectTechnician(selectedTechnician.id, rejectionReason);
+      // Delete technician in backend (rejection by removal)
+      await technicianService.deleteTechnician(target.id);
       
-      // Update local state
-      setTechnicians(prev => prev.map(tech => 
-        tech.id === selectedTechnician.id 
-          ? { ...tech, directeur_valide: false }
-          : tech
-      ));
+      // Remove from local list
+      setTechnicians(prev => prev.filter(tech => tech.id !== target.id));
       
       setIsRejectDialogOpen(false);
       setSelectedTechnician(null);
+      setIsDetailModalOpen(false);
       setRejectionReason('');
       
       toast({
         title: "Technicien rejeté",
-        description: "Le technicien a été rejeté et ne peut plus accéder à la plateforme.",
+        description: "Le technicien a été supprimé de la base de données.",
       });
     } catch (error: any) {
       toast({
         title: "Erreur",
-        description: error.message || "Erreur lors du rejet du technicien",
+        description: error.message || "Erreur lors de la suppression du technicien",
         variant: "destructive"
       });
     }
@@ -240,31 +241,7 @@ export default function DirectorAffiliationManagement() {
       <DirectorSidebar isOpen={isOpen} setIsOpen={setIsOpen} />
 
       <div className="flex-1 transition-all duration-300">
-        {/* Header */}
-        <header className="bg-white shadow-sm border-b sticky top-0 z-30">
-          <div className="px-4 sm:px-6 lg:px-8">
-            <div className="flex justify-between items-center py-4">
-              <div className="flex items-center space-x-4">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={toggleSidebar}
-                  className="lg:hidden"
-                >
-                  <Menu className="h-5 w-5" />
-                </Button>
-                <div>
-                  <h1 className="text-xl font-semibold text-gray-900">
-                    Gestion des Affiliations Techniciens
-                  </h1>
-                  <p className="text-sm text-gray-600">
-                    Valider les comptes techniciens en attente d'approbation
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </header>
+        <DirectorHeader isSidebarOpen={isOpen} onMenuClick={() => setIsOpen(!isOpen)} />
 
         {/* Content */}
         <main className="p-4 sm:p-6 lg:p-8">
@@ -374,24 +351,14 @@ export default function DirectorAffiliationManagement() {
                                 <Mail className="h-3 w-3 mr-1" />
                                 {technician.email}
                               </span>
-                              {technician.phone && (
+                              {technician.telephone && (
                                 <span className="flex items-center">
                                   <Phone className="h-3 w-3 mr-1" />
-                                  {technician.phone}
+                                  {technician.telephone }
                                 </span>
                               )}
                             </div>
                             <div className="flex items-center space-x-4">
-                              <span className="flex items-center">
-                                <Building className="h-3 w-3 mr-1" />
-                                {technician.company || 'Non spécifié'}
-                              </span>
-                              {technician.location && (
-                                <span className="flex items-center">
-                                  <MapPin className="h-3 w-3 mr-1" />
-                                  {technician.location}
-                                </span>
-                              )}
                               <span className="flex items-center">
                                 <Calendar className="h-3 w-3 mr-1" />
                                 {new Date(technician.created_at).toLocaleDateString('fr-FR')}
@@ -402,15 +369,6 @@ export default function DirectorAffiliationManagement() {
                       </div>
 
                       <div className="flex items-center space-x-4">
-                        <div className="text-right">
-                          <div className="text-sm font-medium">
-                            {technician.experience ? `${technician.experience.substring(0, 50)}...` : 'Aucune expérience spécifiée'}
-                          </div>
-                          <div className="text-xs text-gray-500">
-                            Disponibilité: {technician.availability || 'Non spécifiée'}
-                          </div>
-                        </div>
-                        
                         <div className="flex flex-col items-end space-y-1">
                           {getStatusBadge(technician)}
                           {getRoleBadge(technician.role)}
@@ -429,7 +387,7 @@ export default function DirectorAffiliationManagement() {
                             <Button
                               variant="outline"
                               size="sm"
-                              onClick={() => handleRejectTechnician()}
+                              onClick={() => handleRejectTechnician(technician)}
                               className="text-red-600 border-red-200 hover:bg-red-50"
                             >
                               <XCircle className="h-4 w-4" />
@@ -474,9 +432,7 @@ export default function DirectorAffiliationManagement() {
                       <p><strong>Nom:</strong> {selectedTechnician.name}</p>
                       <p><strong>Email:</strong> {selectedTechnician.email}</p>
                       {selectedTechnician.telephone && <p><strong>Téléphone:</strong> {selectedTechnician.telephone}</p>}
-                      {selectedTechnician.company && <p><strong>Entreprise:</strong> {selectedTechnician.company}</p>}
-                      {selectedTechnician.location && <p><strong>Localisation:</strong> {selectedTechnician.location}</p>}
-                      <p><strong>Disponibilité:</strong> {selectedTechnician.availability || 'Non spécifiée'}</p>
+                      {selectedTechnician.birthday && <p><strong>Date de naissance:</strong> {selectedTechnician.birthday}</p>}
                     </div>
                   </div>
                   <div>
@@ -491,106 +447,12 @@ export default function DirectorAffiliationManagement() {
                   </div>
                 </div>
 
-                {/* Experience */}
-                {selectedTechnician.experience && (
-                  <div>
-                    <h3 className="font-semibold text-gray-900 mb-2">Expérience</h3>
-                    <p className="text-sm text-gray-700 bg-gray-50 p-3 rounded-lg">
-                      {selectedTechnician.experience}
-                    </p>
-                  </div>
-                )}
-
-                {/* Motivation */}
-                {selectedTechnician.motivation && (
-                  <div>
-                    <h3 className="font-semibold text-gray-900 mb-2">Motivation</h3>
-                    <p className="text-sm text-gray-700 bg-gray-50 p-3 rounded-lg">
-                      {selectedTechnician.motivation}
-                    </p>
-                  </div>
-                )}
-
-                {/* Skills */}
-                {selectedTechnician.skills && selectedTechnician.skills.length > 0 && (
-                  <div>
-                    <h3 className="font-semibold text-gray-900 mb-2">Compétences</h3>
-                    <div className="flex flex-wrap gap-2">
-                      {selectedTechnician.skills.map((skill, index) => (
-                        <Badge key={index} variant="secondary">{skill}</Badge>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Documents */}
-                {selectedTechnician.documents && (
-                  <div>
-                    <h3 className="font-semibold text-gray-900 mb-2">Documents</h3>
-                    <div className="space-y-2">
-                      {selectedTechnician.documents.cv && (
-                        <div className="flex items-center space-x-2">
-                          <FileText className="h-4 w-4 text-blue-600" />
-                          <span className="text-sm">{selectedTechnician.documents.cv}</span>
-                          <Button variant="outline" size="sm">
-                            <Download className="h-3 w-3" />
-                          </Button>
-                        </div>
-                      )}
-                      {selectedTechnician.documents.certifications?.map((cert, index) => (
-                        <div key={index} className="flex items-center space-x-2">
-                          <FileText className="h-4 w-4 text-green-600" />
-                          <span className="text-sm">{cert}</span>
-                          <Button variant="outline" size="sm">
-                            <Download className="h-3 w-3" />
-                          </Button>
-                        </div>
-                      ))}
-                      {selectedTechnician.documents.recommendations?.map((rec, index) => (
-                        <div key={index} className="flex items-center space-x-2">
-                          <FileText className="h-4 w-4 text-purple-600" />
-                          <span className="text-sm">{rec}</span>
-                          <Button variant="outline" size="sm">
-                            <Download className="h-3 w-3" />
-                          </Button>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* References */}
-                {selectedTechnician.references && selectedTechnician.references.length > 0 && (
-                  <div>
-                    <h3 className="font-semibold text-gray-900 mb-2">Références</h3>
-                    <div className="space-y-2">
-                      {selectedTechnician.references.map((ref, index) => (
-                        <div key={index} className="bg-gray-50 p-3 rounded-lg">
-                          <p className="font-medium">{ref.name}</p>
-                          <p className="text-sm text-gray-600">{ref.position} - {ref.company}</p>
-                          <p className="text-sm text-gray-500">{ref.contact}</p>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Rejection Reason */}
-                {selectedTechnician.directeur_valide === false && selectedTechnician.rejection_reason && (
-                  <div>
-                    <h3 className="font-semibold text-gray-900 mb-2">Motif de Rejet</h3>
-                    <p className="text-sm text-red-700 bg-red-50 p-3 rounded-lg">
-                      {selectedTechnician.rejection_reason}
-                    </p>
-                  </div>
-                )}
-
                 {/* Actions */}
                 {selectedTechnician.directeur_valide === false ? (
                   <div className="flex justify-end space-x-2 pt-4 border-t">
                     <Button
                       variant="outline"
-                      onClick={() => openRejectDialog(selectedTechnician)}
+                      onClick={() => handleRejectTechnician(selectedTechnician)}
                       className="text-red-600 border-red-200 hover:bg-red-50"
                     >
                       <XCircle className="h-4 w-4 mr-2" />
@@ -611,7 +473,7 @@ export default function DirectorAffiliationManagement() {
                   <div className="flex justify-end space-x-2 pt-4 border-t">
                     <Button
                       variant="outline"
-                      onClick={() => openRejectDialog(selectedTechnician)}
+                      onClick={() => handleRejectTechnician(selectedTechnician)}
                       className="text-red-600 border-red-200 hover:bg-red-50"
                     >
                       <XCircle className="h-4 w-4 mr-2" />
@@ -624,38 +486,6 @@ export default function DirectorAffiliationManagement() {
           </DialogContent>
         </Dialog>
 
-        {/* Reject Dialog */}
-        <AlertDialog open={isRejectDialogOpen} onOpenChange={setIsRejectDialogOpen}>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Rejeter le Technicien</AlertDialogTitle>
-              <AlertDialogDescription>
-                Veuillez indiquer la raison du rejet de ce technicien. Cette action peut être annulée plus tard.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <div className="my-4">
-              <Label htmlFor="rejection-reason">Raison du rejet</Label>
-              <Textarea
-                id="rejection-reason"
-                placeholder="Ex: Expérience insuffisante, documents manquants, etc."
-                value={rejectionReason}
-                onChange={(e) => setRejectionReason(e.target.value)}
-                rows={3}
-              />
-            </div>
-            <AlertDialogFooter>
-              <AlertDialogCancel>Annuler</AlertDialogCancel>
-              <AlertDialogAction
-                onClick={handleRejectTechnician}
-                className="bg-red-600 hover:bg-red-700"
-                disabled={!rejectionReason.trim()}
-              >
-                <XCircle className="h-4 w-4 mr-2" />
-                Rejeter le Technicien
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
       </div>
     </div>
   );

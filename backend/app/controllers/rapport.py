@@ -4,11 +4,13 @@ from app.models.user import User
 from app.utils.security import token_required, role_required
 from database.config import db
 from weasyprint import HTML
+from app.models.bilan import Bilan
 from datetime import datetime, date
 import os
 import uuid
 from  app.models.alerte import Alerte  
 from app.models.etat_bilan import Etat_bilan  # Assure-toi que c'est bien importé
+from sqlalchemy import text
 
 # @token_required
 # @role_required("technicien", "directeur")
@@ -190,6 +192,17 @@ def get_rapports_by_user(current_user):
     return jsonify(result), 200
 
 @token_required
+@role_required("directeur")
+def get_all_rapports(current_user):
+    """Get all rapports - only accessible by directors"""
+    try:
+        rapports = Rapport.query.all()
+        result = [rapport.to_dict() for rapport in rapports]
+        return jsonify(result), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@token_required
 @role_required("technicien", "directeur")
 def get_rapport(id, current_user):
     rapport = Rapport.query.get(id)
@@ -238,6 +251,31 @@ def update_rapport(id):
     return jsonify({"message": "Rapport mis à jour avec succès"}), 200
 
 
+@token_required
+@role_required("directeur")
+def delete_rapport(id, current_user):
+    """Delete a rapport - only accessible by directors"""
+    try:
+        rapport = Rapport.query.get(id)
+        if not rapport:
+            return jsonify({"message": "Rapport non trouvé"}), 404
+        
+        # Delete the PDF file if it exists
+        if rapport.lien_pdf:
+            try:
+                pdf_path = os.path.join("app", rapport.lien_pdf)
+                if os.path.exists(pdf_path):
+                    os.remove(pdf_path)
+            except Exception as e:
+                print(f"Warning: Could not delete PDF file: {e}")
+        
+        db.session.delete(rapport)
+        db.session.commit()
+        return jsonify({"message": "Rapport supprimé avec succès"}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": str(e)}), 500
+
 
 def generer_pdf_rapport(description, nom, id_serre, output_path, etat_bilan, alertes):
     html = render_template(
@@ -250,4 +288,55 @@ def generer_pdf_rapport(description, nom, id_serre, output_path, etat_bilan, ale
         alertes=alertes
     )
     HTML(string=html).write_pdf(output_path)
+
+
+@token_required
+@role_required("directeur")
+def get_rapports_by_director_entreprise(current_user):
+    try:
+        query = """
+            SELECT 
+                r.id,
+                r.date,
+                r.description,
+                r.lien_pdf,
+                s.nom AS serre_nom,
+                s.id AS serre_id,
+                d.nom AS domaine_nom,
+                e.nom AS entreprise_nom
+            FROM rapport r
+            JOIN serres s ON r.id_serre = s.id
+            JOIN domaines d ON s.id_domaine = d.id
+            JOIN entreprises e ON d.id_entreprise = e.id
+            WHERE e.id_user = :user_id
+            ORDER BY r.date DESC
+        """
+        result = db.session.execute(text(query), {"user_id": current_user.id})
+
+        rapports = []
+        for row in result.mappings():
+            # Récupérer les bilans de la serre liée (le modèle ne stocke pas les bilans spécifiques au rapport)
+            try:
+                bilans_for_serre = Bilan.query.filter_by(id_serre=row["serre_id"]).all()
+                bilan_names = [b.nom for b in bilans_for_serre]
+            except Exception:
+                bilan_names = []
+
+            rapports.append({
+                "id": row["id"],
+                "date": row["date"].isoformat() if row["date"] else None,
+                "description": row["description"],
+                "lien_pdf": row["lien_pdf"],
+                "serre": row["serre_nom"],
+                "serre_id": row["serre_id"],
+                "domaine": row["domaine_nom"],
+                "entreprise": row["entreprise_nom"],
+                "bilans": bilan_names,
+            })
+
+        return jsonify(rapports), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"status": "error", "message": str(e)}), 500
+
 
