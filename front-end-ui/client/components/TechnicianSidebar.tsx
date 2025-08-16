@@ -48,7 +48,7 @@ export default function TechnicianSidebar({
         id: "accueil",
         label: "Accueil",
         icon: <Home className="h-5 w-5" />,
-        path: userRole === "technicien_sup" ? "/technicien-sup/home" : basePath,
+        path: userRole === "technicien_sup" ? "/technicien-sup/home" : "/technician/dashboard",
       },
       {
         id: "carte",
@@ -78,7 +78,7 @@ export default function TechnicianSidebar({
         id: "rapports",
         label: "Rapports",
         icon: <Bookmark className="h-5 w-5" />,
-        path: userRole === "technicien_sup" ? "/technicien-sup/reports" : "/reports",
+        path: userRole === "technicien_sup" ? "/technicien-sup/reports" : "/technician/reports",
       },
 	
     ];
