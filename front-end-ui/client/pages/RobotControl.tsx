@@ -42,7 +42,7 @@ interface ControlCommand {
 }
 
 interface Robot {
-  id: string;
+  id: number;
   name: string;
   referance: string;
 }
