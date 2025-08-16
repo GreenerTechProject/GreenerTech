@@ -83,6 +83,16 @@ export default function RobotControl() {
     };
   };
   
+  
+
+  // Update your default robots to use string IDs
+  const setDefaultRobots = () => {
+    setRobots([
+      { id: '1', nom: 'Robot #1', referance: '1' },
+      { id: '2', nom: 'Robot #2', referance: '2' }
+    ]);
+  };
+  
   // Add this function to fetch robots
   const fetchRobots = async () => {
     try {
@@ -340,6 +350,8 @@ export default function RobotControl() {
     console.log("Sending mode: STOP");
     sendCommand("STOP");
   };
+  
+  const [isMouseDown, setIsMouseDown] = useState(false);
 
   // Control button component
   const ControlButton: React.FC<{ 
@@ -348,9 +360,20 @@ export default function RobotControl() {
     className?: string;
   }> = ({ mode, children, className = "" }) => (
     <Button
-	onMouseDown={() => handleButtonDown(mode)}
-	onMouseUp={handleButtonUp}
-	onMouseLeave={handleButtonUp}
+	onMouseDown={() => {
+      setIsMouseDown(true);
+      handleButtonDown(mode);
+    }}
+	onMouseUp={() => {
+      setIsMouseDown(false);
+      handleButtonUp();
+    }}
+	onMouseLeave={() => {
+      if (isMouseDown) {
+        setIsMouseDown(false);
+        handleButtonUp();
+      }
+    }}
 	className={`w-full ${className} ${pressedButton === mode ? "ring-4 ring-yellow-300" : ""}`}
 	variant="outline"
     >
@@ -539,8 +562,8 @@ export default function RobotControl() {
 			    </SelectTrigger>
 			    <SelectContent>
 				  {robots.map((robot) => (
-				    <SelectItem key={robot.id} value={robot.id}>
-				  	{robot.nom}
+				    <SelectItem key={robot.referance} value={robot.referance}>
+				  	{robot.nom} ({robot.referance})
 				    </SelectItem>
 				  ))}
 			    </SelectContent>
