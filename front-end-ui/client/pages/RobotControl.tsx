@@ -23,6 +23,8 @@ import {
   Camera,
   Bot
 } from 'lucide-react';
+import axios from 'axios';
+import { tokenManager } from "../services/authService";
 
 interface QRData {
   [key: string]: any;
@@ -40,8 +42,8 @@ interface ControlCommand {
 }
 
 interface Robot {
-  id: string;
-  name: string;
+  id: number;
+  nom: string;
   referance: string;
 }
 
@@ -71,31 +73,43 @@ export default function RobotControl() {
   // Add this state variable with your other state declarations
   const [robots, setRobots] = useState<Robot[]>([]);
   
+  const createAuthenticatedRequest = () => {
+  const token = tokenManager.getToken();
+  return {
+      headers: {
+        "Content-Type": "application/json",
+        ...(token && { Authorization: `Bearer ${token}` }),
+      },
+    };
+  };
+  
+  
+
+  // Update your default robots to use string IDs
+  const setDefaultRobots = () => {
+    setRobots([
+      { id: '1', nom: 'Robot #1', referance: '1' },
+      { id: '2', nom: 'Robot #2', referance: '2' }
+    ]);
+  };
+  
   // Add this function to fetch robots
   const fetchRobots = async () => {
     try {
-      //const response = await fetch(`${window.location.protocol}//${window.location.hostname}:5000/api/robot`);
-      const response = await fetch(`http://greenertech2.mywire.org:5000/api/robot`);
-      if (response.ok) {
-        const data = await response.json();
-        setRobots(data);
+      const response = await axios.get(
+        `${window.location.protocol}//${window.location.hostname}:5000/api/robot`,
+        createAuthenticatedRequest()
+      );
+      
+      if (response.data) {
+        setRobots(response.data);
       } else {
-        console.error('Failed to fetch robots');
-        // Fallback to default robots if API fails
-        setRobots([
-          { id: '1', name: 'Robot #1' },
-          { id: '2', name: 'Robot #2' },
-          { id: '3', name: 'Robot #3' }
-        ]);
+        console.error('No data received from robots API');
+        setDefaultRobots();
       }
     } catch (error) {
       console.error('Error fetching robots:', error);
-      // Fallback to default robots if API fails
-      setRobots([
-        { id: '1', name: 'Robot #1' },
-        { id: '2', name: 'Robot #2' },
-        { id: '3', name: 'Robot #3' }
-      ]);
+      setDefaultRobots();
     }
   };
   
@@ -336,6 +350,8 @@ export default function RobotControl() {
     console.log("Sending mode: STOP");
     sendCommand("STOP");
   };
+  
+  const [isMouseDown, setIsMouseDown] = useState(false);
 
   // Control button component
   const ControlButton: React.FC<{ 
@@ -344,9 +360,20 @@ export default function RobotControl() {
     className?: string;
   }> = ({ mode, children, className = "" }) => (
     <Button
-	onMouseDown={() => handleButtonDown(mode)}
-	onMouseUp={handleButtonUp}
-	onMouseLeave={handleButtonUp}
+	onMouseDown={() => {
+      setIsMouseDown(true);
+      handleButtonDown(mode);
+    }}
+	onMouseUp={() => {
+      setIsMouseDown(false);
+      handleButtonUp();
+    }}
+	onMouseLeave={() => {
+      if (isMouseDown) {
+        setIsMouseDown(false);
+        handleButtonUp();
+      }
+    }}
 	className={`w-full ${className} ${pressedButton === mode ? "ring-4 ring-yellow-300" : ""}`}
 	variant="outline"
     >
@@ -535,8 +562,8 @@ export default function RobotControl() {
 			    </SelectTrigger>
 			    <SelectContent>
 				  {robots.map((robot) => (
-				    <SelectItem key={robot.id} value={robot.id}>
-				  	{robot.name}
+				    <SelectItem key={robot.referance} value={robot.referance}>
+				  	{robot.nom} ({robot.referance})
 				    </SelectItem>
 				  ))}
 			    </SelectContent>
