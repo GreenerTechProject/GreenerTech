@@ -39,6 +39,12 @@ interface ControlCommand {
   control_mode: string;
 }
 
+interface Robot {
+  id: string;
+  name: string;
+  referance: string;
+}
+
 
 export default function RobotControl() {
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -56,6 +62,44 @@ export default function RobotControl() {
   const [selectedRobot, setSelectedRobot] = useState<string>('1');
   const [isFullScreen, setIsFullScreen] = useState<boolean>(false);
   const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
+  
+  
+  
+  
+  
+  
+  // Add this state variable with your other state declarations
+  const [robots, setRobots] = useState<Robot[]>([]);
+  
+  // Add this function to fetch robots
+  const fetchRobots = async () => {
+    try {
+      //const response = await fetch(`${window.location.protocol}//${window.location.hostname}:5000/api/robot`);
+      const response = await fetch(`http://greenertech2.mywire.org:5000/api/robot`);
+      if (response.ok) {
+        const data = await response.json();
+        setRobots(data);
+      } else {
+        console.error('Failed to fetch robots');
+        // Fallback to default robots if API fails
+        setRobots([
+          { id: '1', name: 'Robot #1' },
+          { id: '2', name: 'Robot #2' },
+          { id: '3', name: 'Robot #3' }
+        ]);
+      }
+    } catch (error) {
+      console.error('Error fetching robots:', error);
+      // Fallback to default robots if API fails
+      setRobots([
+        { id: '1', name: 'Robot #1' },
+        { id: '2', name: 'Robot #2' },
+        { id: '3', name: 'Robot #3' }
+      ]);
+    }
+  };
+  
+  
 
   // WebSocket references
   const qrWsRef = useRef<WebSocket | null>(null);
@@ -279,7 +323,7 @@ export default function RobotControl() {
   const handleRobotChange = (robot: string) => {
     setSelectedRobot(robot);
     // Send robot selection command
-    sendCommand('SELECT_ROBOT');
+    //sendCommand('SELECT_ROBOT');
   };
 
   // Handle button press/release
@@ -352,6 +396,7 @@ export default function RobotControl() {
 	
 	updateSelectedFromUrl();
 	
+    fetchRobots(); // Add this line
 	
     startWebRTC(selectedRobot, selectedCamera);
     initializeWebSockets(selectedRobot, selectedCamera);
@@ -483,16 +528,21 @@ export default function RobotControl() {
               </CardTitle>
             </CardHeader>
             <CardContent>
+			
               <Select value={selectedRobot} onValueChange={handleRobotChange}>
-                <SelectTrigger className="h-8 text-sm">
-                  <SelectValue placeholder="Choisir" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="1">Robot #1</SelectItem>
-                  <SelectItem value="2">Robot #2</SelectItem>
-                  <SelectItem value="3">Robot #3</SelectItem>
-                </SelectContent>
-              </Select>
+			    <SelectTrigger className="h-8 text-sm">
+				  <SelectValue placeholder="Choisir" />
+			    </SelectTrigger>
+			    <SelectContent>
+				  {robots.map((robot) => (
+				    <SelectItem key={robot.id} value={robot.id}>
+				  	{robot.name}
+				    </SelectItem>
+				  ))}
+			    </SelectContent>
+			  </Select>
+			  
+			  
             </CardContent>
           </Card>
 
@@ -670,12 +720,12 @@ export default function RobotControl() {
 
                   {/* Camera Controls */}
                   <div className="flex gap-2 justify-center">
-                    <ControlButton mode="LEFT_CAM" className="bg-purple-500/90 hover:bg-purple-600/90 border-purple-400 text-white px-3 py-2">
-                      <ArrowLeft className="mr-1 h-4 w-4" />
+                    <ControlButton mode="TOP_CAM" className="bg-purple-500/90 hover:bg-purple-600/90 border-purple-400 text-white px-3 py-2">
+                      <ArrowUp className="mr-1 h-4 w-4" />
                       <span className="text-sm">Cam</span>
                     </ControlButton>
-                    <ControlButton mode="RIGHT_CAM" className="bg-purple-500/90 hover:bg-purple-600/90 border-purple-400 text-white px-3 py-2">
-                      <ArrowRight className="mr-1 h-4 w-4" />
+                    <ControlButton mode="DOWN_CAM" className="bg-purple-500/90 hover:bg-purple-600/90 border-purple-400 text-white px-3 py-2">
+                      <ArrowDown className="mr-1 h-4 w-4" />
                       <span className="text-sm">Cam</span>
                     </ControlButton>
                   </div>

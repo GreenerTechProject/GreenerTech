@@ -11,8 +11,45 @@ from app.models.bilan import Bilan
 from app.models.domaine import Domaine
 from app.models.serre import Serre
 
+
+
+# Create new alert
+def create_alerte():
+    data = request.get_json()
+    try:
+        alerte = Alerte(
+            id_bilan=data["id_bilan"],
+            status_alert=data["status_alert"],
+            maladie=data["maladie"],
+            lien_image=data.get("lien_image"),
+            x1=data.get("x1"),
+            y1=data.get("y1"),
+            status=data.get("status", "non résolue")
+        )
+        db.session.add(alerte)
+        db.session.commit()
+        return jsonify(alerte.to_dict()), 201
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"status": "error", "message": str(e)}), 400
+        
+        
+
+# Delete alert
+def delete_alerte(alert_id):
+    alerte = Alerte.query.get(alert_id)
+    if not alerte:
+        return jsonify({"status": "error", "message": "Alerte non trouvée"}), 404
+    try:
+        db.session.delete(alerte)
+        db.session.commit()
+        return jsonify({"status": "success", "message": "Alerte supprimée"}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"status": "error", "message": str(e)}), 400
+
 @token_required
-@role_required("technicien", "technicien_superieur", "directeur")
+@role_required("directeur", "technicien_superieur", "technicien")
 def get_alertes(current_user):
     try:
         if current_user.role == "directeur":
@@ -58,7 +95,7 @@ def get_alertes(current_user):
 
 # Get alert by ID
 @token_required
-@role_required("technicien", "technicien_superieur", "directeur")
+@role_required("directeur", "technicien_superieur", "technicien")
 def get_alerte(current_user, alerte_id):
     alerte = Alerte.query.get(alerte_id)
     if not alerte:
@@ -67,7 +104,7 @@ def get_alerte(current_user, alerte_id):
 
 # Update existing alert
 @token_required
-@role_required("technicien", "technicien_superieur", "directeur")
+@role_required("directeur", "technicien_superieur", "technicien")
 def update_alerte(current_user, alert_id):
     alerte = Alerte.query.get(alert_id)
     if not alerte:

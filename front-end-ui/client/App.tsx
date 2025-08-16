@@ -351,16 +351,6 @@ const App = () => (
                 </ProtectedRoute>
               }
             />
-			
-			{/* Robot Control */}
-            <Route
-              path="/robot-control"
-              element={
-                <ProtectedRoute>
-                  <RobotControl />
-                </ProtectedRoute>
-              }
-            />
 
             <Route
               path="/technicien-sup/profile"
