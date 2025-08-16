@@ -41,7 +41,7 @@ export interface AutorisationSerre {
   id_serre: number;
 }
 
-// Configure axios base URL
+// Configure axios base URL - use correct backend port
 const API_BASE_URL = `${window.location.protocol}//${window.location.hostname}:5000/api`;
 
 // Create axios instance with auth headers
