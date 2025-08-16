@@ -6,7 +6,7 @@ import json
 #import serial
 
 
-host = "localhost"
+host = "greenertech2.mywire.org"
 
 async def send_video(robot_ref, camera, idcamera):
     cap = cv2.VideoCapture(idcamera)

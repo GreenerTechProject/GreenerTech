@@ -539,7 +539,7 @@ export default function RobotControl() {
 			    </SelectTrigger>
 			    <SelectContent>
 				  {robots.map((robot) => (
-				    <SelectItem key={robot.id} value={robot.id}>
+				    <SelectItem key={robot.referance} value={robot.referance}>
 				  	{robot.nom}
 				    </SelectItem>
 				  ))}
