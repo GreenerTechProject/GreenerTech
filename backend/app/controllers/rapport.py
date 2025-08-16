@@ -192,6 +192,17 @@ def get_rapports_by_user(current_user):
     return jsonify(result), 200
 
 @token_required
+@role_required("directeur")
+def get_all_rapports(current_user):
+    """Get all rapports - only accessible by directors"""
+    try:
+        rapports = Rapport.query.all()
+        result = [rapport.to_dict() for rapport in rapports]
+        return jsonify(result), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@token_required
 @role_required("technicien", "directeur")
 def get_rapport(id, current_user):
     rapport = Rapport.query.get(id)
@@ -239,6 +250,31 @@ def update_rapport(id):
     db.session.commit()
     return jsonify({"message": "Rapport mis à jour avec succès"}), 200
 
+
+@token_required
+@role_required("directeur")
+def delete_rapport(id, current_user):
+    """Delete a rapport - only accessible by directors"""
+    try:
+        rapport = Rapport.query.get(id)
+        if not rapport:
+            return jsonify({"message": "Rapport non trouvé"}), 404
+        
+        # Delete the PDF file if it exists
+        if rapport.lien_pdf:
+            try:
+                pdf_path = os.path.join("app", rapport.lien_pdf)
+                if os.path.exists(pdf_path):
+                    os.remove(pdf_path)
+            except Exception as e:
+                print(f"Warning: Could not delete PDF file: {e}")
+        
+        db.session.delete(rapport)
+        db.session.commit()
+        return jsonify({"message": "Rapport supprimé avec succès"}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": str(e)}), 500
 
 
 def generer_pdf_rapport(description, nom, id_serre, output_path, etat_bilan, alertes):

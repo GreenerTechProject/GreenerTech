@@ -131,7 +131,7 @@ def get_interventions_by_assigned_serres(current_user):
                     intervention_data['domaine_nom'] = "Domaine inconnu"
             
             # Get type_tache information
-            type_tache = Type_tache.query.get(intervention.id_type_tache)
+            type_tache = TypeTache.query.get(intervention.id_type_tache)
             if type_tache:
                 intervention_data['type_nom'] = type_tache.nom
             

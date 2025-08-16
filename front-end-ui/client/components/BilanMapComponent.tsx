@@ -70,6 +70,11 @@ export default function BilanMapComponent({
     setMapLoaded(true);
   };
 
+  // Safety check to ensure Google Maps API is loaded
+  const isGoogleMapsLoaded = () => {
+    return typeof window !== 'undefined' && window.google && window.google.maps;
+  };
+
   const onMapUnmount = () => {
     setMap(null);
     setMapLoaded(false);
@@ -122,6 +127,34 @@ export default function BilanMapComponent({
     return totalDistance;
   };
 
+  // Don't render the map if Google Maps API isn't loaded
+  if (typeof window === 'undefined' || !window.google || !window.google.maps) {
+    return (
+      <Card className={className}>
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-lg">
+            <Route className="h-5 w-5" />
+            Carte Interactive du Bilan
+            {isTracking && (
+              <Badge variant="secondary" className="ml-2 animate-pulse">
+                <Navigation className="h-3 w-3 mr-1" />
+                Suivi actif
+              </Badge>
+            )}
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="p-0">
+          <div className="flex items-center justify-center h-full min-h-[500px]">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600 mx-auto mb-2"></div>
+              <p className="text-sm text-gray-600">Chargement de Google Maps...</p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
     <Card className={className}>
       <CardHeader className="pb-3">
@@ -139,6 +172,15 @@ export default function BilanMapComponent({
       <CardContent className="p-0">
         <div className="relative">
           <GoogleMapsWrapper apiKey={getGoogleMapsAPIKey()}>
+          {(!mapLoaded || !isGoogleMapsLoaded()) && (
+            <div className="flex items-center justify-center h-full min-h-[500px]">
+              <div className="text-center">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600 mx-auto mb-2"></div>
+                <p className="text-sm text-gray-600">Chargement de la carte...</p>
+              </div>
+            </div>
+          )}
+          {mapLoaded && isGoogleMapsLoaded() && (
             <GoogleMap
               mapContainerStyle={mapContainerStyle}
               center={getMapCenter()}
@@ -172,7 +214,7 @@ export default function BilanMapComponent({
                       <text x="16" y="20" text-anchor="middle" fill="white" font-size="12" font-weight="bold">S</text>
                     </svg>
                   `),
-                  scaledSize: new google.maps.Size(32, 32),
+                  scaledSize: mapLoaded && isGoogleMapsLoaded() ? new window.google.maps.Size(32, 32) : undefined,
                 }}
                 title="Serre"
               />
@@ -202,7 +244,7 @@ export default function BilanMapComponent({
                         <text x="16" y="20" text-anchor="middle" fill="white" font-size="12" font-weight="bold">T</text>
                       </svg>
                     `),
-                    scaledSize: new google.maps.Size(32, 32),
+                    scaledSize: mapLoaded && isGoogleMapsLoaded() ? new window.google.maps.Size(32, 32) : undefined,
                   }}
                   title="Votre position actuelle"
                 />
@@ -237,7 +279,7 @@ export default function BilanMapComponent({
                         <text x="16" y="20" text-anchor="middle" fill="white" font-size="12" font-weight="bold">${point.ordre}</text>
                       </svg>
                     `),
-                    scaledSize: new google.maps.Size(32, 32),
+                    scaledSize: mapLoaded && isGoogleMapsLoaded() ? new window.google.maps.Size(32, 32) : undefined,
                   }}
                   title={`Point ${point.ordre} du bilan`}
                 />
@@ -257,6 +299,7 @@ export default function BilanMapComponent({
                 />
               )}
             </GoogleMap>
+          )}
           </GoogleMapsWrapper>
 
           {/* Map Legend and Stats */}
@@ -287,7 +330,7 @@ export default function BilanMapComponent({
                 <>
                   <div className="border-t pt-2">
                     <div className="text-xs text-gray-600">
-                      Distance parcourue: {(calculateTotalDistance() / 1000).toFixed(2)} km
+                      Distance parcourue: {((calculateTotalDistance() || 0) / 1000).toFixed(2)} km
                     </div>
                     <div className="text-xs text-gray-600">
                       Points du bilan: {selectedPoints.length}/4
