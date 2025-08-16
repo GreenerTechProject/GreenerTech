@@ -42,8 +42,8 @@ interface ControlCommand {
 }
 
 interface Robot {
-  id: string;
-  name: string;
+  id: number;
+  nom: string;
   referance: string;
 }
 
@@ -540,7 +540,7 @@ export default function RobotControl() {
 			    <SelectContent>
 				  {robots.map((robot) => (
 				    <SelectItem key={robot.id} value={robot.id}>
-				  	{robot.name}
+				  	{robot.nom}
 				    </SelectItem>
 				  ))}
 			    </SelectContent>
