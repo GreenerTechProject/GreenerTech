@@ -126,7 +126,7 @@ async def simulate_sensor_data(robot_ref):
     async with websockets.connect(uri) as ws:
         while True:
             data = {
-                "temperature": round(random.uniform(20, 30000), 2),
+                "temperature": round(random.uniform(20, 30), 2),
                 "humidity": round(random.uniform(50, 80), 2),
                 "co2": round(random.uniform(300, 800), 2),
                 "luminosite": round(random.uniform(100, 1000), 2),
@@ -221,8 +221,8 @@ async def main():
     #robot_ref = "robot_123"
     robot_ref = get_or_create_robot_referance()
     await asyncio.gather(
-        send_video(robot_ref, "right", 0),
-        #send_video(robot_ref, "left", 1),
+        #send_video(robot_ref, "right", 0),
+        send_video(robot_ref, "left", 1),
         receive_controls(robot_ref),
         simulate_sensor_data(robot_ref),
         #listen_missions(robot_ref) 
