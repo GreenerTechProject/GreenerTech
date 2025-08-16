@@ -540,7 +540,7 @@ export default function RobotControl() {
 			    <SelectContent>
 				  {robots.map((robot) => (
 				    <SelectItem key={robot.referance} value={robot.referance}>
-				  	{robot.nom}
+				  	{robot.nom} ({robot.referance})
 				    </SelectItem>
 				  ))}
 			    </SelectContent>
