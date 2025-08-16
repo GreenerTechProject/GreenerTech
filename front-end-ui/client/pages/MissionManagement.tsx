@@ -15,16 +15,22 @@ import { robotService } from '../services/robotService';
 import { serreService } from '../services/serreService';
 import { toast } from 'sonner';
 import { MissionCreation } from '../components/MissionCreation';
+import { MissionEdit } from '../components/MissionEdit';
+import TechHeader from '../components/TechHeader';
+import { useAuth } from '../contexts/AuthContext';
 
 // Define Mission interface to match the service
 interface Mission {
   id: number;
   id_robot: number;
-  id_serre: string;
+  id_serre: number;
   rep_jr: number;
   rep_sem: number;
-  date_debut: string;
+  date_debut: string | null;
   date_fin: string | null;
+  jour: number | null;
+  heure: number | null;
+  minute: number | null;
   executed: boolean;
 }
 
@@ -35,7 +41,7 @@ interface Robot {
 }
 
 interface Serre {
-  id: string;
+  id: number;
   nom: string;
   surface: number;
   domainId: string;
@@ -55,6 +61,7 @@ interface Serre {
 }
 
 export const MissionManagement: React.FC = () => {
+  const { user } = useAuth();
   const [missions, setMissions] = useState<Mission[]>([]);
   const [robots, setRobots] = useState<Robot[]>([]);
   const [serres, setSerres] = useState<Serre[]>([]);
@@ -62,6 +69,8 @@ export const MissionManagement: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [showEditDialog, setShowEditDialog] = useState(false);
+  const [editingMission, setEditingMission] = useState<Mission | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -77,13 +86,9 @@ export const MissionManagement: React.FC = () => {
       const missionsData = await missionService.getAllMissions();
       console.log('Missions data received:', missionsData);
       
-      // Ensure missionsData is an array and convert id_serre to string
+      // Ensure missionsData is an array
       if (Array.isArray(missionsData)) {
-        const convertedMissions = missionsData.map(mission => ({
-          ...mission,
-          id_serre: mission.id_serre.toString()
-        }));
-        setMissions(convertedMissions);
+        setMissions(missionsData);
       } else {
         console.error('Expected array but received:', typeof missionsData, missionsData);
         setMissions([]);
@@ -120,9 +125,9 @@ export const MissionManagement: React.FC = () => {
 
   const fetchSerres = async () => {
     try {
-      const serresData = await serreService.getAllSerres();
-      console.log('Serres data received:', serresData);
-      
+      // For mission management, only show serres the current user has access to
+      const serresData = await serreService.getSerresByCurrentUser();
+      console.log('Serres data received for current user:', serresData);
       if (Array.isArray(serresData)) {
         setSerres(serresData);
       } else {
@@ -154,7 +159,8 @@ export const MissionManagement: React.FC = () => {
     return robot ? `${robot.nom} (${robot.referance})` : 'Robot inconnu';
   };
 
-  const getSerreName = (serreId: string) => {
+  const getSerreName = (serreId: number) => {
+    
     if (!Array.isArray(serres)) return 'Serre inconnue';
     const serre = serres.find(s => s.id === serreId);
     return serre ? serre.nom : 'Serre inconnue';
@@ -177,50 +183,94 @@ export const MissionManagement: React.FC = () => {
     fetchMissions();
   };
 
+  const handleEditMission = (mission: Mission) => {
+    setEditingMission(mission);
+    setShowEditDialog(true);
+  };
+
+  const handleMissionUpdated = () => {
+    setShowEditDialog(false);
+    setEditingMission(null);
+    fetchMissions();
+  };
+
+  const handleCancelEdit = () => {
+    setShowEditDialog(false);
+    setEditingMission(null);
+  };
+
+  // Determine user role for TechHeader
+  const userRole = user?.role === 'technicien_sup' ? 'technicien_sup' : 'technicien';
+
   return (
-    <div className="container mx-auto p-6 space-y-6">
-      {/* Header */}
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Gestion des Missions</h1>
-          <p className="text-gray-600 mt-2">
-            Gérez les missions des robots dans vos serres
-          </p>
+    <div className="min-h-screen bg-gray-50">
+      {/* TechHeader for Technician */}
+      <TechHeader role={userRole} />
+      
+      <div className="container mx-auto p-3 sm:p-4 md:p-6 space-y-4 sm:space-y-6">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 sm:gap-6">
+          <div className="flex-1">
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Gestion des Missions</h1>
+            <p className="text-sm sm:text-base text-gray-600 mt-2">
+              Gérez les missions des robots dans vos serres accessibles
+            </p>
+          </div>
+          <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
+            <DialogTrigger asChild>
+              <Button className="w-full sm:w-auto flex items-center justify-center gap-2">
+                <Plus className="h-4 w-4" />
+                <span className="hidden sm:inline">Nouvelle Mission</span>
+                <span className="sm:hidden">Nouvelle</span>
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto mx-4">
+              <DialogHeader>
+                <DialogTitle>Créer une nouvelle mission</DialogTitle>
+                <DialogDescription>
+                  Configurez une mission pour un robot dans une serre spécifique
+                </DialogDescription>
+              </DialogHeader>
+              <MissionCreation onMissionCreated={handleMissionCreated} />
+            </DialogContent>
+          </Dialog>
         </div>
-        <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
-          <DialogTrigger asChild>
-            <Button className="flex items-center gap-2">
-              <Plus className="h-4 w-4" />
-              Nouvelle Mission
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+
+        {/* Edit Mission Dialog */}
+        <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto mx-4">
             <DialogHeader>
-              <DialogTitle>Créer une nouvelle mission</DialogTitle>
+              <DialogTitle>Modifier la mission</DialogTitle>
               <DialogDescription>
-                Configurez une mission pour un robot dans une serre spécifique
+                Modifiez les paramètres de la mission sélectionnée
               </DialogDescription>
             </DialogHeader>
-            <MissionCreation onMissionCreated={handleMissionCreated} />
+            {editingMission && (
+              <MissionEdit
+                mission={editingMission}
+                onMissionUpdated={handleMissionUpdated}
+                onCancel={handleCancelEdit}
+              />
+            )}
           </DialogContent>
         </Dialog>
-      </div>
 
              {/* Error Display */}
        {error && (
          <Card className="border-red-200 bg-red-50">
-           <CardContent className="pt-6">
-             <div className="flex items-center justify-between">
+           <CardContent className="pt-4 sm:pt-6">
+             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
                <div className="flex items-center gap-2 text-red-700">
                  <div className="w-2 h-2 bg-red-500 rounded-full"></div>
                  <span className="font-medium">Erreur:</span>
-                 <span>{error}</span>
+                 <span className="text-sm sm:text-base">{error}</span>
                </div>
                <Button 
                  variant="outline" 
                  size="sm" 
                  onClick={fetchMissions}
                  disabled={loading}
+                 className="w-full sm:w-auto"
                >
                  Réessayer
                </Button>
@@ -232,12 +282,12 @@ export const MissionManagement: React.FC = () => {
        {/* Filters */}
        <Card>
         <CardHeader>
-          <CardTitle>Filtres</CardTitle>
+          <CardTitle className="text-lg sm:text-xl">Filtres</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
             <div className="space-y-2">
-              <Label htmlFor="search">Rechercher</Label>
+              <Label htmlFor="search" className="text-sm sm:text-base">Rechercher</Label>
               <div className="relative">
                 <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                 <Input
@@ -245,14 +295,14 @@ export const MissionManagement: React.FC = () => {
                   placeholder="Rechercher par robot ou serre..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
+                  className="pl-10 text-sm sm:text-base"
                 />
               </div>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="status">Statut</Label>
+              <Label htmlFor="status" className="text-sm sm:text-base">Statut</Label>
               <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger>
+                <SelectTrigger className="text-sm sm:text-base">
                   <SelectValue placeholder="Filtrer par statut" />
                 </SelectTrigger>
                 <SelectContent>
@@ -262,9 +312,9 @@ export const MissionManagement: React.FC = () => {
                 </SelectContent>
               </Select>
             </div>
-            <div className="space-y-2">
-              <Label>Total des missions</Label>
-              <div className="text-2xl font-bold text-blue-600">
+            <div className="space-y-2 sm:col-span-2 lg:col-span-1">
+              <Label className="text-sm sm:text-base">Total des missions</Label>
+              <div className="text-xl sm:text-2xl font-bold text-blue-600">
                 {filteredMissions.length}
               </div>
             </div>
@@ -275,8 +325,8 @@ export const MissionManagement: React.FC = () => {
       {/* Missions Table */}
       <Card>
         <CardHeader>
-          <CardTitle>Liste des Missions</CardTitle>
-          <CardDescription>
+          <CardTitle className="text-lg sm:text-xl">Liste des Missions</CardTitle>
+          <CardDescription className="text-sm sm:text-base">
             {filteredMissions.length} mission(s) trouvée(s)
           </CardDescription>
         </CardHeader>
@@ -286,105 +336,223 @@ export const MissionManagement: React.FC = () => {
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
             </div>
           ) : filteredMissions.length === 0 ? (
-            <div className="text-center py-8 text-gray-500">
+            <div className="text-center py-8 text-gray-500 text-sm sm:text-base">
               Aucune mission trouvée
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Robot</TableHead>
-                    <TableHead>Serre</TableHead>
-                    <TableHead>Répétitions</TableHead>
-                    <TableHead>Date de début</TableHead>
-                    <TableHead>Date de fin</TableHead>
-                    <TableHead>Statut</TableHead>
-                    <TableHead>Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredMissions.map((mission) => (
-                    <TableRow key={mission.id}>
-                                             <TableCell>
-                         <div className="flex items-center gap-2">
-                           <Bot className="h-4 w-4 text-blue-600" />
-                           <span className="font-medium">
-                             {getRobotName(mission.id_robot)}
-                           </span>
-                         </div>
-                       </TableCell>
-                                             <TableCell>
-                         <div className="flex items-center gap-2">
-                           <Building2 className="h-4 w-4 text-green-600" />
-                           <span>{getSerreName(mission.id_serre)}</span>
-                         </div>
-                       </TableCell>
-                      <TableCell>
-                        <div className="text-sm">
-                          <div>J: {mission.rep_jr}</div>
-                          <div>S: {mission.rep_sem}</div>
+            <>
+              {/* Desktop Table View */}
+              <div className="hidden lg:block overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="text-sm">Robot</TableHead>
+                      <TableHead className="text-sm">Serre</TableHead>
+                      <TableHead className="text-sm">Répétitions</TableHead>
+                      <TableHead className="text-sm">Date de début</TableHead>
+                      <TableHead className="text-sm">Date de fin</TableHead>
+                      <TableHead className="text-sm">Statut</TableHead>
+                      <TableHead className="text-sm">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredMissions.map((mission) => (
+                      <TableRow key={mission.id}>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <Bot className="h-4 w-4 text-blue-600" />
+                            <span className="font-medium text-sm">
+                              {getRobotName(mission.id_robot)}
+                            </span>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <Building2 className="h-4 w-4 text-green-600" />
+                            <span className="text-sm">{getSerreName(mission.id_serre)}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="text-sm">
+                            <div>J: {mission.rep_jr}</div>
+                            <div>S: {mission.rep_sem}</div>
+                            {(mission.rep_jr > 0 || mission.rep_sem > 0) && (
+                              <div className="text-xs text-gray-500 mt-1">
+                                {mission.heure !== null && mission.minute !== null && (
+                                  <span>{mission.heure.toString().padStart(2, '0')}:{mission.minute.toString().padStart(2, '0')}</span>
+                                )}
+                                {mission.rep_sem > 0 && mission.jour && (
+                                  <span className="ml-1">
+                                    {['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'][mission.jour - 1]}
+                                  </span>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          {mission.date_debut ? (
+                            <div className="flex items-center gap-2">
+                              <Calendar className="h-4 w-4 text-gray-500" />
+                              <span className="text-sm">
+                                {format(new Date(mission.date_debut), 'dd/MM/yyyy', { locale: fr })}
+                              </span>
+                            </div>
+                          ) : (
+                            <span className="text-gray-400 text-sm">-</span>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          {mission.date_fin ? (
+                            <div className="flex items-center gap-2">
+                              <Calendar className="h-4 w-4 text-gray-500" />
+                              <span className="text-sm">
+                                {format(new Date(mission.date_fin), 'dd/MM/yyyy', { locale: fr })}
+                              </span>
+                            </div>
+                          ) : (
+                            <span className="text-gray-400 text-sm">-</span>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant={mission.executed ? "default" : "secondary"} className="text-xs">
+                            {mission.executed ? "Exécutée" : "En attente"}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {/* TODO: View mission details */}}
+                              className="h-8 w-8 p-0"
+                            >
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleEditMission(mission)}
+                              className="h-8 w-8 p-0"
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleDeleteMission(mission.id)}
+                              className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+
+              {/* Mobile Card View */}
+              <div className="lg:hidden space-y-4">
+                {filteredMissions.map((mission) => (
+                  <Card key={mission.id} className="p-4">
+                    <div className="space-y-3">
+                      {/* Mission Header */}
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <Bot className="h-5 w-5 text-blue-600" />
+                          <span className="font-medium text-sm">
+                            {getRobotName(mission.id_robot)}
+                          </span>
                         </div>
-                      </TableCell>
-                      <TableCell>
+                        <Badge variant={mission.executed ? "default" : "secondary"} className="text-xs">
+                          {mission.executed ? "Exécutée" : "En attente"}
+                        </Badge>
+                      </div>
+
+                      {/* Mission Details */}
+                      <div className="grid grid-cols-2 gap-3 text-sm">
+                        <div className="flex items-center gap-2">
+                          <Building2 className="h-4 w-4 text-green-600" />
+                          <span>{getSerreName(mission.id_serre)}</span>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-xs text-gray-500">Répétitions</div>
+                          <div>J: {mission.rep_jr} | S: {mission.rep_sem}</div>
+                          {(mission.rep_jr > 0 || mission.rep_sem > 0) && (
+                            <div className="text-xs text-gray-500 mt-1">
+                              {mission.heure !== null && mission.minute !== null && (
+                                <span>{mission.heure.toString().padStart(2, '0')}:{mission.minute.toString().padStart(2, '0')}</span>
+                              )}
+                              {mission.rep_sem > 0 && mission.jour && (
+                                <span className="ml-1">
+                                  {['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'][mission.jour - 1]}
+                                </span>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Dates */}
+                      <div className="grid grid-cols-2 gap-3 text-sm">
                         <div className="flex items-center gap-2">
                           <Calendar className="h-4 w-4 text-gray-500" />
                           <span>
-                            {format(new Date(mission.date_debut), 'dd/MM/yyyy', { locale: fr })}
+                            {mission.date_debut ? 
+                              format(new Date(mission.date_debut), 'dd/MM/yyyy', { locale: fr }) : 
+                              <span className="text-gray-400">-</span>
+                            }
                           </span>
                         </div>
-                      </TableCell>
-                      <TableCell>
-                        {mission.date_fin ? (
-                          <div className="flex items-center gap-2">
-                            <Calendar className="h-4 w-4 text-gray-500" />
-                            <span>
-                              {format(new Date(mission.date_fin), 'dd/MM/yyyy', { locale: fr })}
-                            </span>
-                          </div>
-                        ) : (
-                          <span className="text-gray-400">-</span>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant={mission.executed ? "default" : "secondary"}>
-                          {mission.executed ? "Exécutée" : "En attente"}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
                         <div className="flex items-center gap-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => {/* TODO: View mission details */}}
-                          >
-                            <Eye className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => {/* TODO: Edit mission */}}
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleDeleteMission(mission.id)}
-                            className="text-red-600 hover:text-red-700"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
+                          <Calendar className="h-4 w-4 text-gray-500" />
+                          <span>
+                            {mission.date_fin ? 
+                              format(new Date(mission.date_fin), 'dd/MM/yyyy', { locale: fr }) : 
+                              <span className="text-gray-400">-</span>
+                            }
+                          </span>
                         </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
+                      </div>
+
+                      {/* Actions */}
+                      <div className="flex items-center justify-end gap-2 pt-2 border-t">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {/* TODO: View mission details */}}
+                          className="h-8 w-8 p-0"
+                        >
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleEditMission(mission)}
+                          className="h-8 w-8 p-0"
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleDeleteMission(mission.id)}
+                          className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  </Card>
+                ))}
+              </div>
+            </>
           )}
         </CardContent>
       </Card>
-    </div>
+        </div>
+      </div>
   );
 };
