@@ -97,10 +97,10 @@ all_bp.route('/bilan/<int:bilan_id>/qrcode', methods=['GET'])(generate_bilan_qrc
 
 
 all_bp.route('/guide_culture', methods=['POST'])(create_guide_culture)
+all_bp.route('/guide_culture', methods=['GET'])(get_all_guides)
 all_bp.route('/guide_culture/<int:id>', methods=['PUT'])(update_guide_culture)
 all_bp.route('/guide_culture/<int:id>', methods=['DELETE'])(delete_guide)
 all_bp.route('/guide_culture/<int:id>', methods=['GET'])(get_guide_culture)
-all_bp.route('/guide_culture', methods=['GET'])(get_all_guides)
 
 all_bp.route('/types-tache' , methods=['POST'])(create_type_tache)  
 all_bp.route('/types-tache/<int:id>', methods=['GET'])(get_type_tache)

@@ -200,7 +200,7 @@ def create_rapport(current_user):
 
 # get rapport by user 
 @token_required
-@role_required("technicien", "directeur")
+@role_required("technicien", "technicien_superieur", "directeur")
 def get_rapports_by_user(current_user):
     rapports = Rapport.query.filter_by(user_id=current_user.id).all()
     if not rapports:

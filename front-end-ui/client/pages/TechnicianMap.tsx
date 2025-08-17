@@ -212,8 +212,13 @@ export default function TechnicianMap() {
       console.log('Loading guides for serre:', serreId);
       
       const serreGuides = await guideService.getGuides();
+      console.log('All guides received:', serreGuides);
+      
       // Filter guides for the specific serre
-      const filteredGuides = serreGuides.filter(guide => guide.id_serre === serreId.toString());
+      const filteredGuides = serreGuides.filter(guide => {
+        console.log('Checking guide:', guide.id, 'serre:', guide.id_serre, 'against serreId:', serreId.toString());
+        return guide.id_serre === serreId.toString();
+      });
       console.log('Filtered guides for serre:', filteredGuides);
       
       setGuides(filteredGuides);
@@ -275,6 +280,7 @@ export default function TechnicianMap() {
     setSelectedSerre(serre);
     setIsCreatingBilan(false);
     loadBilansForSerre(parseInt(serre.id));
+    loadGuidesForSerre(parseInt(serre.id));
   };
 
   const getStatusColor = (status: string) => {
