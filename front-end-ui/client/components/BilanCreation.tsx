@@ -27,6 +27,7 @@ interface BilanCreationProps {
   serreLocation: { lat: number; lng: number };
   onBilanCreated: () => void;
   onCancel: () => void;
+  isMobile?: boolean;
 }
 
 export default function BilanCreation({
@@ -35,6 +36,7 @@ export default function BilanCreation({
   serreLocation,
   onBilanCreated,
   onCancel,
+  isMobile = false,
 }: BilanCreationProps) {
   const [isTracking, setIsTracking] = useState(false);
   const [currentLocation, setCurrentLocation] = useState<{ lat: number; lng: number; accuracy?: number } | null>(null);
@@ -251,14 +253,15 @@ export default function BilanCreation({
   const removeLastPoint = () => {
     if (selectedPoints.length > 0) {
       setSelectedPoints(prev => prev.slice(0, -1));
-      setSuccess("Dernier point supprimé");
     }
+  };
+
+  const clearAllPoints = () => {
+    setSelectedPoints([]);
   };
 
   const resetPoints = () => {
     setSelectedPoints([]);
-    setSuccess("Tous les points ont été réinitialisés");
-    setError(null);
   };
 
   // Manual map click handler: add point directly (with optional snapping)
@@ -417,404 +420,583 @@ export default function BilanCreation({
 
   return (
     <>
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-2 sm:p-4">
-        <Card className="w-full h-full max-w-none sm:max-w-6xl sm:max-h-[90vh] overflow-hidden">
-          <CardHeader className="bg-gradient-to-r from-green-50 to-blue-50 border-b p-4 sm:p-6 flex-shrink-0">
+      {isMobile ? (
+        // Mobile Layout - Full Screen with Touch-Friendly Controls
+        <div className="h-full flex flex-col bg-white">
+          {/* Mobile Header */}
+          <div className="bg-[#B4CC5F] text-white p-4 shadow-lg flex-shrink-0">
             <div className="flex items-center justify-between">
-              <CardTitle className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
-                <MapPin className="h-5 w-5 sm:h-6 sm:w-6 text-green-600 flex-shrink-0" />
-                <div className="min-w-0">
-                  <div className="text-lg sm:text-xl font-bold truncate">Création de Bilan GPS</div>
-                  <div className="text-xs sm:text-sm text-gray-600 font-normal truncate">
-                    Serre: {serreName} • Marchez dans le champ pour marquer les positions
-                  </div>
+              <div className="flex items-center space-x-3">
+                <MapPin className="h-6 w-6 text-white" />
+                <div>
+                  <h1 className="text-lg font-semibold">Création de Bilan</h1>
+                  <p className="text-sm text-white/90">{serreName}</p>
                 </div>
-              </CardTitle>
-              
-              {/* Close Button */}
+              </div>
               <Button
                 onClick={onCancel}
                 variant="ghost"
                 size="sm"
-                className="h-8 w-8 p-0 hover:bg-gray-200 flex-shrink-0 ml-2"
+                className="h-10 w-10 p-0 hover:bg-white/20 text-white"
                 disabled={isCreating}
               >
-                <X className="h-4 w-4" />
+                <X className="h-5 w-5" />
               </Button>
             </div>
-          </CardHeader>
+          </div>
 
-          <CardContent className="p-0 flex-1 overflow-hidden flex flex-col">
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-0 flex-1 min-h-0">
-              {/* Left Panel - Controls and Status */}
-              <div className="lg:col-span-1 border-r border-b lg:border-b-0 bg-gray-50 flex flex-col overflow-hidden">
-                {/* Scrollable Content Area */}
-                <div 
-                  className="flex-1 overflow-y-auto p-3 sm:p-4 lg:p-6 border-l-2 border-blue-200"
-                  style={{
-                    maxHeight: 'calc(100vh - 200px)',
-                    minHeight: '400px',
-                    scrollbarWidth: 'thin',
-                    scrollbarColor: '#CBD5E0 #F7FAFC',
-                    WebkitOverflowScrolling: 'touch',
-                    msOverflowStyle: 'auto'
-                  }}
-                >
-                  {/* Scroll Indicator */}
-                  <div className="sticky top-0 bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded mb-3 text-center z-10">
-                    📜 Zone défilable - Utilisez la molette ou les flèches pour naviguer
+          {/* Mobile Content */}
+          <div className="flex-1 flex flex-col overflow-hidden">
+            {/* Map Section - Takes most of the screen */}
+            <div className="flex-1 min-h-0">
+              {!isMapLoaded ? (
+                <div className="flex items-center justify-center h-full bg-gray-50">
+                  <div className="text-center">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#B4CC5F] mx-auto mb-2"></div>
+                    <p className="text-sm text-gray-600">Chargement de la carte...</p>
                   </div>
-                  
-                  <div className="space-y-4 sm:space-y-6 pb-4">
-                    {/* Bilan Name Input */}
-                    <div className="space-y-2 sm:space-y-3">
-                      <h3 className="font-semibold text-base sm:text-lg">Nom du Bilan</h3>
-                      <div className="space-y-2">
-                        <Label htmlFor="bilanName" className="text-sm sm:text-base">Nom *</Label>
-                        <Input
-                          id="bilanName"
-                          value={bilanName}
-                          onChange={(e) => setBilanName(e.target.value)}
-                          placeholder="Ex: Bilan Nord-Est - Juin 2024"
-                          className="w-full text-sm sm:text-base"
-                        />
-                      </div>
-                    </div>
+                </div>
+              ) : (
+                <BilanMapComponent
+                  serreLocation={serreLocation}
+                  selectedPoints={selectedPoints}
+                  currentLocation={currentLocation}
+                  isTracking={isTracking}
+                  className="h-full"
+                  onMapClick={handleMapClick}
+                />
+              )}
+            </div>
 
-                    <Separator />
-
-                    {/* GPS Status */}
-                    <div className="space-y-2 sm:space-y-3">
-                      <h3 className="font-semibold text-base sm:text-lg flex items-center gap-2">
-                        <Navigation className="h-4 w-4 sm:h-5 sm:w-5" />
-                        Statut GPS
-                      </h3>
-                      
-                      <div className="space-y-2">
-                        <div className="flex items-center justify-between text-sm">
-                          <span className="text-gray-600">Position actuelle:</span>
-                          <Badge variant={currentLocation ? "default" : "secondary"} className="text-xs">
-                            {currentLocation ? "Disponible" : "Non disponible"}
-                          </Badge>
-                        </div>
-                        
-                        <div className="flex items-center justify-between text-sm">
-                          <span className="text-gray-600">Suivi actif:</span>
-                          <Badge variant={isTracking ? "default" : "secondary"} className="text-xs">
-                            {isTracking ? "Actif" : "Inactif"}
-                          </Badge>
-                        </div>
-                      </div>
-
-                      {currentLocation && (
-                        <div className="text-xs text-gray-500 bg-white p-2 rounded border">
-                          Lat: {currentLocation.lat.toFixed(6)}<br />
-                          Lng: {currentLocation.lng.toFixed(6)}
-                          {currentLocation.accuracy !== undefined && (
-                            <>
-                              <br />
-                              Précision: ±{Math.round(currentLocation.accuracy)} m
-                            </>
-                          )}
-                        </div>
-                      )}
-                    </div>
-
-                    <Separator />
-
-                    {/* GPS Controls */}
-                    <div className="space-y-2 sm:space-y-3">
-                      <h3 className="font-semibold text-base sm:text-lg">Contrôles</h3>
-                      
-                      <div className="grid grid-cols-2 gap-2">
-                        {!isTracking ? (
-                          <Button 
-                            onClick={startTracking}
-                            className="w-full text-xs sm:text-sm"
-                            disabled={!currentLocation}
-                            size="sm"
-                          >
-                            <Play className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
-                            Démarrer
-                          </Button>
-                        ) : (
-                          <Button 
-                            onClick={stopTracking}
-                            variant="outline"
-                            className="w-full text-xs sm:text-sm"
-                            size="sm"
-                          >
-                            <Pause className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
-                            Arrêter
-                          </Button>
-                        )}
-                        
-                        <Button 
-                          onClick={getCurrentLocation}
-                          variant="outline"
-                          className="w-full text-xs sm:text-sm"
-                          size="sm"
-                        >
-                          <Target className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
-                          Actualiser
-                        </Button>
-                      </div>
-                    </div>
-
-                    <Separator />
-
-                    {/* Point Management */}
-                    <div className="space-y-2 sm:space-y-3">
-                      <h3 className="font-semibold text-base sm:text-lg">Gestion des Points</h3>
-                      
-                      <div className="space-y-2">
-                        <div className="grid grid-cols-2 gap-2">
-                          <Button 
-                            onClick={addCurrentPosition}
-                            className="w-full text-xs sm:text-sm"
-                            disabled={creationMode !== 'gps' || !currentLocation || !isTracking || selectedPoints.length >= 4}
-                            size="sm"
-                          >
-                            <MapPin className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
-                            Ajouter (GPS)
-                          </Button>
-                          <Button 
-                            onClick={() => setCreationMode(m => m === 'manual' ? 'gps' : 'manual')}
-                            variant="outline"
-                            className="w-full text-xs sm:text-sm"
-                            size="sm"
-                          >
-                            <Move className="h-3 w-3 mr-1" />
-                            Mode: {creationMode === 'manual' ? 'Manuel' : 'GPS'}
-                          </Button>
-                        </div>
-                        
-                        <div className="grid grid-cols-2 gap-2">
-                          <Button 
-                            onClick={removeLastPoint}
-                            variant="outline"
-                            size="sm"
-                            disabled={selectedPoints.length === 0}
-                            className="text-xs"
-                          >
-                            <XCircle className="h-3 w-3 mr-1" />
-                            Supprimer
-                          </Button>
-                          
-                          <Button 
-                            onClick={resetPoints}
-                            variant="outline"
-                            size="sm"
-                            disabled={selectedPoints.length === 0}
-                            className="text-xs"
-                          >
-                            <RotateCcw className="h-3 w-3 mr-1" />
-                            Réinitialiser
-                          </Button>
-                        </div>
-                        
-                        {/* Snap Toggle */}
-                        <div className="flex items-center justify-between text-xs text-gray-700">
-                          <span>Aligner sur grille 0,8 m</span>
-                          <Button onClick={() => setSnapEnabled(v => !v)} variant={snapEnabled ? 'default' : 'outline'} size="sm">
-                            {snapEnabled ? 'Activé' : 'Désactivé'}
-                          </Button>
-                        </div>
-
-                        {/* Rectangle Centerline Mode */}
-                        <div className="space-y-2 text-xs text-gray-700 mt-2">
-                          <div className="flex items-center justify-between">
-                            <span>Rectangle (centre + largeur)</span>
-                            <Button onClick={() => setCreationMode(m => m === 'rectangleCenterline' ? 'manual' : 'rectangleCenterline')} variant={creationMode === 'rectangleCenterline' ? 'default' : 'outline'} size="sm">
-                              <SquareIcon className="h-3 w-3 mr-1" /> {creationMode === 'rectangleCenterline' ? 'Activé' : 'Désactivé'}
-                            </Button>
-                          </div>
-                          {creationMode === 'rectangleCenterline' && (
-                            <div className="flex items-center gap-2">
-                              <Label htmlFor="rectWidth">Largeur (m)</Label>
-                              <Input id="rectWidth" type="number" step="0.1" value={rectangleParams.width} onChange={(e) => setRectangleParams(s => ({ ...s, width: Math.max(0.1, parseFloat(e.target.value) || 0.8) }))} className="w-24" />
-                              <span className="text-gray-500">Cliquez 2 points sur la carte (ligne centrale)</span>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-
-                    <Separator />
-
-                    {/* Points Summary */}
-                    <div className="space-y-2 sm:space-y-3">
-                      <h3 className="font-semibold text-base sm:text-lg">Résumé des Points</h3>
-                      
-                      <div className="space-y-2">
-                        <div className="flex items-center justify-between text-sm">
-                          <span className="text-gray-600">Points sélectionnés:</span>
-                          <Badge variant="outline" className="text-xs">{selectedPoints.length}/4</Badge>
-                        </div>
-                        
-                        <div className="flex items-center justify-between text-sm">
-                          <span className="text-gray-600">Surface estimée:</span>
-                          <span className="text-sm font-medium">
-                            {calculateArea().toFixed(1)} m²
-                          </span>
-                        </div>
-                      </div>
-
-                      {selectedPoints.length > 0 && (
-                        <div className="border rounded p-2 bg-white max-h-24 sm:max-h-32 overflow-y-auto">
-                          <div className="space-y-1">
-                            {selectedPoints.map((point, index) => (
-                              <div key={index} className="flex items-center gap-2 text-xs">
-                                <Badge variant="secondary" className="text-xs">
-                                  {point.ordre}
-                                </Badge>
-                                <span className="text-gray-600 truncate">
-                                  {point.lat.toFixed(6)}, {point.lng.toFixed(6)}
-                                </span>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-
-                    <Separator />
-
-                    {/* Generation Options */}
-                    <div className="space-y-2 sm:space-y-3">
-                      <h3 className="font-semibold text-base sm:text-lg">Options de génération</h3>
-                      <div className="space-y-2 text-sm">
-                        <div className="flex items-center justify-between">
-                          <span>Générer polygone depuis le parcours (centre + largeur)</span>
-                          <Button onClick={() => setUseCenterlineBuffer(v => !v)} variant={useCenterlineBuffer ? 'default' : 'outline'} size="sm">
-                            {useCenterlineBuffer ? 'Activé' : 'Désactivé'}
-                          </Button>
-                        </div>
-                        {useCenterlineBuffer && (
-                          <div className="flex items-center gap-2">
-                            <Label htmlFor="rowWidth">Largeur (m)</Label>
-                            <Input id="rowWidth" type="number" step="0.1" value={rowWidthMeters} onChange={(e) => setRowWidthMeters(Math.max(0.1, parseFloat(e.target.value) || 0.8))} className="w-24" />
-                          </div>
-                        )}
-                      </div>
-                    </div>
-
-                    <Separator />
-
-                    {/* Debug Info */}
-                    <div className="p-2 sm:p-3 bg-blue-50 border border-blue-200 rounded-md text-xs">
-                      <div className="font-medium text-blue-800 mb-2">État du formulaire:</div>
-                      <div className="space-y-1 text-blue-700">
-                        <div>• Nom saisi: {bilanName ? '✅' : '❌'} "{bilanName}"</div>
-                        <div>• Points: {selectedPoints.length}/4 {selectedPoints.length >= 3 ? '✅' : '❌'}</div>
-                        <div>• En cours de création: {isCreating ? 'Oui' : 'Non'}</div>
-                        <div>• Peut créer: {canCreateBilan ? '✅ Oui' : '❌ Non'}</div>
-                      </div>
-                    </div>
-
-                    <Separator />
-
-                    {/* Actions - Always at the bottom */}
-                    <div className="space-y-3 pt-2">
-                      {/* Create Bilan Button */}
-                      <Button 
-                        onClick={handleCreateBilan}
-                        className="w-full bg-green-600 hover:bg-green-700 text-white"
-                        disabled={!canCreateBilan}
-                        size="lg"
-                      >
-                        <CheckCircle className="h-5 w-5 mr-2" />
-                        {isCreating ? "Création en cours..." : "Créer le Bilan"}
-                      </Button>
-                      
-                      {/* Alternative Save Button */}
-                      <Button 
-                        onClick={handleCreateBilan}
-                        variant="outline"
-                        className="w-full border-green-600 text-green-600 hover:bg-green-50"
-                        disabled={!canCreateBilan}
-                      >
-                        <CheckCircle className="h-4 w-4 mr-2" />
-                        Sauvegarder le Bilan
-                      </Button>
-                      
-                      {/* Test Button - Direct Creation */}
-                      <Button 
-                        onClick={() => {
-                          if (canCreateBilan) {
-                            createBilan();
-                          } else {
-                            setError("Conditions non remplies pour créer le bilan");
-                          }
-                        }}
-                        variant="secondary"
-                        className="w-full"
-                        size="sm"
-                      >
-                        🧪 Test - Créer Directement
-                      </Button>
-                      
-                      {/* Cancel Button */}
-                      <Button 
-                        onClick={onCancel}
-                        variant="outline"
-                        className="w-full"
-                        disabled={isCreating}
-                      >
-                        Annuler
-                      </Button>
-                    </div>
-
-                    {/* Messages */}
-                    {error && (
-                      <div className="p-3 bg-red-50 border border-red-200 rounded-md">
-                        <p className="text-sm text-red-600">{error}</p>
-                      </div>
-                    )}
-                    
-                    {success && (
-                      <div className="p-3 bg-green-50 border border-green-200 rounded-md">
-                        <p className="text-sm text-green-600">{success}</p>
-                      </div>
-                    )}
-
-                    {/* Spacer to ensure buttons are reachable */}
-                    <div className="h-4"></div>
+            {/* Mobile Control Panel - Collapsible from bottom */}
+            <div className="bg-white border-t border-gray-200 shadow-lg">
+              {/* Control Panel Header */}
+              <div className="p-3 border-b border-gray-100">
+                <div className="flex items-center justify-between">
+                  <h3 className="font-medium text-gray-900">Contrôles</h3>
+                  <div className="flex items-center space-x-2">
+                    <Badge variant={currentLocation ? "default" : "secondary"} className="text-xs">
+                      GPS: {currentLocation ? "✓" : "✗"}
+                    </Badge>
+                    <Badge variant={isTracking ? "default" : "secondary"} className="text-xs">
+                      Suivi: {isTracking ? "Actif" : "Inactif"}
+                    </Badge>
                   </div>
                 </div>
               </div>
 
-              {/* Right Panel - Map */}
-              <div className="lg:col-span-2 h-full min-h-[300px] sm:min-h-[400px]">
-                {!isMapLoaded ? (
-                  <Card className="h-full">
-                    <CardContent className="flex items-center justify-center h-full">
-                      <div className="text-center">
-                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600 mx-auto mb-2"></div>
-                        <p className="text-sm text-gray-600">Chargement de Google Maps...</p>
-                        <p className="text-xs text-gray-500 mt-1">Veuillez patienter pendant le chargement</p>
-                        <div className="mt-2 text-xs text-gray-500">
-                          <p>Vérification de l'API Google Maps...</p>
-                          <p>Chargement des bibliothèques...</p>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ) : (
-                  <BilanMapComponent
-                    serreLocation={serreLocation}
-                    selectedPoints={selectedPoints}
-                    currentLocation={currentLocation}
-                    isTracking={isTracking}
-                    className="h-full"
-                    onMapClick={handleMapClick}
+              {/* Control Panel Content */}
+              <div className="p-4 space-y-4 max-h-64 overflow-y-auto">
+                {/* Bilan Name Input */}
+                <div className="space-y-2">
+                  <Label htmlFor="bilanName" className="text-sm font-medium">Nom du bilan *</Label>
+                  <Input
+                    id="bilanName"
+                    value={bilanName}
+                    onChange={(e) => setBilanName(e.target.value)}
+                    placeholder="Ex: Bilan Nord-Est - Juin 2024"
+                    className="w-full"
                   />
+                </div>
+
+                {/* GPS Controls */}
+                <div className="space-y-3">
+                  <h4 className="font-medium text-gray-900">Contrôles GPS</h4>
+                  <div className="grid grid-cols-2 gap-3">
+                    {!isTracking ? (
+                      <Button 
+                        onClick={startTracking}
+                        className="w-full bg-[#B4CC5F] hover:bg-[#B4CC5F]/90 text-white"
+                        disabled={!currentLocation}
+                        size="sm"
+                      >
+                        <Play className="h-4 w-4 mr-2" />
+                        Démarrer
+                      </Button>
+                    ) : (
+                      <Button 
+                        onClick={stopTracking}
+                        variant="outline"
+                        className="w-full"
+                        size="sm"
+                      >
+                        <Pause className="h-4 w-4 mr-2" />
+                        Arrêter
+                      </Button>
+                    )}
+                    
+                    <Button 
+                      onClick={getCurrentLocation}
+                      variant="outline"
+                      className="w-full"
+                      size="sm"
+                    >
+                      <Target className="h-4 w-4 mr-2" />
+                      Actualiser
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Point Management */}
+                <div className="space-y-3">
+                  <h4 className="font-medium text-gray-900">Points du bilan</h4>
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between text-sm">
+                      <span>Points collectés:</span>
+                      <Badge variant="outline" className="text-xs">
+                        {selectedPoints.length}/4
+                      </Badge>
+                    </div>
+                    
+                    <div className="grid grid-cols-2 gap-2">
+                      <Button 
+                        onClick={addCurrentPosition}
+                        className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+                        disabled={!currentLocation || !isTracking || selectedPoints.length >= 4}
+                        size="sm"
+                      >
+                        <MapPin className="h-4 w-4 mr-2" />
+                        Ajouter
+                      </Button>
+                      
+                      <Button 
+                        onClick={removeLastPoint}
+                        variant="outline"
+                        size="sm"
+                        disabled={selectedPoints.length === 0}
+                        className="w-full"
+                      >
+                        <RotateCcw className="h-4 w-4 mr-2" />
+                        Annuler
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Progress and Status */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between text-sm">
+                    <span>Progression:</span>
+                    <span className="font-medium">{Math.round((selectedPoints.length / 4) * 100)}%</span>
+                  </div>
+                  <div className="w-full bg-gray-200 rounded-full h-2">
+                    <div 
+                      className="bg-[#B4CC5F] h-2 rounded-full transition-all duration-300"
+                      style={{ width: `${(selectedPoints.length / 4) * 100}%` }}
+                    ></div>
+                  </div>
+                </div>
+
+                {/* Create Bilan Button */}
+                <Button 
+                  onClick={handleCreateBilan}
+                  className="w-full bg-[#B4CC5F] hover:bg-[#B4CC5F]/90 text-white h-12 text-base font-medium"
+                  disabled={!canCreateBilan}
+                >
+                  <CheckCircle className="h-5 w-5 mr-2" />
+                  {isCreating ? "Création en cours..." : "Créer le Bilan"}
+                </Button>
+
+                {/* Error/Success Messages */}
+                {error && (
+                  <div className="p-3 bg-red-50 border border-red-200 rounded-md">
+                    <p className="text-sm text-red-600">{error}</p>
+                  </div>
+                )}
+                
+                {success && (
+                  <div className="p-3 bg-green-50 border border-green-200 rounded-md">
+                    <p className="text-sm text-green-600">{success}</p>
+                  </div>
                 )}
               </div>
             </div>
-          </CardContent>
-        </Card>
-      </div>
+          </div>
+        </div>
+      ) : (
+        // Desktop Layout - Original Modal Design
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-2 sm:p-4">
+          <Card className="w-full h-full max-w-none sm:max-w-6xl sm:max-h-[90vh] overflow-hidden">
+            <CardHeader className="bg-gradient-to-r from-green-50 to-blue-50 border-b p-4 sm:p-6 flex-shrink-0">
+              <div className="flex items-center justify-between">
+                <CardTitle className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
+                  <MapPin className="h-5 w-5 sm:h-6 sm:w-6 text-green-600 flex-shrink-0" />
+                  <div className="min-w-0">
+                    <div className="text-lg sm:text-xl font-bold truncate">Création de Bilan GPS</div>
+                    <div className="text-xs sm:text-sm text-gray-600 font-normal truncate">
+                      Serre: {serreName} • Marchez dans le champ pour marquer les positions
+                    </div>
+                  </div>
+                </CardTitle>
+                
+                {/* Close Button */}
+                <Button
+                  onClick={onCancel}
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 w-8 p-0 hover:bg-gray-200 flex-shrink-0 ml-2"
+                  disabled={isCreating}
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+            </CardHeader>
+
+            <CardContent className="p-0 flex-1 overflow-hidden flex flex-col">
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-0 flex-1 min-h-0">
+                {/* Left Panel - Controls and Status */}
+                <div className="lg:col-span-1 border-r border-b lg:border-b-0 bg-gray-50 flex flex-col overflow-hidden">
+                  {/* Scrollable Content Area */}
+                  <div 
+                    className="flex-1 overflow-y-auto p-3 sm:p-4 lg:p-6 border-l-2 border-blue-200"
+                    style={{
+                      maxHeight: 'calc(100vh - 200px)',
+                      minHeight: '400px',
+                      scrollbarWidth: 'thin',
+                      scrollbarColor: '#CBD5E0 #F7FAFC',
+                      WebkitOverflowScrolling: 'touch',
+                      msOverflowStyle: 'auto'
+                    }}
+                  >
+                    {/* Scroll Indicator */}
+                    <div className="sticky top-0 bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded mb-3 text-center z-10">
+                      📜 Zone défilable - Utilisez la molette ou les flèches pour naviguer
+                    </div>
+                    
+                    <div className="space-y-4 sm:space-y-6 pb-4">
+                      {/* Bilan Name Input */}
+                      <div className="space-y-2 sm:space-y-3">
+                        <h3 className="font-semibold text-base sm:text-lg">Nom du Bilan</h3>
+                        <div className="space-y-2">
+                          <Label htmlFor="bilanName" className="text-sm sm:text-base">Nom *</Label>
+                          <Input
+                            id="bilanName"
+                            value={bilanName}
+                            onChange={(e) => setBilanName(e.target.value)}
+                            placeholder="Ex: Bilan Nord-Est - Juin 2024"
+                            className="w-full text-sm sm:text-base"
+                          />
+                        </div>
+                      </div>
+
+                      <Separator />
+
+                      {/* GPS Status */}
+                      <div className="space-y-2 sm:space-y-3">
+                        <h3 className="font-semibold text-base sm:text-lg flex items-center gap-2">
+                          <Navigation className="h-4 w-4 sm:h-5 sm:w-5" />
+                          Statut GPS
+                        </h3>
+                        
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between text-sm">
+                            <span className="text-gray-600">Position actuelle:</span>
+                            <Badge variant={currentLocation ? "default" : "secondary"} className="text-xs">
+                              {currentLocation ? "Disponible" : "Non disponible"}
+                            </Badge>
+                          </div>
+                          
+                          <div className="flex items-center justify-between text-sm">
+                            <span className="text-gray-600">Suivi actif:</span>
+                            <Badge variant={isTracking ? "default" : "secondary"} className="text-xs">
+                              {isTracking ? "Actif" : "Inactif"}
+                            </Badge>
+                          </div>
+                        </div>
+
+                        {currentLocation && (
+                          <div className="text-xs text-gray-500 bg-white p-2 rounded border">
+                            Lat: {currentLocation.lat.toFixed(6)}<br />
+                            Lng: {currentLocation.lng.toFixed(6)}
+                            {currentLocation.accuracy !== undefined && (
+                              <>
+                                <br />
+                                Précision: ±{Math.round(currentLocation.accuracy)} m
+                              </>
+                            )}
+                          </div>
+                        )}
+                      </div>
+
+                      <Separator />
+
+                      {/* GPS Controls */}
+                      <div className="space-y-2 sm:space-y-3">
+                        <h3 className="font-semibold text-base sm:text-lg">Contrôles</h3>
+                        
+                        <div className="grid grid-cols-2 gap-2">
+                          {!isTracking ? (
+                            <Button 
+                              onClick={startTracking}
+                              className="w-full text-xs sm:text-sm"
+                              disabled={!currentLocation}
+                              size="sm"
+                            >
+                              <Play className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                              Démarrer
+                            </Button>
+                          ) : (
+                            <Button 
+                              onClick={stopTracking}
+                              variant="outline"
+                              className="w-full text-xs sm:text-sm"
+                              size="sm"
+                            >
+                              <Pause className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                              Arrêter
+                            </Button>
+                          )}
+                          
+                          <Button 
+                            onClick={getCurrentLocation}
+                            variant="outline"
+                            className="w-full text-xs sm:text-sm"
+                            size="sm"
+                          >
+                            <Target className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                            Actualiser
+                          </Button>
+                        </div>
+                      </div>
+
+                      <Separator />
+
+                      {/* Point Management */}
+                      <div className="space-y-2 sm:space-y-3">
+                        <h3 className="font-semibold text-base sm:text-lg">Gestion des Points</h3>
+                        
+                        <div className="space-y-2">
+                          <div className="grid grid-cols-2 gap-2">
+                            <Button 
+                              onClick={addCurrentPosition}
+                              className="w-full text-xs sm:text-sm"
+                              disabled={creationMode !== 'gps' || !currentLocation || !isTracking || selectedPoints.length >= 4}
+                              size="sm"
+                            >
+                              <MapPin className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                              Ajouter (GPS)
+                            </Button>
+                            <Button 
+                              onClick={() => setCreationMode(m => m === 'manual' ? 'gps' : 'manual')}
+                              variant="outline"
+                              className="w-full text-xs sm:text-sm"
+                              size="sm"
+                            >
+                              <Move className="h-3 w-3 mr-1" />
+                              Mode: {creationMode === 'manual' ? 'Manuel' : 'GPS'}
+                            </Button>
+                          </div>
+                          
+                          <div className="grid grid-cols-2 gap-2">
+                            <Button 
+                              onClick={removeLastPoint}
+                              variant="outline"
+                              size="sm"
+                              disabled={selectedPoints.length === 0}
+                              className="text-xs"
+                            >
+                              <RotateCcw className="h-3 w-3 mr-1" />
+                              Annuler dernier
+                            </Button>
+                            <Button 
+                              onClick={clearAllPoints}
+                              variant="outline"
+                              size="sm"
+                              disabled={selectedPoints.length === 0}
+                              className="text-xs"
+                            >
+                              <XCircle className="h-3 w-3 mr-1" />
+                              Tout effacer
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+
+                      <Separator />
+
+                      {/* Advanced Options */}
+                      <div className="space-y-2 sm:space-y-3">
+                        <h3 className="font-semibold text-base sm:text-lg">Options avancées</h3>
+                        
+                        <div className="space-y-2">
+                          <div className="flex items-center space-x-2">
+                            <input
+                              type="checkbox"
+                              id="snapEnabled"
+                              checked={snapEnabled}
+                              onChange={(e) => setSnapEnabled(e.target.checked)}
+                              className="rounded border-gray-300 text-[#B4CC5F] focus:ring-[#B4CC5F]"
+                            />
+                            <Label htmlFor="snapEnabled" className="text-sm">Aligner sur grille 0,8 m</Label>
+                          </div>
+                          
+                          <div className="flex items-center space-x-2">
+                            <input
+                              type="checkbox"
+                              id="useCenterlineBuffer"
+                              checked={useCenterlineBuffer}
+                              onChange={(e) => setUseCenterlineBuffer(e.target.checked)}
+                              className="rounded border-gray-300 text-[#B4CC5F] focus:ring-[#B4CC5F]"
+                            />
+                            <Label htmlFor="useCenterlineBuffer" className="text-sm">Rectangle (centre + largeur)</Label>
+                          </div>
+                          
+                          {useCenterlineBuffer && (
+                            <div className="pl-6 space-y-2">
+                              <div className="grid grid-cols-2 gap-2">
+                                <div>
+                                  <Label htmlFor="rowWidthMeters" className="text-xs">Largeur (m)</Label>
+                                  <Input
+                                    id="rowWidthMeters"
+                                    type="number"
+                                    step="0.1"
+                                    min="0.1"
+                                    max="10"
+                                    value={rowWidthMeters}
+                                    onChange={(e) => setRowWidthMeters(parseFloat(e.target.value))}
+                                    className="w-full text-xs"
+                                  />
+                                </div>
+                                <div>
+                                  <Label htmlFor="rectangleLength" className="text-xs">Longueur (m)</Label>
+                                  <Input
+                                    id="rectangleLength"
+                                    type="number"
+                                    step="0.1"
+                                    min="1"
+                                    max="100"
+                                    value={rectangleParams.length}
+                                    onChange={(e) => setRectangleParams(prev => ({ ...prev, length: parseFloat(e.target.value) }))}
+                                    className="w-full text-xs"
+                                  />
+                                </div>
+                              </div>
+                              <p className="text-xs text-gray-500">
+                                Cliquez 2 points sur la carte (ligne centrale)
+                              </p>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      <Separator />
+
+                      {/* Debug Information */}
+                      <div className="space-y-2 sm:space-y-3">
+                        <h3 className="font-semibold text-base sm:text-lg">Informations de débogage</h3>
+                        
+                        <div className="space-y-2 text-xs">
+                          <div className="grid grid-cols-2 gap-2">
+                            <div>• Points sélectionnés: {selectedPoints.length}</div>
+                            <div>• Création en cours: {isCreating ? 'Oui' : 'Non'}</div>
+                            <div>• Nom saisi: {bilanName ? '✅' : '❌'} "{bilanName}"</div>
+                            <div>• Peut créer: {canCreateBilan ? '✅ Oui' : '❌ Non'}</div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Actions - Always at the bottom */}
+                      <div className="space-y-3 pt-2">
+                        {/* Create Bilan Button */}
+                        <Button 
+                          onClick={handleCreateBilan}
+                          className="w-full bg-green-600 hover:bg-green-700 text-white"
+                          disabled={!canCreateBilan}
+                          size="lg"
+                        >
+                          <CheckCircle className="h-5 w-5 mr-2" />
+                          {isCreating ? "Création en cours..." : "Créer le Bilan"}
+                        </Button>
+                        
+                        {/* Alternative Save Button */}
+                        <Button 
+                          onClick={handleCreateBilan}
+                          variant="outline"
+                          className="w-full border-green-600 text-green-600 hover:bg-green-50"
+                          disabled={!canCreateBilan}
+                        >
+                          <CheckCircle className="h-4 w-4 mr-2" />
+                          Sauvegarder le Bilan
+                        </Button>
+                        
+                        {/* Test Button - Direct Creation */}
+                        <Button 
+                          onClick={() => {
+                            if (canCreateBilan) {
+                              createBilan();
+                            } else {
+                              setError("Conditions non remplies pour créer le bilan");
+                            }
+                          }}
+                          variant="secondary"
+                          className="w-full"
+                          size="sm"
+                        >
+                          🧪 Test - Créer Directement
+                        </Button>
+                        
+                        {/* Cancel Button */}
+                        <Button 
+                          onClick={onCancel}
+                          variant="outline"
+                          className="w-full"
+                          disabled={isCreating}
+                        >
+                          Annuler
+                        </Button>
+                      </div>
+
+                      {/* Messages */}
+                      {error && (
+                        <div className="p-3 bg-red-50 border border-red-200 rounded-md">
+                          <p className="text-sm text-red-600">{error}</p>
+                        </div>
+                      )}
+                      
+                      {success && (
+                        <div className="p-3 bg-green-50 border border-green-200 rounded-md">
+                          <p className="text-sm text-green-600">{success}</p>
+                        </div>
+                      )}
+
+                      {/* Spacer to ensure buttons are reachable */}
+                      <div className="h-4"></div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Right Panel - Map */}
+                <div className="lg:col-span-2 h-full min-h-[300px] sm:min-h-[400px]">
+                  {!isMapLoaded ? (
+                    <Card className="h-full">
+                      <CardContent className="flex items-center justify-center h-full">
+                        <div className="text-center">
+                          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600 mx-auto mb-2"></div>
+                          <p className="text-sm text-gray-600">Chargement de Google Maps...</p>
+                          <p className="text-xs text-gray-500 mt-1">Veuillez patienter pendant le chargement</p>
+                          <div className="mt-2 text-xs text-gray-500">
+                            <p>Vérification de l'API Google Maps...</p>
+                            <p>Chargement des bibliothèques...</p>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ) : (
+                    <BilanMapComponent
+                      serreLocation={serreLocation}
+                      selectedPoints={selectedPoints}
+                      currentLocation={currentLocation}
+                      isTracking={isTracking}
+                      className="h-full"
+                      onMapClick={handleMapClick}
+                    />
+                  )}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
       {/* Confirmation Dialog */}
       <AlertDialog open={showConfirmation} onOpenChange={setShowConfirmation}>

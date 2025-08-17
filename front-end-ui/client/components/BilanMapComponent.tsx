@@ -386,26 +386,6 @@ export default function BilanMapComponent({
             </div>
           </div>
 
-          {/* Responsive Instructions Overlay */}
-          {selectedPoints.length === 0 && (
-            <div className={`absolute bg-blue-600 text-white p-2 sm:p-3 lg:p-4 rounded-lg shadow-lg ${
-              isMobile ? 'bottom-2 left-2 right-2 max-w-none' : 'bottom-4 left-4 max-w-80'
-            }`}>
-              <div className="flex items-start gap-2 sm:gap-3">
-                <Target className="h-4 w-4 sm:h-5 sm:w-5 mt-0.5 flex-shrink-0" />
-                <div className="text-xs sm:text-sm">
-                  <div className="font-semibold mb-1">Instructions</div>
-                  <div className="space-y-0.5 sm:space-y-1 text-blue-100">
-                    <div>1. Démarrer le suivi GPS</div>
-                    <div>2. Marcher dans le champ</div>
-                    <div>3. Cliquer "Ajouter Point" à chaque position</div>
-                    <div>4. Continuer jusqu'à 4 points</div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-
           {/* Responsive Progress Indicator */}
           {selectedPoints.length > 0 && (
             <div className={`absolute bg-white p-2 sm:p-3 rounded-lg shadow-lg ${
