@@ -57,7 +57,7 @@ export default function PageHeader({
   };
 
   return (
-    <header className="bg-white shadow-sm border-b sticky top-0 z-10">
+    <header className="bg-card shadow-sm border-b border-border sticky top-0 z-10">
       <div className="max-w-full px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center py-4">
           <div className="flex items-center space-x-4">
@@ -67,11 +67,11 @@ export default function PageHeader({
             {/* Title Section */}
             <div className="flex items-center space-x-3">
               <div>
-                <h1 className="text-xl font-semibold text-gray-900">
+                <h1 className="text-xl font-semibold text-foreground">
                   {title}
                 </h1>
                 {subtitle && (
-                  <p className="text-sm text-gray-600 mt-0.5">{subtitle}</p>
+                  <p className="text-sm text-muted-foreground mt-0.5">{subtitle}</p>
                 )}
               </div>
 
@@ -103,7 +103,7 @@ export default function PageHeader({
                 <DropdownMenuTrigger asChild>
                   <Button
                     variant="ghost"
-                    className="flex items-center space-x-2 hover:bg-gray-100 transition-colors duration-200 px-3 py-2 rounded-md"
+                    className="flex items-center space-x-2 hover:bg-muted transition-colors duration-200 px-3 py-2 rounded-md"
                   >
                     <div className="hidden sm:flex items-center space-x-2">
                       <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">

@@ -73,6 +73,11 @@ export default function BilanMapComponent({
     setMapLoaded(true);
   };
 
+  // Safety check to ensure Google Maps API is loaded
+  const isGoogleMapsLoaded = () => {
+    return typeof window !== 'undefined' && window.google && window.google.maps;
+  };
+
   const onMapUnmount = () => {
     setMap(null);
     setMapLoaded(false);
@@ -125,53 +130,27 @@ export default function BilanMapComponent({
     return totalDistance;
   };
 
-  // Create marker icon only when Google Maps API is available
-  const createMarkerIcon = (color: string, text: string) => {
-    if (!checkGoogleMapsAvailable()) {
-      console.warn('Google Maps API not available for creating marker icon');
-      return undefined;
-    }
-    
-    try {
-      const scaledSize = createGoogleMapsSize(32, 32);
-      if (!scaledSize) {
-        console.warn('Could not create Google Maps Size object');
-        return undefined;
-      }
-
-      return {
-        url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
-          <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <circle cx="16" cy="16" r="16" fill="${color}" opacity="0.8"/>
-            <circle cx="16" cy="16" r="8" fill="${color}"/>
-            <text x="16" y="20" text-anchor="middle" fill="white" font-size="12" font-weight="bold">${text}</text>
-          </svg>
-        `),
-        scaledSize,
-      };
-    } catch (error) {
-      console.error('Error creating marker icon:', error);
-      return undefined;
-    }
-  };
-
-  // Show error state if Google Maps failed to load
-  if (hasError) {
+  // Don't render the map if Google Maps API isn't loaded
+  if (typeof window === 'undefined' || !window.google || !window.google.maps) {
     return (
       <Card className={className}>
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center gap-2 text-lg">
             <Route className="h-5 w-5" />
             Carte Interactive du Bilan
+            {isTracking && (
+              <Badge variant="secondary" className="ml-2 animate-pulse">
+                <Navigation className="h-3 w-3 mr-1" />
+                Suivi actif
+              </Badge>
+            )}
           </CardTitle>
         </CardHeader>
         <CardContent className="p-0">
-          <div className="flex items-center justify-center h-[500px] bg-gray-50">
+          <div className="flex items-center justify-center h-full min-h-[500px]">
             <div className="text-center">
-              <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
-              <p className="text-lg font-medium text-gray-900 mb-2">Erreur de chargement de la carte</p>
-              <p className="text-sm text-gray-600 mb-4">{error}</p>
-              <p className="text-xs text-gray-500">Veuillez rafraîchir la page ou vérifier votre connexion internet</p>
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600 mx-auto mb-2"></div>
+              <p className="text-sm text-gray-600">Chargement de Google Maps...</p>
             </div>
           </div>
         </CardContent>
@@ -195,7 +174,16 @@ export default function BilanMapComponent({
       </CardHeader>
       <CardContent className="p-0">
         <div className="relative">
-          <GoogleMapsWrapper apiKey={getGoogleMapsAPIKey()}>
+          <GoogleMapsWrapper>
+          {(!mapLoaded || !isGoogleMapsLoaded()) && (
+            <div className="flex items-center justify-center h-full min-h-[500px]">
+              <div className="text-center">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600 mx-auto mb-2"></div>
+                <p className="text-sm text-gray-600">Chargement de la carte...</p>
+              </div>
+            </div>
+          )}
+          {mapLoaded && isGoogleMapsLoaded() && (
             <GoogleMap
               mapContainerStyle={mapContainerStyle}
               center={getMapCenter()}
@@ -218,18 +206,21 @@ export default function BilanMapComponent({
                 gestureHandling: 'greedy',
               }}
             >
-              {/* Only render map content when Google Maps API is loaded */}
-              {mapLoaded && isGoogleMapsAvailable && (
-                <>
-                  {/* Additional safety check for required Google Maps objects */}
-                  {checkGoogleMapsAvailable() ? (
-                    <>
-                      {/* Serre Location Marker */}
-                      <Marker
-                        position={serreLocation}
-                        icon={createMarkerIcon('#10B981', 'S')}
-                        title="Serre"
-                      />
+              {/* Serre Location Marker */}
+              <Marker
+                position={serreLocation}
+                icon={{
+                  url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
+                    <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <circle cx="16" cy="16" r="16" fill="#10B981" opacity="0.8"/>
+                      <circle cx="16" cy="16" r="8" fill="#10B981"/>
+                      <text x="16" y="20" text-anchor="middle" fill="white" font-size="12" font-weight="bold">S</text>
+                    </svg>
+                  `),
+                  scaledSize: mapLoaded && isGoogleMapsLoaded() ? new window.google.maps.Size(32, 32) : undefined,
+                }}
+                title="Serre"
+              />
 
                       {/* User Movement Path */}
                       {userPath.length > 1 && (
@@ -244,14 +235,23 @@ export default function BilanMapComponent({
                         />
                       )}
 
-                      {/* Current Location Marker */}
-                      {currentLocation && (
-                        <Marker
-                          position={currentLocation}
-                          icon={createMarkerIcon('#3B82F6', 'T')}
-                          title="Votre position actuelle"
-                        />
-                      )}
+              {/* Current Location Marker */}
+              {currentLocation && (
+                <Marker
+                  position={currentLocation}
+                  icon={{
+                    url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
+                      <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <circle cx="16" cy="16" r="16" fill="#3B82F6" opacity="0.8"/>
+                        <circle cx="16" cy="16" r="8" fill="#3B82F6"/>
+                        <text x="16" y="20" text-anchor="middle" fill="white" font-size="12" font-weight="bold">T</text>
+                      </svg>
+                    `),
+                    scaledSize: mapLoaded && isGoogleMapsLoaded() ? new window.google.maps.Size(32, 32) : undefined,
+                  }}
+                  title="Votre position actuelle"
+                />
+              )}
 
                       {/* Accuracy Circle */}
                       {currentLocation?.accuracy !== undefined && currentLocation.accuracy > 0 && (
@@ -269,15 +269,24 @@ export default function BilanMapComponent({
                         />
                       )}
 
-                      {/* Selected Points Markers */}
-                      {selectedPoints.map((point, index) => (
-                        <Marker
-                          key={index}
-                          position={{ lat: point.lat, lng: point.lng }}
-                          icon={createMarkerIcon('#F59E0B', point.ordre.toString())}
-                          title={`Point ${point.ordre} du bilan`}
-                        />
-                      ))}
+              {/* Selected Points Markers */}
+              {selectedPoints.map((point, index) => (
+                <Marker
+                  key={index}
+                  position={{ lat: point.lat, lng: point.lng }}
+                  icon={{
+                    url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
+                      <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <circle cx="16" cy="16" r="16" fill="#F59E0B" opacity="0.8"/>
+                        <circle cx="16" cy="16" r="8" fill="#F59E0B"/>
+                        <text x="16" y="20" text-anchor="middle" fill="white" font-size="12" font-weight="bold">${point.ordre}</text>
+                      </svg>
+                    `),
+                    scaledSize: mapLoaded && isGoogleMapsLoaded() ? new window.google.maps.Size(32, 32) : undefined,
+                  }}
+                  title={`Point ${point.ordre} du bilan`}
+                />
+              ))}
 
                       {/* Polygon connecting the selected points */}
                       {selectedPoints.length >= 3 && (
@@ -306,6 +315,7 @@ export default function BilanMapComponent({
                 </>
               )}
             </GoogleMap>
+          )}
           </GoogleMapsWrapper>
 
           {/* Map Legend and Stats */}
@@ -336,7 +346,7 @@ export default function BilanMapComponent({
                 <>
                   <div className="border-t pt-2">
                     <div className="text-xs text-gray-600">
-                      Distance parcourue: {(calculateTotalDistance() / 1000).toFixed(2)} km
+                      Distance parcourue: {((calculateTotalDistance() || 0) / 1000).toFixed(2)} km
                     </div>
                     <div className="text-xs text-gray-600">
                       Points du bilan: {selectedPoints.length}/4

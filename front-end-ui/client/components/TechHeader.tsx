@@ -3,10 +3,9 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import TechnicianSidebar from "./TechnicianSidebar";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Home, Map, ChevronDown, User, LogOut, Menu } from "lucide-react";
+import { Home, Map, ChevronDown, User, LogOut, Sun, Moon } from "lucide-react";
 
 type UserRole = "technicien" | "technicien_sup";
 
@@ -14,12 +13,12 @@ interface TechHeaderProps {
   role: UserRole;
 }
 
-const getRoleLabel = (role: UserRole): string =>
-  role === "technicien_sup" ? "Technicien Supérieur" : "Technicien";
+
 
 export default function TechHeader({ role }: TechHeaderProps) {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const [isDarkMode, setIsDarkMode] = React.useState(false);
 
   const initials = (user?.name || user?.email || "U")
     .split(" ")
@@ -39,6 +38,16 @@ export default function TechHeader({ role }: TechHeaderProps) {
     await logout();
   };
 
+  const toggleTheme = () => {
+    setIsDarkMode(!isDarkMode);
+    // Apply theme to document
+    if (isDarkMode) {
+      document.documentElement.classList.remove('dark');
+    } else {
+      document.documentElement.classList.add('dark');
+    }
+  };
+
   return (
     <header className="bg-white border-b sticky top-0 z-10">
       <div className="max-w-full px-3 sm:px-4 lg:px-6">
@@ -49,42 +58,36 @@ export default function TechHeader({ role }: TechHeaderProps) {
             <TechnicianSidebar userRole={role} />
           </div>
 
-          {/* Center: Logo + Map icon (responsive sizing) */}
-          <div className="justify-self-center flex items-center gap-2 sm:gap-3">
+          {/* Center: Home and Map icons (centered) */}
+          <div className="justify-self-center flex items-center gap-3">
             <div 
-              className="h-8 w-8 sm:h-9 sm:w-9 lg:h-10 lg:w-10 rounded-xl bg-[#B4CC5F] flex items-center justify-center shadow-sm cursor-pointer hover:bg-[#9BB84F] transition-colors duration-200 active:scale-95"
-              onClick={() => navigate(role === "technicien_sup" ? "/technicien-sup/home" : "/technician")}
-              title="Accueil - Tableau de bord"
+              className="h-9 w-9 rounded-xl bg-[#B4CC5F] flex items-center justify-center shadow-sm cursor-pointer hover:bg-[#9BB84F] transition-colors duration-200 active:scale-95"
+              onClick={() => navigate(role === "technicien_sup" ? "/technicien-sup/home" : "/technician/dashboard")}
+              title="Accueil"
             >
-              <Home className="h-4 w-4 sm:h-5 sm:w-5 lg:h-6 lg:w-6 text-white" />
+              <Home className="h-5 w-5 text-white" />
             </div>
             <div 
               className="cursor-pointer hover:scale-110 transition-transform duration-200 active:scale-95"
-              onClick={() => navigate(role === "technicien_sup" ? "/technicien-sup" : "/technician")}
-              title="Carte - Vue d'ensemble"
+              onClick={() => navigate(role === "technicien_sup" ? "/technicien-sup" : "/technician/map")}
+              title="Carte"
             >
-              <Map className="h-4 w-4 sm:h-5 sm:w-5 lg:h-6 lg:w-6 text-blue-700" />
+              <Map className="h-5 w-5 text-blue-700" />
             </div>
           </div>
 
-          {/* Right: Role + User dropdown (responsive) */}
-          <div className="justify-self-end flex items-center gap-2 sm:gap-3">
-            {/* Role badge - hidden on very small screens */}
-            <Badge variant="outline" className="hidden xs:inline bg-gray-50 border-gray-200 text-gray-700 text-xs">
-              {getRoleLabel(role)}
-            </Badge>
-
+          {/* Right: User dropdown */}
+          <div className="justify-self-end">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="px-2 sm:px-3 h-8 sm:h-9 lg:h-10">
-                  <div className="flex items-center gap-1 sm:gap-2">
-                    <Avatar className="h-6 w-6 sm:h-7 sm:w-7 lg:h-8 lg:w-8">
-                      <AvatarFallback className="bg-blue-100 text-blue-700 text-xs sm:text-sm">
+                <Button variant="ghost" className="px-3 h-9">
+                  <div className="flex items-center gap-2">
+                    <Avatar className="h-7 w-7">
+                      <AvatarFallback className="bg-blue-100 text-blue-700 text-sm">
                         {initials}
                       </AvatarFallback>
                     </Avatar>
-                    {/* User info - hidden on small screens */}
-                    <div className="hidden sm:block text-left">
+                    <div className="text-left">
                       <div className="text-sm font-medium text-gray-900 leading-none">
                         {user?.name || "Utilisateur"}
                       </div>
@@ -92,7 +95,7 @@ export default function TechHeader({ role }: TechHeaderProps) {
                         {user?.email}
                       </div>
                     </div>
-                    <ChevronDown className="h-3 w-3 sm:h-4 sm:w-4 text-gray-400" />
+                    <ChevronDown className="h-4 w-4 text-gray-400" />
                   </div>
                 </Button>
               </DropdownMenuTrigger>
@@ -104,6 +107,18 @@ export default function TechHeader({ role }: TechHeaderProps) {
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={handleProfile} className="cursor-pointer">
                   <User className="h-4 w-4 mr-2" /> Profile
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={toggleTheme} className="cursor-pointer">
+                  {isDarkMode ? (
+                    <>
+                      <Sun className="h-4 w-4 mr-2" /> Mode clair
+                    </>
+                  ) : (
+                    <>
+                      <Moon className="h-4 w-4 mr-2" /> Mode sombre
+                    </>
+                  )}
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={handleLogout} className="cursor-pointer text-red-600 focus:text-red-600">

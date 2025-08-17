@@ -1,26 +1,33 @@
 import axios from 'axios';
 import { tokenManager } from './authService';
 
+// Use the correct backend port
 const API_BASE_URL = `${window.location.protocol}//${window.location.hostname}:5000/api`;
 
 interface Mission {
   id: number;
   id_robot: number;
   id_serre: number;
+  date_debut: string | null;
+  date_fin: string | null;
   rep_jr: number;
   rep_sem: number;
-  date_debut: string;
-  date_fin: string | null;
+  jour: number | null;
+  heure: number | null;
+  minute: number | null;
   executed: boolean;
 }
 
 interface CreateMissionRequest {
   id_robot: number;
   id_serre: number;
-  rep_jr: number;
-  rep_sem: number;
-  date_debut: string;
+  date_debut?: string | null;
   date_fin?: string | null;
+  rep_jr?: number;
+  rep_sem?: number;
+  jour?: number | null;
+  heure?: number | null;
+  minute?: number | null;
   executed?: boolean;
 }
 
@@ -43,18 +50,12 @@ export const missionService = {
   // Get all missions
   getAllMissions: async (): Promise<Mission[]> => {
     try {
-      console.log('Fetching missions from:', `${API_BASE_URL}/mission_robot`);
-      console.log('Auth headers:', createAuthenticatedRequest());
-      
       const response = await axios.get<Mission[]>(
         `${API_BASE_URL}/mission_robot`,
         createAuthenticatedRequest()
       );
-      
-      console.log('Mission response:', response);
       return response.data;
     } catch (error: any) {
-      console.error('Mission API error:', error);
       const errorMessage = error.response?.data?.message || 
         "Erreur lors de la récupération des missions";
       throw {

@@ -30,7 +30,7 @@ interface Serre {
   };
 }
 
-interface Intervention {
+interface InterventionItem {
   id: number;
   type: string;
   id_serre: number;
@@ -71,8 +71,8 @@ interface InterventionData {
 export default function TechnicienSupInterventions() {
   const { user } = useAuth();
   const [assignedSerres, setAssignedSerres] = useState<Serre[]>([]);
-  const [interventions, setInterventions] = useState<Intervention[]>([]);
-  const [filteredInterventions, setFilteredInterventions] = useState<Intervention[]>([]);
+  const [interventions, setInterventions] = useState<InterventionItem[]>([]);
+  const [filteredInterventions, setFilteredInterventions] = useState<InterventionItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
@@ -100,7 +100,7 @@ export default function TechnicienSupInterventions() {
     try {
       setLoading(true);
       // Mock data for now - in real implementation, fetch from backend
-      const mockInterventions: Intervention[] = [
+      const mockInterventions: InterventionItem[] = [
         {
           id: 1,
           type: "Préparation du Sol",

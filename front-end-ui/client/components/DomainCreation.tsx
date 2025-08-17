@@ -8,7 +8,7 @@ import { Separator } from "@/components/ui/separator";
 import { MapPin, Plus, Trash2 } from "lucide-react";
 import GoogleMapsWrapper from "./GoogleMapsWrapper";
 import MapComponent, { DrawnShape } from "./MapComponent";
-import { getGoogleMapsAPIKey } from "@/config/maps";
+
 
 interface Domain {
   id: string;
@@ -41,7 +41,7 @@ interface DomainCreationProps {
   }) => Promise<{ id: string }>; // Add this prop
 }
 
-const GOOGLE_MAPS_API_KEY = getGoogleMapsAPIKey();
+
 
 export default function DomainCreation({
   onContinue,
@@ -113,6 +113,7 @@ export default function DomainCreation({
       // Add serres for this domain
       domain.serres.forEach((serre) => {
         shapes.push({
+          id: `serre-${domain.id}-${serre.id || Math.random().toString(36).substr(2, 9)}`,
           type: "serre",
           name: serre.nom,
           path: serre.position,
@@ -289,7 +290,7 @@ export default function DomainCreation({
 
       {/* Right Panel - Map */}
       <div className="flex-1">
-        <GoogleMapsWrapper apiKey={GOOGLE_MAPS_API_KEY}>
+        <GoogleMapsWrapper>
           <MapComponent
             onShapeComplete={handleShapeComplete}
             existingShapes={getAllShapes()}

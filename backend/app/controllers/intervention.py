@@ -6,7 +6,7 @@ from app.utils.security import token_required , role_required
 from database.config import db
 from app.models.user import User
 from app.models.serre import Serre
-from app.models.type_tache import Type_tache
+from app.models.type_tache import TypeTache
 
 # controllers/intervention.py
 from app.utils.notifications import envoyer_notification
@@ -131,7 +131,7 @@ def get_interventions_by_assigned_serres(current_user):
                     intervention_data['domaine_nom'] = "Domaine inconnu"
             
             # Get type_tache information
-            type_tache = Type_tache.query.get(intervention.id_type_tache)
+            type_tache = TypeTache.query.get(intervention.id_type_tache)
             if type_tache:
                 intervention_data['type_nom'] = type_tache.nom
             

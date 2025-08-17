@@ -135,8 +135,8 @@ export default function DirectorDashboard() {
 
       const totalAlerts = (alerts as any[])?.length || 0;
       const criticalAlerts = (alerts as any[])?.filter((a: any) => {
-        // Critical severity by priority value 2 (backend returns 'priority' field)
-        return typeof (a.priority || a.status_alert) === 'number' && (a.priority || a.status_alert) === 2;
+        // Critical severity by status_alert value 2
+        return typeof a.status_alert === 'number' && a.status_alert === 2;
       }).length || 0;
 
       const totalDomains = domains.length;
@@ -333,59 +333,32 @@ export default function DirectorDashboard() {
         const L: Record<string, number> = {};
         const M: Record<string, number> = {};
         const H: Record<string, number> = {};
-        let processedCount = 0;
-        let skippedCount = 0;
-        let severityCounts = { 0: 0, 1: 0, 2: 0 };
-        
-        (alerts as any[]).forEach((a: any, index: number) => {
-          console.log(`[NewDirectorDashboard] Processing alert ${index + 1}:`, {
-            id: a?.id,
-            priority: a?.priority,
-            status_alert: a?.status_alert,
-            timestamp: a?.timestamp,
-            date: a?.date,
-            created_at: a?.created_at
-          });
-          
-          const when = a?.timestamp || a?.date || a?.created_at;
+        (alerts as any[]).forEach((a: any) => {
+          const when = a?.date;
           if (!when) {
             console.log('[NewDirectorDashboard] Alert without date - SKIPPING:', a);
             skippedCount++;
             return;
           }
           
-          const key = new Date(when).toISOString().slice(0, 7);
-          const sev = Number(a?.priority || a?.status_alert) || 0;
-          
-          console.log('[NewDirectorDashboard] Alert processed:', { 
-            when, 
-            key, 
-            sev, 
-            monthKey: key,
-            priority_type: typeof a?.priority,
-            status_alert_type: typeof a?.status_alert
-          });
-          
-          if (sev === 2) {
-            H[key] = (H[key] || 0) + 1;
-            severityCounts[2]++;
-          } else if (sev === 1) {
-            M[key] = (M[key] || 0) + 1;
-            severityCounts[1]++;
-          } else if (sev === 0) {
-            L[key] = (L[key] || 0) + 1;
-            severityCounts[0]++;
+          let dateObj: Date;
+          try {
+            dateObj = new Date(when);
+            if (isNaN(dateObj.getTime())) {
+              console.log('[NewDirectorDashboard] Invalid date format:', when);
+              return;
+            }
+          } catch (error) {
+            console.log('[NewDirectorDashboard] Date parsing error:', error, 'for date:', when);
+            return;
           }
           
-          processedCount++;
-        });
-        
-        console.log('[NewDirectorDashboard] Processing summary:', {
-          totalAlerts: (alerts as any[])?.length || 0,
-          processedCount,
-          skippedCount,
-          severityCounts,
-          monthlyCounts: { L, M, H }
+          const key = dateObj.toISOString().slice(0, 7);
+          const sev = Number(a?.status_alert) || 0;
+          console.log('[NewDirectorDashboard] Processing alert:', { when, key, sev, alert: a });
+          if (sev === 2) H[key] = (H[key] || 0) + 1;
+          else if (sev === 1) M[key] = (M[key] || 0) + 1;
+          else if (sev === 0) L[key] = (L[key] || 0) + 1;
         });
         console.log('[NewDirectorDashboard] Monthly counts:', { L, M, H });
         setAlertsMonthly({

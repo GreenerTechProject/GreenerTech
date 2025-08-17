@@ -29,14 +29,24 @@ def create_mission_robot(current_user):
         id_serre=id_serre,
         rep_jr=rep_jr,
         rep_sem=rep_sem,
-        # jour = jour , # 'lundi'=1 , 'mardi'=2, etc.
-        # heure = heure , 
-        # minute = minute,
-        date_debut=date_debut,
+        # Don't set date_debut here - it will be set conditionally below
+        # date_debut=date_debut,
         date_fin=date_fin,
         executed=executed,
         bilans=bilans # <-- récupérer la liste de bilans
         )
+        
+        # Set date_debut based on mission type
+        if date_debut and not (rep_jr or rep_sem):
+            # Date-based mission
+            mission.date_debut = date_debut
+            mission.jour = None
+            mission.heure = None
+            mission.minute = None
+        else:
+            # Repetition-based mission
+            mission.date_debut = None
+            
         if rep_sem and rep_sem!=0 :
             if not jour or not heure or not minute:
                 return jsonify({"status": "error", "message": "Vous devez sélectionner un jour, une heure et une minute pour la répétition hebdomadaire."}), 400
@@ -49,10 +59,8 @@ def create_mission_robot(current_user):
             if  not heure or not minute:
                 return jsonify({"status": "error", "message": "Vous devez sélectionner  une heure et une minute pour la répétition hebdomadaire."}), 400
             else:
-                mission.heure = heure , 
-                mission.minute = minute ,
-        # else :
-        #     return jsonify({"status": "error", "message": "Vous devez sélectionner une répétition hebdomadaire."}), 400
+                mission.heure = heure
+                mission.minute = minute
             
         db.session.add(mission)
         db.session.commit()

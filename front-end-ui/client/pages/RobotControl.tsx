@@ -69,6 +69,8 @@ export default function RobotControl() {
   const [robots, setRobots] = useState<Robot[]>([]);
   const [isLoadingRobots, setIsLoadingRobots] = useState<boolean>(false);
   const [robotsError, setRobotsError] = useState<string | null>(null);
+
+
   // WebSocket references
   const qrWsRef = useRef<WebSocket | null>(null);
   const controlWsRef = useRef<WebSocket | null>(null);
@@ -311,7 +313,7 @@ export default function RobotControl() {
   const handleRobotChange = (robot: string) => {
     setSelectedRobot(robot);
     // Send robot selection command
-    sendCommand('SELECT_ROBOT');
+    //sendCommand('SELECT_ROBOT');
   };
 
   // Update selected robot when robots are loaded
@@ -404,6 +406,7 @@ export default function RobotControl() {
 	
 	updateSelectedFromUrl();
 	
+    fetchRobots(); // Add this line
 	
     startWebRTC(selectedRobot, selectedCamera);
     initializeWebSockets(selectedRobot, selectedCamera);
@@ -501,6 +504,10 @@ export default function RobotControl() {
     };
   }, [selectedRobot, selectedCamera]);
 
+  // Fetch robots on component mount
+  useEffect(() => {
+    fetchRobots();
+  }, []);
 
 
   return (
@@ -540,7 +547,7 @@ export default function RobotControl() {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-2">
-              <Select value={selectedRobot} onValueChange={handleRobotChange} disabled={isLoadingRobots || robotsError}>
+              <Select value={selectedRobot} onValueChange={handleRobotChange} disabled={isLoadingRobots || !!robotsError}>
                 <SelectTrigger className="h-8 text-sm">
                   <SelectValue placeholder={isLoadingRobots ? "Chargement..." : robotsError ? "Erreur" : "Choisir un robot"} />
                 </SelectTrigger>
@@ -564,11 +571,11 @@ export default function RobotControl() {
                 disabled={isLoadingRobots}
                 className="w-full h-6 text-xs"
                 variant="outline"
-                size="sm"
               >
                 <RefreshCw className={`h-3 w-3 mr-1 ${isLoadingRobots ? 'animate-spin' : ''}`} />
                 Actualiser les robots
               </Button>
+
             </CardContent>
           </Card>
 
@@ -746,12 +753,12 @@ export default function RobotControl() {
 
                   {/* Camera Controls */}
                   <div className="flex gap-2 justify-center">
-                    <ControlButton mode="LEFT_CAM" className="bg-purple-500/90 hover:bg-purple-600/90 border-purple-400 text-white px-3 py-2">
-                      <ArrowLeft className="mr-1 h-4 w-4" />
+                    <ControlButton mode="TOP_CAM" className="bg-purple-500/90 hover:bg-purple-600/90 border-purple-400 text-white px-3 py-2">
+                      <ArrowUp className="mr-1 h-4 w-4" />
                       <span className="text-sm">Cam</span>
                     </ControlButton>
-                    <ControlButton mode="RIGHT_CAM" className="bg-purple-500/90 hover:bg-purple-600/90 border-purple-400 text-white px-3 py-2">
-                      <ArrowRight className="mr-1 h-4 w-4" />
+                    <ControlButton mode="DOWN_CAM" className="bg-purple-500/90 hover:bg-purple-600/90 border-purple-400 text-white px-3 py-2">
+                      <ArrowDown className="mr-1 h-4 w-4" />
                       <span className="text-sm">Cam</span>
                     </ControlButton>
                   </div>

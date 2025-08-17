@@ -18,78 +18,60 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Calendar, Save, Send, ArrowLeft, ChevronDown } from "lucide-react";
+import { Calendar, Send, ArrowLeft, ChevronDown, X, Tag } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { InterventionService, CreateInterventionRequest } from "@/services/interventionService";
+import { serreService } from "@/services/serreService";
+import { typeTacheService } from "@/services/typeTacheService";
 
 interface InterventionFormProps {
   isOpen: boolean;
   onClose: () => void;
   onSubmit?: (data: InterventionData) => void;
-  onSaveDraft?: (data: InterventionData) => void;
 }
 
 interface InterventionData {
-  interventionType: string;
-  serreId: string;
-  interventionDate: string;
-  functionary: string;
-  description: string;
-  priority: "basse" | "moyenne" | "haute" | "urgente";
+  interventionType: string;  // Will be converted to number (id_type_tache)
+  serreId: string;          // Will be converted to number (id_serre)
+  interventionDate: string; // Will be used as date_debut
+  dateFin: string;          // Date de fin
+  estimatedCharges: string; // Charges estimées en MAD
+  description: string;      // Direct mapping
 }
 
-const interventionTypes = [
-  { value: "maintenance", label: "Maintenance préventive" },
-  { value: "reparation", label: "Réparation" },
-  { value: "inspection", label: "Inspection" },
-  { value: "recolte", label: "Récolte" },
-  { value: "plantation", label: "Plantation" },
-  { value: "irrigation", label: "Système d'irrigation" },
-  { value: "temperature", label: "Contrôle température" },
-  { value: "nettoyage", label: "Nettoyage" },
-];
 
-const functionaries = [
-  { value: "jean.dupont", label: "Jean Dupont - Technicien Senior" },
-  { value: "marie.martin", label: "Marie Martin - Spécialiste Irrigation" },
-  { value: "pierre.bernard", label: "Pierre Bernard - Expert Cultures" },
-  { value: "sophie.morel", label: "Sophie Morel - Technicien Junior" },
-  { value: "paul.durand", label: "Paul Durand - Responsable Maintenance" },
-];
 
-const priorityOptions = [
-  { value: "basse", label: "Basse" },
-  { value: "moyenne", label: "Moyenne" },
-  { value: "haute", label: "Haute" },
-  { value: "urgente", label: "Urgente" },
-];
+
 
 export default function InterventionForm({
   isOpen,
   onClose,
   onSubmit,
-  onSaveDraft,
 }: InterventionFormProps) {
   console.log("InterventionForm rendered, isOpen:", isOpen);
   const [formData, setFormData] = useState<InterventionData>({
     interventionType: "",
     serreId: "",
     interventionDate: "",
-    functionary: "",
+    dateFin: "",
+    estimatedCharges: "",
     description: "",
-    priority: "moyenne",
   });
 
   const [errors, setErrors] = useState<Partial<InterventionData>>({});
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isDrafting, setIsDrafting] = useState(false);
-  const [formStep, setFormStep] = useState(0);
-  const [showSuccess, setShowSuccess] = useState(false);
+  const [serres, setSerres] = useState<Array<{id: number, nom: string}>>([]);
+  const [loadingSerres, setLoadingSerres] = useState(false);
+  const [typeTaches, setTypeTaches] = useState<Array<{id: number, nom: string}>>([]);
+  const [loadingTypeTaches, setLoadingTypeTaches] = useState(false);
 
   useEffect(() => {
+    console.log("🔍 useEffect triggered, isOpen:", isOpen);
     if (isOpen) {
-      setFormStep(0);
-      setShowSuccess(false);
+      console.log("🚀 Form opening, fetching data...");
+      fetchSerres();
+      fetchTypeTaches();
       setTimeout(() => {
         const firstField = document.querySelector('#intervention-type-trigger');
         if (firstField) {
@@ -99,6 +81,61 @@ export default function InterventionForm({
     }
   }, [isOpen]);
 
+  const fetchSerres = async () => {
+    try {
+      console.log("🔄 Starting to fetch serres...");
+      setLoadingSerres(true);
+      
+      // Try the primary method first
+      let userSerres;
+      try {
+        userSerres = await serreService.getSerresByCurrentUser();
+        console.log("📦 Serres fetched via getSerresByCurrentUser:", userSerres);
+      } catch (primaryError) {
+        console.warn("⚠️ Primary method failed, trying fallback:", primaryError);
+        // Fallback to getSerresByUser method
+        userSerres = await serreService.getSerresByUser();
+        console.log("📦 Serres fetched via fallback getSerresByUser:", userSerres);
+      }
+      
+      if (userSerres && userSerres.length > 0) {
+        setSerres(userSerres.map(serre => ({ id: serre.id, nom: serre.nom })));
+        console.log("✅ Serres state updated:", userSerres.map(serre => ({ id: serre.id, nom: serre.nom })));
+      } else {
+        console.warn("⚠️ No serres found for user");
+        setSerres([]);
+      }
+    } catch (error) {
+      console.error("❌ Error fetching serres:", error);
+      toast({
+        title: "❌ Erreur",
+        description: "Impossible de charger la liste des serres.",
+        variant: "destructive",
+      });
+      setSerres([]);
+    } finally {
+      setLoadingSerres(false);
+      console.log("🔓 Loading state set to false");
+    }
+  };
+
+  const fetchTypeTaches = async () => {
+    try {
+      setLoadingTypeTaches(true);
+      const allTypeTaches = await typeTacheService.getAllTypeTaches();
+      setTypeTaches(allTypeTaches.map(typeTache => ({ id: typeTache.id, nom: typeTache.nom })));
+    } catch (error) {
+      console.error("Error fetching type taches:", error);
+      toast({
+        title: "❌ Erreur",
+        description: "Impossible de charger la liste des types de tâches.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoadingTypeTaches(false);
+    }
+  };
+
   const validateForm = () => {
     const newErrors: Partial<InterventionData> = {};
 
@@ -106,15 +143,18 @@ export default function InterventionForm({
       newErrors.interventionType = "Type d'intervention requis";
     }
     if (!formData.serreId) {
-      newErrors.serreId = "ID Serre requis";
+      newErrors.serreId = "Sélectionner une serre";
     }
     if (!formData.interventionDate) {
       newErrors.interventionDate = "Date d'intervention requise";
     }
-    if (!formData.functionary) {
-      newErrors.functionary = "Fonctionnaire requis";
+    
+    // Ensure description is not empty (backend requirement)
+    if (!formData.description || formData.description.trim() === "") {
+      newErrors.description = "Description requise";
     }
 
+    console.log("🔍 Form validation errors:", newErrors);
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -123,21 +163,71 @@ export default function InterventionForm({
     if (validateForm()) {
       setIsSubmitting(true);
       try {
-        await new Promise(resolve => setTimeout(resolve, 1500));
+        console.log("📝 Form data before mapping:", formData);
+        
+        // Map form data to backend format with proper validation
+        const createRequest: CreateInterventionRequest = {
+          description: formData.description || "Intervention créée par le technicien", // Ensure description is never empty
+          id_serre: parseInt(formData.serreId),
+          id_type_tache: parseInt(formData.interventionType),
+          date_debut: formData.interventionDate,
+          total_charges: 0.0, // Default value as per backend model
+          // date_fin is optional and not set initially
+        };
+
+        console.log("🔄 Backend request data:", createRequest);
+
+        // Validate the mapped data
+        if (isNaN(createRequest.id_serre) || isNaN(createRequest.id_type_tache)) {
+          throw new Error("Invalid serre or type tache ID");
+        }
+
+        if (!createRequest.date_debut) {
+          throw new Error("Date de début is required");
+        }
+
+        // Additional validation for data integrity
+        if (createRequest.id_serre <= 0 || createRequest.id_type_tache <= 0) {
+          throw new Error("Invalid serre or type tache ID (must be positive)");
+        }
+
+        // Validate date format (should be YYYY-MM-DD)
+        const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+        if (!dateRegex.test(createRequest.date_debut)) {
+          throw new Error("Invalid date format. Expected YYYY-MM-DD");
+        }
+
+        // Create intervention using the service
+        const createdIntervention = await InterventionService.createIntervention(createRequest);
+        
+        console.log("✅ Intervention created successfully:", createdIntervention);
+        console.log("📊 Backend response data:", createdIntervention);
+        
+        // Call parent callback if provided
         onSubmit?.(formData);
-        setShowSuccess(true);
+        
         toast({
           title: "✅ Intervention créée",
           description: "Votre demande d'intervention a été envoyée avec succès.",
           duration: 3000,
         });
+        
         setTimeout(() => {
           handleClose();
         }, 1500);
       } catch (error) {
+        console.error("❌ Error creating intervention:", error);
+        let errorMessage = "Une erreur est survenue lors de l'envoi de l'intervention.";
+        
+        if (error instanceof Error) {
+          errorMessage = error.message;
+        } else if (typeof error === 'object' && error !== null && 'message' in error) {
+          errorMessage = (error as any).message;
+        }
+        
         toast({
           title: "❌ Erreur",
-          description: "Une erreur est survenue lors de l'envoi.",
+          description: errorMessage,
           variant: "destructive",
         });
       } finally {
@@ -146,43 +236,18 @@ export default function InterventionForm({
     }
   };
 
-  const handleSaveDraft = async () => {
-    setIsDrafting(true);
-    try {
-      await new Promise(resolve => setTimeout(resolve, 800));
-      onSaveDraft?.(formData);
-      toast({
-        title: "💾 Brouillon sauvegardé",
-        description: "Votre intervention a été sauvegardée en brouillon.",
-        duration: 2000,
-      });
-      setTimeout(() => {
-        handleClose();
-      }, 500);
-    } catch (error) {
-      toast({
-        title: "❌ Erreur",
-        description: "Erreur lors de la sauvegarde.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsDrafting(false);
-    }
-  };
+
 
   const handleClose = () => {
-    setFormStep(0);
-    setShowSuccess(false);
     setIsSubmitting(false);
-    setIsDrafting(false);
     setTimeout(() => {
       setFormData({
         interventionType: "",
         serreId: "",
         interventionDate: "",
-        functionary: "",
+        dateFin: "",
+        estimatedCharges: "",
         description: "",
-        priority: "moyenne",
       });
       setErrors({});
       onClose();
@@ -198,35 +263,52 @@ export default function InterventionForm({
   
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="max-w-[1396px] w-[95vw] max-h-[90vh] overflow-y-auto p-0 rounded-xl border border-gray-200 shadow-sm">
-        <div className="flex h-[644px] p-8 items-center bg-white rounded-xl">
-          <form className="flex w-full h-[580px] flex-col justify-center items-start gap-8">
+      <DialogContent className="max-w-[800px] w-[95vw] max-h-[90vh] overflow-y-auto p-0 rounded-xl border border-border shadow-2xl mx-auto z-[9998] fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-card">
+        {/* Close Button */}
+        <button
+          onClick={handleClose}
+          className="absolute top-4 right-4 z-[9999] p-2 hover:bg-muted rounded-full transition-colors"
+        >
+          <X className="h-5 w-5 text-muted-foreground" />
+        </button>
+        
+        <div className="flex min-h-[400px] p-6 items-center bg-card rounded-xl relative z-[9997]">
+          <form className="flex w-full min-h-[350px] flex-col justify-center items-start gap-4 relative z-[9996]">
             {/* Row 1: Type d'intervention & ID Serre */}
-            <div className="w-full h-[198px] flex justify-between">
-              <div className="flex w-[567px] flex-col justify-center items-start gap-3">
-                <Label htmlFor="intervention-type" className="flex items-start gap-0 text-sm font-semibold text-gray-900">
+            <div className="w-full flex flex-col md:flex-row justify-between gap-3 sm:gap-4 md:gap-0">
+              <div className="flex w-full md:w-[48%] lg:w-[567px] flex-col justify-center items-start gap-2 sm:gap-3">
+                <Label htmlFor="intervention-type" className="flex items-start gap-0 text-xs sm:text-sm font-semibold text-foreground">
                   Type d'intervention demandée
                   <span className="text-red-500 ml-1">*</span>
                 </Label>
                 <Select
                   value={formData.interventionType}
                   onValueChange={(value) => updateFormData("interventionType", value)}
+                  onOpenChange={(open) => console.log("🔽 Type tache dropdown open:", open)}
                 >
                   <SelectTrigger
                     className={cn(
-                      "flex h-[47px] w-[567px] px-3 py-0 justify-between items-center rounded-lg border border-gray-300 bg-white",
+                      "flex h-[45px] sm:h-[47px] w-full px-3 py-0 justify-between items-center rounded-lg border border-border bg-card",
                       errors.interventionType && "border-red-500 focus:border-red-500"
                     )}
+                    disabled={loadingTypeTaches}
                   >
                     <SelectValue
-                      placeholder="Sélectionner un type d'intervention"
-                      className="text-gray-900 font-normal text-base"
+                      placeholder={loadingTypeTaches ? "Chargement..." : "Sélectionner un type d'intervention"}
+                      className="text-foreground font-normal text-base"
                     />
                   </SelectTrigger>
-                  <SelectContent>
-                    {interventionTypes.map((type) => (
-                      <SelectItem key={type.value} value={type.value}>
-                        {type.label}
+                  <SelectContent 
+                    className="z-[9999] relative min-w-[200px]" 
+                    position="popper" 
+                    side="bottom" 
+                    align="start"
+                    sideOffset={4}
+                    avoidCollisions={true}
+                  >
+                    {typeTaches.map((type) => (
+                      <SelectItem key={type.id} value={type.id.toString()}>
+                        {type.nom}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -236,166 +318,165 @@ export default function InterventionForm({
                 )}
               </div>
 
-              <div className="flex w-[567px] flex-col justify-center items-start gap-3">
-                <Label htmlFor="serre-id" className="flex items-start gap-0 text-sm font-semibold text-gray-900">
-                  ID Serre
+              <div className="flex w-full md:w-[48%] lg:w-[567px] flex-col justify-center items-start gap-2 sm:gap-3">
+                <Label htmlFor="serre-id" className="flex items-start gap-0 text-xs sm:text-sm font-semibold text-foreground">
+                  Sélectionner une serre
                   <span className="text-red-500 ml-1">*</span>
+
                 </Label>
-                <Input
-                  id="serre-id"
-                  type="text"
+                <Select
                   value={formData.serreId}
-                  onChange={(e) => updateFormData("serreId", e.target.value)}
-                  placeholder="Serre / Domaine / Bilan"
-                  className={cn(
-                    "flex w-[567px] h-[50px] px-4 py-0 items-center rounded-lg border border-gray-300 bg-white text-base text-gray-600",
-                    errors.serreId && "border-red-500 focus:border-red-500"
-                  )}
-                />
+                  onValueChange={(value) => updateFormData("serreId", value)}
+                  onOpenChange={(open) => console.log("🔽 Serre dropdown open:", open)}
+                >
+                  <SelectTrigger
+                    id="serre-id"
+                    className={cn(
+                      "flex h-[45px] sm:h-[50px] px-3 sm:px-4 py-0 items-center rounded-lg border border-border bg-card text-sm sm:text-base text-foreground",
+                      errors.serreId && "border-red-500 focus:border-red-500",
+                      loadingSerres && "opacity-50 cursor-not-allowed"
+                    )}
+                    disabled={loadingSerres}
+                  >
+                    <SelectValue
+                      placeholder={loadingSerres ? "Chargement..." : "Sélectionner une serre"}
+                      className="text-foreground font-normal text-base"
+                    />
+                  </SelectTrigger>
+                  <SelectContent 
+                    className="z-[9999] relative min-w-[200px]" 
+                    position="popper" 
+                    side="bottom" 
+                    align="start"
+                    sideOffset={4}
+                    avoidCollisions={true}
+                  >
+                    {serres.length > 0 ? (
+                      serres.map((serre) => (
+                        <SelectItem key={serre.id} value={serre.id.toString()}>
+                          {serre.nom}
+                        </SelectItem>
+                      ))
+                    ) : (
+                      <div className="px-3 py-2 text-sm text-muted-foreground">
+                        {loadingSerres ? "Chargement des serres..." : "Aucune serre assignée"}
+                      </div>
+                    )}
+                  </SelectContent>
+                </Select>
                 {errors.serreId && (
                   <p className="text-sm text-red-500">{errors.serreId}</p>
                 )}
               </div>
             </div>
 
-            {/* Row 2: Date d'intervention & Fonctionnaire */}
-            <div className="w-full flex justify-between">
-              <div className="flex w-[567px] flex-col justify-center items-start gap-3">
-                <Label htmlFor="intervention-date" className="flex items-start gap-0 text-sm font-semibold text-gray-900">
+            {/* Row 2: Date d'intervention & Date de fin */}
+            <div className="w-full flex flex-col md:flex-row justify-between gap-4">
+              <div className="flex w-full md:w-[48%] flex-col justify-center items-start gap-2">
+                <Label htmlFor="intervention-date" className="flex items-start gap-0 text-sm font-semibold text-foreground">
                   Date de l'intervention
                   <span className="text-red-500 ml-1">*</span>
                 </Label>
-                <div className="relative w-[567px] h-[52px]">
+                <div className="relative w-full h-12">
                   <Input
                     id="intervention-date"
                     type="date"
                     value={formData.interventionDate}
                     onChange={(e) => updateFormData("interventionDate", e.target.value)}
                     className={cn(
-                      "w-full h-full rounded-lg border border-gray-300 bg-white px-6 text-black text-lg font-normal",
+                      "w-full h-full rounded-lg border border-border bg-card px-4 text-foreground text-base font-normal focus:border-[#B4CC5F] focus:ring-[#B4CC5F]",
                       errors.interventionDate && "border-red-500 focus:border-red-500"
                     )}
                     placeholder="mm/dd/yyyy"
                   />
-                  <svg className="absolute right-3 top-1/2 transform -translate-y-1/2 h-6 w-6" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M6.75 3V5.25M17.25 3V5.25M3 18.75V7.5C3 6.90326 3.23705 6.33097 3.65901 5.90901C4.08097 5.48705 4.65326 5.25 5.25 5.25H18.75C19.3467 5.25 19.919 5.48705 20.341 5.90901C20.7629 6.33097 21 6.90326 21 7.5V18.75M3 18.75C3 19.3467 3.23705 19.919 3.65901 20.341C4.08097 20.7629 4.65326 21 5.25 21H18.75C19.3467 21 19.919 20.7629 20.341 20.341C20.7629 19.919 21 19.3467 21 18.75M3 18.75V11.25C3 10.6533 3.23705 10.081 3.65901 9.65901C4.08097 9.23705 4.65326 9 5.25 9H18.75C19.3467 9 19.919 9.23705 20.341 9.65901C20.7629 10.081 21 10.6533 21 11.25V18.75" stroke="black" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                  </svg>
+                  <Calendar className="absolute right-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                 </div>
                 {errors.interventionDate && (
                   <p className="text-sm text-red-500">{errors.interventionDate}</p>
                 )}
               </div>
 
-              <div className="flex w-[567px] flex-col justify-center items-start gap-3">
-                <Label htmlFor="functionary" className="flex items-start gap-0 text-sm font-semibold text-gray-900">
-                  Fonctionnaire demandé
-                  <span className="text-red-500 ml-1">*</span>
+              <div className="flex w-full md:w-[48%] flex-col justify-center items-start gap-2">
+                <Label htmlFor="date-fin" className="flex items-start gap-0 text-sm font-semibold text-foreground">
+                  Date de fin
+                  <span className="text-muted-foreground text-xs ml-1">(optionnel)</span>
                 </Label>
-                <Select
-                  value={formData.functionary}
-                  onValueChange={(value) => updateFormData("functionary", value)}
-                >
-                  <SelectTrigger
-                    className={cn(
-                      "flex h-[47px] w-[567px] px-3 py-0 justify-between items-center rounded-lg border border-gray-300 bg-white",
-                      errors.functionary && "border-red-500 focus:border-red-500"
-                    )}
-                  >
-                    <SelectValue
-                      placeholder="Sélectionner un fonctionnaire"
-                      className="text-gray-900 font-normal text-base"
-                    />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {functionaries.map((functionary) => (
-                      <SelectItem key={functionary.value} value={functionary.value}>
-                        {functionary.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                {errors.functionary && (
-                  <p className="text-sm text-red-500">{errors.functionary}</p>
-                )}
+                <div className="relative w-full h-12">
+                  <Input
+                    id="date-fin"
+                    type="date"
+                    value={formData.dateFin}
+                    onChange={(e) => updateFormData("dateFin", e.target.value)}
+                    className="w-full h-full rounded-lg border border-border bg-card px-4 text-foreground text-base font-normal focus:border-[#B4CC5F] focus:ring-[#B4CC5F]"
+                    placeholder="mm/dd/yyyy"
+                  />
+                  <Calendar className="absolute right-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                </div>
               </div>
             </div>
 
-            {/* Row 3: Description */}
-            <div className="flex w-full flex-col items-start gap-3">
-              <Label htmlFor="description" className="text-sm font-semibold text-gray-900">
-                Description de l'intervention (optionnel)
-              </Label>
-              <Textarea
-                id="description"
-                value={formData.description}
-                onChange={(e) => updateFormData("description", e.target.value)}
-                placeholder="Détails supplémentaires sur l'intervention..."
-                rows={5}
-                className="flex h-[122px] w-full p-4 items-start rounded-lg border border-gray-300 bg-white resize-none text-gray-600 text-base"
-              />
+            {/* Row 3: Charges estimées */}
+            <div className="w-full">
+              <div className="flex flex-col gap-2">
+                <Label htmlFor="estimated-charges" className="flex items-start gap-1 text-sm font-semibold text-foreground">
+                  Charges estimées (MAD)
+                  <span className="text-muted-foreground text-xs">(optionnel)</span>
+                </Label>
+                <div className="relative">
+                  <Input
+                    id="estimated-charges"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={formData.estimatedCharges}
+                    onChange={(e) => updateFormData("estimatedCharges", e.target.value)}
+                    className="h-12 px-4 pl-12 rounded-lg border border-border bg-card hover:border-[#B4CC5F] focus:border-[#B4CC5F] focus:ring-[#B4CC5F] transition-colors text-foreground font-medium"
+                    placeholder="0.00"
+                  />
+                  <Tag className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-[#B4CC5F]" />
+                </div>
+              </div>
             </div>
 
-            {/* Row 4: Priority */}
-            <div className="flex w-full h-[52px] flex-col justify-center items-start gap-3">
-              <Label className="text-sm font-semibold text-gray-900">
-                Priorité
-              </Label>
-              <RadioGroup
-                value={formData.priority}
-                onValueChange={(value: any) => updateFormData("priority", value)}
-                className="flex w-full items-start gap-6"
-              >
-                {priorityOptions.map((option) => (
-                  <div key={option.value} className="flex items-center justify-center gap-2">
-                    <RadioGroupItem
-                      value={option.value}
-                      id={option.value}
-                      className={cn(
-                        "w-4 h-4 rounded-full border-[0.5px] border-black",
-                        formData.priority === option.value && "border-blue-500 bg-blue-500"
-                      )}
-                    />
-                    <Label
-                      htmlFor={option.value}
-                      className="text-sm font-normal cursor-pointer text-gray-600"
-                    >
-                      {option.label}
-                    </Label>
-                  </div>
-                ))}
-              </RadioGroup>
+            {/* Row 4: Description */}
+            <div className="w-full">
+              <div className="flex flex-col gap-2">
+                <Label htmlFor="description" className="text-sm font-semibold text-foreground">
+                  Description de l'intervention
+                  <span className="text-muted-foreground text-xs ml-1">(optionnel)</span>
+                </Label>
+                <Textarea
+                  id="description"
+                  value={formData.description}
+                  onChange={(e) => updateFormData("description", e.target.value)}
+                  placeholder="Détails supplémentaires sur l'intervention..."
+                  rows={3}
+                  className="w-full p-3 rounded-lg border border-border bg-card resize-none text-sm text-foreground focus:border-[#B4CC5F] focus:ring-[#B4CC5F]"
+                />
+              </div>
             </div>
+
+
 
             {/* Footer Actions */}
-            <div className="flex h-[73px] pt-6 justify-between items-start w-full border-t border-gray-200">
+            <div className="flex flex-col sm:flex-row gap-3 pt-6 justify-center items-center w-full border-t border-border">
               <Button
                 type="button"
                 onClick={handleClose}
-                className="flex h-12 px-6 justify-center items-start gap-2 rounded-lg bg-gray-100 hover:bg-gray-200 border-0"
+                className="flex h-12 px-6 justify-center items-center gap-2 rounded-lg bg-muted hover:bg-muted/80 border-0 w-full sm:w-auto"
               >
-                <ArrowLeft className="h-4 w-4 text-gray-600" />
-                <span className="text-gray-600 text-center font-medium text-base">Annuler</span>
+                <ArrowLeft className="h-4 w-4 text-muted-foreground" />
+                <span className="text-muted-foreground text-center font-medium">Annuler</span>
               </Button>
 
-              <div className="flex justify-center items-start gap-4">
-                <Button
-                  type="button"
-                  onClick={handleSaveDraft}
-                  className="flex h-12 px-6 justify-center items-start gap-2 rounded-lg bg-blue-50 hover:bg-blue-100 border-0"
-                >
-                  <Save className="h-4 w-4 text-blue-600" />
-                  <span className="text-blue-600 text-center font-medium text-base">Sauvegarder en brouillon</span>
-                </Button>
-
-                <Button
-                  type="button"
-                  onClick={handleSubmit}
-                  className="flex h-12 px-6 justify-center items-start gap-2 rounded-lg bg-blue-800 hover:bg-blue-900 text-white shadow-md border-0"
-                >
-                  <Send className="h-4 w-4 text-white" />
-                  <span className="text-white text-center font-medium text-base">Envoyer la demande</span>
-                </Button>
-              </div>
+              <Button
+                type="button"
+                onClick={handleSubmit}
+                className="flex h-12 px-6 justify-center items-center gap-2 rounded-lg bg-[#B4CC5F] hover:bg-[#9BB84F] text-white shadow-md border-0 w-full sm:w-auto"
+              >
+                <Send className="h-4 w-4 text-white" />
+                <span className="text-white text-center font-medium">Envoyer la demande</span>
+              </Button>
             </div>
           </form>
         </div>

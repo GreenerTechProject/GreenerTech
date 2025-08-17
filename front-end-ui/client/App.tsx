@@ -19,6 +19,7 @@ import VerifyEmail from "./pages/VerifyEmail";
 import TechnicienRegistration from "./pages/TechnicienRegistration";
 import DirecteurSetup from "./pages/DirecteurSetup";
 import TechnicianDashboard from "./pages/TechnicianDashboard";
+import TechnicianMap from "./pages/TechnicianMap";
 import TechnicienSupDashboard from "./pages/TechnicienSupDashboard";
 import TechnicienSupAlerts from "./pages/TechnicienSupAlerts";
 import TechnicienSupInterventions from "./pages/TechnicienSupInterventions";
@@ -30,7 +31,6 @@ import Interventions from "./pages/Interventions";
 import Surveillance from "./pages/Surveillance";
 import Profile from "./pages/Profile";
 import ProfileEdit from "./pages/ProfileEdit";
-import RobotControl from "./pages/RobotControle";
 import NotFound from "./pages/NotFound";
 import TechnicienSupProfile from "./pages/TechnicienSupProfile";
 
@@ -47,6 +47,9 @@ import DirectorProfileEdit from "./pages/DirectorProfileEdit";
 import DirectorMapConfig from "./pages/DirectorMapConfig";
 import DirectorHeader from "./components/DirectorHeader";
 import { MissionManagement } from "./pages/MissionManagement";
+import RobotControl from "./pages/RobotControle";
+import TechnicianReportsPage from "./pages/TechnicianReportsPage";
+import TechnicianReportCreation from "./pages/TechnicianReportCreation";
 
 const queryClient = new QueryClient();
 
@@ -214,13 +217,24 @@ const App = () => (
               path="/technician"
               element={
                 <ProtectedRoute requiredRole="technicien">
-                  <TechnicianDashboard />
+                  <TechnicianMap />
                 </ProtectedRoute>
               }
             />
 
             <Route
-              path="/technician-dashboard"
+              path="/technician/map"
+              element={
+                <ProtectedRoute requiredRole="technicien">
+                  <Navigate to="/technician" replace />
+                </ProtectedRoute>
+              }
+            />
+
+           
+
+            <Route
+              path="/technician/dashboard"
               element={
                 <ProtectedRoute requiredRole="technicien">
                   <TechnicianDashboard />
@@ -260,6 +274,24 @@ const App = () => (
               element={
                 <ProtectedRoute requiredRole="technicien">
                   <MissionManagement />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/technician/reports"
+              element={
+                <ProtectedRoute requiredRole="technicien">
+                  <TechnicianReportsPage />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/technician/reports/create"
+              element={
+                <ProtectedRoute requiredRole="technicien">
+                  <TechnicianReportCreation />
                 </ProtectedRoute>
               }
             />
@@ -336,16 +368,6 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <ProfileEdit />
-                </ProtectedRoute>
-              }
-            />
-			
-			{/* Robot Control */}
-            <Route
-              path="/robot-control"
-              element={
-                <ProtectedRoute>
-                  <RobotControl />
                 </ProtectedRoute>
               }
             />

@@ -44,6 +44,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Initialize theme on app load
+  useEffect(() => {
+    const storedTheme = localStorage.getItem("theme");
+    const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const initialDark = storedTheme ? storedTheme === 'dark' : prefersDark;
+    
+    document.documentElement.classList.toggle('dark', initialDark);
+    document.body.classList.toggle('dark', initialDark);
+  }, []);
+
   // Initialize auth state
   useEffect(() => {
     const initializeAuth = async () => {

@@ -13,7 +13,7 @@ export default function AlertStatsCards({ stats, loading = false }: AlertStatsCa
       title: "Alertes Non Résolues",
       value: stats.unresolvedAlerts,
       icon: AlertTriangle,
-      bgColor: "bg-red-100",
+      bgColor: "bg-red-100 dark:bg-red-950/40",
       iconColor: "text-red-600",
       valueColor: "text-red-600",
     },
@@ -21,7 +21,7 @@ export default function AlertStatsCards({ stats, loading = false }: AlertStatsCa
       title: "Alertes Résolues",
       value: stats.resolvedAlerts,
       icon: CheckCircle,
-      bgColor: "bg-green-100",
+      bgColor: "bg-green-100 dark:bg-green-950/40",
       iconColor: "text-green-600",
       valueColor: "text-green-600",
     },
@@ -29,7 +29,7 @@ export default function AlertStatsCards({ stats, loading = false }: AlertStatsCa
       title: "Temps Moyen de Résolution",
       value: `${stats.averageResolutionTime}h`,
       icon: Clock,
-      bgColor: "bg-orange-100",
+      bgColor: "bg-orange-100 dark:bg-orange-950/40",
       iconColor: "text-orange-600",
       valueColor: "text-orange-600",
     },
@@ -37,7 +37,7 @@ export default function AlertStatsCards({ stats, loading = false }: AlertStatsCa
       title: "Total Alertes",
       value: stats.totalAlerts,
       icon: BarChart3,
-      bgColor: "bg-blue-100",
+      bgColor: "bg-blue-100 dark:bg-blue-950/40",
       iconColor: "text-blue-600",
       valueColor: "text-blue-600",
     },
@@ -71,7 +71,7 @@ export default function AlertStatsCards({ stats, loading = false }: AlertStatsCa
         return (
           <div
             key={index}
-            className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-shadow"
+            className="bg-card p-6 rounded-2xl border shadow-sm hover:shadow-md transition-all duration-200"
           >
             <div className="flex items-center gap-4">
               <div
@@ -80,10 +80,10 @@ export default function AlertStatsCards({ stats, loading = false }: AlertStatsCa
                 <Icon className={`w-5 h-5 ${stat.iconColor}`} />
               </div>
               <div className="flex-1">
-                <p className="text-sm font-medium text-gray-600 mb-1">
+                <p className="text-sm font-medium text-muted-foreground mb-1">
                   {stat.title}
                 </p>
-                <p className={`text-2xl font-bold ${stat.valueColor}`}>
+                <p className={`text-3xl font-extrabold ${stat.valueColor}`}>
                   {stat.value}
                 </p>
               </div>

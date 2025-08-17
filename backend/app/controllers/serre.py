@@ -78,7 +78,7 @@ def create_serre(current_user):
 
 
 @token_required
-@role_required("directeur" , "technicien_superieur")
+@role_required("directeur" , "technicien_superieur", "technicien")
 #@access_domaine_required
 def get_all_serres(current_user):
     entreprise = Entreprise.query.filter_by(id=current_user.id_entreprise).first()
@@ -93,7 +93,7 @@ def get_all_serres(current_user):
 
 
 @token_required
-@role_required("directeur" , "technicien_superieur")
+@role_required("directeur" , "technicien_superieur", "technicien")
 #@access_domaine_required
 def get_serre(current_user, id):
     serre = Serre.query.get_or_404(id)
