@@ -381,7 +381,7 @@ export default function BilanCreation({
       const bilanData = {
         name: bilanName.trim(),
         id_serre: serreId,
-        path: pointsToSend,
+        position: pointsToSend,
         area: calculateArea(),
         center: calculateCenter() || undefined,
       };

@@ -1,11 +1,11 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { GoogleMap, Marker, Polygon, Polyline, Circle } from '@react-google-maps/api';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { MapPin, Navigation, Target, Route } from 'lucide-react';
 import { BilanPoint } from '../services/bilanService';
-import GoogleMapsWrapper from './GoogleMapsWrapper';
-import { getGoogleMapsAPIKey } from '@/config/maps';
+import { useLoadScript } from '@react-google-maps/api';
+import { GOOGLE_MAPS_CONFIG } from '@/config/maps';
 
 interface BilanMapComponentProps {
   serreLocation: { lat: number; lng: number };
@@ -22,6 +22,13 @@ const mapContainerStyle = {
   minHeight: '500px',
 };
 
+const libraries: ("drawing" | "geometry" | "places" | "visualization")[] = [
+  "drawing",
+  "geometry",
+  "places",
+  "visualization",
+];
+
 export default function BilanMapComponent({
   serreLocation,
   selectedPoints,
@@ -31,8 +38,13 @@ export default function BilanMapComponent({
   onMapClick,
 }: BilanMapComponentProps) {
   const [map, setMap] = useState<google.maps.Map | null>(null);
-  const [mapLoaded, setMapLoaded] = useState(false);
   const [userPath, setUserPath] = useState<{ lat: number; lng: number }[]>([]);
+
+  // Load Google Maps script
+  const { isLoaded, loadError } = useLoadScript({
+    googleMapsApiKey: GOOGLE_MAPS_CONFIG.API_KEY,
+    libraries,
+  });
 
   // Center map on serre location when component mounts
   useEffect(() => {
@@ -65,23 +77,16 @@ export default function BilanMapComponent({
     }
   }, [isTracking]);
 
-  const onMapLoad = (map: google.maps.Map) => {
+  const onMapLoad = useCallback((map: google.maps.Map) => {
     setMap(map);
-    setMapLoaded(true);
-  };
+  }, []);
 
-  // Safety check to ensure Google Maps API is loaded
-  const isGoogleMapsLoaded = () => {
-    return typeof window !== 'undefined' && window.google && window.google.maps;
-  };
-
-  const onMapUnmount = () => {
+  const onMapUnmount = useCallback(() => {
     setMap(null);
-    setMapLoaded(false);
-  };
+  }, []);
 
   // Create polygon path from selected points
-  const getPolygonPath = () => {
+  const getPolygonPath = useCallback(() => {
     if (selectedPoints.length < 3) return [];
     
     // Sort points by order
@@ -92,20 +97,20 @@ export default function BilanMapComponent({
       lat: point.lat,
       lng: point.lng,
     }));
-  };
+  }, [selectedPoints]);
 
   // Calculate center of all points for better map centering
-  const getMapCenter = () => {
+  const getMapCenter = useCallback(() => {
     if (selectedPoints.length > 0) {
       const avgLat = selectedPoints.reduce((sum, point) => sum + point.lat, 0) / selectedPoints.length;
       const avgLng = selectedPoints.reduce((sum, point) => sum + point.lng, 0) / selectedPoints.length;
       return { lat: avgLat, lng: avgLng };
     }
     return serreLocation;
-  };
+  }, [selectedPoints, serreLocation]);
 
   // Calculate total distance walked
-  const calculateTotalDistance = () => {
+  const calculateTotalDistance = useCallback(() => {
     if (userPath.length < 2) return 0;
     
     let totalDistance = 0;
@@ -125,10 +130,17 @@ export default function BilanMapComponent({
     }
     
     return totalDistance;
-  };
+  }, [userPath]);
 
-  // Don't render the map if Google Maps API isn't loaded
-  if (typeof window === 'undefined' || !window.google || !window.google.maps) {
+  // Handle map click
+  const handleMapClick = useCallback((e: google.maps.MapMouseEvent) => {
+    if (onMapClick && e.latLng) {
+      onMapClick(e.latLng.lat(), e.latLng.lng());
+    }
+  }, [onMapClick]);
+
+  // Show loading state while Google Maps is loading
+  if (!isLoaded) {
     return (
       <Card className={className}>
         <CardHeader className="pb-3">
@@ -155,6 +167,35 @@ export default function BilanMapComponent({
     );
   }
 
+  // Show error state if Google Maps failed to load
+  if (loadError) {
+    return (
+      <Card className={className}>
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-lg">
+            <Route className="h-5 w-5" />
+            Carte Interactive du Bilan
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="p-0">
+          <div className="flex items-center justify-center h-full min-h-[500px]">
+            <div className="text-center">
+              <div className="text-red-500 text-lg mb-2">⚠️ Erreur de chargement</div>
+              <p className="text-sm text-gray-600">Impossible de charger Google Maps</p>
+              <p className="text-xs text-gray-500 mt-1">{loadError.message}</p>
+              <button 
+                onClick={() => window.location.reload()} 
+                className="mt-3 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+              >
+                Réessayer
+              </button>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
     <Card className={className}>
       <CardHeader className="pb-3">
@@ -171,136 +212,120 @@ export default function BilanMapComponent({
       </CardHeader>
       <CardContent className="p-0">
         <div className="relative">
-          <GoogleMapsWrapper>
-          {(!mapLoaded || !isGoogleMapsLoaded()) && (
-            <div className="flex items-center justify-center h-full min-h-[500px]">
-              <div className="text-center">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600 mx-auto mb-2"></div>
-                <p className="text-sm text-gray-600">Chargement de la carte...</p>
-              </div>
-            </div>
-          )}
-          {mapLoaded && isGoogleMapsLoaded() && (
-            <GoogleMap
-              mapContainerStyle={mapContainerStyle}
-              center={getMapCenter()}
-              zoom={18}
-              onLoad={onMapLoad}
-              onUnmount={onMapUnmount}
-              onClick={(e) => {
-                if (onMapClick && e.latLng) {
-                  onMapClick(e.latLng.lat(), e.latLng.lng());
-                }
+          <GoogleMap
+            mapContainerStyle={mapContainerStyle}
+            center={getMapCenter()}
+            zoom={18}
+            onLoad={onMapLoad}
+            onUnmount={onMapUnmount}
+            onClick={handleMapClick}
+            options={{
+              mapTypeId: 'satellite', // Satellite view for better field visualization
+              tilt: 0,
+              streetViewControl: false,
+              fullscreenControl: true,
+              mapTypeControl: true,
+              zoomControl: true,
+              scaleControl: true,
+              gestureHandling: 'greedy',
+            }}
+          >
+            {/* Serre Location Marker */}
+            <Marker
+              position={serreLocation}
+              icon={{
+                url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
+                  <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="16" cy="16" r="16" fill="#10B981" opacity="0.8"/>
+                    <circle cx="16" cy="16" r="8" fill="#10B981"/>
+                    <text x="16" y="20" text-anchor="middle" fill="white" font-size="12" font-weight="bold">S</text>
+                  </svg>
+                `),
+                scaledSize: new google.maps.Size(32, 32),
               }}
-              options={{
-                mapTypeId: 'satellite', // Satellite view for better field visualization
-                tilt: 0,
-                streetViewControl: false,
-                fullscreenControl: true,
-                mapTypeControl: true,
-                zoomControl: true,
-                scaleControl: true,
-                gestureHandling: 'greedy',
-              }}
-            >
-              {/* Serre Location Marker */}
+              title="Serre"
+            />
+
+            {/* User Movement Path */}
+            {userPath.length > 1 && (
+              <Polyline
+                path={userPath}
+                options={{
+                  strokeColor: '#3B82F6',
+                  strokeOpacity: 0.8,
+                  strokeWeight: 3,
+                  geodesic: true,
+                }}
+              />
+            )}
+
+            {/* Current Location Marker */}
+            {currentLocation && (
               <Marker
-                position={serreLocation}
+                position={currentLocation}
                 icon={{
                   url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
                     <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <circle cx="16" cy="16" r="16" fill="#10B981" opacity="0.8"/>
-                      <circle cx="16" cy="16" r="8" fill="#10B981"/>
-                      <text x="16" y="20" text-anchor="middle" fill="white" font-size="12" font-weight="bold">S</text>
+                      <circle cx="16" cy="16" r="16" fill="#3B82F6" opacity="0.8"/>
+                      <circle cx="16" cy="16" r="8" fill="#3B82F6"/>
+                      <text x="16" y="20" text-anchor="middle" fill="white" font-size="12" font-weight="bold">T</text>
                     </svg>
                   `),
-                  scaledSize: mapLoaded && isGoogleMapsLoaded() ? new window.google.maps.Size(32, 32) : undefined,
+                  scaledSize: new google.maps.Size(32, 32),
                 }}
-                title="Serre"
+                title="Votre position actuelle"
               />
+            )}
 
-              {/* User Movement Path */}
-              {userPath.length > 1 && (
-                <Polyline
-                  path={userPath}
-                  options={{
-                    strokeColor: '#3B82F6',
-                    strokeOpacity: 0.8,
-                    strokeWeight: 3,
-                    geodesic: true,
-                  }}
-                />
-              )}
+            {/* Accuracy Circle */}
+            {currentLocation?.accuracy !== undefined && currentLocation.accuracy > 0 && (
+              <Circle
+                center={{ lat: currentLocation.lat, lng: currentLocation.lng }}
+                radius={currentLocation.accuracy}
+                options={{
+                  strokeColor: '#3B82F6',
+                  strokeOpacity: 0.4,
+                  strokeWeight: 1,
+                  fillColor: '#3B82F6',
+                  fillOpacity: 0.1,
+                  clickable: false,
+                }}
+              />
+            )}
 
-              {/* Current Location Marker */}
-              {currentLocation && (
-                <Marker
-                  position={currentLocation}
-                  icon={{
-                    url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
-                      <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <circle cx="16" cy="16" r="16" fill="#3B82F6" opacity="0.8"/>
-                        <circle cx="16" cy="16" r="8" fill="#3B82F6"/>
-                        <text x="16" y="20" text-anchor="middle" fill="white" font-size="12" font-weight="bold">T</text>
-                      </svg>
-                    `),
-                    scaledSize: mapLoaded && isGoogleMapsLoaded() ? new window.google.maps.Size(32, 32) : undefined,
-                  }}
-                  title="Votre position actuelle"
-                />
-              )}
+            {/* Selected Points Markers */}
+            {selectedPoints.map((point, index) => (
+              <Marker
+                key={index}
+                position={{ lat: point.lat, lng: point.lng }}
+                icon={{
+                  url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
+                    <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <circle cx="16" cy="16" r="16" fill="#F59E0B" opacity="0.8"/>
+                      <circle cx="16" cy="16" r="8" fill="#F59E0B"/>
+                      <text x="16" y="20" text-anchor="middle" fill="white" font-size="12" font-weight="bold">${point.ordre}</text>
+                    </svg>
+                  `),
+                  scaledSize: new google.maps.Size(32, 32),
+                }}
+                title={`Point ${point.ordre} du bilan`}
+              />
+            ))}
 
-              {/* Accuracy Circle */}
-              {currentLocation?.accuracy !== undefined && currentLocation.accuracy > 0 && (
-                <Circle
-                  center={{ lat: currentLocation.lat, lng: currentLocation.lng }}
-                  radius={currentLocation.accuracy}
-                  options={{
-                    strokeColor: '#3B82F6',
-                    strokeOpacity: 0.4,
-                    strokeWeight: 1,
-                    fillColor: '#3B82F6',
-                    fillOpacity: 0.1,
-                    clickable: false,
-                  }}
-                />
-              )}
-
-              {/* Selected Points Markers */}
-              {selectedPoints.map((point, index) => (
-                <Marker
-                  key={index}
-                  position={{ lat: point.lat, lng: point.lng }}
-                  icon={{
-                    url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
-                      <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <circle cx="16" cy="16" r="16" fill="#F59E0B" opacity="0.8"/>
-                        <circle cx="16" cy="16" r="8" fill="#F59E0B"/>
-                        <text x="16" y="20" text-anchor="middle" fill="white" font-size="12" font-weight="bold">${point.ordre}</text>
-                      </svg>
-                    `),
-                    scaledSize: mapLoaded && isGoogleMapsLoaded() ? new window.google.maps.Size(32, 32) : undefined,
-                  }}
-                  title={`Point ${point.ordre} du bilan`}
-                />
-              ))}
-
-              {/* Polygon connecting the selected points */}
-              {selectedPoints.length >= 3 && (
-                <Polygon
-                  paths={getPolygonPath()}
-                  options={{
-                    fillColor: '#10B981',
-                    fillOpacity: 0.3,
-                    strokeColor: '#10B981',
-                    strokeWeight: 3,
-                    strokeOpacity: 0.8,
-                  }}
-                />
-              )}
-            </GoogleMap>
-          )}
-          </GoogleMapsWrapper>
+            {/* Polygon connecting the selected points */}
+            {selectedPoints.length >= 3 && (
+              <Polygon
+                paths={getPolygonPath()}
+                options={{
+                  fillColor: '#10B981',
+                  fillOpacity: 0.3,
+                  strokeColor: '#10B981',
+                  strokeWeight: 3,
+                  strokeOpacity: 0.8,
+                }}
+              />
+            )}
+          </GoogleMap>
 
           {/* Map Legend and Stats */}
           <div className="absolute top-4 right-4 bg-white bg-opacity-95 p-4 rounded-lg shadow-lg text-sm max-w-64">
