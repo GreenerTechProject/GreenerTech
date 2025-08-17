@@ -22,7 +22,7 @@ export interface Bilan {
 export interface CreateBilanRequest {
   name: string;
   id_serre: number;
-  path: BilanPoint[];
+  position: BilanPoint[];
   area?: number;
   center?: {
     lat: number;
