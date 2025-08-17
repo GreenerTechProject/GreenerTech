@@ -1,21 +1,19 @@
 from aiohttp import web, WSMsgType
 import json
 
-# Set of connected control clients
-control_clients = set()
+# Dictionary of connected clients: {ws: robot_id}
+control_clients = {}
 
-def get_key_from_request(request):
-    robot_id = request.query.get("robot", "1")
-    camera_id = request.query.get("camera", "right")
-    return f"{robot_id}_{camera_id}"
+def get_robot_id(request):
+    return request.query.get("robot", "1")
 
 async def control_handler(request):
-    key = get_key_from_request(request)
+    robot_id = get_robot_id(request)
     ws = web.WebSocketResponse()
     await ws.prepare(request)
 
-    control_clients.add(ws)
-    print(f"🤖 Control client connected ({key})")
+    control_clients[ws] = robot_id
+    print(f"🤖 Control client connected (robot {robot_id})")
 
     try:
         async for msg in ws:
@@ -23,24 +21,27 @@ async def control_handler(request):
                 try:
                     data = json.loads(msg.data)
                     if "control_mode" in data:
-                        mode = data["control_mode"]
-                        print(f"[{key}] Control mode received: {mode}")
+                        control_mode = data["control_mode"]
+                        print(f"[Robot {robot_id}] Control mode received: {control_mode}")
 
-                        # Broadcast to other clients (including optionally same robot or others)
-                        for client in control_clients:
-                            if client != ws and not client.closed:
-                                await client.send_str(json.dumps({
-                                    "key": key,
-                                    "control_mode": mode
+                        # Broadcast ONLY to clients of the same robot
+                        for client_ws, client_robot_id in control_clients.items():
+                            if (
+                                client_ws != ws
+                                and not client_ws.closed
+                                and client_robot_id == robot_id
+                            ):
+                                await client_ws.send_str(json.dumps({
+                                    "control_mode": control_mode
                                 }))
                 except Exception as e:
-                    print(f"[{key}] ❌ JSON error in control message: {e}")
+                    print(f"[Robot {robot_id}] ❌ JSON error in control message: {e}")
 
             elif msg.type == WSMsgType.ERROR:
-                print(f"[{key}] WS connection closed with exception {ws.exception()}")
+                print(f"[Robot {robot_id}] WS connection closed with exception {ws.exception()}")
 
     finally:
-        control_clients.discard(ws)
-        print(f"🔌 Control client disconnected ({key})")
+        control_clients.pop(ws, None)
+        print(f"🔌 Control client disconnected (robot {robot_id})")
 
     return ws
