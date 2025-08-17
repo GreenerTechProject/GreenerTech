@@ -85,9 +85,37 @@ def get_alertes(current_user):
             if not bilan_ids:
                 return jsonify([]), 200
             
+            # Get alerts for these bilans
             alertes = Alerte.query.filter(Alerte.id_bilan.in_(bilan_ids)).all()
             
-            return jsonify([a.to_dict() for a in alertes]), 200
+            # Enhance alert data with location information using ORM joins
+            try:
+                enhanced_alertes = []
+                for alerte in alertes:
+                    # Find the bilan for this alert
+                    bilan = next((b for b in bilans if b.id == alerte.id_bilan), None)
+                    if bilan:
+                        # Find the serre for this bilan
+                        serre = Serre.query.get(bilan.id_serre)
+                        if serre:
+                            # Find the domaine for this serre
+                            domaine = Domaine.query.get(serre.id_domaine)
+                            
+                            enhanced_alerte = alerte.to_dict()
+                            enhanced_alerte['bilan_nom'] = bilan.nom
+                            enhanced_alerte['serre_nom'] = serre.nom
+                            enhanced_alerte['id_serre'] = serre.id
+                            enhanced_alerte['domaine_nom'] = domaine.nom if domaine else "Domaine inconnu"
+                            enhanced_alertes.append(enhanced_alerte)
+                            
+                            # Debug: Print the data being processed
+                            print(f"Alert {alerte.id}: Bilan={bilan.nom}, Serre={serre.nom}, Domaine={domaine.nom if domaine else 'None'}")
+                
+                return jsonify(enhanced_alertes), 200
+            except Exception as e:
+                print(f"Error enhancing alerts for technicien: {e}")
+                # Fallback: return basic alert data without enhancement
+                return jsonify([a.to_dict() for a in alertes]), 200
         else:
             return jsonify({"status": "error", "message": "Rôle non autorisé"}), 403
     except Exception as e:
@@ -104,15 +132,20 @@ def get_alerte(current_user, alerte_id):
 
 # Update existing alert
 @token_required
-@role_required("directeur", "technicien_superieur", "technicien")
-def update_alerte(current_user, alert_id):
-    alerte = Alerte.query.get(alert_id)
+@role_required("technicien", "technicien_superieur", "directeur")
+def update_alerte(current_user, alerte_id):
+    alerte = Alerte.query.get(alerte_id)
     if not alerte:
         return jsonify({"status": "error", "message": "Alerte non trouvée"}), 404
 
     data = request.get_json()
     try:
-        alerte.status_alert = data.get("status_alert", alerte.status_alert)
+        # Validate status_alert to be within valid range (0, 1, 2)
+        new_status_alert = data.get("status_alert", alerte.status_alert)
+        if new_status_alert is not None and new_status_alert not in [0, 1, 2]:
+            return jsonify({"status": "error", "message": "status_alert must be 0, 1, or 2"}), 400
+        
+        alerte.status_alert = new_status_alert
         alerte.maladie = data.get("maladie", alerte.maladie)
         alerte.lien_image = data.get("lien_image", alerte.lien_image)
         alerte.x1 = data.get("x1", alerte.x1)

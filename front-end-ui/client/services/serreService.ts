@@ -41,7 +41,7 @@ export interface AutorisationSerre {
   id_serre: number;
 }
 
-// Configure axios base URL
+// Configure axios base URL - use correct backend port
 const API_BASE_URL = `${window.location.protocol}//${window.location.hostname}:5000/api`;
 
 // Create axios instance with auth headers
@@ -252,19 +252,8 @@ export const serreService = {
   // Get serres assigned to the current user
   getSerresByUser: async (): Promise<any[]> => {
     try {
-      // Get current user's ID from localStorage or context
-      const token = tokenManager.getToken();
-      if (!token) {
-        throw new Error("Token non trouvé");
-      }
-
-      // Decode token to get user ID (you might need to adjust this based on your token structure)
-      // For now, we'll use a different approach - get user info from the backend
-      const userResponse = await axios.get(`${API_BASE_URL}/user`, createAuthenticatedRequest());
-      const userId = userResponse.data.id;
-
-      // Use the existing method to get assigned serres
-      return await serreService.getSerresAssignedToUser(userId);
+      const response = await axios.get(`${API_BASE_URL}/serre/user`, createAuthenticatedRequest());
+      return response.data;
     } catch (error: any) {
       const errorMessage = error.response?.data?.message ||
         "Erreur lors de la récupération des serres de l'utilisateur";

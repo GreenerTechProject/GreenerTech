@@ -125,4 +125,54 @@
       min-height: 300px;
     }
   }
+  
+  /* Theme consistency rules for better dark mode support */
+  .dark {
+    color-scheme: dark;
+  }
+  
+  /* Ensure all form elements respect theme */
+  .dark input,
+  .dark textarea,
+  .dark select {
+    @apply bg-card text-foreground border-border;
+  }
+  
+  /* Ensure all buttons respect theme */
+  .dark button {
+    @apply transition-colors duration-200;
+  }
+  
+  /* Fallback rules for hardcoded colors */
+  .dark .bg-white {
+    @apply bg-card;
+  }
+  
+  .dark .text-gray-900 {
+    @apply text-foreground;
+  }
+  
+  .dark .text-gray-700 {
+    @apply text-foreground;
+  }
+  
+  .dark .text-gray-600 {
+    @apply text-muted-foreground;
+  }
+  
+  .dark .text-gray-500 {
+    @apply text-muted-foreground;
+  }
+  
+  .dark .bg-gray-50 {
+    @apply bg-muted;
+  }
+  
+  .dark .border-gray-200 {
+    @apply border-border;
+  }
+  
+  .dark .border-gray-300 {
+    @apply border-border;
+  }
 }
