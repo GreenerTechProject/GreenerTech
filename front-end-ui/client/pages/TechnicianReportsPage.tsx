@@ -45,7 +45,7 @@ export default function TechnicianReportsPage() {
   const fetchReports = async () => {
     try {
       setLoading(true);
-      const data = await ReportService.getReportsByAssignedSerres();
+      const data = await ReportService.getReportsByUser();
       setReports(data);
     } catch (error) {
       console.error("Error fetching reports:", error);

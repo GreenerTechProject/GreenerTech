@@ -73,9 +73,6 @@ export const MissionManagement: React.FC = () => {
   const [editingMission, setEditingMission] = useState<Mission | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  // Determine user role for header
-  const userRole = user?.role === 'technicien_superieur' ? 'technicien_sup' : 'technicien';
-
   useEffect(() => {
     fetchMissions();
     fetchRobots();

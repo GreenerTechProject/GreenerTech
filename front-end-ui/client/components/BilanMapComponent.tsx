@@ -2,12 +2,10 @@ import React, { useEffect, useState, useRef } from 'react';
 import { GoogleMap, Marker, Polygon, Polyline, Circle } from '@react-google-maps/api';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { MapPin, Navigation, Target, Route, AlertCircle } from 'lucide-react';
+import { MapPin, Navigation, Target, Route } from 'lucide-react';
 import { BilanPoint } from '../services/bilanService';
 import GoogleMapsWrapper from './GoogleMapsWrapper';
 import { getGoogleMapsAPIKey } from '@/config/maps';
-import { useGoogleMaps } from '../hooks/useGoogleMaps';
-import { isGoogleMapsAvailable as checkGoogleMapsAvailable, createGoogleMapsSize } from '../utils/googleMapsUtils';
 
 interface BilanMapComponentProps {
   serreLocation: { lat: number; lng: number };
@@ -35,7 +33,6 @@ export default function BilanMapComponent({
   const [map, setMap] = useState<google.maps.Map | null>(null);
   const [mapLoaded, setMapLoaded] = useState(false);
   const [userPath, setUserPath] = useState<{ lat: number; lng: number }[]>([]);
-  const { isLoaded: isGoogleMapsAvailable, hasError, error } = useGoogleMaps();
 
   // Center map on serre location when component mounts
   useEffect(() => {
@@ -222,18 +219,18 @@ export default function BilanMapComponent({
                 title="Serre"
               />
 
-                      {/* User Movement Path */}
-                      {userPath.length > 1 && (
-                        <Polyline
-                          path={userPath}
-                          options={{
-                            strokeColor: '#3B82F6',
-                            strokeOpacity: 0.8,
-                            strokeWeight: 3,
-                            geodesic: true,
-                          }}
-                        />
-                      )}
+              {/* User Movement Path */}
+              {userPath.length > 1 && (
+                <Polyline
+                  path={userPath}
+                  options={{
+                    strokeColor: '#3B82F6',
+                    strokeOpacity: 0.8,
+                    strokeWeight: 3,
+                    geodesic: true,
+                  }}
+                />
+              )}
 
               {/* Current Location Marker */}
               {currentLocation && (
@@ -253,21 +250,21 @@ export default function BilanMapComponent({
                 />
               )}
 
-                      {/* Accuracy Circle */}
-                      {currentLocation?.accuracy !== undefined && currentLocation.accuracy > 0 && (
-                        <Circle
-                          center={{ lat: currentLocation.lat, lng: currentLocation.lng }}
-                          radius={currentLocation.accuracy}
-                          options={{
-                            strokeColor: '#3B82F6',
-                            strokeOpacity: 0.4,
-                            strokeWeight: 1,
-                            fillColor: '#3B82F6',
-                            fillOpacity: 0.1,
-                            clickable: false,
-                          }}
-                        />
-                      )}
+              {/* Accuracy Circle */}
+              {currentLocation?.accuracy !== undefined && currentLocation.accuracy > 0 && (
+                <Circle
+                  center={{ lat: currentLocation.lat, lng: currentLocation.lng }}
+                  radius={currentLocation.accuracy}
+                  options={{
+                    strokeColor: '#3B82F6',
+                    strokeOpacity: 0.4,
+                    strokeWeight: 1,
+                    fillColor: '#3B82F6',
+                    fillOpacity: 0.1,
+                    clickable: false,
+                  }}
+                />
+              )}
 
               {/* Selected Points Markers */}
               {selectedPoints.map((point, index) => (
@@ -288,31 +285,18 @@ export default function BilanMapComponent({
                 />
               ))}
 
-                      {/* Polygon connecting the selected points */}
-                      {selectedPoints.length >= 3 && (
-                        <Polygon
-                          paths={getPolygonPath()}
-                          options={{
-                            fillColor: '#10B981',
-                            fillOpacity: 0.3,
-                            strokeColor: '#10B981',
-                            strokeWeight: 3,
-                            strokeOpacity: 0.8,
-                          }}
-                        />
-                      )}
-                    </>
-                  ) : (
-                    <div className="flex items-center justify-center h-full">
-                      <div className="text-center">
-                        <div className="animate-pulse">
-                          <div className="h-8 w-8 bg-gray-300 rounded-full mx-auto mb-2"></div>
-                          <p className="text-sm text-gray-500">Initialisation des composants de la carte...</p>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </>
+              {/* Polygon connecting the selected points */}
+              {selectedPoints.length >= 3 && (
+                <Polygon
+                  paths={getPolygonPath()}
+                  options={{
+                    fillColor: '#10B981',
+                    fillOpacity: 0.3,
+                    strokeColor: '#10B981',
+                    strokeWeight: 3,
+                    strokeOpacity: 0.8,
+                  }}
+                />
               )}
             </GoogleMap>
           )}

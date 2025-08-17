@@ -622,21 +622,21 @@ export default function AlertHeatmap({
             )}
 
             {/* Legend in bottom-left corner: 3 alert levels */}
-            <div className="absolute bottom-4 left-4 z-10">
+            <div className="absolute bottom-4 left-4 ">
               <div className="rounded-2xl shadow-xl border border-black/5 dark:border-white/10 backdrop-blur bg-white/80 dark:bg-gray-900/70 p-3">
                 <h4 className="text-xs font-semibold text-gray-900 dark:text-gray-100 mb-2">Niveaux d'alerte</h4>
                 <div className="space-y-2">
                   <div className="flex items-center gap-2">
                     <div className="w-3 h-3 rounded-full bg-[#EF4444]"></div>
-                    <span className="text-xs text-gray-700 dark:text-gray-300">Élevée (2)</span>
+                    <span className="text-xs text-gray-700 dark:text-gray-300">Élevée</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <div className="w-3 h-3 rounded-full bg-[#F97316]"></div>
-                    <span className="text-xs text-gray-700 dark:text-gray-300">Moyenne (1)</span>
+                    <span className="text-xs text-gray-700 dark:text-gray-300">Moyenne</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <div className="w-3 h-3 rounded-full bg-[#EAB308]"></div>
-                    <span className="text-xs text-gray-700 dark:text-gray-300">Faible (0)</span>
+                    <span className="text-xs text-gray-700 dark:text-gray-300">Faible</span>
                   </div>
                 </div>
               </div>
