@@ -37,6 +37,8 @@ import {
   LogOut,
   FileText,
   AlertCircle,
+  BookOpen,
+  BarChart3,
 } from "lucide-react";
 import TechnicianSidebar from "../components/TechnicianSidebar";
 import InterventionForm from "../components/InterventionForm";
@@ -44,10 +46,10 @@ import TechHeader from "../components/TechHeader";
 import BilanCreation from "../components/BilanCreation";
 import BilanMapComponent from "../components/BilanMapComponent";
 import { cn } from "@/lib/utils";
-import { getGoogleMapsAPIKey } from "@/config/maps";
-
 import { bilanService, Bilan } from "../services/bilanService";
 import { serreService } from "../services/serreService";
+import { guideService, GuideDeCulture } from "../services/guideService";
+import { etatBilanService, EtatBilan } from "../services/etatBilanService";
 
 interface Serre {
   id: string;
@@ -83,7 +85,7 @@ interface Intervention {
   status: "pending" | "in_progress" | "completed";
 }
 
-const GOOGLE_MAPS_API_KEY = getGoogleMapsAPIKey();
+
 
 export default function TechnicianMap() {
   const { user, logout } = useAuth();
@@ -97,6 +99,17 @@ export default function TechnicianMap() {
   const [isCreatingIntervention, setIsCreatingIntervention] = useState(false);
   const [isInterventionFormOpen, setIsInterventionFormOpen] = useState(false);
   const [selectedIntervention, setSelectedIntervention] = useState<Intervention | null>(null);
+
+  // New state for enhanced features
+  const [guides, setGuides] = useState<GuideDeCulture[]>([]);
+  const [selectedBilan, setSelectedBilan] = useState<Bilan | null>(null);
+  const [etatBilans, setEtatBilans] = useState<EtatBilan[]>([]);
+  const [isLoadingGuides, setIsLoadingGuides] = useState(false);
+  const [isLoadingEtatBilans, setIsLoadingEtatBilans] = useState(false);
+
+  // Mobile responsive state
+  const [isMobilePanelOpen, setIsMobilePanelOpen] = useState(false);
+  const [activeMobileTab, setActiveMobileTab] = useState<'serres' | 'bilan' | 'details' | 'guides' | 'etat'>('serres');
 
   // Load serres assigned to the current technician
   useEffect(() => {
@@ -144,12 +157,14 @@ export default function TechnicianMap() {
     loadAssignedSerres();
   }, [user]);
 
-  // Load bilans for selected serre
+  // Load bilans and guides for selected serre
   useEffect(() => {
     if (selectedSerre) {
       loadBilansForSerre(parseInt(selectedSerre.id));
+      loadGuidesForSerre(parseInt(selectedSerre.id));
     } else {
       setBilans([]); // Reset bilans when no serre is selected
+      setGuides([]); // Reset guides when no serre is selected
     }
   }, [selectedSerre]);
 
@@ -188,6 +203,50 @@ export default function TechnicianMap() {
       await loadBilansForSerre(parseInt(selectedSerre.id));
     }
     setIsCreatingBilan(false);
+  };
+
+  // Load guides for selected serre
+  const loadGuidesForSerre = async (serreId: number) => {
+    try {
+      setIsLoadingGuides(true);
+      console.log('Loading guides for serre:', serreId);
+      
+      const serreGuides = await guideService.getGuides();
+      // Filter guides for the specific serre
+      const filteredGuides = serreGuides.filter(guide => guide.id_serre === serreId.toString());
+      console.log('Filtered guides for serre:', filteredGuides);
+      
+      setGuides(filteredGuides);
+    } catch (error: any) {
+      console.error('Error loading guides:', error);
+      setGuides([]);
+    } finally {
+      setIsLoadingGuides(false);
+    }
+  };
+
+  // Load etat de bilan for selected bilan
+  const loadEtatBilanForBilan = async (bilanId: number) => {
+    try {
+      setIsLoadingEtatBilans(true);
+      console.log('Loading etat de bilan for bilan:', bilanId);
+      
+      const etatBilanData = await etatBilanService.getEtatBilanByBilan(bilanId);
+      console.log('Received etat de bilan:', etatBilanData);
+      
+      setEtatBilans(etatBilanData);
+    } catch (error: any) {
+      console.error('Error loading etat de bilan:', error);
+      setEtatBilans([]);
+    } finally {
+      setIsLoadingEtatBilans(false);
+    }
+  };
+
+  // Handle bilan selection
+  const handleBilanSelect = (bilan: Bilan) => {
+    setSelectedBilan(bilan);
+    loadEtatBilanForBilan(bilan.id);
   };
 
 
@@ -249,11 +308,6 @@ export default function TechnicianMap() {
     // Here you would typically call an API to save the intervention
   };
 
-  const handleInterventionSaveDraft = (data: any) => {
-    console.log("Intervention saved as draft:", data);
-    // TODO: Save draft to backend or local storage
-  };
-
   const getZoneIcon = (type: string) => {
     switch (type) {
       case "irrigation":
@@ -282,8 +336,8 @@ export default function TechnicianMap() {
 
       <div className="flex flex-col lg:flex-row h-[calc(100vh-73px)]">
 
-        {/* Left Control Panel */}
-        <div className="w-full lg:w-96 bg-white shadow-lg max-h-[50vh] lg:max-h-full">
+        {/* Left Control Panel - Hidden on mobile, visible on desktop */}
+        <div className="hidden lg:block lg:w-96 bg-white shadow-lg max-h-[50vh] lg:max-h-full">
           <ScrollArea className="h-full">
             <div className="p-6 space-y-6">
               {/* Create New Bilan Section - Always Visible */}
@@ -480,12 +534,167 @@ export default function TechnicianMap() {
                       </div>
               )}
 
+              {/* Culture Guides Section */}
+              {selectedSerre && (
+                <div className="space-y-4">
+                  <h4 className="text-lg font-semibold text-gray-900 flex items-center space-x-2">
+                    <BookOpen className="h-5 w-5" />
+                    <span>Guide de Culture</span>
+                  </h4>
+                  
+                  {isLoadingGuides ? (
+                    <div className="text-center py-4 text-gray-500">
+                      <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500 mx-auto mb-2"></div>
+                      <p className="text-sm">Chargement des guides...</p>
+                    </div>
+                  ) : guides.length === 0 ? (
+                    <div className="text-center py-4 text-gray-500">
+                      <BookOpen className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                      <p className="text-sm">Aucun guide de culture disponible</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {guides.map((guide) => (
+                        <Card key={guide.id} className="border-gray-200">
+                          <CardContent className="p-4">
+                            <div className="space-y-2">
+                              <h5 className="font-medium text-gray-900">{guide.nom}</h5>
+                              <p className="text-sm text-gray-600">Variété: {guide.variete}</p>
+                              <div className="grid grid-cols-2 gap-2 text-xs text-gray-500">
+                                <span>Rendement: {guide.rendement} kg</span>
+                                <span>Plants: {guide.nombre_de_plants}</span>
+                                <span>Début: {new Date(guide.date_debut_saison).toLocaleDateString()}</span>
+                                <span>Fin: {new Date(guide.date_fin_saison).toLocaleDateString()}</span>
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Bilans Section */}
+              {selectedSerre && (
+                <div className="space-y-4">
+                  <h4 className="text-lg font-semibold text-gray-900 flex items-center space-x-2">
+                    <FileText className="h-5 w-5" />
+                    <span>Bilans ({bilans.length})</span>
+                  </h4>
+                  
+                  {isLoadingBilans ? (
+                    <div className="text-center py-4 text-gray-500">
+                      <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500 mx-auto mb-2"></div>
+                      <p className="text-sm">Chargement des bilans...</p>
+                    </div>
+                  ) : bilans.length === 0 ? (
+                    <div className="text-center py-4 text-gray-500">
+                      <FileText className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                      <p className="text-sm">Aucun bilan disponible</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {bilans.map((bilan) => (
+                        <Card 
+                          key={bilan.id} 
+                          className={cn(
+                            "cursor-pointer transition-all duration-200 hover:shadow-md border",
+                            selectedBilan?.id === bilan.id
+                              ? "ring-2 ring-[#B4CC5F] border-[#B4CC5F] shadow-md"
+                              : "border-gray-200 hover:border-[#B4CC5F]/50",
+                          )}
+                          onClick={() => handleBilanSelect(bilan)}
+                        >
+                          <CardContent className="p-4">
+                            <div className="space-y-2">
+                              <h5 className="font-medium text-gray-900">{bilan.nom}</h5>
+                              <p className="text-sm text-gray-600">Surface: {bilan.surface || 'Non calculée'} m²</p>
+                              <p className="text-xs text-gray-500">
+                                Points GPS: {bilan.position?.length || 0}
+                              </p>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Etat de Bilan Section */}
+              {selectedBilan && (
+                <div className="space-y-4">
+                  <h4 className="text-lg font-semibold text-gray-900 flex items-center space-x-2">
+                    <BarChart3 className="h-5 w-5" />
+                    <span>État du Bilan: {selectedBilan.nom}</span>
+                  </h4>
+                  
+                  {isLoadingEtatBilans ? (
+                    <div className="text-center py-4 text-gray-500">
+                      <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500 mx-auto mb-2"></div>
+                      <p className="text-sm">Chargement de l'état...</p>
+                    </div>
+                  ) : etatBilans.length === 0 ? (
+                    <div className="text-center py-4 text-gray-500">
+                      <BarChart3 className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                      <p className="text-sm">Aucun état de bilan disponible</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {etatBilans.map((etat) => (
+                        <Card key={etat.id} className="border-gray-200">
+                          <CardContent className="p-4">
+                            <div className="space-y-3">
+                              <div className="flex items-center justify-between">
+                                <span className="text-sm font-medium text-gray-900">
+                                  {new Date(etat.date).toLocaleDateString()}
+                                </span>
+                                <Badge variant="outline" className="text-xs">
+                                  État
+                                </Badge>
+                              </div>
+                              
+                              <div className="grid grid-cols-2 gap-3 text-sm">
+                                <div className="space-y-1">
+                                  <p className="text-gray-600">Tomates saines: <span className="font-medium text-green-600">{etat.nombre_tomates_non_maladies}</span></p>
+                                  <p className="text-gray-600">Tomates malades: <span className="font-medium text-red-600">{etat.nombre_tomates_maladies}</span></p>
+                                  <p className="text-gray-600">Maladie type 1: <span className="font-medium text-orange-600">{etat.nombre_malade1}</span></p>
+                                  <p className="text-gray-600">Maladie type 2: <span className="font-medium text-orange-600">{etat.nombre_malade2}</span></p>
+                                </div>
+                                
+                                {etat.temperature && (
+                                  <div className="space-y-1">
+                                    <p className="text-gray-600">Température: <span className="font-medium">{etat.temperature}°C</span></p>
+                                    <p className="text-gray-600">Humidité: <span className="font-medium">{etat.humidite || 'N/A'}%</span></p>
+                                    <p className="text-gray-600">Luminosité: <span className="font-medium">{etat.luminosite || 'N/A'} lux</span></p>
+                                    <p className="text-gray-600">CO2: <span className="font-medium">{etat.co2 || 'N/A'} ppm</span></p>
+                                  </div>
+                                )}
+                              </div>
+                              
+                              {etat.rendement && (
+                                <div className="pt-2 border-t border-gray-200">
+                                  <p className="text-sm font-medium text-gray-900">
+                                    Rendement estimé: {etat.rendement} kg
+                                  </p>
+                                </div>
+                              )}
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
             </div>
           </ScrollArea>
         </div>
 
-        {/* Right Map Section */}
-        <div className="flex-1 relative min-h-[50vh] lg:min-h-full" data-testid="map-section">
+        {/* Right Map Section - Full screen on mobile */}
+        <div className="flex-1 relative min-h-[calc(100vh-73px)] lg:min-h-full" data-testid="map-section">
           {isCreatingBilan && selectedSerre ? (
             <BilanMapComponent
               serreLocation={selectedSerre.location}
@@ -495,7 +704,7 @@ export default function TechnicianMap() {
               className="h-full"
             />
           ) : selectedSerre ? (
-          <GoogleMapsWrapper apiKey={GOOGLE_MAPS_API_KEY}>
+          <GoogleMapsWrapper>
               <GoogleMap
                 mapContainerStyle={{
                   width: "100%",
@@ -530,16 +739,18 @@ export default function TechnicianMap() {
                 >
                   <div className="p-2">
                     <h3 className="font-semibold text-gray-900 text-sm">
-                  {selectedSerre.nom}
+                      {selectedSerre.nom}
                     </h3>
                     <p className="text-xs text-gray-600">
-                {selectedSerre.variety}
-              </p>
-              <p className="text-xs text-gray-500">
+                      {selectedSerre.variety}
+                    </p>
+                    <p className="text-xs text-gray-500">
                       {selectedSerre.surface} m² • Zones: {selectedSerre.zones ? selectedSerre.zones.length : 0}
                     </p>
                   </div>
                 </InfoWindow>
+
+
               </GoogleMap>
             </GoogleMapsWrapper>
           ) : (
@@ -548,10 +759,222 @@ export default function TechnicianMap() {
                 <MapPin className="h-16 w-16 mx-auto mb-4 opacity-50" />
                 <p className="text-lg font-medium">Sélectionnez une serre</p>
                 <p className="text-sm">Choisissez une serre dans la liste pour voir sa localisation</p>
+                
+                {/* Mobile Serre Selection */}
+                <div className="lg:hidden mt-6 space-y-3">
+                  <Button
+                    onClick={() => setIsMobilePanelOpen(true)}
+                    className="bg-[#B4CC5F] hover:bg-[#B4CC5F]/90 text-white px-6 py-3 rounded-lg w-full"
+                  >
+                    <MapPin className="h-5 w-5 mr-2" />
+                    Voir mes serres
+                  </Button>
+                  <p className="text-xs text-gray-400">
+                    Utilisez le bouton flottant en bas à droite pour accéder à vos serres
+                  </p>
+                </div>
               </div>
             </div>
           )}
         </div>
+      </div>
+
+      {/* Mobile Interface */}
+      <div className="lg:hidden">
+        {/* Mobile Header Overlay */}
+        {selectedSerre && (
+          <div className="fixed top-20 left-4 right-4 z-40">
+            <div className="bg-white/95 backdrop-blur-md rounded-xl shadow-xl border border-gray-200 p-4">
+              <div className="flex items-center justify-between">
+                <div className="flex-1 min-w-0">
+                  <h3 className="text-base font-semibold text-gray-900 truncate">
+                    {selectedSerre.nom}
+                  </h3>
+                  <p className="text-sm text-gray-600 truncate">
+                    {selectedSerre.variety} • {selectedSerre.surface} m²
+                  </p>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setIsMobilePanelOpen(!isMobilePanelOpen)}
+                  className="ml-3 p-2"
+                >
+                  {isMobilePanelOpen ? 'Fermer' : 'Ouvrir'}
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Mobile Bottom Panel */}
+        <div
+          className={cn(
+            "fixed bottom-0 left-0 right-0 bg-white border-t-2 border-gray-200 transition-transform duration-300 ease-in-out z-30 shadow-2xl",
+            isMobilePanelOpen ? "translate-y-0" : "translate-y-full"
+          )}
+          style={{ maxHeight: "70vh" }}
+        >
+          <div className="p-6">
+            {/* Panel Handle */}
+            <div className="flex justify-center mb-6">
+              <div className="w-16 h-1.5 bg-gray-400 rounded-full"></div>
+            </div>
+
+            {/* Mobile Tabs */}
+            <div className="flex space-x-2 mb-6 bg-gray-100 rounded-xl p-2">
+              {[
+                { key: 'serres', label: 'Serres', icon: MapPin },
+                { key: 'bilan', label: 'Bilans', icon: FileText },
+                { key: 'guides', label: 'Guides', icon: BookOpen },
+                { key: 'etat', label: 'État', icon: BarChart3 },
+              ].map(({ key, label, icon: Icon }) => (
+                <button
+                  key={key}
+                  onClick={() => setActiveMobileTab(key as any)}
+                  className={cn(
+                    "flex-1 flex items-center justify-center space-x-2 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 min-h-[44px]",
+                    activeMobileTab === key
+                      ? "bg-white text-[#B4CC5F] shadow-md border border-[#B4CC5F]/20"
+                      : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+                  )}
+                >
+                  <Icon className="h-5 w-5" />
+                  <span className="hidden sm:inline">{label}</span>
+                </button>
+              ))}
+            </div>
+
+            {/* Mobile Tab Content */}
+            <div className="space-y-4 max-h-[45vh] overflow-y-auto pb-4">
+              {activeMobileTab === 'serres' && (
+                <div className="space-y-3">
+                  {serres.map((serre) => (
+                    <Card
+                      key={serre.id}
+                      className={cn(
+                        "cursor-pointer transition-all duration-200",
+                        selectedSerre?.id === serre.id
+                          ? "ring-2 ring-[#B4CC5F] border-[#B4CC5F]"
+                          : "border-gray-200"
+                      )}
+                      onClick={() => {
+                        handleSelectSerre(serre);
+                        setIsMobilePanelOpen(false);
+                      }}
+                    >
+                      <CardContent className="p-3">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <h4 className="font-medium text-sm">{serre.nom}</h4>
+                            <p className="text-xs text-gray-600">{serre.variety}</p>
+                          </div>
+                          <Badge variant="outline" className="text-xs">
+                            {serre.surface} m²
+                          </Badge>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )}
+
+              {activeMobileTab === 'bilan' && selectedSerre && (
+                <div className="space-y-3">
+                  {bilans.map((bilan) => (
+                    <Card
+                      key={bilan.id}
+                      className={cn(
+                        "cursor-pointer transition-all duration-200",
+                        selectedBilan?.id === bilan.id
+                          ? "ring-2 ring-[#B4CC5F] border-[#B4CC5F]"
+                          : "border-gray-200"
+                      )}
+                      onClick={() => handleBilanSelect(bilan)}
+                    >
+                      <CardContent className="p-3">
+                        <div className="space-y-2">
+                          <h4 className="font-medium text-sm">{bilan.nom}</h4>
+                          <p className="text-xs text-gray-600">
+                            Surface: {bilan.surface || 'Non calculée'} m²
+                          </p>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )}
+
+              {activeMobileTab === 'guides' && selectedSerre && (
+                <div className="space-y-3">
+                  {guides.map((guide) => (
+                    <Card key={guide.id} className="border-gray-200">
+                      <CardContent className="p-3">
+                        <div className="space-y-2">
+                          <h4 className="font-medium text-sm">{guide.nom}</h4>
+                          <p className="text-xs text-gray-600">Variété: {guide.variete}</p>
+                          <div className="grid grid-cols-2 gap-2 text-xs text-gray-500">
+                            <span>Rendement: {guide.rendement} kg</span>
+                            <span>Plants: {guide.nombre_de_plants}</span>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )}
+
+              {activeMobileTab === 'etat' && selectedBilan && (
+                <div className="space-y-3">
+                  {etatBilans.map((etat) => (
+                    <Card key={etat.id} className="border-gray-200">
+                      <CardContent className="p-3">
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs font-medium">
+                              {new Date(etat.date).toLocaleDateString()}
+                            </span>
+                            <Badge variant="outline" className="text-xs">
+                              État
+                            </Badge>
+                          </div>
+                          <div className="grid grid-cols-2 gap-2 text-xs">
+                            <span className="text-green-600">Saines: {etat.nombre_tomates_non_maladies}</span>
+                            <span className="text-red-600">Malades: {etat.nombre_tomates_maladies}</span>
+                            <span className="text-orange-600">Type 1: {etat.nombre_malade1}</span>
+                            <span className="text-orange-600">Type 2: {etat.nombre_malade2}</span>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Mobile Floating Action Button */}
+        <Button
+          onClick={() => setIsMobilePanelOpen(!isMobilePanelOpen)}
+          className="fixed bottom-6 right-6 w-16 h-16 rounded-full shadow-2xl bg-[#B4CC5F] hover:bg-[#B4CC5F]/90 text-white z-40 text-2xl font-bold transition-all duration-200 hover:scale-110"
+        >
+          {isMobilePanelOpen ? '×' : '≡'}
+        </Button>
+
+        {/* Mobile Quick Access - Show when serre selected but panel closed */}
+        {selectedSerre && !isMobilePanelOpen && (
+          <div className="fixed bottom-6 left-6 z-40">
+            <Button
+              variant="outline"
+              onClick={() => setIsMobilePanelOpen(true)}
+              className="bg-white/95 backdrop-blur-sm border-gray-200 shadow-lg hover:bg-white px-4 py-2 rounded-lg"
+            >
+              <FileText className="h-4 w-4 mr-2" />
+              Bilans
+            </Button>
+          </div>
+        )}
       </div>
 
       {/* Intervention Form Modal */}
@@ -559,7 +982,6 @@ export default function TechnicianMap() {
         isOpen={isInterventionFormOpen}
         onClose={() => setIsInterventionFormOpen(false)}
         onSubmit={handleInterventionSubmit}
-        onSaveDraft={handleInterventionSaveDraft}
       />
     </div>
   );

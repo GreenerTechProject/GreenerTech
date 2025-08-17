@@ -11,6 +11,10 @@ import uuid
 from  app.models.alerte import Alerte  
 from app.models.etat_bilan import Etat_bilan  # Assure-toi que c'est bien importé
 from sqlalchemy import text
+from app.models.serre import Serre
+from app.models.domaine import Domaine
+from app.models.entreprise import Entreprise
+from app.models.autorisation_serre import Autorisation_serre
 
 # @token_required
 # @role_required("technicien", "directeur")
@@ -118,7 +122,7 @@ def create_rapport(current_user):
     data = request.get_json()
     description = data.get("description")
     id_serre = data.get("id_serre")
-    id_bilan = data.get("ids_bilans", [])
+    ids_bilans = data.get("ids_bilans", [])
 
     # Récupérer les dates de début et fin (au format string ISO "YYYY-MM-DD")
     date_debut_str = data.get("date_debut")
@@ -127,19 +131,32 @@ def create_rapport(current_user):
     if not description or not id_serre:
         return jsonify({"message": "Champs requis manquants"}), 400
 
-    # Convertir les dates en objets datetime.date si présentes
+    # Si aucun bilan n'est spécifié, récupérer tous les bilans de la serre
+    if not ids_bilans:
+        from app.models.bilan import Bilan
+        serre_bilans = Bilan.query.filter_by(id_serre=id_serre).all()
+        ids_bilans = [bilan.id for bilan in serre_bilans]
+
+    # Convertir les dates en objets datetime si présentes
     date_debut = None
     date_fin = None
     try:
         if date_debut_str:
-            date_debut = datetime.strptime(date_debut_str, "%d/%m/%Y %H:%M")
+            # Handle both ISO format and custom format
+            try:
+                date_debut = datetime.fromisoformat(date_debut_str.replace('Z', '+00:00'))
+            except ValueError:
+                date_debut = datetime.strptime(date_debut_str, "%d/%m/%Y %H:%M")
         if date_fin_str:
-            date_fin = datetime.strptime(date_fin_str, "%d/%m/%Y %H:%M")
+            try:
+                date_fin = datetime.fromisoformat(date_fin_str.replace('Z', '+00:00'))
+            except ValueError:
+                date_fin = datetime.strptime(date_fin_str, "%d/%m/%Y %H:%M")
     except ValueError:
-        return jsonify({"message": "Format de date invalide, attendu YYYY-MM-DDTHH:MM"}), 400
+        return jsonify({"message": "Format de date invalide"}), 400
 
-    # Construire la requête pour récupérer les derniers états de bilan
-    query_etat = Etat_bilan.query.filter(Etat_bilan.id_bilan.in_(id_bilan))
+    # Construire la requête pour récupérer les états de bilan
+    query_etat = Etat_bilan.query.filter(Etat_bilan.id_bilan.in_(ids_bilans))
     if date_debut:
         query_etat = query_etat.filter(Etat_bilan.date >= date_debut)
     if date_fin:
@@ -147,7 +164,7 @@ def create_rapport(current_user):
     etat_bilan = query_etat.order_by(Etat_bilan.date.desc()).all()
 
     # Filtrer les alertes par date aussi
-    query_alertes = Alerte.query.filter(Alerte.id_bilan.in_(id_bilan))
+    query_alertes = Alerte.query.filter(Alerte.id_bilan.in_(ids_bilans))
     if date_debut:
         query_alertes = query_alertes.filter(Alerte.date >= date_debut)
     if date_fin:
@@ -337,6 +354,59 @@ def get_rapports_by_director_entreprise(current_user):
         return jsonify(rapports), 200
     except Exception as e:
         db.session.rollback()
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+
+@token_required
+@role_required("technicien", "technicien_superieur", "directeur")
+def get_rapports_by_assigned_serres(current_user):
+    """Get reports for serres assigned to the technician"""
+    try:
+        if current_user.role == "directeur":
+            return get_rapports_by_director_entreprise(current_user)
+        elif current_user.role in ["technicien", "technicien_superieur"]:
+            # Get assigned serres for the technician
+            autorisations = Autorisation_serre.query.filter_by(id_user=current_user.id).all()
+            assigned_serre_ids = [auth.id_serre for auth in autorisations]
+            
+            if not assigned_serre_ids:
+                return jsonify([]), 200
+            
+            # Get reports for assigned serres
+            rapports = Rapport.query.filter(Rapport.id_serre.in_(assigned_serre_ids)).order_by(Rapport.date.desc()).all()
+            
+            # Enhance report data with serre and domaine information
+            enhanced_rapports = []
+            for rapport in rapports:
+                enhanced_rapport = rapport.to_dict()
+                
+                # Get serre information
+                serre = db.session.query(Serre).filter_by(id=rapport.id_serre).first()
+                if serre:
+                    enhanced_rapport['serre_nom'] = serre.nom
+                    enhanced_rapport['serre_id'] = serre.id
+                    
+                    # Get domaine information
+                    domaine = db.session.query(Domaine).filter_by(id=serre.id_domaine).first()
+                    if domaine:
+                        enhanced_rapport['domaine_nom'] = domaine.nom
+                        
+                        # Get entreprise information
+                        entreprise = db.session.query(Entreprise).filter_by(id=domaine.id_entreprise).first()
+                        if entreprise:
+                            enhanced_rapport['entreprise_nom'] = entreprise.nom
+                
+                # Get user information
+                user = User.query.get(rapport.user_id)
+                if user:
+                    enhanced_rapport['user_nom'] = user.name
+                
+                enhanced_rapports.append(enhanced_rapport)
+            
+            return jsonify(enhanced_rapports), 200
+        else:
+            return jsonify({"status": "error", "message": "Rôle non autorisé"}), 403
+    except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
 
 

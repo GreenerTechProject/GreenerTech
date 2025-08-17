@@ -211,10 +211,7 @@ export const MissionManagement: React.FC = () => {
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 sm:gap-6">
           <div className="flex-1">
-            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Gestion des Missions</h1>
-            <p className="text-sm sm:text-base text-gray-600 mt-2">
-              Gérez les missions des robots dans vos serres accessibles
-            </p>
+          
           </div>
           <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
             <DialogTrigger asChild>

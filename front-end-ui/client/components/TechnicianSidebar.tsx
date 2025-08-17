@@ -115,8 +115,8 @@ export default function TechnicianSidebar({
         onClick={() => setIsOpen(!isOpen)}
         className={cn(
           "h-10 w-10 rounded-lg transition-all duration-300",
-          "bg-gray-50 hover:bg-gray-100 text-gray-700 border border-gray-200",
-          isOpen && "bg-gray-100",
+          "bg-muted hover:bg-muted/80 text-foreground border border-border",
+          isOpen && "bg-muted/80",
           "lg:h-11 lg:w-11 xl:h-12 xl:w-12",
         )}
         size="sm"
@@ -135,8 +135,8 @@ export default function TechnicianSidebar({
       {/* Sidebar */}
       <div
         className={cn(
-          "fixed top-1/2 left-4 lg:left-8 xl:left-12 2xl:left-16 transform -translate-y-1/2 w-72 lg:w-80 xl:w-96 2xl:w-[28rem] bg-white shadow-2xl z-50 transition-all duration-300 ease-in-out",
-          "rounded-2xl border border-gray-200/50 backdrop-blur-sm bg-white/95",
+          "fixed top-1/2 left-4 lg:left-8 xl:left-12 2xl:left-16 transform -translate-y-1/2 w-72 lg:w-80 xl:w-96 2xl:w-[28rem] bg-card shadow-2xl z-50 transition-all duration-300 ease-in-out",
+          "rounded-2xl border border-border/50 backdrop-blur-sm bg-card/95",
           isOpen
             ? "translate-x-0 opacity-100 scale-100"
             : "-translate-x-full opacity-0 scale-95",
@@ -150,9 +150,9 @@ export default function TechnicianSidebar({
         {/* Sidebar Content */}
         <div className="flex flex-col h-full">
           {/* Header */}
-          <div className="p-6 border-b border-gray-100">
-            <h2 className="text-lg font-semibold text-gray-900">Navigation</h2>
-            <p className="text-sm text-gray-500 mt-1">
+          <div className="p-6 border-b border-border">
+            <h2 className="text-lg font-semibold text-foreground">Navigation</h2>
+            <p className="text-sm text-muted-foreground mt-1">
               {userRole === "technicien_sup"
                 ? "Technicien Supérieur"
                 : "Technicien"}
@@ -168,7 +168,7 @@ export default function TechnicianSidebar({
                     onClick={() => handleItemClick(item)}
                     className={cn(
                       "flex items-center w-full px-4 py-3 text-left rounded-lg transition-all duration-200",
-                      "hover:bg-gray-50 focus:outline-none focus:bg-gray-50 focus:ring-2 focus:ring-greener-400/20",
+                      "hover:bg-muted focus:outline-none focus:bg-muted focus:ring-2 focus:ring-greener-400/20",
                       "group transform hover:scale-[1.02]",
                       item.id === "interventions" && "bg-gradient-to-r from-blue-50 to-blue-100 hover:from-blue-100 hover:to-blue-200 border border-blue-200 shadow-sm"
                     )}
@@ -178,7 +178,7 @@ export default function TechnicianSidebar({
                         "transition-colors duration-200",
                         item.id === "interventions"
                           ? "text-blue-600 group-hover:text-blue-700"
-                          : "text-gray-500 group-hover:text-greener-500"
+                          : "text-muted-foreground group-hover:text-greener-500"
                       )}>
                         {item.icon}
                       </div>
@@ -186,7 +186,7 @@ export default function TechnicianSidebar({
                         "font-medium text-sm transition-colors duration-200",
                         item.id === "interventions"
                           ? "text-blue-700 group-hover:text-blue-800 font-semibold"
-                          : "text-gray-700 group-hover:text-gray-900"
+                          : "text-foreground group-hover:text-foreground"
                       )}>
                         {item.label}
                         {item.id === "interventions" && (
@@ -203,7 +203,7 @@ export default function TechnicianSidebar({
           </nav>
 
           {/* Logout Section */}
-          <div className="p-4 border-t border-gray-100">
+          <div className="p-4 border-t border-border">
             <button
               onClick={handleLogout}
               className={cn(
@@ -213,10 +213,10 @@ export default function TechnicianSidebar({
               )}
             >
               <div className="flex items-center space-x-3">
-                <div className="text-gray-500 group-hover:text-red-500 transition-colors duration-200">
+                <div className="text-muted-foreground group-hover:text-red-500 transition-colors duration-200">
                   <LogOut className="h-5 w-5" />
                 </div>
-                <span className="text-gray-700 font-medium text-sm group-hover:text-red-600 transition-colors duration-200">
+                <span className="text-foreground font-medium text-sm group-hover:text-red-600 transition-colors duration-200">
                   Se déconnecter
                 </span>
               </div>

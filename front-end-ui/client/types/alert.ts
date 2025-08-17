@@ -1,6 +1,7 @@
 export interface Alert {
   id: number;
   id_bilan: number;
+  id_serre?: number;
   status_alert: number;
   maladie: string;
   lien_image?: string;
@@ -8,6 +9,10 @@ export interface Alert {
   y1?: number;
   date: string;
   status: "résolue" | "non résolue";
+  // Enhanced location information
+  bilan_nom?: string;
+  serre_nom?: string;
+  domaine_nom?: string;
 }
 
 export interface CreateAlertRequest {

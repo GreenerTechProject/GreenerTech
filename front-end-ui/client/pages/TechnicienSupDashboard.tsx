@@ -48,7 +48,7 @@ import {
 import TechnicianSidebar from "../components/TechnicianSidebar";
 import InterventionForm from "../components/InterventionForm";
 import { cn } from "@/lib/utils";
-import { getGoogleMapsAPIKey } from "@/config/maps";
+
 import { useToast } from "@/hooks/use-toast";
 import { serreService } from "../services/serreService";
 import { technicianService } from "../services/technicianService";
@@ -89,7 +89,7 @@ interface Zone {
   lastReading: Date;
 }
 
-const GOOGLE_MAPS_API_KEY = getGoogleMapsAPIKey();
+
 
 const mockSerres: Serre[] = [
   {
@@ -928,7 +928,7 @@ export default function TechnicienSupDashboard(): JSX.Element {
           {/* Right Panel: Map */}
           <ResizablePanel defaultSize={72} minSize={55} className="min-w-0">
             <div className="h-full relative min-h-[500px] w-full flex-1" data-testid="map-section">
-              <GoogleMapsWrapper apiKey={GOOGLE_MAPS_API_KEY}>
+              <GoogleMapsWrapper>
                 <div ref={mapRef} className="w-full h-full min-h-[500px] min-w-[400px] flex-1" />
               </GoogleMapsWrapper>
 
@@ -1014,7 +1014,7 @@ export default function TechnicienSupDashboard(): JSX.Element {
 
       {/* Mobile Layout - Full Screen Map */}
       <div className="lg:hidden h-full relative">
-        <GoogleMapsWrapper apiKey={GOOGLE_MAPS_API_KEY}>
+                    <GoogleMapsWrapper>
           <div ref={mapRef} className="w-full h-full" />
         </GoogleMapsWrapper>
 

@@ -24,6 +24,7 @@ import {
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import ReportService from "../services/reportService";
 import { serreService } from "../services/serreService";
+import TechHeader from "../components/TechHeader";
 
 interface Serre {
   id: number;
@@ -131,6 +132,7 @@ export default function TechnicianReportCreation() {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      <TechHeader role="technicien" />
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="mb-8">
@@ -143,14 +145,6 @@ export default function TechnicianReportCreation() {
               <ArrowLeft className="h-4 w-4" />
               <span>Retour</span>
             </Button>
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">
-                Générer un Rapport
-              </h1>
-              <p className="text-gray-600 mt-2">
-                Créez un rapport détaillé pour vos serres assignées
-              </p>
-            </div>
           </div>
         </div>
 
@@ -300,7 +294,7 @@ export default function TechnicianReportCreation() {
                 <Button
                   type="submit"
                   disabled={loading || !selectedSerre || !description.trim()}
-                  className="bg-green-600 hover:bg-green-700"
+                  className="bg-[#B4CC5F] hover:bg-[#9BB84F] transition-colors duration-200"
                 >
                   {loading ? (
                     <div className="flex items-center space-x-2">

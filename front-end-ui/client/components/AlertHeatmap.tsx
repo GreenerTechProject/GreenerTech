@@ -3,7 +3,7 @@ import { GoogleMap, Marker, InfoWindow, HeatmapLayer } from "@react-google-maps/
 import { Alert } from "@/types/alert";
 import { AlertService } from "@/services/alertService";
 import { GOOGLE_MAPS_CONFIG } from "@/config/maps";
-import { Loader2, AlertTriangle, MapPin } from "lucide-react";
+import { Loader2, AlertTriangle, MapPin, Activity, Clock, CheckCircle2 } from "lucide-react";
 
 interface AlertHeatmapProps {
   className?: string;
@@ -95,9 +95,32 @@ export default function AlertHeatmap({
   className = "w-full h-full", 
   height = "400px" 
 }: AlertHeatmapProps) {
+  // Responsive height calculation
+  const getResponsiveHeight = () => {
+    if (typeof window !== 'undefined') {
+      const screenWidth = window.innerWidth;
+      if (screenWidth < 640) return "300px";      // Mobile
+      if (screenWidth < 1024) return "400px";     // Tablet
+      if (screenWidth < 1280) return "450px";     // Small desktop
+      return "500px";                             // Large desktop
+    }
+    return height; // Fallback to prop
+  };
+
+  const [responsiveHeight, setResponsiveHeight] = useState(getResponsiveHeight());
   const [alerts, setAlerts] = useState<Alert[]>([]);
   const [markers, setMarkers] = useState<AlertMarker[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Handle window resize for responsive height
+  useEffect(() => {
+    const handleResize = () => {
+      setResponsiveHeight(getResponsiveHeight());
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
   const [error, setError] = useState<string | null>(null);
   const [map, setMap] = useState<google.maps.Map | null>(null);
   const [usingSampleData, setUsingSampleData] = useState(false);
@@ -105,6 +128,7 @@ export default function AlertHeatmap({
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   const [googleMapsLoaded, setGoogleMapsLoaded] = useState(false);
   const [heatmapData, setHeatmapData] = useState<HeatmapPoint[]>([]);
+  const [isDark, setIsDark] = useState<boolean>(false);
   const mapRef = useRef<google.maps.Map | null>(null);
 
   // Check if Google Maps is loaded
@@ -121,35 +145,47 @@ export default function AlertHeatmap({
     
     // Higher weight for unresolved alerts
     if (alert.status === "non résolue") {
-      weight += 3; // Increased weight for unresolved alerts
+      weight += 2; // Increased weight for unresolved alerts
     }
     
-    // Higher weight for higher status_alert values
-    if (alert.status_alert > 5) {
-      weight += 4; // High priority
-    } else if (alert.status_alert > 3) {
-      weight += 3; // Medium priority
-    } else if (alert.status_alert > 1) {
-      weight += 2; // Low priority
+    // Weight based on status_alert values (0, 1, 2)
+    if (alert.status_alert === 2) {
+      weight += 4; // Élevée (High) - Red
+    } else if (alert.status_alert === 1) {
+      weight += 2; // Moyenne (Medium) - Orange
+    } else if (alert.status_alert === 0) {
+      weight += 1; // Faible (Low) - Yellow
     }
     
     return weight;
   }, []);
 
-  // Get alert level description based on weight
-  const getAlertLevel = useCallback((weight: number): string => {
-    if (weight >= 7) return "Élevée";
-    if (weight >= 5) return "Moyenne";
-    if (weight >= 3) return "Faible";
-    return "Très faible";
+  // Get alert level description based on status_alert
+  const getAlertLevel = useCallback((statusAlert: number): string => {
+    switch (statusAlert) {
+      case 2:
+        return "Élevée";
+      case 1:
+        return "Moyenne";
+      case 0:
+        return "Faible";
+      default:
+        return "Inconnu";
+    }
   }, []);
 
-  // Get alert level color based on weight
-  const getAlertColor = useCallback((weight: number): string => {
-    if (weight >= 7) return "#EF4444"; // Red
-    if (weight >= 5) return "#F97316"; // Orange
-    if (weight >= 3) return "#EAB308"; // Yellow
-    return "#22C55E"; // Green
+  // Get alert level color based on status_alert
+  const getAlertColor = useCallback((statusAlert: number): string => {
+    switch (statusAlert) {
+      case 2:
+        return "#EF4444"; // Red for Élevée
+      case 1:
+        return "#F97316"; // Orange for Moyenne
+      case 0:
+        return "#EAB308"; // Yellow for Faible
+      default:
+        return "#22C55E"; // Green for unknown
+    }
   }, []);
 
   // Convert alerts to heatmap data points with more spread for smooth blending
@@ -225,24 +261,52 @@ export default function AlertHeatmap({
   const fetchAlerts = useCallback(async () => {
     try {
       setLoading(true);
-      const response = await AlertService.getAllAlerts(1, 1000);
+      setError(null);
       
-      if (response.alerts && response.alerts.length > 0) {
-        console.log("Fetched real alerts:", response.alerts.length);
-        setAlerts(response.alerts);
-        setUsingSampleData(false);
-      } else {
-        console.log("No real alerts, using sample data");
-        setAlerts(SAMPLE_ALERTS);
-        setUsingSampleData(true);
+      // First try to get alerts by assigned serres (more specific for technicians)
+      let realAlerts: Alert[] = [];
+      
+      try {
+        const assignedSerresAlerts = await AlertService.getAlertsByAssignedSerres();
+        if (assignedSerresAlerts && assignedSerresAlerts.length > 0) {
+          console.log("Fetched alerts by assigned serres:", assignedSerresAlerts.length);
+          realAlerts = assignedSerresAlerts;
+        }
+      } catch (assignedError) {
+        console.log("Could not fetch alerts by assigned serres, trying getAllAlerts");
       }
       
-      // Don't convert to markers yet - wait for Google Maps to load
+      // If no alerts from assigned serres, try getAllAlerts
+      if (realAlerts.length === 0) {
+        try {
+          const response = await AlertService.getAllAlerts(1, 1000);
+          if (response.alerts && response.alerts.length > 0) {
+            console.log("Fetched all alerts:", response.alerts.length);
+            realAlerts = response.alerts;
+          }
+        } catch (allAlertsError) {
+          console.log("Could not fetch all alerts");
+        }
+      }
+      
+      // Use real alerts if available
+      if (realAlerts.length > 0) {
+        console.log("Using real alerts:", realAlerts.length);
+        setAlerts(realAlerts);
+        setUsingSampleData(false);
+      } else {
+        console.log("No real alerts available, using sample data for demonstration");
+        setAlerts(SAMPLE_ALERTS);
+        setUsingSampleData(true);
+        setError("Aucune alerte réelle trouvée. Affichage des données de démonstration.");
+      }
+      
     } catch (err) {
       console.error("Error fetching alerts:", err);
-      // Fallback to sample data
+      // Only use sample data as absolute last resort
       setAlerts(SAMPLE_ALERTS);
       setUsingSampleData(true);
+      setError("Erreur lors du chargement des alertes. Affichage des données de démonstration.");
     } finally {
       setLoading(false);
     }
@@ -283,6 +347,13 @@ export default function AlertHeatmap({
     setMap(map);
     mapRef.current = map;
     setGoogleMapsLoaded(true);
+    // Apply theme style
+    try {
+      const theme = localStorage.getItem('theme');
+      const dark = theme ? theme === 'dark' : document.documentElement.classList.contains('dark');
+      setIsDark(dark);
+      map.setOptions({ styles: dark ? DARK_MAP_STYLE : LIGHT_MAP_STYLE });
+    } catch (e) {}
     
     // Process alerts now that Google Maps is loaded
     if (alerts.length > 0) {
@@ -290,6 +361,19 @@ export default function AlertHeatmap({
       processAlerts();
     }
   }, [alerts, processAlerts]);
+
+  // Listen for theme changes
+  useEffect(() => {
+    const handler = (e: any) => {
+      const dark = !!e?.detail?.dark;
+      setIsDark(dark);
+      if (mapRef.current) {
+        mapRef.current.setOptions({ styles: dark ? DARK_MAP_STYLE : LIGHT_MAP_STYLE });
+      }
+    };
+    window.addEventListener('theme-changed', handler as EventListener);
+    return () => window.removeEventListener('theme-changed', handler as EventListener);
+  }, []);
 
   // Fit bounds when markers change
   useEffect(() => {
@@ -321,8 +405,8 @@ export default function AlertHeatmap({
 
   const mapContainerStyle = {
     width: "100%",
-    height: height,
-    minHeight: "300px",
+    height: responsiveHeight,
+    minHeight: "250px",
   };
 
   // Fallback view when Google Maps fails to load
@@ -336,6 +420,29 @@ export default function AlertHeatmap({
         <p className="text-sm text-gray-600 mb-4">
           Impossible de charger Google Maps. Voici un résumé des alertes :
         </p>
+        
+        {/* Data source indicator */}
+        {usingSampleData && (
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-4 max-w-md mx-auto">
+            <div className="flex items-center gap-2 text-yellow-800">
+              <AlertTriangle className="h-4 w-4" />
+              <span className="text-sm font-medium">Données de démonstration</span>
+            </div>
+            <p className="text-xs text-yellow-700 mt-1">
+              Les vraies alertes n'ont pas pu être chargées
+            </p>
+          </div>
+        )}
+        
+        {error && (
+          <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-4 max-w-md mx-auto">
+            <div className="flex items-center gap-2 text-red-800">
+              <AlertTriangle className="h-4 w-4" />
+              <span className="text-sm font-medium">Erreur de chargement</span>
+            </div>
+            <p className="text-xs text-red-700 mt-1">{error}</p>
+          </div>
+        )}
         
         {/* Alert summary table */}
         <div className="bg-white rounded-lg border p-4 max-w-md mx-auto">
@@ -352,20 +459,25 @@ export default function AlertHeatmap({
               </span>
             </div>
             <div className="flex justify-between">
-              <span className="text-gray-600">Urgentes:</span>
+              <span className="text-gray-600">Élevées (2):</span>
               <span className="font-medium text-red-600">
-                {alerts.filter(a => a.status_alert > 5).length}
+                {alerts.filter(a => a.status_alert === 2).length}
+              </span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-gray-600">Moyennes (1):</span>
+              <span className="font-medium text-orange-600">
+                {alerts.filter(a => a.status_alert === 1).length}
+              </span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-gray-600">Faibles (0):</span>
+              <span className="font-medium text-yellow-600">
+                {alerts.filter(a => a.status_alert === 0).length}
               </span>
             </div>
           </div>
         </div>
-        
-        <button 
-          onClick={() => window.location.reload()}
-          className="mt-4 px-4 py-2 text-sm bg-[#B4CC5F] text-white rounded-md hover:bg-[#9BB54A]"
-        >
-          Réessayer
-        </button>
       </div>
     </div>
   );
@@ -388,12 +500,6 @@ export default function AlertHeatmap({
   return (
     <div className={className}>
       <div className="mb-4">
-        <h3 className="text-lg font-semibold text-gray-900 mb-2">
-          Carte des alertes - Vue d'ensemble
-        </h3>
-        <p className="text-sm text-gray-600">
-          La carte de chaleur montre l'intensité des alertes par zone
-        </p>
         {usingSampleData && (
           <div className="mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded-md">
             <p className="text-xs text-yellow-800">
@@ -410,10 +516,9 @@ export default function AlertHeatmap({
         )}
       </div>
       
-      {/* Two-column layout: Map (1/2) + Alert Summary (1/2) */}
-      <div className="flex gap-6">
-        {/* Left side: Map */}
-        <div className="w-1/2">
+      {/* Layout: Sidebar on top, Map below, then Stats/Alerts, then Interventions Chart */}
+        <div className="w-full space-y-6">
+          {/* Map Section - Full width */}
           <div className="relative" onMouseMove={handleMouseMove}>
             <GoogleMap
               mapContainerStyle={mapContainerStyle}
@@ -426,24 +531,33 @@ export default function AlertHeatmap({
                 mapTypeControl: true,
                 fullscreenControl: true,
                 mapTypeId: "satellite",
+                gestureHandling: "greedy", // Enable dragging on mobile
+                draggable: true,
+                scrollwheel: true,
+                disableDoubleClickZoom: false,
+             
               }}
             >
-              {/* Heatmap Layer with custom gradient */}
+              {/* Heatmap Layers: subtle glow + main neon gradient */}
               {heatmapData.length > 0 && (
-                <HeatmapLayer
-                  data={heatmapData}
-                  options={{
-                    radius: 60,
-                    opacity: 0.85,
-                    gradient: [
-                      'rgba(34, 197, 94, 0.2)',      // Light green (Très faible) - more visible
-                      'rgba(34, 197, 94, 0.5)',      // Medium green
-                      'rgba(234, 179, 8, 0.7)',      // Yellow (Faible) - more visible
-                      'rgba(249, 115, 22, 0.85)',    // Orange (Moyenne) - more visible
-                      'rgba(239, 68, 68, 1)'         // Red (Élevée) - fully opaque
-                    ]
-                  }}
-                />
+                <>
+                  <HeatmapLayer
+                    data={heatmapData}
+                    options={{
+                      radius: 85,
+                      opacity: 0.35,
+                      gradient: NEON_GLOW_GRADIENT
+                    }}
+                  />
+                  <HeatmapLayer
+                    data={heatmapData}
+                    options={{
+                      radius: 55,
+                      opacity: 0.95,
+                      gradient: NEON_GRADIENT
+                    }}
+                  />
+                </>
               )}
 
               {/* Invisible markers for hover events */}
@@ -492,10 +606,10 @@ export default function AlertHeatmap({
                 <div className="flex items-center mt-1">
                   <div 
                     className="w-3 h-3 rounded-full mr-2"
-                    style={{ backgroundColor: getAlertColor(hoveredMarker.weight) }}
+                    style={{ backgroundColor: getAlertColor(hoveredMarker.alert.status_alert) }}
                   ></div>
                   <span className="text-xs font-medium">
-                    {getAlertLevel(hoveredMarker.weight)}
+                    {getAlertLevel(hoveredMarker.alert.status_alert)}
                   </span>
                 </div>
                 <div className="text-xs text-gray-500 mt-1">
@@ -507,151 +621,121 @@ export default function AlertHeatmap({
               </div>
             )}
 
-            {/* Legend in bottom-left corner */}
-            <div className="absolute bottom-4 left-4 bg-white border border-gray-200 rounded-lg shadow-lg p-4 z-10">
-              <h4 className="text-sm font-medium text-gray-900 mb-3">Niveaux d'alerte</h4>
-              <div className="space-y-2">
-                <div className="flex items-center">
-                  <div className="w-4 h-4 bg-red-500 rounded-full mr-2"></div>
-                  <span className="text-xs text-gray-700">Élevée</span>
-                </div>
-                <div className="flex items-center">
-                  <div className="w-4 h-4 bg-orange-500 rounded-full mr-2"></div>
-                  <span className="text-xs text-gray-700">Moyenne</span>
-                </div>
-                <div className="flex items-center">
-                  <div className="w-4 h-4 bg-yellow-500 rounded-full mr-2"></div>
-                  <span className="text-xs text-gray-700">Faible</span>
-                </div>
-                <div className="flex items-center">
-                  <div className="w-4 h-4 bg-green-500 rounded-full mr-2"></div>
-                  <span className="text-xs text-gray-700">Très faible</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Right side: Alert Summary Dashboard */}
-        <div className="w-1/2 space-y-4">
-          {/* Alert Statistics Cards */}
-          <div className="grid grid-cols-2 gap-4">
-            <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
-              <div className="flex items-center">
-                <div className="p-2 bg-red-100 rounded-lg">
-                  <AlertTriangle className="h-6 w-6 text-red-600" />
-                </div>
-                <div className="ml-3">
-                  <p className="text-sm font-medium text-gray-900">Total Alertes</p>
-                  <p className="text-2xl font-bold text-red-600">{alerts.length}</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
-              <div className="flex items-center">
-                <div className="p-2 bg-orange-100 rounded-lg">
-                  <AlertTriangle className="h-6 w-6 text-orange-600" />
-                </div>
-                <div className="ml-3">
-                  <p className="text-sm font-medium text-gray-900">Non Résolues</p>
-                  <p className="text-2xl font-bold text-orange-600">
-                    {alerts.filter(a => a.status === "non résolue").length}
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
-              <div className="flex items-center">
-                <div className="p-2 bg-yellow-100 rounded-lg">
-                  <AlertTriangle className="h-6 w-6 text-yellow-600" />
-                </div>
-                <div className="ml-3">
-                  <p className="text-sm font-medium text-gray-900">Urgentes</p>
-                  <p className="text-2xl font-bold text-yellow-600">
-                    {alerts.filter(a => a.status_alert > 5).length}
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
-              <div className="flex items-center">
-                <div className="p-2 bg-green-100 rounded-lg">
-                  <AlertTriangle className="h-6 w-6 text-green-600" />
-                </div>
-                <div className="ml-3">
-                  <p className="text-sm font-medium text-gray-900">Résolues</p>
-                  <p className="text-2xl font-bold text-green-600">
-                    {alerts.filter(a => a.status === "résolue").length}
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Alert Level Distribution */}
-          <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
-            <h4 className="text-sm font-medium text-gray-900 mb-3">Distribution par Niveau</h4>
-            <div className="space-y-3">
-              {[
-                { level: "Élevée", color: "bg-red-500", count: alerts.filter(a => getAlertWeight(a) >= 7).length },
-                { level: "Moyenne", color: "bg-orange-500", count: alerts.filter(a => getAlertWeight(a) >= 5 && getAlertWeight(a) < 7).length },
-                { level: "Faible", color: "bg-yellow-500", count: alerts.filter(a => getAlertWeight(a) >= 3 && getAlertWeight(a) < 5).length },
-                { level: "Très faible", color: "bg-green-500", count: alerts.filter(a => getAlertWeight(a) < 3).length }
-              ].map((item, index) => (
-                <div key={index} className="flex items-center justify-between">
-                  <div className="flex items-center">
-                    <div className={`w-3 h-3 rounded-full mr-2 ${item.color}`}></div>
-                    <span className="text-sm text-gray-700">{item.level}</span>
+            {/* Legend in bottom-left corner: 3 alert levels */}
+            <div className="absolute bottom-4 left-4 z-10">
+              <div className="rounded-2xl shadow-xl border border-black/5 dark:border-white/10 backdrop-blur bg-white/80 dark:bg-gray-900/70 p-3">
+                <h4 className="text-xs font-semibold text-gray-900 dark:text-gray-100 mb-2">Niveaux d'alerte</h4>
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 rounded-full bg-[#EF4444]"></div>
+                    <span className="text-xs text-gray-700 dark:text-gray-300">Élevée (2)</span>
                   </div>
-                  <span className="text-sm font-medium text-gray-900">{item.count}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Recent Alerts List */}
-          <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
-            <h4 className="text-sm font-medium text-gray-900 mb-3">Alertes Récentes</h4>
-            <div className="space-y-2 max-h-32 overflow-y-auto">
-              {alerts.slice(0, 5).map((alert) => (
-                <div key={alert.id} className="flex items-center justify-between p-2 bg-gray-50 rounded">
-                  <div className="flex-1">
-                    <p className="text-xs font-medium text-gray-900">{alert.serre_nom}</p>
-                    <p className="text-xs text-gray-600">{alert.maladie}</p>
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 rounded-full bg-[#F97316]"></div>
+                    <span className="text-xs text-gray-700 dark:text-gray-300">Moyenne (1)</span>
                   </div>
-                  <div className="flex items-center space-x-2">
-                    <div 
-                      className={`w-2 h-2 rounded-full ${
-                        getAlertWeight(alert) >= 7 ? 'bg-red-500' :
-                        getAlertWeight(alert) >= 5 ? 'bg-orange-500' :
-                        getAlertWeight(alert) >= 3 ? 'bg-yellow-500' : 'bg-green-500'
-                      }`}
-                    ></div>
-                    <span className={`text-xs px-2 py-1 rounded-full ${
-                      alert.status === "non résolue" 
-                        ? "bg-red-100 text-red-800" 
-                        : "bg-green-100 text-green-800"
-                    }`}>
-                      {alert.status}
-                    </span>
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 rounded-full bg-[#EAB308]"></div>
+                    <span className="text-xs text-gray-700 dark:text-gray-300">Faible (0)</span>
                   </div>
                 </div>
-              ))}
+              </div>
+            </div>
+
+            {/* Data source indicator in top-right corner */}
+            <div className="absolute top-4 right-4 z-10">
+              <div className={`rounded-lg shadow-lg border p-2 ${
+                usingSampleData 
+                  ? 'bg-yellow-50 border-yellow-200 text-yellow-800' 
+                  : 'bg-green-50 border-green-200 text-green-800'
+              }`}>
+                <div className="flex items-center gap-2 text-xs font-medium">
+                  {usingSampleData ? (
+                    <>
+                      <AlertTriangle className="h-3 w-3" />
+                      <span>Démo</span>
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircle2 className="h-3 w-3" />
+                      <span>Données réelles</span>
+                    </>
+                  )}
+                </div>
+                {usingSampleData && (
+                  <div className="text-[10px] text-yellow-700 mt-1">
+                    {alerts.length} alertes de démonstration
+                  </div>
+                )}
+                {!usingSampleData && (
+                  <div className="text-[10px] text-green-700 mt-1">
+                    {alerts.length} alertes réelles
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 
-          {/* Map Info */}
-          <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
-            <div className="text-sm text-blue-800">
-              <p><strong>Points de chaleur:</strong> {heatmapData.length}</p>
-              <p><strong>Zones surveillées:</strong> {markers.length}</p>
-            </div>
-          </div>
+
         </div>
       </div>
-    </div>
-  );
+    );
 }
+
+// Neon gradient and map styles
+const NEON_GRADIENT = [
+  'rgba(59,130,246,0.15)', // blue faint
+  'rgba(59,130,246,0.6)',  // blue
+  'rgba(6,182,212,0.8)',   // cyan
+  'rgba(132,204,22,0.9)',  // lime
+  'rgba(234,179,8,0.95)',  // yellow
+  'rgba(249,115,22,0.98)', // orange
+  'rgba(239,68,68,1.0)'    // red
+];
+
+const NEON_GLOW_GRADIENT = [
+  'rgba(6,182,212,0.0)',  // transparent
+  'rgba(6,182,212,0.08)',
+  'rgba(59,130,246,0.12)',
+  'rgba(132,204,22,0.16)',
+  'rgba(234,179,8,0.18)',
+  'rgba(249,115,22,0.2)',
+  'rgba(239,68,68,0.22)'
+];
+
+const DARK_MAP_STYLE: any[] = [
+  { elementType: 'geometry', stylers: [{ color: '#1f2937' }] },
+  { elementType: 'labels.icon', stylers: [{ visibility: 'off' }] },
+  { elementType: 'labels.text.fill', stylers: [{ color: '#9ca3af' }] },
+  { elementType: 'labels.text.stroke', stylers: [{ color: '#111827' }] },
+  {
+    featureType: 'administrative.locality',
+    elementType: 'labels.text.fill',
+    stylers: [{ color: '#d1d5db' }]
+  },
+  {
+    featureType: 'poi',
+    elementType: 'labels.text.fill',
+    stylers: [{ color: '#9ca3af' }]
+  },
+  { featureType: 'poi', elementType: 'geometry', stylers: [{ color: '#111827' }] },
+  { featureType: 'road', elementType: 'geometry', stylers: [{ color: '#374151' }] },
+  { featureType: 'road', elementType: 'geometry.stroke', stylers: [{ color: '#4b5563' }] },
+  { featureType: 'road.highway', elementType: 'geometry', stylers: [{ color: '#4b5563' }] },
+  { featureType: 'transit', elementType: 'geometry', stylers: [{ color: '#111827' }] },
+  { featureType: 'water', elementType: 'geometry', stylers: [{ color: '#0b1220' }] },
+  { featureType: 'water', elementType: 'labels.text.fill', stylers: [{ color: '#64748b' }] },
+];
+
+const LIGHT_MAP_STYLE: any[] = [
+  { elementType: 'geometry', stylers: [{ color: '#f5f5f5' }] },
+  { elementType: 'labels.icon', stylers: [{ visibility: 'off' }] },
+  { elementType: 'labels.text.fill', stylers: [{ color: '#6b7280' }] },
+  { elementType: 'labels.text.stroke', stylers: [{ color: '#ffffff' }] },
+  { featureType: 'poi', elementType: 'geometry', stylers: [{ color: '#e5e7eb' }] },
+  { featureType: 'road', elementType: 'geometry', stylers: [{ color: '#ffffff' }] },
+  { featureType: 'road', elementType: 'geometry.stroke', stylers: [{ color: '#e5e7eb' }] },
+  { featureType: 'road.highway', elementType: 'geometry', stylers: [{ color: '#e5e7eb' }] },
+  { featureType: 'transit', elementType: 'geometry', stylers: [{ color: '#e5e7eb' }] },
+  { featureType: 'water', elementType: 'geometry', stylers: [{ color: '#dbeafe' }] },
+];

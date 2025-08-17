@@ -171,7 +171,7 @@ export default function BilanMapComponent({
       </CardHeader>
       <CardContent className="p-0">
         <div className="relative">
-          <GoogleMapsWrapper apiKey={getGoogleMapsAPIKey()}>
+          <GoogleMapsWrapper>
           {(!mapLoaded || !isGoogleMapsLoaded()) && (
             <div className="flex items-center justify-center h-full min-h-[500px]">
               <div className="text-center">

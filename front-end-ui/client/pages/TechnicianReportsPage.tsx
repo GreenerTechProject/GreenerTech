@@ -26,6 +26,7 @@ import {
 import ReportService, { ApiReport } from "../services/reportService";
 import { serreService } from "../services/serreService";
 import { useNavigate } from "react-router-dom";
+import TechHeader from "../components/TechHeader";
 
 export default function TechnicianReportsPage() {
   const { user } = useAuth();
@@ -87,11 +88,11 @@ export default function TechnicianReportsPage() {
     const diffDays = Math.floor((now.getTime() - reportDate.getTime()) / (1000 * 60 * 60 * 24));
     
     if (diffDays <= 7) {
-      return { label: "Récent", color: "bg-green-100 text-green-800 border-green-300" };
+      return { label: "Récent", color: "bg-[#B4CC5F]/20 text-[#9BB84F] border-[#B4CC5F]/30" };
     } else if (diffDays <= 30) {
       return { label: "Mois dernier", color: "bg-blue-100 text-blue-800 border-blue-300" };
     } else {
-      return { label: "Ancien", color: "bg-gray-100 text-gray-800 border-gray-300" };
+      return { label: "Ancien", color: "bg-muted text-muted-foreground border-border" };
     }
   };
 
@@ -110,69 +111,71 @@ export default function TechnicianReportsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Chargement des rapports...</p>
+      <div className="min-h-screen bg-white dark:bg-gray-900">
+        <TechHeader role="technicien" />
+        <div className="flex items-center justify-center min-h-[calc(100vh-80px)]">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto"></div>
+            <p className="mt-4 text-muted-foreground">Chargement des rapports...</p>
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            Rapports - Technicien
-          </h1>
-          <p className="text-gray-600">
-            Consultez et gérez les rapports de vos serres assignées
-          </p>
-        </div>
+    <div className="min-h-screen bg-white dark:bg-gray-900">
+      <TechHeader role="technicien" />
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <Card>
+          <Card className="hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600">Total Rapports</p>
-                  <p className="text-2xl font-bold text-gray-900">
+                  <p className="text-sm font-medium text-muted-foreground mb-1">Total Rapports</p>
+                  <p className="text-3xl font-bold text-[#B4CC5F]">
                     {reports.length}
                   </p>
+                  <p className="text-xs text-muted-foreground mt-1">Tous les rapports</p>
                 </div>
-                <FileText className="h-8 w-8 text-gray-400" />
+                <div className="h-12 w-12 rounded-xl bg-[#B4CC5F] flex items-center justify-center shadow-lg hover:shadow-xl transition-shadow duration-300">
+                  <FileText className="h-7 w-7 text-white" />
+                </div>
               </div>
             </CardContent>
           </Card>
           
-          <Card>
+          <Card className="hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600">Serres Assignées</p>
-                  <p className="text-2xl font-bold text-blue-600">
+                  <p className="text-sm font-medium text-muted-foreground mb-1">Serres Assignées</p>
+                  <p className="text-3xl font-bold text-blue-600">
                     {availableSerres.length}
                   </p>
-                  {availableSerres.length === 0 && (
-                    <p className="text-xs text-gray-500 mt-1">
+                  {availableSerres.length === 0 ? (
+                    <p className="text-xs text-red-500 mt-1">
                       Aucune serre assignée
                     </p>
+                  ) : (
+                    <p className="text-xs text-muted-foreground mt-1">Serres disponibles</p>
                   )}
                 </div>
-                <Calendar className="h-8 w-8 text-blue-600" />
+                <div className="h-12 w-12 rounded-xl bg-blue-600 flex items-center justify-center shadow-lg hover:shadow-xl transition-shadow duration-300">
+                  <Calendar className="h-7 w-7 text-white" />
+                </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600">Ce Mois</p>
-                  <p className="text-2xl font-bold text-green-600">
+                  <p className="text-sm font-medium text-muted-foreground mb-1">Ce Mois</p>
+                  <p className="text-3xl font-bold text-[#B4CC5F]">
                     {reports.filter(r => {
                       if (!r.date) return false;
                       const reportDate = new Date(r.date);
@@ -180,25 +183,10 @@ export default function TechnicianReportsPage() {
                       return reportDate.getMonth() === now.getMonth() && reportDate.getFullYear() === now.getFullYear();
                     }).length}
                   </p>
+                  <p className="text-xs text-muted-foreground mt-1">Rapports du mois</p>
                 </div>
-                <Calendar className="h-8 w-8 text-green-600" />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600">Actions</p>
-                  <Button 
-                    onClick={handleGenerateReport}
-                    disabled={availableSerres.length === 0}
-                    className="bg-green-600 hover:bg-green-700 text-white text-sm px-4 py-2 disabled:bg-gray-400 disabled:cursor-not-allowed"
-                  >
-                    <Plus className="h-4 w-4 mr-2" />
-                    Générer un rapport
-                  </Button>
+                <div className="h-12 w-12 rounded-xl bg-[#B4CC5F] flex items-center justify-center shadow-lg hover:shadow-xl transition-shadow duration-300">
+                  <Calendar className="h-7 w-7 text-white" />
                 </div>
               </div>
             </CardContent>
@@ -206,34 +194,36 @@ export default function TechnicianReportsPage() {
         </div>
 
         {/* Filters and Search */}
-        <Card className="mb-8">
-          <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
-              <Filter className="h-5 w-5" />
+        <Card className="mb-8 hover:shadow-md transition-shadow duration-300">
+          <CardHeader className="pb-4">
+            <CardTitle className="flex items-center space-x-2 text-lg">
+              <div className="h-8 w-8 rounded-lg bg-[#B4CC5F] flex items-center justify-center">
+                <Filter className="h-5 w-5 text-white" />
+              </div>
               <span>Filtres et Recherche</span>
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
-                <Label htmlFor="search">Rechercher</Label>
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Label htmlFor="search" className="text-sm font-medium text-foreground">Rechercher</Label>
+                <div className="relative mt-1">
+                                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
                     id="search"
                     type="text"
                     placeholder="Description, serre, domaine..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10"
+                                          className="pl-10 border-border focus:border-[#B4CC5F] focus:ring-[#B4CC5F] transition-colors duration-200"
                   />
                 </div>
               </div>
 
               <div>
-                <Label htmlFor="serre-filter">Filtrer par Serre</Label>
+                <Label htmlFor="serre-filter" className="text-sm font-medium text-foreground">Filtrer par Serre</Label>
                 <Select value={filterSerre} onValueChange={setFilterSerre}>
-                  <SelectTrigger>
+                                      <SelectTrigger className="mt-1 border-border focus:border-[#B4CC5F] focus:ring-[#B4CC5F] transition-colors duration-200">
                     <SelectValue placeholder="Toutes les serres" />
                   </SelectTrigger>
                   <SelectContent>
@@ -251,13 +241,13 @@ export default function TechnicianReportsPage() {
                 <Button 
                   onClick={handleGenerateReport}
                   disabled={availableSerres.length === 0}
-                  className="w-full bg-green-600 hover:bg-green-700 text-white font-medium disabled:bg-gray-400 disabled:cursor-not-allowed"
+                  className="w-full bg-[#B4CC5F] hover:bg-[#9BB84F] text-white font-medium disabled:bg-gray-400 disabled:cursor-not-allowed transition-all duration-200 hover:scale-105 active:scale-95 shadow-lg hover:shadow-xl"
                 >
                   <Plus className="h-4 w-4 mr-2" />
                   Générer un rapport
                 </Button>
                 {availableSerres.length === 0 && (
-                  <p className="text-xs text-gray-500 mt-1 text-center">
+                  <p className="text-xs text-red-500 mt-1 text-center font-medium">
                     Aucune serre assignée
                   </p>
                 )}
@@ -267,26 +257,33 @@ export default function TechnicianReportsPage() {
         </Card>
 
         {/* Reports List */}
-        <Card>
-          <CardHeader>
-            <CardTitle>
-              Rapports ({filteredReports.length})
+        <Card className="hover:shadow-md transition-shadow duration-300">
+          <CardHeader className="pb-4">
+            <CardTitle className="flex items-center space-x-2 text-lg">
+              <div className="h-8 w-8 rounded-lg bg-[#B4CC5F] flex items-center justify-center">
+                <FileText className="h-5 w-5 text-white" />
+              </div>
+              <span>Rapports ({filteredReports.length})</span>
             </CardTitle>
           </CardHeader>
           <CardContent>
             {availableSerres.length === 0 ? (
-              <div className="text-center py-12 text-gray-500">
-                <Calendar className="h-16 w-16 mx-auto mb-4 opacity-50" />
-                <h3 className="text-lg font-medium mb-2">Aucune serre assignée</h3>
-                <p className="text-sm mb-4">
+              <div className="text-center py-12 text-muted-foreground">
+                <div className="h-20 w-20 rounded-full bg-red-100 mx-auto mb-4 flex items-center justify-center">
+                  <Calendar className="h-10 w-10 text-red-500" />
+                </div>
+                <h3 className="text-xl font-semibold mb-2 text-foreground">Aucune serre assignée</h3>
+                <p className="text-sm mb-4 text-muted-foreground max-w-md mx-auto">
                   Vous n'avez pas encore de serres assignées. Contactez votre directeur pour obtenir des autorisations.
                 </p>
               </div>
             ) : filteredReports.length === 0 ? (
-              <div className="text-center py-12 text-gray-500">
-                <FileText className="h-16 w-16 mx-auto mb-4 opacity-50" />
-                <h3 className="text-lg font-medium mb-2">Aucun rapport trouvé</h3>
-                <p className="text-sm mb-4">
+              <div className="text-center py-12 text-muted-foreground">
+                <div className="h-20 w-20 rounded-full bg-[#B4CC5F]/20 mx-auto mb-4 flex items-center justify-center">
+                  <FileText className="h-10 w-10 text-[#B4CC5F]" />
+                </div>
+                <h3 className="text-xl font-semibold mb-2 text-foreground">Aucun rapport trouvé</h3>
+                <p className="text-sm mb-4 text-muted-foreground max-w-md mx-auto">
                   {reports.length === 0 
                     ? availableSerres && availableSerres.length > 0
                       ? "Vous n'avez pas encore de rapports pour vos serres assignées"
@@ -297,7 +294,7 @@ export default function TechnicianReportsPage() {
                 {availableSerres && availableSerres.length > 0 && (
                   <Button 
                     onClick={handleGenerateReport}
-                    className="bg-green-600 hover:bg-green-700"
+                    className="bg-[#B4CC5F] hover:bg-[#9BB84F] transition-all duration-200 hover:scale-105 active:scale-95 shadow-lg hover:shadow-xl"
                   >
                     <Plus className="h-4 w-4 mr-2" />
                     Créer votre premier rapport
@@ -311,42 +308,44 @@ export default function TechnicianReportsPage() {
                   return (
                     <div
                       key={report.id}
-                      className="flex items-start space-x-4 p-6 border rounded-lg hover:bg-gray-50 transition-colors"
+                      className="flex items-start space-x-4 p-6 border rounded-lg hover:bg-muted hover:shadow-md transition-all duration-300 hover:-translate-y-1 border-border"
                     >
                       <div className="flex-shrink-0">
-                        <FileText className="h-8 w-8 text-green-600" />
+                        <div className="h-12 w-12 rounded-xl bg-[#B4CC5F] flex items-center justify-center shadow-lg hover:shadow-xl transition-shadow duration-300">
+                          <FileText className="h-7 w-7 text-white" />
+                        </div>
                       </div>
                       
                       <div className="flex-1 min-w-0">
                         <div className="flex items-start justify-between">
                           <div className="flex-1">
-                            <h3 className="text-lg font-medium text-gray-900 mb-2">
+                            <h3 className="text-lg font-medium text-foreground mb-2">
                               {report.description}
                             </h3>
                             
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-3">
                               <div className="flex items-center space-x-2">
-                                <span className="text-sm font-medium text-gray-600">Serre:</span>
-                                <span className="text-sm text-gray-900">{report.serre_nom || `Serre ${report.serre_id}`}</span>
+                                <span className="text-sm font-medium text-muted-foreground">Serre:</span>
+                                <span className="text-sm text-foreground">{report.serre_nom || `Serre ${report.serre_id}`}</span>
                               </div>
                               
                               {report.domaine_nom && (
                                 <div className="flex items-center space-x-2">
-                                  <span className="text-sm font-medium text-gray-600">Domaine:</span>
-                                  <span className="text-sm text-gray-900">{report.domaine_nom}</span>
+                                  <span className="text-sm font-medium text-muted-foreground">Domaine:</span>
+                                  <span className="text-sm text-foreground">{report.domaine_nom}</span>
                                 </div>
                               )}
                               
                               {report.user_nom && (
                                 <div className="flex items-center space-x-2">
-                                  <span className="text-sm font-medium text-gray-600">Créé par:</span>
-                                  <span className="text-sm text-gray-900">{report.user_nom}</span>
+                                  <span className="text-sm font-medium text-muted-foreground">Créé par:</span>
+                                  <span className="text-sm text-foreground">{report.user_nom}</span>
                                 </div>
                               )}
                             </div>
                             
                             {report.date && (
-                              <div className="flex items-center space-x-2 text-sm text-gray-500">
+                              <div className="flex items-center space-x-2 text-sm text-muted-foreground">
                                 <Calendar className="h-4 w-4" />
                                 <span>Créé le {new Date(report.date).toLocaleDateString("fr-FR")}</span>
                             </div>
@@ -366,7 +365,7 @@ export default function TechnicianReportsPage() {
                                 variant="outline"
                                 size="sm"
                                 onClick={() => handleDownloadReport(report)}
-                                className="h-8"
+                                className="h-8 border-[#B4CC5F] text-[#B4CC5F] hover:bg-[#B4CC5F] hover:text-white transition-all duration-200 hover:scale-105 active:scale-95"
                               >
                                 <Download className="h-3 w-3 mr-1" />
                                 Télécharger

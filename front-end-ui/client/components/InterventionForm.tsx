@@ -18,7 +18,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Calendar, Save, Send, ArrowLeft, ChevronDown } from "lucide-react";
+import { Calendar, Send, ArrowLeft, ChevronDown, X, Tag } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { InterventionService, CreateInterventionRequest } from "@/services/interventionService";
 import { serreService } from "@/services/serreService";
@@ -28,13 +28,14 @@ interface InterventionFormProps {
   isOpen: boolean;
   onClose: () => void;
   onSubmit?: (data: InterventionData) => void;
-  onSaveDraft?: (data: InterventionData) => void;
 }
 
 interface InterventionData {
   interventionType: string;  // Will be converted to number (id_type_tache)
   serreId: string;          // Will be converted to number (id_serre)
   interventionDate: string; // Will be used as date_debut
+  dateFin: string;          // Date de fin
+  estimatedCharges: string; // Charges estimées en MAD
   description: string;      // Direct mapping
 }
 
@@ -46,22 +47,20 @@ export default function InterventionForm({
   isOpen,
   onClose,
   onSubmit,
-  onSaveDraft,
 }: InterventionFormProps) {
   console.log("InterventionForm rendered, isOpen:", isOpen);
   const [formData, setFormData] = useState<InterventionData>({
     interventionType: "",
     serreId: "",
     interventionDate: "",
+    dateFin: "",
+    estimatedCharges: "",
     description: "",
   });
 
   const [errors, setErrors] = useState<Partial<InterventionData>>({});
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isDrafting, setIsDrafting] = useState(false);
-  const [formStep, setFormStep] = useState(0);
-  const [showSuccess, setShowSuccess] = useState(false);
   const [serres, setSerres] = useState<Array<{id: number, nom: string}>>([]);
   const [loadingSerres, setLoadingSerres] = useState(false);
   const [typeTaches, setTypeTaches] = useState<Array<{id: number, nom: string}>>([]);
@@ -71,8 +70,6 @@ export default function InterventionForm({
     console.log("🔍 useEffect triggered, isOpen:", isOpen);
     if (isOpen) {
       console.log("🚀 Form opening, fetching data...");
-      setFormStep(0);
-      setShowSuccess(false);
       fetchSerres();
       fetchTypeTaches();
       setTimeout(() => {
@@ -209,7 +206,6 @@ export default function InterventionForm({
         // Call parent callback if provided
         onSubmit?.(formData);
         
-        setShowSuccess(true);
         toast({
           title: "✅ Intervention créée",
           description: "Votre demande d'intervention a été envoyée avec succès.",
@@ -240,45 +236,22 @@ export default function InterventionForm({
     }
   };
 
-  const handleSaveDraft = async () => {
-    setIsDrafting(true);
-    try {
-      await new Promise(resolve => setTimeout(resolve, 800));
-      onSaveDraft?.(formData);
-      toast({
-        title: "💾 Brouillon sauvegardé",
-        description: "Votre intervention a été sauvegardée en brouillon.",
-        duration: 2000,
-      });
-      setTimeout(() => {
-        handleClose();
-      }, 500);
-    } catch (error) {
-      toast({
-        title: "❌ Erreur",
-        description: "Erreur lors de la sauvegarde.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsDrafting(false);
-    }
-  };
+
 
   const handleClose = () => {
-    setFormStep(0);
-    setShowSuccess(false);
     setIsSubmitting(false);
-    setIsDrafting(false);
-          setTimeout(() => {
-        setFormData({
-          interventionType: "",
-          serreId: "",
-          interventionDate: "",
-          description: "",
-        });
-        setErrors({});
-        onClose();
-      }, 150);
+    setTimeout(() => {
+      setFormData({
+        interventionType: "",
+        serreId: "",
+        interventionDate: "",
+        dateFin: "",
+        estimatedCharges: "",
+        description: "",
+      });
+      setErrors({});
+      onClose();
+    }, 150);
   };
 
   const updateFormData = (field: keyof InterventionData, value: string) => {
@@ -290,13 +263,21 @@ export default function InterventionForm({
   
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="max-w-[1396px] w-[98vw] sm:w-[95vw] max-h-[95vh] sm:max-h-[90vh] overflow-y-auto p-0 rounded-xl border border-gray-200 shadow-2xl mx-auto z-[9998] fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white">
-        <div className="flex min-h-[500px] sm:min-h-[580px] lg:min-h-[644px] p-3 sm:p-4 md:p-6 lg:p-8 items-center bg-white rounded-xl relative z-[9997]">
-          <form className="flex w-full min-h-[450px] sm:min-h-[520px] lg:min-h-[580px] flex-col justify-center items-start gap-3 sm:gap-4 md:gap-6 lg:gap-8 relative z-[9996]">
+      <DialogContent className="max-w-[800px] w-[95vw] max-h-[90vh] overflow-y-auto p-0 rounded-xl border border-border shadow-2xl mx-auto z-[9998] fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-card">
+        {/* Close Button */}
+        <button
+          onClick={handleClose}
+          className="absolute top-4 right-4 z-[9999] p-2 hover:bg-muted rounded-full transition-colors"
+        >
+          <X className="h-5 w-5 text-muted-foreground" />
+        </button>
+        
+        <div className="flex min-h-[400px] p-6 items-center bg-card rounded-xl relative z-[9997]">
+          <form className="flex w-full min-h-[350px] flex-col justify-center items-start gap-4 relative z-[9996]">
             {/* Row 1: Type d'intervention & ID Serre */}
             <div className="w-full flex flex-col md:flex-row justify-between gap-3 sm:gap-4 md:gap-0">
               <div className="flex w-full md:w-[48%] lg:w-[567px] flex-col justify-center items-start gap-2 sm:gap-3">
-                <Label htmlFor="intervention-type" className="flex items-start gap-0 text-xs sm:text-sm font-semibold text-gray-900">
+                <Label htmlFor="intervention-type" className="flex items-start gap-0 text-xs sm:text-sm font-semibold text-foreground">
                   Type d'intervention demandée
                   <span className="text-red-500 ml-1">*</span>
                 </Label>
@@ -307,14 +288,14 @@ export default function InterventionForm({
                 >
                   <SelectTrigger
                     className={cn(
-                      "flex h-[45px] sm:h-[47px] w-full px-3 py-0 justify-between items-center rounded-lg border border-gray-300 bg-white",
+                      "flex h-[45px] sm:h-[47px] w-full px-3 py-0 justify-between items-center rounded-lg border border-border bg-card",
                       errors.interventionType && "border-red-500 focus:border-red-500"
                     )}
                     disabled={loadingTypeTaches}
                   >
                     <SelectValue
                       placeholder={loadingTypeTaches ? "Chargement..." : "Sélectionner un type d'intervention"}
-                      className="text-gray-900 font-normal text-base"
+                      className="text-foreground font-normal text-base"
                     />
                   </SelectTrigger>
                   <SelectContent 
@@ -338,7 +319,7 @@ export default function InterventionForm({
               </div>
 
               <div className="flex w-full md:w-[48%] lg:w-[567px] flex-col justify-center items-start gap-2 sm:gap-3">
-                <Label htmlFor="serre-id" className="flex items-start gap-0 text-xs sm:text-sm font-semibold text-gray-900">
+                <Label htmlFor="serre-id" className="flex items-start gap-0 text-xs sm:text-sm font-semibold text-foreground">
                   Sélectionner une serre
                   <span className="text-red-500 ml-1">*</span>
 
@@ -351,7 +332,7 @@ export default function InterventionForm({
                   <SelectTrigger
                     id="serre-id"
                     className={cn(
-                      "flex h-[45px] sm:h-[50px] px-3 sm:px-4 py-0 items-center rounded-lg border border-gray-300 bg-white text-sm sm:text-base text-gray-600",
+                      "flex h-[45px] sm:h-[50px] px-3 sm:px-4 py-0 items-center rounded-lg border border-border bg-card text-sm sm:text-base text-foreground",
                       errors.serreId && "border-red-500 focus:border-red-500",
                       loadingSerres && "opacity-50 cursor-not-allowed"
                     )}
@@ -359,7 +340,7 @@ export default function InterventionForm({
                   >
                     <SelectValue
                       placeholder={loadingSerres ? "Chargement..." : "Sélectionner une serre"}
-                      className="text-gray-900 font-normal text-base"
+                      className="text-foreground font-normal text-base"
                     />
                   </SelectTrigger>
                   <SelectContent 
@@ -377,7 +358,7 @@ export default function InterventionForm({
                         </SelectItem>
                       ))
                     ) : (
-                      <div className="px-3 py-2 text-sm text-gray-500">
+                      <div className="px-3 py-2 text-sm text-muted-foreground">
                         {loadingSerres ? "Chargement des serres..." : "Aucune serre assignée"}
                       </div>
                     )}
@@ -389,94 +370,113 @@ export default function InterventionForm({
               </div>
             </div>
 
-            {/* Row 2: Date d'intervention & Fonctionnaire */}
-            <div className="w-full flex flex-col md:flex-row justify-between gap-3 sm:gap-4 md:gap-0">
-              <div className="flex w-full md:w-[48%] lg:w-[567px] flex-col justify-center items-start gap-2 sm:gap-3">
-                <Label htmlFor="intervention-date" className="flex items-start gap-0 text-xs sm:text-sm font-semibold text-gray-900">
+            {/* Row 2: Date d'intervention & Date de fin */}
+            <div className="w-full flex flex-col md:flex-row justify-between gap-4">
+              <div className="flex w-full md:w-[48%] flex-col justify-center items-start gap-2">
+                <Label htmlFor="intervention-date" className="flex items-start gap-0 text-sm font-semibold text-foreground">
                   Date de l'intervention
                   <span className="text-red-500 ml-1">*</span>
                 </Label>
-                <div className="relative w-full h-[45px] sm:h-[52px] z-[9997]">
+                <div className="relative w-full h-12">
                   <Input
                     id="intervention-date"
                     type="date"
                     value={formData.interventionDate}
                     onChange={(e) => updateFormData("interventionDate", e.target.value)}
                     className={cn(
-                      "w-full h-full rounded-lg border border-gray-300 bg-white px-4 sm:px-6 text-black text-base sm:text-lg font-normal focus:z-[9999]",
+                      "w-full h-full rounded-lg border border-border bg-card px-4 text-foreground text-base font-normal focus:border-[#B4CC5F] focus:ring-[#B4CC5F]",
                       errors.interventionDate && "border-red-500 focus:border-red-500"
                     )}
                     placeholder="mm/dd/yyyy"
-                    style={{ 
-                      zIndex: 9997,
-                      position: 'relative'
-                    }}
                   />
-                  <svg className="absolute right-3 top-1/2 transform -translate-y-1/2 h-6 w-6" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M6.75 3V5.25M17.25 3V5.25M3 18.75V7.5C3 6.90326 3.23705 6.33097 3.65901 5.90901C4.08097 5.48705 4.65326 5.25 5.25 5.25H18.75C19.3467 5.25 19.919 5.48705 20.341 5.90901C20.7629 6.33097 21 6.90326 21 7.5V18.75M3 18.75C3 19.3467 3.23705 19.919 3.65901 20.341C4.08097 20.7629 4.65326 21 5.25 21H18.75C19.3467 21 19.919 20.7629 20.341 20.341C20.7629 19.919 21 19.3467 21 18.75M3 18.75V11.25C3 10.6533 3.23705 10.081 3.65901 9.65901C4.08097 9.23705 4.65326 9 5.25 9H18.75C19.3467 9 19.919 9.23705 20.341 9.65901C20.7629 10.081 21 10.6533 21 11.25V18.75" stroke="black" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                  </svg>
+                  <Calendar className="absolute right-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                 </div>
                 {errors.interventionDate && (
                   <p className="text-sm text-red-500">{errors.interventionDate}</p>
                 )}
               </div>
 
-
+              <div className="flex w-full md:w-[48%] flex-col justify-center items-start gap-2">
+                <Label htmlFor="date-fin" className="flex items-start gap-0 text-sm font-semibold text-foreground">
+                  Date de fin
+                  <span className="text-muted-foreground text-xs ml-1">(optionnel)</span>
+                </Label>
+                <div className="relative w-full h-12">
+                  <Input
+                    id="date-fin"
+                    type="date"
+                    value={formData.dateFin}
+                    onChange={(e) => updateFormData("dateFin", e.target.value)}
+                    className="w-full h-full rounded-lg border border-border bg-card px-4 text-foreground text-base font-normal focus:border-[#B4CC5F] focus:ring-[#B4CC5F]"
+                    placeholder="mm/dd/yyyy"
+                  />
+                  <Calendar className="absolute right-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                </div>
+              </div>
             </div>
 
-            {/* Row 3: Description */}
-            <div className="flex w-full flex-col items-start gap-2 sm:gap-3">
-              <Label htmlFor="description" className="text-xs sm:text-sm font-semibold text-gray-900">
-                Description de l'intervention (optionnel)
-              </Label>
-              <Textarea
-                id="description"
-                value={formData.description}
-                onChange={(e) => updateFormData("description", e.target.value)}
-                placeholder="Détails supplémentaires sur l'intervention..."
-                rows={4}
-                className="flex h-[100px] sm:h-[122px] w-full p-3 sm:p-4 items-start rounded-lg border border-gray-300 bg-white resize-none text-sm sm:text-base text-gray-600"
-              />
+            {/* Row 3: Charges estimées */}
+            <div className="w-full">
+              <div className="flex flex-col gap-2">
+                <Label htmlFor="estimated-charges" className="flex items-start gap-1 text-sm font-semibold text-foreground">
+                  Charges estimées (MAD)
+                  <span className="text-muted-foreground text-xs">(optionnel)</span>
+                </Label>
+                <div className="relative">
+                  <Input
+                    id="estimated-charges"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={formData.estimatedCharges}
+                    onChange={(e) => updateFormData("estimatedCharges", e.target.value)}
+                    className="h-12 px-4 pl-12 rounded-lg border border-border bg-card hover:border-[#B4CC5F] focus:border-[#B4CC5F] focus:ring-[#B4CC5F] transition-colors text-foreground font-medium"
+                    placeholder="0.00"
+                  />
+                  <Tag className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-[#B4CC5F]" />
+                </div>
+              </div>
+            </div>
+
+            {/* Row 4: Description */}
+            <div className="w-full">
+              <div className="flex flex-col gap-2">
+                <Label htmlFor="description" className="text-sm font-semibold text-foreground">
+                  Description de l'intervention
+                  <span className="text-muted-foreground text-xs ml-1">(optionnel)</span>
+                </Label>
+                <Textarea
+                  id="description"
+                  value={formData.description}
+                  onChange={(e) => updateFormData("description", e.target.value)}
+                  placeholder="Détails supplémentaires sur l'intervention..."
+                  rows={3}
+                  className="w-full p-3 rounded-lg border border-border bg-card resize-none text-sm text-foreground focus:border-[#B4CC5F] focus:ring-[#B4CC5F]"
+                />
+              </div>
             </div>
 
 
 
             {/* Footer Actions */}
-            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 pt-4 sm:pt-6 justify-between items-start w-full border-t border-gray-200">
+            <div className="flex flex-col sm:flex-row gap-3 pt-6 justify-center items-center w-full border-t border-border">
               <Button
                 type="button"
                 onClick={handleClose}
-                className="flex h-10 sm:h-12 px-4 sm:px-6 justify-center items-center gap-2 rounded-lg bg-gray-100 hover:bg-gray-200 border-0 w-full sm:w-auto"
+                className="flex h-12 px-6 justify-center items-center gap-2 rounded-lg bg-muted hover:bg-muted/80 border-0 w-full sm:w-auto"
               >
-                <ArrowLeft className="h-4 w-4 text-gray-600" />
-                <span className="text-gray-600 text-center font-medium text-sm sm:text-base">Annuler</span>
+                <ArrowLeft className="h-4 w-4 text-muted-foreground" />
+                <span className="text-muted-foreground text-center font-medium">Annuler</span>
               </Button>
 
-              <div className="flex flex-col sm:flex-row justify-center items-start gap-2 sm:gap-3 md:gap-4 w-full sm:w-auto">
-                <Button
-                  type="button"
-                  onClick={handleSaveDraft}
-                  className="flex h-10 sm:h-12 px-4 sm:px-6 justify-center items-center gap-2 rounded-lg bg-[#B4CC5F]/10 hover:bg-[#B4CC5F]/20 border-0 w-full sm:w-auto"
-                >
-                  <Save className="h-4 w-4 text-[#B4CC5F]" />
-                  <span className="text-[#B4CC5F] text-center font-medium text-sm sm:text-base">
-                    <span className="hidden sm:inline">Sauvegarder en brouillon</span>
-                    <span className="sm:hidden">Sauvegarder</span>
-                  </span>
-                </Button>
-
-                <Button
-                  type="button"
-                  onClick={handleSubmit}
-                  className="flex h-10 sm:h-12 px-4 sm:px-6 justify-center items-center gap-2 rounded-lg bg-[#B4CC5F] hover:bg-[#9BB84F] text-white shadow-md border-0 w-full sm:w-auto"
-                >
-                  <Send className="h-4 w-4 text-white" />
-                  <span className="text-white text-center font-medium text-sm sm:text-base">
-                    <span className="hidden sm:inline">Envoyer la demande</span>
-                    <span className="sm:hidden">Envoyer</span>
-                  </span>
-                </Button>
-              </div>
+              <Button
+                type="button"
+                onClick={handleSubmit}
+                className="flex h-12 px-6 justify-center items-center gap-2 rounded-lg bg-[#B4CC5F] hover:bg-[#9BB84F] text-white shadow-md border-0 w-full sm:w-auto"
+              >
+                <Send className="h-4 w-4 text-white" />
+                <span className="text-white text-center font-medium">Envoyer la demande</span>
+              </Button>
             </div>
           </form>
         </div>
