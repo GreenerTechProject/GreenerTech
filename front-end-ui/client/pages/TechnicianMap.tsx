@@ -631,13 +631,13 @@ export default function TechnicianMap() {
           <ScrollArea className="flex-1 h-full w-full" style={{ height: '100%', maxHeight: '100%' }}>
             <div className="p-6 space-y-6 min-h-full pb-8">
               {/* Create New Bilan Section - Always Visible */}
-              <Card className="border-dashed border-2 border-gray-200 hover:border-blue-500 transition-colors">
+              <Card className="border-dashed border-2 border-gray-200 hover:border-[#B4CC5F] transition-colors">
                   <CardContent className="p-4">
                   {!isCreatingBilan ? (
                       <Button
                       onClick={() => setIsCreatingBilan(true)}
                         variant="ghost"
-                      className="w-full h-16 border-0 text-gray-600 hover:text-blue-500 hover:bg-blue-50"
+                      className="w-full h-16 border-0 text-gray-600 hover:text-[#B4CC5F] hover:bg-[#B4CC5F]/5"
                       >
                         <div className="flex flex-col items-center space-y-2">
                           <Sprout className="h-6 w-6" />
@@ -651,12 +651,23 @@ export default function TechnicianMap() {
                       </Button>
                     ) : (
                       <div className="space-y-3">
-                        <h4 className="font-medium text-gray-900">
-                        Nouveau bilan - {selectedSerre?.nom || 'Sélectionnez une serre'}
-                        </h4>
-                      <p className="text-sm text-gray-600">
-                        Utilisez le formulaire de création de bilan qui s'affiche à droite.
-                      </p>
+                        <div className="flex items-center space-x-2">
+                          <Sprout className="h-5 w-5 text-[#B4CC5F]" />
+                          <h4 className="font-medium text-[#B4CC5F]">
+                            Nouveau bilan - {selectedSerre?.nom || 'Sélectionnez une serre'}
+                          </h4>
+                        </div>
+                        <p className="text-sm text-gray-600">
+                          Utilisez le formulaire de création de bilan qui s'affiche à droite.
+                        </p>
+                        <Button
+                          onClick={() => setIsCreatingBilan(false)}
+                          variant="outline"
+                          size="sm"
+                          className="w-full"
+                        >
+                          Annuler
+                        </Button>
                       </div>
                     )}
                   </CardContent>
@@ -664,13 +675,23 @@ export default function TechnicianMap() {
 
               {/* Bilan Creation Form */}
               {selectedSerre && isCreatingBilan && (
-                <BilanCreation
-                  serreId={parseInt(selectedSerre.id)}
-                  serreName={selectedSerre.nom}
-                  serreLocation={selectedSerre.location}
-                  onBilanCreated={handleBilanCreated}
-                  onCancel={() => setIsCreatingBilan(false)}
-                />
+                <Card className="border-2 border-[#B4CC5F] bg-[#B4CC5F]/5">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-lg text-[#B4CC5F] flex items-center space-x-2">
+                      <MapPin className="h-5 w-5" />
+                      <span>Création de bilan</span>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <BilanCreation
+                      serreId={parseInt(selectedSerre.id)}
+                      serreName={selectedSerre.nom}
+                      serreLocation={selectedSerre.location}
+                      onBilanCreated={handleBilanCreated}
+                      onCancel={() => setIsCreatingBilan(false)}
+                    />
+                  </CardContent>
+                </Card>
               )}
 
               {/* Serres List */}
@@ -682,7 +703,7 @@ export default function TechnicianMap() {
 
                 {isLoadingSerres ? (
                   <div className="text-center py-6 text-gray-500">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-2"></div>
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#B4CC5F] mx-auto mb-2"></div>
                     <p>Chargement des serres...</p>
                   </div>
                 ) : serresError ? (
@@ -704,60 +725,71 @@ export default function TechnicianMap() {
                       className={cn(
                         "cursor-pointer transition-all duration-200 hover:shadow-md border",
                         selectedSerre?.id === serre.id
-                          ? "ring-2 ring-[#B4CC5F] border-[#B4CC5F] shadow-md"
+                          ? "ring-2 ring-[#B4CC5F] border-[#B4CC5F] shadow-md bg-[#B4CC5F]/5"
                           : "border-gray-200 hover:border-[#B4CC5F]/50",
                       )}
                       onClick={() => handleSelectSerre(serre)}
                     >
                       <CardContent className="p-4">
                         <div className="flex items-start justify-between mb-3">
-                          <div>
+                          <div className="flex-1">
                             <h4 className="font-semibold text-gray-900">
                               {serre.nom}
                             </h4>
                             <p className="text-sm text-gray-600">
                               {serre.variety}
                             </p>
+                            <div className="flex items-center space-x-2 mt-2">
+                              <Badge variant="outline" className="text-xs">
+                                {serre.surface} m²
+                              </Badge>
+                              <Badge variant="outline" className="text-xs">
+                                {serre.zones.length} zones
+                              </Badge>
+                            </div>
                           </div>
-                          <Badge
-                            variant="outline"
-                            className={cn(
-                              "text-xs",
-                              getStatusColor(serre.status),
+                          <div className="flex flex-col items-end space-y-2">
+                            <Badge
+                              variant="outline"
+                              className={cn(
+                                "text-xs",
+                                getStatusColor(serre.status),
+                              )}
+                            >
+                              {serre.status === "active"
+                                ? "Actif"
+                                : serre.status === "maintenance"
+                                  ? "Maintenance"
+                                  : "Inactif"}
+                            </Badge>
+                            {selectedSerre?.id === serre.id && (
+                              <div className="w-3 h-3 bg-[#B4CC5F] rounded-full"></div>
                             )}
-                          >
-                            {serre.status === "active"
-                              ? "Actif"
-                              : serre.status === "maintenance"
-                                ? "Maintenance"
-                                : "Inactif"}
-                          </Badge>
+                          </div>
                         </div>
 
-                        <div className="flex items-center justify-between text-sm text-gray-500">
-                          <span>{serre.surface} m²</span>
-                          <span>Billons: {serre.zones.length}</span>
-                        </div>
-
-                        {serre.zones.length > 0 && (
-                          <div className="mt-3 flex flex-wrap gap-1">
-                            {serre.zones.slice(0, 3).map((zone) => (
-                              <div
-                                key={zone.id}
-                                className={cn(
-                                  "flex items-center space-x-1 px-2 py-1 rounded-full text-xs border",
-                                  getStatusColor(zone.status),
-                                )}
+                        {/* Quick Actions for Selected Serre */}
+                        {selectedSerre?.id === serre.id && (
+                          <div className="mt-3 pt-3 border-t border-gray-200">
+                            <div className="flex space-x-2">
+                              <Button
+                                onClick={() => setIsCreatingBilan(true)}
+                                size="sm"
+                                className="flex-1 bg-[#B4CC5F] hover:bg-[#B4CC5F]/90 text-white"
                               >
-                                {getZoneIcon(zone.type)}
-                                <span>{zone.name}</span>
-                              </div>
-                            ))}
-                            {serre.zones.length > 3 && (
-                              <div className="px-2 py-1 bg-gray-100 text-gray-600 rounded-full text-xs">
-                                +{serre.zones.length - 3}
-                              </div>
-                            )}
+                                <Sprout className="h-4 w-4 mr-2" />
+                                Créer bilan
+                              </Button>
+                              <Button
+                                onClick={() => setIsInterventionFormOpen(true)}
+                                size="sm"
+                                variant="outline"
+                                className="flex-1"
+                              >
+                                <AlertCircle className="h-4 w-4 mr-2" />
+                                Intervention
+                              </Button>
+                            </div>
                           </div>
                         )}
                       </CardContent>
@@ -1181,29 +1213,83 @@ export default function TechnicianMap() {
             <div className="space-y-4 max-h-[45vh] overflow-y-auto pb-4">
               {activeMobileTab === 'serres' && (
                 <div className="space-y-3">
+                  {/* Quick Bilan Creation for Selected Serre */}
+                  {selectedSerre && (
+                    <Card className="border-2 border-dashed border-[#B4CC5F] bg-[#B4CC5F]/5">
+                      <CardContent className="p-4">
+                        <div className="text-center space-y-3">
+                          <div className="flex items-center justify-center space-x-2">
+                            <Sprout className="h-5 w-5 text-[#B4CC5F]" />
+                            <h4 className="font-semibold text-[#B4CC5F]">
+                              Créer un bilan pour {selectedSerre.nom}
+                            </h4>
+                          </div>
+                          <p className="text-xs text-gray-600">
+                            Commencez le suivi GPS et collectez les points du bilan
+                          </p>
+                          <Button
+                            onClick={() => {
+                              setIsCreatingBilan(true);
+                              setIsMobilePanelOpen(false);
+                            }}
+                            className="w-full bg-[#B4CC5F] hover:bg-[#B4CC5F]/90 text-white"
+                            size="sm"
+                          >
+                            <MapPin className="h-4 w-4 mr-2" />
+                            Commencer le bilan
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )}
+
+                  {/* Serres List */}
                   {serres.map((serre) => (
                     <Card
                       key={serre.id}
                       className={cn(
                         "cursor-pointer transition-all duration-200",
                         selectedSerre?.id === serre.id
-                          ? "ring-2 ring-[#B4CC5F] border-[#B4CC5F]"
-                          : "border-gray-200"
+                          ? "ring-2 ring-[#B4CC5F] border-[#B4CC5F] bg-[#B4CC5F]/5"
+                          : "border-gray-200 hover:border-[#B4CC5F]/50"
                       )}
                       onClick={() => {
                         handleSelectSerre(serre);
-                        setIsMobilePanelOpen(false);
+                        // Don't close panel on mobile, let user see the quick bilan creation
                       }}
                     >
                       <CardContent className="p-3">
                         <div className="flex items-center justify-between">
-                          <div>
-                            <h4 className="font-medium text-sm">{serre.nom}</h4>
+                          <div className="flex-1">
+                            <h4 className="font-medium text-sm text-gray-900">{serre.nom}</h4>
                             <p className="text-xs text-gray-600">{serre.variety}</p>
+                            <div className="flex items-center space-x-2 mt-1">
+                              <Badge variant="outline" className="text-xs">
+                                {serre.surface} m²
+                              </Badge>
+                              <Badge variant="outline" className="text-xs">
+                                {serre.zones.length} zones
+                              </Badge>
+                            </div>
                           </div>
-                          <Badge variant="outline" className="text-xs">
-                            {serre.surface} m²
-                          </Badge>
+                          <div className="flex flex-col items-end space-y-1">
+                            <Badge
+                              variant="outline"
+                              className={cn(
+                                "text-xs",
+                                getStatusColor(serre.status)
+                              )}
+                            >
+                              {serre.status === "active"
+                                ? "Actif"
+                                : serre.status === "maintenance"
+                                  ? "Maintenance"
+                                  : "Inactif"}
+                            </Badge>
+                            {selectedSerre?.id === serre.id && (
+                              <div className="w-2 h-2 bg-[#B4CC5F] rounded-full"></div>
+                            )}
+                          </div>
                         </div>
                       </CardContent>
                     </Card>
@@ -1211,29 +1297,99 @@ export default function TechnicianMap() {
                 </div>
               )}
 
-              {activeMobileTab === 'bilan' && selectedSerre && (
+              {activeMobileTab === 'bilan' && (
                 <div className="space-y-3">
-                  {bilans.map((bilan) => (
-                    <Card
-                      key={bilan.id}
-                      className={cn(
-                        "cursor-pointer transition-all duration-200",
-                        selectedBilan?.id === bilan.id
-                          ? "ring-2 ring-[#B4CC5F] border-[#B4CC5F]"
-                          : "border-gray-200"
-                      )}
-                      onClick={() => handleBilanSelect(bilan)}
-                    >
-                      <CardContent className="p-3">
-                        <div className="space-y-2">
-                          <h4 className="font-medium text-sm">{bilan.nom}</h4>
-                          <p className="text-xs text-gray-600">
-                            Surface: {bilan.surface || 'Non calculée'} m²
-                          </p>
-                        </div>
+                  {!selectedSerre ? (
+                    <Card className="border-dashed border-2 border-gray-300 bg-gray-50">
+                      <CardContent className="p-4 text-center">
+                        <MapPin className="h-8 w-8 mx-auto mb-2 text-gray-400" />
+                        <p className="text-sm text-gray-600 mb-3">
+                          Sélectionnez d'abord une serre pour voir ses bilans
+                        </p>
+                        <Button
+                          onClick={() => setActiveMobileTab('serres')}
+                          variant="outline"
+                          size="sm"
+                        >
+                          Choisir une serre
+                        </Button>
                       </CardContent>
                     </Card>
-                  ))}
+                  ) : bilans.length === 0 ? (
+                    <Card className="border-dashed border-2 border-[#B4CC5F] bg-[#B4CC5F]/5">
+                      <CardContent className="p-4 text-center">
+                        <FileText className="h-8 w-8 mx-auto mb-2 text-[#B4CC5F]" />
+                        <h4 className="font-medium text-[#B4CC5F] mb-2">
+                          Aucun bilan pour {selectedSerre.nom}
+                        </h4>
+                        <p className="text-xs text-gray-600 mb-3">
+                          Créez votre premier bilan en utilisant le GPS
+                        </p>
+                        <Button
+                          onClick={() => {
+                            setIsCreatingBilan(true);
+                            setIsMobilePanelOpen(false);
+                          }}
+                          className="bg-[#B4CC5F] hover:bg-[#B4CC5F]/90 text-white"
+                          size="sm"
+                        >
+                          <Sprout className="h-4 w-4 mr-2" />
+                          Créer un bilan
+                        </Button>
+                      </CardContent>
+                    </Card>
+                  ) : (
+                    <>
+                      {/* Bilan Creation Quick Access */}
+                      <Card className="border-2 border-dashed border-[#B4CC5F] bg-[#B4CC5F]/5">
+                        <CardContent className="p-3">
+                          <Button
+                            onClick={() => {
+                              setIsCreatingBilan(true);
+                              setIsMobilePanelOpen(false);
+                            }}
+                            className="w-full bg-[#B4CC5F] hover:bg-[#B4CC5F]/90 text-white"
+                            size="sm"
+                          >
+                            <Plus className="h-4 w-4 mr-2" />
+                            Nouveau bilan pour {selectedSerre.nom}
+                          </Button>
+                        </CardContent>
+                      </Card>
+
+                      {/* Existing Bilans */}
+                      <div className="space-y-2">
+                        <h5 className="text-sm font-medium text-gray-700 px-1">
+                          Bilans existants ({bilans.length})
+                        </h5>
+                        {bilans.map((bilan) => (
+                          <Card
+                            key={bilan.id}
+                            className={cn(
+                              "cursor-pointer transition-all duration-200",
+                              selectedBilan?.id === bilan.id
+                                ? "ring-2 ring-[#B4CC5F] border-[#B4CC5F]"
+                                : "border-gray-200"
+                            )}
+                            onClick={() => handleBilanSelect(bilan)}
+                          >
+                            <CardContent className="p-3">
+                              <div className="space-y-2">
+                                <h4 className="font-medium text-sm">{bilan.nom}</h4>
+                                <p className="text-xs text-gray-600">
+                                  Surface: {bilan.surface || 'Non calculée'} m²
+                                </p>
+                                <div className="flex items-center justify-between text-xs text-gray-500">
+                                  <span>Points: {bilan.position?.length || 0}/4</span>
+                                  <span>Créé le {new Date().toLocaleDateString()}</span>
+                                </div>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        ))}
+                      </div>
+                    </>
+                  )}
                 </div>
               )}
 
@@ -1294,7 +1450,46 @@ export default function TechnicianMap() {
           {isMobilePanelOpen ? '×' : '≡'}
         </Button>
 
-  
+        {/* Mobile Serre Selection Notification */}
+        {selectedSerre && (
+          <Card className="mb-4 border-2 border-[#B4CC5F] bg-[#B4CC5F]/5">
+            <CardContent className="p-4">
+              <div className="text-center space-y-3">
+                <div className="flex items-center justify-center space-x-2">
+                  <MapPin className="h-5 w-5 text-[#B4CC5F]" />
+                  <h4 className="font-semibold text-[#B4CC5F]">
+                    Serre sélectionnée: {selectedSerre.nom}
+                  </h4>
+                </div>
+                <p className="text-xs text-gray-600">
+                  Vous pouvez maintenant créer des bilans ou consulter les données
+                </p>
+                <div className="flex space-x-2">
+                  <Button
+                    onClick={() => {
+                      setIsCreatingBilan(true);
+                      setIsMobilePanelOpen(false);
+                    }}
+                    className="flex-1 bg-[#B4CC5F] hover:bg-[#B4CC5F]/90 text-white"
+                    size="sm"
+                  >
+                    <Sprout className="h-4 w-4 mr-2" />
+                    Créer bilan
+                  </Button>
+                  <Button
+                    onClick={() => setActiveMobileTab('bilan')}
+                    variant="outline"
+                    size="sm"
+                    className="flex-1"
+                  >
+                    <FileText className="h-4 w-4 mr-2" />
+                    Voir bilans
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
       </div>
 
       {/* Intervention Form Modal */}

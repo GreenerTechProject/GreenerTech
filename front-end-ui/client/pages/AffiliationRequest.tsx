@@ -5,7 +5,7 @@ import { useAuth } from "../contexts/AuthContext";
 import { companyService, Company } from "../services/companyService";
 
 const roles = [
-  { value: "technicien-superieur", label: "Technicien Supérieur" },
+  { value: "technicien_superieur", label: "Technicien Supérieur" },
   { value: "technicien", label: "Technicien" },
 ];
 
@@ -79,7 +79,7 @@ export default function AffiliationRequest() {
   // If no role selected or wrong role, redirect to role selection
   if (
     !selectedRole ||
-    (selectedRole !== "technicien-superieur" && selectedRole !== "technicien")
+    (selectedRole !== "technicien_superieur" && selectedRole !== "technicien")
   ) {
     navigate("/role-selection", { replace: true });
     return null;

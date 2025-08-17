@@ -101,7 +101,7 @@ export const guideService = {
     try {
       console.log("Fetching guides for serre:", serreId);
       const response = await axios.get<GuideDeCulture[]>(
-        `${API_BASE_URL}/guide_culture/serre/${serreId}`, 
+        `${API_BASE_URL}/serre/${serreId}/guides`, 
         createAuthenticatedRequest()
       );
       console.log("Received guides for serre:", response.data);

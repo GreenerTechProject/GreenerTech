@@ -45,11 +45,13 @@ interface PreRegisteredUser {
   name: string;
   email: string;
   role: string;
+  company_name?: string;
+  id_assigned?: string;
 }
 
 interface Company {
   id: string;
-  name: string;
+  nom: string;
 }
 
 export default function TechnicienRegistration() {
