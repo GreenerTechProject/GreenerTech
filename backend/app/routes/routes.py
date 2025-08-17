@@ -27,7 +27,7 @@ from app.controllers.alerte import (
     get_alertes_by_entreprise, get_alertes_by_director_entreprise
 )
 
-from app.controllers.rapport import create_rapport, get_all_rapports, get_rapport, update_rapport, delete_rapport, get_rapports_by_director_entreprise, get_rapports_by_user
+from app.controllers.rapport import create_rapport, get_all_rapports, get_rapport, update_rapport, delete_rapport, get_rapports_by_director_entreprise, get_rapports_by_user, get_rapports_by_assigned_serres
 
 
 all_bp = Blueprint('all_bp', __name__)
@@ -182,6 +182,7 @@ all_bp.route('/rapport', methods=['GET'])(get_rapports_by_user)
 all_bp.route('/rapport/<int:id>', methods=['PUT'])(update_rapport)
 all_bp.route('/rapport/<int:id>', methods=['DELETE'])(delete_rapport)
 all_bp.route('/rapport/director-enterprise', methods=['GET'])(get_rapports_by_director_entreprise)
+all_bp.route('/rapport/assigned', methods=['GET'])(get_rapports_by_assigned_serres)
 
 
 
