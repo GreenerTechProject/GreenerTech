@@ -25,7 +25,7 @@ interface SidebarItem {
 }
 
 interface TechnicianSidebarProps {
-  userRole: "technicien" | "technicien_sup";
+  userRole: "technicien" | "technicien_sup" | "technicien_superieur";
   onInterventionClick?: () => void;
 }
 
@@ -37,10 +37,10 @@ export default function TechnicianSidebar({
   const { logout } = useAuth();
   const navigate = useNavigate();
 
-  const basePath =
-    userRole === "technicien_sup"
-      ? "/technicien-sup"
-      : "/technician";
+  // Check if user is a superior technician (either role name)
+  const isSuperiorTechnician = userRole === "technicien_sup" || userRole === "technicien_superieur";
+
+  const basePath = isSuperiorTechnician ? "/technicien-sup" : "/technician";
 
   const sidebarItems: SidebarItem[] = (() => {
     const items: SidebarItem[] = [
@@ -48,47 +48,47 @@ export default function TechnicianSidebar({
         id: "accueil",
         label: "Accueil",
         icon: <Home className="h-5 w-5" />,
-        path: userRole === "technicien_sup" ? "/technicien-sup/home" : "/technician/dashboard",
+        path: isSuperiorTechnician ? "/technicien-sup/home" : "/technician/dashboard",
       },
       {
         id: "carte",
         label: "Carte",
         icon: <Map className="h-5 w-5" />,
-        path: userRole === "technicien_sup" ? "/technicien-sup/map" : "/technician",
+        path: isSuperiorTechnician ? "/technicien-sup/map" : "/technician",
       },
       {
         id: "missions",
         label: "Missions",
         icon: <Target className="h-5 w-5" />,
-        path: userRole === "technicien_sup" ? "/technicien-sup/missions" : "/technician/missions",
+        path: isSuperiorTechnician ? "/technicien-sup/missions" : "/technician/missions",
       },
       {
         id: "alertes",
         label: "Alertes",
         icon: <AlertTriangle className="h-5 w-5" />,
-        path: userRole === "technicien_sup" ? "/technicien-sup/alerts" : "/technician/alerts",
+        path: isSuperiorTechnician ? "/technicien-sup/alerts" : "/technician/alerts",
       },
       {
         id: "interventions",
         label: "Interventions",
         icon: <Bell className="h-5 w-5" />,
-        path: userRole === "technicien_sup" ? "/technicien-sup/interventions" : "/technician/interventions",
+        path: isSuperiorTechnician ? "/technicien-sup/interventions" : "/technician/interventions",
       },
       {
         id: "rapports",
         label: "Rapports",
         icon: <Bookmark className="h-5 w-5" />,
-        path: userRole === "technicien_sup" ? "/technicien-sup/reports" : "/technician/reports",
+        path: isSuperiorTechnician ? "/technicien-sup/reports" : "/technician/reports",
       },
-
+	
     ];
     // Show Surveillance only for regular technicians, not for tech-sup
-    if (userRole !== "technicien_sup") {
+    if (!isSuperiorTechnician) {
       items.splice(2, 0,  {
         id: "robot-control",
         label: "Contrôle Robot",
         icon: <Bot className="h-5 w-5" />,
-        path: "robot-control",
+        path: "/robot-control",
 	  });
     }
     return items;
@@ -153,7 +153,7 @@ export default function TechnicianSidebar({
           <div className="p-6 border-b border-border">
             <h2 className="text-lg font-semibold text-foreground">Navigation</h2>
             <p className="text-sm text-muted-foreground mt-1">
-              {userRole === "technicien_sup"
+              {isSuperiorTechnician
                 ? "Technicien Supérieur"
                 : "Technicien"}
             </p>

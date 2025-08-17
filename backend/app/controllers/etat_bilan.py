@@ -44,6 +44,34 @@ def get_etat_bilan_by_bilan(current_user, bilan_id):
     etats = Etat_bilan.query.filter_by(id_bilan=bilan_id).all()
     return jsonify([e.to_dict() for e in etats]), 200
 
+@token_required
+def get_last_etat_bilan_by_bilan(current_user ,bilan_id) :
+    try:
+        # Subquery to get latest etat_bilan id for the given bilan
+        subquery = (
+            db.session.query(
+                func.max(Etat_bilan.id).label("max_etat_id")
+            )
+            .filter(Etat_bilan.id_bilan == bilan_id)
+            .subquery()
+        )
+
+        # Main query: get full Etat_bilan row matching max id
+        result = (
+            db.session.query(Etat_bilan)
+            .join(subquery, Etat_bilan.id == subquery.c.max_etat_id)
+            .first()
+        )
+
+        if not result:
+            return jsonify({"status": "error", "message": "Aucun état de bilan trouvé pour ce bilan"}), 404
+
+        return jsonify(result.to_dict()), 200
+
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 400
+
+
 
 
 

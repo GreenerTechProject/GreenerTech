@@ -132,7 +132,7 @@ async def sensor_data_handler(request):
                 except Exception as e:
                     print(f"[{key}] ❌ JSON error: {e}")
     finally:
-        control_clients.pop(ws, None)
+        sensor_clients.pop(ws, None)
         print(f"🔌 Client disconnected ({key})")
     return ws
 
