@@ -24,6 +24,8 @@ import {
   Camera,
   Bot
 } from 'lucide-react';
+import axios from 'axios';
+import { tokenManager } from "../services/authService";
 
 interface QRData {
   [key: string]: any;
@@ -67,7 +69,6 @@ export default function RobotControl() {
   const [robots, setRobots] = useState<Robot[]>([]);
   const [isLoadingRobots, setIsLoadingRobots] = useState<boolean>(false);
   const [robotsError, setRobotsError] = useState<string | null>(null);
-
   // WebSocket references
   const qrWsRef = useRef<WebSocket | null>(null);
   const controlWsRef = useRef<WebSocket | null>(null);
@@ -330,6 +331,8 @@ export default function RobotControl() {
     console.log("Sending mode: STOP");
     sendCommand("STOP");
   };
+  
+  const [isMouseDown, setIsMouseDown] = useState(false);
 
   // Control button component
   const ControlButton: React.FC<{ 
@@ -338,9 +341,20 @@ export default function RobotControl() {
     className?: string;
   }> = ({ mode, children, className = "" }) => (
     <Button
-	onMouseDown={() => handleButtonDown(mode)}
-	onMouseUp={handleButtonUp}
-	onMouseLeave={handleButtonUp}
+	onMouseDown={() => {
+      setIsMouseDown(true);
+      handleButtonDown(mode);
+    }}
+	onMouseUp={() => {
+      setIsMouseDown(false);
+      handleButtonUp();
+    }}
+	onMouseLeave={() => {
+      if (isMouseDown) {
+        setIsMouseDown(false);
+        handleButtonUp();
+      }
+    }}
 	className={`w-full ${className} ${pressedButton === mode ? "ring-4 ring-yellow-300" : ""}`}
 	variant="outline"
     >

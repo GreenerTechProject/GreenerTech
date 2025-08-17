@@ -4,7 +4,7 @@ import asyncio
 import websockets
 import json
 
-#import serial
+import serial
 
 
 host = "greenertech2.mywire.org"
@@ -29,16 +29,15 @@ def gstreamer_pipeline(
     )
 
 
-async def send_video(camera):
+async def send_video(robot_ref, camera, idcamera):
 
-    pipeline = gstreamer_pipeline(camera)
+    pipeline = gstreamer_pipeline(idcamera)
     cap = cv2.VideoCapture(pipeline, cv2.CAP_GSTREAMER)
-
 
     while True:
         try:
             print("Tentative de connexion au serveur vidéo...")
-            video_uri = "ws://"+host+":8080/service/video_stream_handler?robot=2&camera="+camera
+            video_uri = "ws://"+host+":8080/service/video_stream_handler?robot="+robot_ref+"&camera="+camera
             async with websockets.connect(video_uri) as websocket:
                 print("Connecté au serveur vidéo avec succès")
                 while True:
@@ -49,8 +48,8 @@ async def send_video(camera):
 
                     _, buffer = cv2.imencode(".jpg", frame)
                     await websocket.send(buffer.tobytes())
-                    await asyncio.sleep(0.03)  # 1/0.03=33 ~30fps
-                    #await asyncio.sleep(0.06)  # 1/0.06=16 ~15fps
+                    #await asyncio.sleep(0.03)  # 1/0.03=33 ~30fps
+                    await asyncio.sleep(0.06)  # 1/0.06=16 ~15fps
                     #await asyncio.sleep(0.12)  # 1/0.12=8 ~8
 
         except (websockets.exceptions.ConnectionClosedError, ConnectionRefusedError) as e:
@@ -118,11 +117,11 @@ async def send_video(camera):
 # Ouvre le port série vers Arduino (adapter le port si besoin)
 #arduino = serial.Serial('/dev/ttyACM0', 9600)
 
-async def receive_controls():
+async def receive_controls(robot_ref):
     while True:
         try:
             print("Tentative de connexion au serveur contrôle...")
-            control_uri = "ws://"+host+":8080/service/control?robot=2"
+            control_uri = "ws://"+host+":8080/service/control?robot="+robot_ref
             async with websockets.connect(control_uri) as websocket:
                 print("Connecté au serveur contrôle avec succès")
                 async for message in websocket:
@@ -132,21 +131,23 @@ async def receive_controls():
                         print(f"Commande contrôle reçue: {data['control_mode']}")
                         
 
-                        #arduino.write((data['control_mode'] + "\n").encode())
+                        arduino.write((data['control_mode'] + "\n").encode())
 
 
         except (websockets.exceptions.ConnectionClosedError, ConnectionRefusedError) as e:
+            arduino.write(("STOP" + "\n").encode())
             print(f"❌ Connexion contrôle échouée ou perdue : {e}. Nouvelle tentative dans 2 secondes...")
             await asyncio.sleep(2)
         except Exception as e:
+            arduino.write(("STOP" + "\n").encode())
             print(f"❌ Erreur contrôle inattendue : {e}. Nouvelle tentative dans 2 secondes...")
             await asyncio.sleep(2)
 
 
 import random
 
-async def simulate_sensor_data():
-    uri = "ws://"+host+":8080/service/sensor_data?robot=2"
+async def simulate_sensor_data(robot_ref):
+    uri = "ws://"+host+":8080/service/sensor_data?robot="+robot_ref
     async with websockets.connect(uri) as ws:
         while True:
             data = {
@@ -215,7 +216,7 @@ async def listen_missions(robot_referance):
     while True:
         try:
             print("Tentative de connexion au serveur mission...")
-            control_uri = "ws://"+host+":8080/service/missions?robot=2&referance="+robot_referance
+            control_uri = "ws://"+host+":8080/service/missions?robot="+robot_referance+"&referance="+robot_referance
             async with websockets.connect(control_uri) as websocket:
                 print(f"Connected to mission websocket for robot '{robot_referance}'")
                 async for msg in websocket:
@@ -231,6 +232,7 @@ async def listen_missions(robot_referance):
                         # Ouvre le port série vers Arduino (adapter le port si besoin)
                         #arduino = serial.Serial('/dev/ttyACM0', 9600)
                         #arduino.write((mission+ "\n").encode())
+                        arduino.write(("LEFT"+ "\n").encode())
                     else:
                         print("No mission at this time.")
         except (websockets.exceptions.ConnectionClosedError, ConnectionRefusedError) as e:
@@ -245,10 +247,10 @@ async def main():
     #robot_ref = "robot_123"
     robot_ref = get_or_create_robot_referance()
     await asyncio.gather(
-        send_video("right"),
-        send_video("left"),
-        receive_controls(),
-        simulate_sensor_data(),
+        send_video(robot_ref, "right", 0),
+        send_video(robot_ref, "left", 1),
+        receive_controls(robot_ref),
+        simulate_sensor_data(robot_ref),
         listen_missions(robot_ref) 
         )
     
