@@ -16,11 +16,12 @@ interface BilanMapComponentProps {
   onMapClick?: (lat: number, lng: number) => void;
 }
 
-const mapContainerStyle = {
+// Responsive map container styles
+const getMapContainerStyle = (isMobile: boolean, isTablet: boolean) => ({
   width: '100%',
-  height: '100%',
-  minHeight: '500px',
-};
+  height: isMobile ? '400px' : isTablet ? '500px' : '600px',
+  minHeight: isMobile ? '350px' : isTablet ? '450px' : '500px',
+});
 
 const libraries: ("drawing" | "geometry" | "places" | "visualization")[] = [
   "drawing",
@@ -39,6 +40,21 @@ export default function BilanMapComponent({
 }: BilanMapComponentProps) {
   const [map, setMap] = useState<google.maps.Map | null>(null);
   const [userPath, setUserPath] = useState<{ lat: number; lng: number }[]>([]);
+  const [isMobile, setIsMobile] = useState(false);
+  const [isTablet, setIsTablet] = useState(false);
+
+  // Responsive breakpoint detection
+  useEffect(() => {
+    const checkScreenSize = () => {
+      const width = window.innerWidth;
+      setIsMobile(width < 768);
+      setIsTablet(width >= 768 && width < 1024);
+    };
+
+    checkScreenSize();
+    window.addEventListener('resize', checkScreenSize);
+    return () => window.removeEventListener('resize', checkScreenSize);
+  }, []);
 
   // Load Google Maps script
   const { isLoaded, loadError } = useLoadScript({
@@ -50,9 +66,9 @@ export default function BilanMapComponent({
   useEffect(() => {
     if (map && serreLocation) {
       map.panTo(serreLocation);
-      map.setZoom(18); // High zoom for field-level view
+      map.setZoom(isMobile ? 16 : isTablet ? 17 : 18); // Responsive zoom levels
     }
-  }, [map, serreLocation]);
+  }, [map, serreLocation, isMobile, isTablet]);
 
   // Center map on current location when tracking
   useEffect(() => {
@@ -144,11 +160,11 @@ export default function BilanMapComponent({
     return (
       <Card className={className}>
         <CardHeader className="pb-3">
-          <CardTitle className="flex items-center gap-2 text-lg">
-            <Route className="h-5 w-5" />
+          <CardTitle className="flex items-center gap-2 text-sm sm:text-base lg:text-lg">
+            <Route className="h-4 w-4 sm:h-5 sm:w-5" />
             Carte Interactive du Bilan
             {isTracking && (
-              <Badge variant="secondary" className="ml-2 animate-pulse">
+              <Badge variant="secondary" className="ml-2 animate-pulse text-xs sm:text-sm">
                 <Navigation className="h-3 w-3 mr-1" />
                 Suivi actif
               </Badge>
@@ -156,10 +172,10 @@ export default function BilanMapComponent({
           </CardTitle>
         </CardHeader>
         <CardContent className="p-0">
-          <div className="flex items-center justify-center h-full min-h-[500px]">
+          <div className="flex items-center justify-center h-full min-h-[350px] sm:min-h-[450px] lg:min-h-[500px]">
             <div className="text-center">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600 mx-auto mb-2"></div>
-              <p className="text-sm text-gray-600">Chargement de Google Maps...</p>
+              <div className="animate-spin rounded-full h-6 w-6 sm:h-8 sm:w-8 border-b-2 border-green-600 mx-auto mb-2"></div>
+              <p className="text-xs sm:text-sm text-gray-600">Chargement de Google Maps...</p>
             </div>
           </div>
         </CardContent>
@@ -172,20 +188,20 @@ export default function BilanMapComponent({
     return (
       <Card className={className}>
         <CardHeader className="pb-3">
-          <CardTitle className="flex items-center gap-2 text-lg">
-            <Route className="h-5 w-5" />
+          <CardTitle className="flex items-center gap-2 text-sm sm:text-base lg:text-lg">
+            <Route className="h-4 w-4 sm:h-5 sm:w-5" />
             Carte Interactive du Bilan
           </CardTitle>
         </CardHeader>
         <CardContent className="p-0">
-          <div className="flex items-center justify-center h-full min-h-[500px]">
+          <div className="flex items-center justify-center h-full min-h-[350px] sm:min-h-[450px] lg:min-h-[500px]">
             <div className="text-center">
-              <div className="text-red-500 text-lg mb-2">⚠️ Erreur de chargement</div>
-              <p className="text-sm text-gray-600">Impossible de charger Google Maps</p>
+              <div className="text-red-500 text-base sm:text-lg mb-2">⚠️ Erreur de chargement</div>
+              <p className="text-xs sm:text-sm text-gray-600">Impossible de charger Google Maps</p>
               <p className="text-xs text-gray-500 mt-1">{loadError.message}</p>
               <button 
                 onClick={() => window.location.reload()} 
-                className="mt-3 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+                className="mt-3 px-3 py-2 sm:px-4 sm:py-2 bg-blue-500 text-white rounded hover:bg-blue-600 text-xs sm:text-sm"
               >
                 Réessayer
               </button>
@@ -198,14 +214,16 @@ export default function BilanMapComponent({
 
   return (
     <Card className={className}>
-      <CardHeader className="pb-3">
-        <CardTitle className="flex items-center gap-2 text-lg">
-          <Route className="h-5 w-5" />
-          Carte Interactive du Bilan
+      <CardHeader className="pb-2 sm:pb-3">
+        <CardTitle className="flex items-center gap-2 text-sm sm:text-base lg:text-lg">
+          <Route className="h-4 w-4 sm:h-5 sm:w-5" />
+          <span className="hidden sm:inline">Carte Interactive du Bilan</span>
+          <span className="sm:hidden">Bilan</span>
           {isTracking && (
-            <Badge variant="secondary" className="ml-2 animate-pulse">
+            <Badge variant="secondary" className="ml-2 animate-pulse text-xs sm:text-sm">
               <Navigation className="h-3 w-3 mr-1" />
-              Suivi actif
+              <span className="hidden sm:inline">Suivi actif</span>
+              <span className="sm:hidden">Actif</span>
             </Badge>
           )}
         </CardTitle>
@@ -213,20 +231,20 @@ export default function BilanMapComponent({
       <CardContent className="p-0">
         <div className="relative">
           <GoogleMap
-            mapContainerStyle={mapContainerStyle}
+            mapContainerStyle={getMapContainerStyle(isMobile, isTablet)}
             center={getMapCenter()}
-            zoom={18}
+            zoom={isMobile ? 16 : isTablet ? 17 : 18}
             onLoad={onMapLoad}
             onUnmount={onMapUnmount}
             onClick={handleMapClick}
             options={{
-              mapTypeId: 'satellite', // Satellite view for better field visualization
+              mapTypeId: 'satellite',
               tilt: 0,
               streetViewControl: false,
               fullscreenControl: true,
-              mapTypeControl: true,
+              mapTypeControl: !isMobile, // Hide on mobile to save space
               zoomControl: true,
-              scaleControl: true,
+              scaleControl: !isMobile, // Hide on mobile to save space
               gestureHandling: 'greedy',
             }}
           >
@@ -253,7 +271,7 @@ export default function BilanMapComponent({
                 options={{
                   strokeColor: '#3B82F6',
                   strokeOpacity: 0.8,
-                  strokeWeight: 3,
+                  strokeWeight: isMobile ? 2 : 3,
                   geodesic: true,
                 }}
               />
@@ -320,34 +338,36 @@ export default function BilanMapComponent({
                   fillColor: '#10B981',
                   fillOpacity: 0.3,
                   strokeColor: '#10B981',
-                  strokeWeight: 3,
+                  strokeWeight: isMobile ? 2 : 3,
                   strokeOpacity: 0.8,
                 }}
               />
             )}
           </GoogleMap>
 
-          {/* Map Legend and Stats */}
-          <div className="absolute top-4 right-4 bg-white bg-opacity-95 p-4 rounded-lg shadow-lg text-sm max-w-64">
-            <div className="space-y-3">
-              <h4 className="font-semibold text-gray-800">Légende</h4>
+          {/* Responsive Map Legend and Stats */}
+          <div className={`absolute bg-white bg-opacity-95 p-2 sm:p-3 lg:p-4 rounded-lg shadow-lg text-xs sm:text-sm max-w-48 sm:max-w-56 lg:max-w-64 ${
+            isMobile ? 'top-2 right-2' : 'top-4 right-4'
+          }`}>
+            <div className="space-y-2 sm:space-y-3">
+              <h4 className="font-semibold text-gray-800 text-xs sm:text-sm">Légende</h4>
               
-              <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 rounded-full bg-green-500"></div>
-                  <span className="text-gray-700">Serre</span>
+              <div className="space-y-1 sm:space-y-2">
+                <div className="flex items-center gap-1 sm:gap-2">
+                  <div className="w-3 h-3 sm:w-4 sm:h-4 rounded-full bg-green-500"></div>
+                  <span className="text-gray-700 text-xs sm:text-sm">Serre</span>
                 </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 rounded-full bg-blue-500"></div>
-                  <span className="text-gray-700">Votre position</span>
+                <div className="flex items-center gap-1 sm:gap-2">
+                  <div className="w-3 h-3 sm:w-4 sm:h-4 rounded-full bg-blue-500"></div>
+                  <span className="text-gray-700 text-xs sm:text-sm">Votre position</span>
                 </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 rounded-full bg-yellow-500"></div>
-                  <span className="text-gray-700">Points du bilan</span>
+                <div className="flex items-center gap-1 sm:gap-2">
+                  <div className="w-3 h-3 sm:w-4 sm:h-4 rounded-full bg-yellow-500"></div>
+                  <span className="text-gray-700 text-xs sm:text-sm">Points du bilan</span>
                 </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-0.5 bg-blue-500"></div>
-                  <span className="text-gray-700">Votre parcours</span>
+                <div className="flex items-center gap-1 sm:gap-2">
+                  <div className="w-2 h-0.5 sm:w-3 sm:h-0.5 bg-blue-500"></div>
+                  <span className="text-gray-700 text-xs sm:text-sm">Votre parcours</span>
                 </div>
               </div>
 
@@ -355,10 +375,10 @@ export default function BilanMapComponent({
                 <>
                   <div className="border-t pt-2">
                     <div className="text-xs text-gray-600">
-                      Distance parcourue: {((calculateTotalDistance() || 0) / 1000).toFixed(2)} km
+                      Distance: {((calculateTotalDistance() || 0) / 1000).toFixed(2)} km
                     </div>
                     <div className="text-xs text-gray-600">
-                      Points du bilan: {selectedPoints.length}/4
+                      Points: {selectedPoints.length}/4
                     </div>
                   </div>
                 </>
@@ -366,14 +386,16 @@ export default function BilanMapComponent({
             </div>
           </div>
 
-          {/* Instructions Overlay */}
+          {/* Responsive Instructions Overlay */}
           {selectedPoints.length === 0 && (
-            <div className="absolute bottom-4 left-4 bg-blue-600 text-white p-4 rounded-lg shadow-lg max-w-80">
-              <div className="flex items-start gap-3">
-                <Target className="h-5 w-5 mt-0.5 flex-shrink-0" />
-                <div className="text-sm">
+            <div className={`absolute bg-blue-600 text-white p-2 sm:p-3 lg:p-4 rounded-lg shadow-lg ${
+              isMobile ? 'bottom-2 left-2 right-2 max-w-none' : 'bottom-4 left-4 max-w-80'
+            }`}>
+              <div className="flex items-start gap-2 sm:gap-3">
+                <Target className="h-4 w-4 sm:h-5 sm:w-5 mt-0.5 flex-shrink-0" />
+                <div className="text-xs sm:text-sm">
                   <div className="font-semibold mb-1">Instructions</div>
-                  <div className="space-y-1 text-blue-100">
+                  <div className="space-y-0.5 sm:space-y-1 text-blue-100">
                     <div>1. Démarrer le suivi GPS</div>
                     <div>2. Marcher dans le champ</div>
                     <div>3. Cliquer "Ajouter Point" à chaque position</div>
@@ -384,15 +406,19 @@ export default function BilanMapComponent({
             </div>
           )}
 
-          {/* Progress Indicator */}
+          {/* Responsive Progress Indicator */}
           {selectedPoints.length > 0 && (
-            <div className="absolute bottom-4 left-4 bg-white p-3 rounded-lg shadow-lg">
-              <div className="text-sm font-medium text-gray-800 mb-2">
+            <div className={`absolute bg-white p-2 sm:p-3 rounded-lg shadow-lg ${
+              isMobile ? 'bottom-2 left-2 right-2' : 'bottom-4 left-4'
+            }`}>
+              <div className="text-xs sm:text-sm font-medium text-gray-800 mb-1 sm:mb-2">
                 Progression: {selectedPoints.length}/4 points
               </div>
-              <div className="w-32 bg-gray-200 rounded-full h-2">
+              <div className={`bg-gray-200 rounded-full h-1.5 sm:h-2 ${
+                isMobile ? 'w-full' : 'w-32'
+              }`}>
                 <div 
-                  className="bg-green-500 h-2 rounded-full transition-all duration-300"
+                  className="bg-green-500 h-1.5 sm:h-2 rounded-full transition-all duration-300"
                   style={{ width: `${(selectedPoints.length / 4) * 100}%` }}
                 ></div>
               </div>

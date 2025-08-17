@@ -58,11 +58,6 @@ export default function TechnicianDashboard() {
     setIsInterventionFormOpen(false);
   };
 
-  const handleInterventionSaveDraft = (data: any) => {
-    console.log("Intervention draft saved:", data);
-    // Here you would typically save the draft to your backend
-    setIsInterventionFormOpen(false);
-  };
 
   const openInterventionForm = () => {
     setIsInterventionFormOpen(true);
@@ -175,15 +170,6 @@ export default function TechnicianDashboard() {
 
         {/* Main Content */}
         <main className="flex-1 overflow-auto px-4 sm:px-6 lg:px-8 py-8">
-          {/* Welcome Section */}
-          <div className="mb-8">
-            <h1 className="text-2xl font-bold text-foreground mb-2">
-              Tableau de bord - Technicien
-            </h1>
-            <p className="text-muted-foreground">
-              Gérez vos interventions et surveillez les alertes en temps réel
-            </p>
-          </div>
 
           {/* Alert Heatmap Section */}
           <div className="mb-8">
@@ -196,28 +182,7 @@ export default function TechnicianDashboard() {
 
           {/* Stats and Actions Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-            {/* Welcome Card */}
-            <div className="bg-card rounded-2xl shadow-lg border p-6">
-              <h2 className="text-lg font-semibold text-foreground mb-4">
-                Bienvenue
-              </h2>
-              <div className="space-y-2 text-sm">
-                <p>
-                  <span className="font-medium">Email:</span> <span className="font-semibold">{user?.email}</span>
-                </p>
-                {user?.name && (
-                  <p>
-                    <span className="font-medium">Nom:</span> <span className="font-semibold">{user.name}</span>
-                  </p>
-                )}
-                {user?.role && (
-                  <p>
-                    <span className="font-medium">Rôle:</span> <span className="font-semibold">{user.role}</span>
-                  </p>
-                )}
-              </div>
-            </div>
-
+         
             {/* Quick Actions */}
             <div className="bg-card rounded-2xl shadow-lg border p-6">
               <h3 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">

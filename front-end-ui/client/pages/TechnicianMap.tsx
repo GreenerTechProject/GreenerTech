@@ -736,7 +736,7 @@ export default function TechnicianMap() {
 
                         <div className="flex items-center justify-between text-sm text-gray-500">
                           <span>{serre.surface} m²</span>
-                          <span>Bilans: {serre.zones.length}</span>
+                          <span>Billons: {serre.zones.length}</span>
                         </div>
 
                         {serre.zones.length > 0 && (
@@ -934,7 +934,7 @@ export default function TechnicianMap() {
                 <div className="space-y-4 pt-2">
                   <h4 className="text-lg font-semibold text-gray-900 flex items-center space-x-2">
                     <FileText className="h-5 w-5" />
-                    <span>Bilans ({bilans.length})</span>
+                    <span>Billons ({bilans.length})</span>
                   </h4>
                   
                   {isLoadingBilans ? (
@@ -1137,31 +1137,7 @@ export default function TechnicianMap() {
 
       {/* Mobile Interface */}
       <div className="lg:hidden">
-        {/* Mobile Header Overlay */}
-        {selectedSerre && (
-          <div className="fixed top-20 left-4 right-4 z-40">
-            <div className="bg-white/95 backdrop-blur-md rounded-xl shadow-xl border border-gray-200 p-4">
-              <div className="flex items-center justify-between">
-                <div className="flex-1 min-w-0">
-                  <h3 className="text-base font-semibold text-gray-900 truncate">
-                    {selectedSerre.nom}
-                  </h3>
-                  <p className="text-sm text-gray-600 truncate">
-                    {selectedSerre.variety} • {selectedSerre.surface} m²
-                  </p>
-                </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setIsMobilePanelOpen(!isMobilePanelOpen)}
-                  className="ml-3 p-2"
-                >
-                  {isMobilePanelOpen ? 'Fermer' : 'Ouvrir'}
-                </Button>
-              </div>
-            </div>
-          </div>
-        )}
+    
 
         {/* Mobile Bottom Panel */}
         <div
@@ -1313,24 +1289,12 @@ export default function TechnicianMap() {
         {/* Mobile Floating Action Button */}
         <Button
           onClick={() => setIsMobilePanelOpen(!isMobilePanelOpen)}
-          className="fixed bottom-6 right-6 w-16 h-16 rounded-full shadow-2xl bg-[#B4CC5F] hover:bg-[#B4CC5F]/90 text-white z-40 text-2xl font-bold transition-all duration-200 hover:scale-110"
+          className="fixed bottom-6 left-6 w-16 h-16 rounded-full shadow-2xl bg-[#B4CC5F] hover:bg-[#B4CC5F]/90 text-white z-40 text-2xl font-bold transition-all duration-200 hover:scale-110"
         >
           {isMobilePanelOpen ? '×' : '≡'}
         </Button>
 
-        {/* Mobile Quick Access - Show when serre selected but panel closed */}
-        {selectedSerre && !isMobilePanelOpen && (
-          <div className="fixed bottom-6 left-6 z-40">
-            <Button
-              variant="outline"
-              onClick={() => setIsMobilePanelOpen(true)}
-              className="bg-white/95 backdrop-blur-sm border-gray-200 shadow-lg hover:bg-white px-4 py-2 rounded-lg"
-            >
-              <FileText className="h-4 w-4 mr-2" />
-              Bilans
-            </Button>
-          </div>
-        )}
+  
       </div>
 
       {/* Intervention Form Modal */}
