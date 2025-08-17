@@ -40,10 +40,16 @@ def create_bilan(current_user):
 
     # Créer chaque point group_cor
     for point in gps_points:
+        # Accept both {lat,lng} and {latitude,longitude}
+        lat = point.get('latitude') or point.get('lat')
+        lng = point.get('longitude') or point.get('lng')
+        if lat is None or lng is None:
+            return jsonify({"message": "Chaque point doit contenir lat/lng ou latitude/longitude"}), 400
+            
         gc = GroupCor(
             id_group_cor=id_group_cor,
-            point_x=point['latitude'],
-            point_y=point['longitude'],
+            point_x=lat,
+            point_y=lng,
             ordre=point.get('ordre', 0)
         )
         db.session.add(gc)
@@ -111,10 +117,16 @@ def update_bilan(current_user, id):
         GroupCor.query.filter_by(id_group_cor=bilan.id_group_cor).delete()
 
         for point in gps_points:
+            # Accept both {lat,lng} and {latitude,longitude}
+            lat = point.get('lat') or point.get('latitude')
+            lng = point.get('lng') or point.get('longitude')
+            if lat is None or lng is None:
+                return jsonify({"message": "Chaque point doit contenir lat/lng ou latitude/longitude"}), 400
+                
             new_point = GroupCor(
                 id_group_cor=bilan.id_group_cor,
-                point_x=point['lat'],
-                point_y=point['lng'],
+                point_x=lat,
+                point_y=lng,
                 ordre=point.get('ordre', 0)
             )
             db.session.add(new_point)
