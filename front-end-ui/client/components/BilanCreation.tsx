@@ -501,47 +501,47 @@ export default function BilanCreation({
           {/* Mobile Header - Floating */}
           <div className="absolute top-2 left-2 right-2 z-20">
             <div className="bg-white/95 backdrop-blur-sm rounded-lg shadow-lg border border-gray-200 p-3">
-              <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-2">
                   <MapPin className="h-5 w-5 text-[#B4CC5F]" />
-                  <div>
+                <div>
                     <h1 className="text-sm font-semibold text-gray-900">Création de Bilan GPS</h1>
                     <p className="text-xs text-gray-600">{serreName}</p>
-                  </div>
                 </div>
-                <Button
-                  onClick={onCancel}
-                  variant="ghost"
-                  size="sm"
+              </div>
+              <Button
+                onClick={onCancel}
+                variant="ghost"
+                size="sm"
                   className="h-8 w-8 p-0 hover:bg-gray-200 text-gray-700"
-                  disabled={isCreating}
-                >
+                disabled={isCreating}
+              >
                   <X className="h-4 w-4" />
-                </Button>
+              </Button>
               </div>
             </div>
           </div>
 
           {/* Fullscreen Map - Takes remaining space */}
           <div className="flex-1 w-full min-h-0 relative pb-4">
-            {!isMapLoaded ? (
-              <div className="flex items-center justify-center h-full bg-gray-50">
-                <div className="text-center">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#B4CC5F] mx-auto mb-2"></div>
-                  <p className="text-sm text-gray-600">Chargement de la carte...</p>
+              {!isMapLoaded ? (
+                <div className="flex items-center justify-center h-full bg-gray-50">
+                  <div className="text-center">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#B4CC5F] mx-auto mb-2"></div>
+                    <p className="text-sm text-gray-600">Chargement de la carte...</p>
+                  </div>
                 </div>
-              </div>
-            ) : (
-              <BilanMapComponent
-                serreLocation={serreLocation}
-                selectedPoints={selectedPoints}
-                currentLocation={currentLocation}
-                isTracking={isTracking}
+              ) : (
+                <BilanMapComponent
+                  serreLocation={serreLocation}
+                  selectedPoints={selectedPoints}
+                  currentLocation={currentLocation}
+                  isTracking={isTracking}
                 className="h-full w-full"
-                onMapClick={handleMapClick}
-              />
-            )}
-          </div>
+                  onMapClick={handleMapClick}
+                />
+              )}
+            </div>
 
           {/* Mobile Control Panel - Fixed at Bottom, Stretchable */}
           <div 
@@ -581,8 +581,8 @@ export default function BilanCreation({
             
             {/* Control Panel Header - Always Visible */}
             <div className="px-4 pb-3 border-b border-gray-100 bg-gradient-to-r from-green-50 to-blue-50 flex-shrink-0">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-2">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-2">
                   <MapPin className="h-5 w-5 text-[#B4CC5F]" />
                   <h3 className="font-semibold text-gray-900 text-base">Contrôles Bilan GPS</h3>
                   <span className="text-xs text-gray-500 bg-white px-2 py-1 rounded-full">
@@ -591,14 +591,14 @@ export default function BilanCreation({
                 </div>
                 <div className="flex items-center space-x-2">
                   <Badge variant={currentLocation ? "default" : "secondary"} className="text-xs bg-green-100 text-green-800">
-                    GPS: {currentLocation ? "✓" : "✗"}
-                  </Badge>
+                      GPS: {currentLocation ? "✓" : "✗"}
+                    </Badge>
                   <Badge variant={isTracking ? "default" : "secondary"} className="text-xs bg-blue-100 text-blue-800">
-                    Suivi: {isTracking ? "Actif" : "Inactif"}
-                  </Badge>
+                      Suivi: {isTracking ? "Actif" : "Inactif"}
+                    </Badge>
+                  </div>
                 </div>
               </div>
-            </div>
 
             {/* Control Panel Content - Scrollable */}
             <ScrollArea className="flex-1 h-[calc(100%-80px)] px-4">
@@ -736,8 +736,8 @@ export default function BilanCreation({
                 {/* Scroll Indicator */}
                 <div className="flex justify-center pt-2 pb-4">
                   <div className="w-8 h-1 bg-gray-300 rounded-full opacity-50"></div>
-                </div>
               </div>
+            </div>
             </ScrollArea>
           </div>
         </div>
@@ -754,129 +754,129 @@ export default function BilanCreation({
               <div className="bg-white rounded-lg shadow-2xl border border-gray-200 w-[280px] sm:w-[320px] md:w-[350px] max-h-[calc(100vh-1rem)] sm:max-h-[calc(95vh-2rem)] overflow-hidden">
                 {/* Panel Header */}
                 <div className="bg-gradient-to-r from-green-50 to-blue-50 border-b border-gray-200 p-3 sm:p-4">
-                  <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2 min-w-0 flex-1">
                       <MapPin className="h-4 w-4 sm:h-5 sm:w-5 text-green-600 flex-shrink-0" />
                       <div className="min-w-0 flex-1">
                         <h3 className="font-semibold text-sm sm:text-base truncate">Contrôles Bilan GPS</h3>
                         <p className="text-xs text-gray-600 truncate">{serreName}</p>
                         <p className="text-xs text-gray-500 mt-1 hidden sm:block">Appuyez sur Échap pour fermer</p>
-                      </div>
                     </div>
-                    <Button
+                  </div>
+                <Button
                       onClick={() => setIsPanelOpen(false)}
-                      variant="ghost"
-                      size="sm"
+                  variant="ghost"
+                  size="sm"
                       className="h-7 w-7 sm:h-8 sm:w-8 p-0 hover:bg-gray-200 rounded-full flex-shrink-0 ml-2"
                       title="Fermer le panneau (Échap)"
-                    >
+                >
                       <X className="h-3 w-3 sm:h-4 sm:w-4" />
-                    </Button>
-                  </div>
-                </div>
-
+                </Button>
+              </div>
+                    </div>
+                    
                 {/* Panel Content */}
                 <ScrollArea className="h-[calc(100vh-140px)] sm:h-[calc(95vh-120px)]">
                   <div className="p-3 sm:p-4 space-y-3 sm:space-y-4">
-                    {/* Bilan Name Input */}
-                    <div className="space-y-2">
+                      {/* Bilan Name Input */}
+                        <div className="space-y-2">
                       <Label htmlFor="bilanName" className="text-sm font-medium">Nom du Bilan *</Label>
-                      <Input
-                        id="bilanName"
-                        value={bilanName}
-                        onChange={(e) => setBilanName(e.target.value)}
-                        placeholder="Ex: Bilan Nord-Est - Juin 2024"
+                          <Input
+                            id="bilanName"
+                            value={bilanName}
+                            onChange={(e) => setBilanName(e.target.value)}
+                            placeholder="Ex: Bilan Nord-Est - Juin 2024"
                         className="w-full"
-                      />
-                    </div>
+                          />
+                      </div>
 
-                    <Separator />
+                      <Separator />
 
-                    {/* GPS Status */}
+                      {/* GPS Status */}
                     <div className="space-y-2">
                       <h4 className="font-medium text-sm flex items-center gap-2">
                         <Navigation className="h-4 w-4" />
-                        Statut GPS
+                          Statut GPS
                       </h4>
-                      
-                      <div className="space-y-2">
+                        
+                        <div className="space-y-2">
                         <div className="flex items-center justify-between text-xs">
                           <span className="text-gray-600">Position:</span>
-                          <Badge variant={currentLocation ? "default" : "secondary"} className="text-xs">
+                            <Badge variant={currentLocation ? "default" : "secondary"} className="text-xs">
                             {currentLocation ? "✓" : "✗"}
-                          </Badge>
-                        </div>
-                        
+                            </Badge>
+                          </div>
+                          
                         <div className="flex items-center justify-between text-xs">
                           <span className="text-gray-600">Suivi:</span>
-                          <Badge variant={isTracking ? "default" : "secondary"} className="text-xs">
-                            {isTracking ? "Actif" : "Inactif"}
-                          </Badge>
+                            <Badge variant={isTracking ? "default" : "secondary"} className="text-xs">
+                              {isTracking ? "Actif" : "Inactif"}
+                            </Badge>
+                          </div>
                         </div>
+
+                        {currentLocation && (
+                        <div className="text-xs text-gray-500 bg-gray-50 p-2 rounded border">
+                            Lat: {currentLocation.lat.toFixed(6)}<br />
+                            Lng: {currentLocation.lng.toFixed(6)}
+                            {currentLocation.accuracy !== undefined && (
+                              <>
+                                <br />
+                                Précision: ±{Math.round(currentLocation.accuracy)} m
+                              </>
+                            )}
+                          </div>
+                        )}
                       </div>
 
-                      {currentLocation && (
-                        <div className="text-xs text-gray-500 bg-gray-50 p-2 rounded border">
-                          Lat: {currentLocation.lat.toFixed(6)}<br />
-                          Lng: {currentLocation.lng.toFixed(6)}
-                          {currentLocation.accuracy !== undefined && (
-                            <>
-                              <br />
-                              Précision: ±{Math.round(currentLocation.accuracy)} m
-                            </>
-                          )}
-                        </div>
-                      )}
-                    </div>
+                      <Separator />
 
-                    <Separator />
-
-                    {/* GPS Controls */}
+                      {/* GPS Controls */}
                     <div className="space-y-2">
                       <h4 className="font-medium text-sm">Contrôles GPS</h4>
-                      
-                      <div className="grid grid-cols-2 gap-2">
-                        {!isTracking ? (
-                          <Button 
-                            onClick={startTracking}
-                            className="w-full text-xs"
-                            disabled={!currentLocation}
-                            size="sm"
-                          >
-                            <Play className="h-3 w-3 mr-1" />
-                            Démarrer
-                          </Button>
-                        ) : (
-                          <Button 
-                            onClick={stopTracking}
-                            variant="outline"
-                            className="w-full text-xs"
-                            size="sm"
-                          >
-                            <Pause className="h-3 w-3 mr-1" />
-                            Arrêter
-                          </Button>
-                        )}
                         
-                        <Button 
-                          onClick={getCurrentLocation}
-                          variant="outline"
+                        <div className="grid grid-cols-2 gap-2">
+                          {!isTracking ? (
+                            <Button 
+                              onClick={startTracking}
+                            className="w-full text-xs"
+                              disabled={!currentLocation}
+                              size="sm"
+                            >
+                            <Play className="h-3 w-3 mr-1" />
+                              Démarrer
+                            </Button>
+                          ) : (
+                            <Button 
+                              onClick={stopTracking}
+                              variant="outline"
+                            className="w-full text-xs"
+                              size="sm"
+                            >
+                            <Pause className="h-3 w-3 mr-1" />
+                              Arrêter
+                            </Button>
+                          )}
+                          
+                          <Button 
+                            onClick={getCurrentLocation}
+                            variant="outline"
                           className="w-full text-xs"
-                          size="sm"
-                        >
+                            size="sm"
+                          >
                           <Target className="h-3 w-3 mr-1" />
-                          Actualiser
-                        </Button>
+                            Actualiser
+                          </Button>
+                        </div>
                       </div>
-                    </div>
 
-                    <Separator />
+                      <Separator />
 
-                    {/* Point Management */}
+                      {/* Point Management */}
                     <div className="space-y-2">
                       <h4 className="font-medium text-sm">Points du bilan</h4>
-                      
-                      <div className="space-y-2">
+                        
+                        <div className="space-y-2">
                         <div className="flex items-center justify-between text-xs">
                           <span>Points collectés:</span>
                           <Badge variant="outline" className="text-xs">
@@ -884,122 +884,122 @@ export default function BilanCreation({
                           </Badge>
                         </div>
                         
-                        <div className="grid grid-cols-2 gap-2">
-                          <Button 
-                            onClick={addCurrentPosition}
+                          <div className="grid grid-cols-2 gap-2">
+                            <Button 
+                              onClick={addCurrentPosition}
                             className="w-full bg-blue-600 hover:bg-blue-700 text-white text-xs"
                             disabled={!currentLocation || !isTracking || selectedPoints.length >= 4}
-                            size="sm"
-                          >
+                              size="sm"
+                            >
                             <MapPin className="h-3 w-3 mr-1" />
                             Ajouter
-                          </Button>
+                            </Button>
                           
-                          <Button 
-                            onClick={removeLastPoint}
-                            variant="outline"
-                            size="sm"
-                            disabled={selectedPoints.length === 0}
+                            <Button 
+                              onClick={removeLastPoint}
+                              variant="outline"
+                              size="sm"
+                              disabled={selectedPoints.length === 0}
                             className="w-full text-xs"
-                          >
-                            <RotateCcw className="h-3 w-3 mr-1" />
+                            >
+                              <RotateCcw className="h-3 w-3 mr-1" />
                             Annuler
-                          </Button>
+                            </Button>
+                          </div>
                         </div>
                       </div>
-                    </div>
 
-                    <Separator />
+                      <Separator />
 
-                    {/* Advanced Options */}
+                      {/* Advanced Options */}
                     <div className="space-y-2">
                       <h4 className="font-medium text-sm">Options avancées</h4>
-                      
-                      <div className="space-y-2">
-                        <div className="flex items-center space-x-2">
-                          <input
-                            type="checkbox"
-                            id="snapEnabled"
-                            checked={snapEnabled}
-                            onChange={(e) => setSnapEnabled(e.target.checked)}
-                            className="rounded border-gray-300 text-[#B4CC5F] focus:ring-[#B4CC5F]"
-                          />
+                        
+                        <div className="space-y-2">
+                          <div className="flex items-center space-x-2">
+                            <input
+                              type="checkbox"
+                              id="snapEnabled"
+                              checked={snapEnabled}
+                              onChange={(e) => setSnapEnabled(e.target.checked)}
+                              className="rounded border-gray-300 text-[#B4CC5F] focus:ring-[#B4CC5F]"
+                            />
                           <Label htmlFor="snapEnabled" className="text-xs">Aligner sur grille 0,8 m</Label>
-                        </div>
-                        
-                        <div className="flex items-center space-x-2">
-                          <input
-                            type="checkbox"
-                            id="useCenterlineBuffer"
-                            checked={useCenterlineBuffer}
-                            onChange={(e) => setUseCenterlineBuffer(e.target.checked)}
-                            className="rounded border-gray-300 text-[#B4CC5F] focus:ring-[#B4CC5F]"
-                          />
+                          </div>
+                          
+                          <div className="flex items-center space-x-2">
+                            <input
+                              type="checkbox"
+                              id="useCenterlineBuffer"
+                              checked={useCenterlineBuffer}
+                              onChange={(e) => setUseCenterlineBuffer(e.target.checked)}
+                              className="rounded border-gray-300 text-[#B4CC5F] focus:ring-[#B4CC5F]"
+                            />
                           <Label htmlFor="useCenterlineBuffer" className="text-xs">Rectangle (centre + largeur)</Label>
-                        </div>
-                        
-                        {useCenterlineBuffer && (
+                          </div>
+                          
+                          {useCenterlineBuffer && (
                           <div className="pl-4 space-y-2">
-                            <div className="grid grid-cols-2 gap-2">
-                              <div>
-                                <Label htmlFor="rowWidthMeters" className="text-xs">Largeur (m)</Label>
-                                <Input
-                                  id="rowWidthMeters"
-                                  type="number"
-                                  step="0.1"
-                                  min="0.1"
-                                  max="10"
-                                  value={rowWidthMeters}
-                                  onChange={(e) => setRowWidthMeters(parseFloat(e.target.value))}
-                                  className="w-full text-xs"
-                                />
-                              </div>
-                              <div>
-                                <Label htmlFor="rectangleLength" className="text-xs">Longueur (m)</Label>
-                                <Input
-                                  id="rectangleLength"
-                                  type="number"
-                                  step="0.1"
-                                  min="1"
-                                  max="100"
-                                  value={rectangleParams.length}
-                                  onChange={(e) => setRectangleParams(prev => ({ ...prev, length: parseFloat(e.target.value) }))}
-                                  className="w-full text-xs"
-                                />
+                              <div className="grid grid-cols-2 gap-2">
+                                <div>
+                                  <Label htmlFor="rowWidthMeters" className="text-xs">Largeur (m)</Label>
+                                  <Input
+                                    id="rowWidthMeters"
+                                    type="number"
+                                    step="0.1"
+                                    min="0.1"
+                                    max="10"
+                                    value={rowWidthMeters}
+                                    onChange={(e) => setRowWidthMeters(parseFloat(e.target.value))}
+                                    className="w-full text-xs"
+                                  />
+                                </div>
+                                <div>
+                                  <Label htmlFor="rectangleLength" className="text-xs">Longueur (m)</Label>
+                                  <Input
+                                    id="rectangleLength"
+                                    type="number"
+                                    step="0.1"
+                                    min="1"
+                                    max="100"
+                                    value={rectangleParams.length}
+                                    onChange={(e) => setRectangleParams(prev => ({ ...prev, length: parseFloat(e.target.value) }))}
+                                    className="w-full text-xs"
+                                  />
+                                </div>
                               </div>
                             </div>
-                          </div>
-                        )}
+                          )}
+                        </div>
                       </div>
-                    </div>
 
-                    <Separator />
+                      <Separator />
 
                     {/* Progress and Status */}
                     <div className="space-y-2">
                       <div className="flex items-center justify-between text-xs">
                         <span>Progression:</span>
                         <span className="font-medium">{Math.round((selectedPoints.length / 4) * 100)}%</span>
-                      </div>
+                          </div>
                       <div className="w-full bg-gray-200 rounded-full h-2">
                         <div 
                           className="bg-[#B4CC5F] h-2 rounded-full transition-all duration-300"
                           style={{ width: `${(selectedPoints.length / 4) * 100}%` }}
                         ></div>
+                        </div>
                       </div>
-                    </div>
 
-                    {/* Create Bilan Button */}
-                    <Button 
-                      onClick={handleCreateBilan}
+                        {/* Create Bilan Button */}
+                        <Button 
+                          onClick={handleCreateBilan}
                       className="w-full bg-[#B4CC5F] hover:bg-[#B4CC5F]/90 text-white"
-                      disabled={!canCreateBilan}
+                          disabled={!canCreateBilan}
                       size="sm"
-                    >
+                        >
                       <CheckCircle className="h-4 w-4 mr-2" />
                       {isCreating ? "Création..." : "Créer le Bilan"}
-                    </Button>
-
+                        </Button>
+                        
                     {/* Messages */}
                     {error && (
                       <div className="p-3 bg-red-50 border border-red-200 rounded-md">
@@ -1019,7 +1019,7 @@ export default function BilanCreation({
 
             {/* Panel Toggle Button - Hidden on very small screens */}
             {!isPanelOpen && (
-              <Button
+                        <Button 
                 onClick={() => setIsPanelOpen(true)}
                 className="absolute top-2 sm:top-4 left-2 sm:left-4 z-20 bg-white hover:bg-gray-50 text-gray-700 border border-gray-200 shadow-lg transition-all duration-200 hover:shadow-xl hidden sm:block"
                 size="sm"
@@ -1097,16 +1097,16 @@ export default function BilanCreation({
                           Arrêter
                         </Button>
                       )}
-                      
-                      <Button 
+                        
+                        <Button 
                         onClick={getCurrentLocation}
                         variant="outline"
                         className="w-full border-gray-300 text-gray-700 hover:bg-gray-50 font-medium"
-                        size="sm"
-                      >
+                          size="sm"
+                        >
                         <Target className="h-3 w-3 mr-1" />
                         Actualiser
-                      </Button>
+                        </Button>
                     </div>
                   </div>
 
@@ -1147,7 +1147,7 @@ export default function BilanCreation({
                         </Button>
                       </div>
                     </div>
-                  </div>
+                      </div>
 
                   {/* Progress and Status */}
                   <div className="space-y-2">
@@ -1174,17 +1174,17 @@ export default function BilanCreation({
                   </Button>
 
                   {/* Error/Success Messages */}
-                  {error && (
-                    <div className="p-3 bg-red-50 border border-red-200 rounded-md">
+                      {error && (
+                        <div className="p-3 bg-red-50 border border-red-200 rounded-md">
                       <p className="text-xs text-red-600">{error}</p>
-                    </div>
-                  )}
-                  
-                  {success && (
-                    <div className="p-3 bg-green-50 border border-green-200 rounded-md">
+                        </div>
+                      )}
+                      
+                      {success && (
+                        <div className="p-3 bg-green-50 border border-green-200 rounded-md">
                       <p className="text-xs text-green-600">{success}</p>
-                    </div>
-                  )}
+                        </div>
+                      )}
                 </div>
               </ScrollArea>
             </div>
@@ -1211,31 +1211,31 @@ export default function BilanCreation({
                       <p className="text-xs text-gray-600">{serreName}</p>
                     </div>
                   </div>
+                    </div>
+                  </div>
                 </div>
-              </div>
-            </div>
 
             {/* Fullscreen Map */}
             <div className="absolute inset-0 transition-all duration-300 ease-in-out">
-              {!isMapLoaded ? (
+                  {!isMapLoaded ? (
                 <div className="flex items-center justify-center h-full bg-gray-50">
-                  <div className="text-center">
+                        <div className="text-center">
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#B4CC5F] mx-auto mb-2"></div>
-                    <p className="text-sm text-gray-600">Chargement de Google Maps...</p>
-                    <p className="text-xs text-gray-500 mt-1">Veuillez patienter pendant le chargement</p>
-                  </div>
-                </div>
-              ) : (
-                <BilanMapComponent
-                  serreLocation={serreLocation}
-                  selectedPoints={selectedPoints}
-                  currentLocation={currentLocation}
-                  isTracking={isTracking}
+                          <p className="text-sm text-gray-600">Chargement de Google Maps...</p>
+                          <p className="text-xs text-gray-500 mt-1">Veuillez patienter pendant le chargement</p>
+                          </div>
+                        </div>
+                  ) : (
+                    <BilanMapComponent
+                      serreLocation={serreLocation}
+                      selectedPoints={selectedPoints}
+                      currentLocation={currentLocation}
+                      isTracking={isTracking}
                   className="h-full w-full"
-                  onMapClick={handleMapClick}
-                />
-              )}
-            </div>
+                      onMapClick={handleMapClick}
+                    />
+                  )}
+                </div>
           </Card>
         </div>
       )}

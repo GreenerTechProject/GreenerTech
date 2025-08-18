@@ -19,8 +19,8 @@ interface BilanMapComponentProps {
 // Responsive map container styles
 const getMapContainerStyle = (isMobile: boolean, isTablet: boolean) => ({
   width: '100%',
-  height: isMobile ? '400px' : isTablet ? '500px' : '600px',
-  minHeight: isMobile ? '350px' : isTablet ? '450px' : '500px',
+  height: '100%', // Use 100% height to fill available space
+  minHeight: '100%', // Ensure minimum height is also 100%
 });
 
 const libraries: ("drawing" | "geometry" | "places" | "visualization")[] = [
@@ -158,8 +158,8 @@ export default function BilanMapComponent({
   // Show loading state while Google Maps is loading
   if (!isLoaded) {
     return (
-      <Card className={className}>
-        <CardHeader className="pb-3">
+      <Card className={`${className} h-full flex flex-col`}>
+        <CardHeader className="pb-3 flex-shrink-0">
           <CardTitle className="flex items-center gap-2 text-sm sm:text-base lg:text-lg">
             <Route className="h-4 w-4 sm:h-5 sm:w-5" />
             Carte Interactive du Bilan
@@ -171,8 +171,8 @@ export default function BilanMapComponent({
             )}
           </CardTitle>
         </CardHeader>
-        <CardContent className="p-0">
-          <div className="flex items-center justify-center h-full min-h-[350px] sm:min-h-[450px] lg:min-h-[500px]">
+        <CardContent className="p-0 flex-1 min-h-0">
+          <div className="flex items-center justify-center h-full">
             <div className="text-center">
               <div className="animate-spin rounded-full h-6 w-6 sm:h-8 sm:w-8 border-b-2 border-green-600 mx-auto mb-2"></div>
               <p className="text-xs sm:text-sm text-gray-600">Chargement de Google Maps...</p>
@@ -186,15 +186,15 @@ export default function BilanMapComponent({
   // Show error state if Google Maps failed to load
   if (loadError) {
     return (
-      <Card className={className}>
-        <CardHeader className="pb-3">
+      <Card className={`${className} h-full flex flex-col`}>
+        <CardHeader className="pb-3 flex-shrink-0">
           <CardTitle className="flex items-center gap-2 text-sm sm:text-base lg:text-lg">
             <Route className="h-4 w-4 sm:h-5 sm:w-5" />
             Carte Interactive du Bilan
           </CardTitle>
         </CardHeader>
-        <CardContent className="p-0">
-          <div className="flex items-center justify-center h-full min-h-[350px] sm:min-h-[450px] lg:min-h-[500px]">
+        <CardContent className="p-0 flex-1 min-h-0">
+          <div className="flex items-center justify-center h-full">
             <div className="text-center">
               <div className="text-red-500 text-base sm:text-lg mb-2">⚠️ Erreur de chargement</div>
               <p className="text-xs sm:text-sm text-gray-600">Impossible de charger Google Maps</p>
@@ -213,8 +213,8 @@ export default function BilanMapComponent({
   }
 
   return (
-    <Card className={className}>
-      <CardHeader className="pb-2 sm:pb-3">
+    <Card className={`${className} h-full flex flex-col`}>
+      <CardHeader className="pb-2 sm:pb-3 flex-shrink-0">
         <CardTitle className="flex items-center gap-2 text-sm sm:text-base lg:text-lg">
           <Route className="h-4 w-4 sm:h-5 sm:w-5" />
           <span className="hidden sm:inline">Carte Interactive du Bilan</span>
@@ -228,10 +228,14 @@ export default function BilanMapComponent({
           )}
         </CardTitle>
       </CardHeader>
-      <CardContent className="p-0">
-        <div className="relative">
+      <CardContent className="p-0 flex-1 min-h-0">
+        <div className="relative h-full w-full">
           <GoogleMap
-            mapContainerStyle={getMapContainerStyle(isMobile, isTablet)}
+            mapContainerStyle={{
+              width: '100%',
+              height: '100%',
+              minHeight: '100%',
+            }}
             center={getMapCenter()}
             zoom={isMobile ? 16 : isTablet ? 17 : 18}
             onLoad={onMapLoad}
