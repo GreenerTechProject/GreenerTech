@@ -189,6 +189,21 @@ export default function AlertHeatmapOverlay({
     }
   };
 
+  // Get intuitive danger level colors for heatmap
+  const getDangerLevelColor = (statusAlert: number) => {
+    const level = AlertService.getAlertLevel(statusAlert);
+    switch (level) {
+      case 'High':
+        return '#dc2626'; // Deep crimson red
+      case 'Medium':
+        return '#f59e0b'; // Amber orange
+      case 'Low':
+        return '#10b981'; // Emerald green
+      default:
+        return '#6b7280'; // Gray
+    }
+  };
+
   // Show loading state
   if (loading) {
     return null; // Don't render anything while loading
@@ -201,7 +216,7 @@ export default function AlertHeatmapOverlay({
 
   return (
     <>
-      {/* Alert markers */}
+      {/* Alert markers - Modern Style with Intuitive Colors */}
       {alertMarkers.map((marker) => (
         <>
           {console.log(`Rendering marker ${marker.id} at position:`, marker.position.lat(), marker.position.lng())}
@@ -210,13 +225,27 @@ export default function AlertHeatmapOverlay({
             position={marker.position}
             icon={{
               url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <circle cx="12" cy="12" r="10" fill="${getAlertLevelColor(marker.alert.status_alert)}" stroke="white" stroke-width="3"/>
-                  <path d="M12 6v8M12 18v-2" stroke="white" stroke-width="2" stroke-linecap="round"/>
+                <svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <defs>
+                    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+                      <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
+                      <feMerge> 
+                        <feMergeNode in="coloredBlur"/>
+                        <feMergeNode in="SourceGraphic"/>
+                      </feMerge>
+                    </filter>
+                    <radialGradient id="markerGradient" cx="50%" cy="50%" r="50%">
+                      <stop offset="0%" stop-color="${getDangerLevelColor(marker.alert.status_alert)}" stop-opacity="0.9"/>
+                      <stop offset="70%" stop-color="${getDangerLevelColor(marker.alert.status_alert)}" stop-opacity="0.7"/>
+                      <stop offset="100%" stop-color="${getDangerLevelColor(marker.alert.status_alert)}" stop-opacity="0.4"/>
+                    </radialGradient>
+                  </defs>
+                  <circle cx="14" cy="14" r="12" fill="url(#markerGradient)" stroke="${getDangerLevelColor(marker.alert.status_alert)}" stroke-width="2" filter="url(#glow)"/>
+                  <path d="M14 8v8M14 16v-2" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                 </svg>
               `),
-              scaledSize: new google.maps.Size(24, 24),
-              anchor: new google.maps.Point(12, 12)
+              scaledSize: new google.maps.Size(28, 28),
+              anchor: new google.maps.Point(14, 14)
             }}
             onClick={() => handleMarkerClick(marker)}
             title={`${marker.alert.maladie} - ${marker.bilan?.nom || 'Bilan inconnu'}`}
@@ -224,72 +253,101 @@ export default function AlertHeatmapOverlay({
         </>
       ))}
 
-      {/* Heatmap layer */}
+      {/* Primary Alert Heatmap - Intuitive Danger Levels */}
       {heatmapPoints.length > 0 && (
         <>
-          {console.log('Rendering HeatmapLayer with', heatmapPoints.length, 'points')}
+          {console.log('Rendering intuitive danger level HeatmapLayer with', heatmapPoints.length, 'points')}
           <HeatmapLayer
             data={heatmapPoints}
             options={{
-              radius: 80,
-              opacity: 0.8,
+              radius: 100,
+              opacity: 0.85,
               gradient: [
-                'rgba(255, 255, 0, 0)',      // Transparent yellow
-                'rgba(255, 255, 0, 0.3)',    // Light yellow
-                'rgba(255, 165, 0, 0.6)',    // Orange
-                'rgba(255, 69, 0, 0.8)',     // Red-orange
-                'rgba(255, 0, 0, 1)'         // Bright red
+                'rgba(16, 185, 129, 0)',      // Transparent emerald green
+                'rgba(16, 185, 129, 0.2)',    // Faint emerald green
+                'rgba(34, 197, 94, 0.4)',     // Green
+                'rgba(59, 130, 246, 0.6)',    // Blue
+                'rgba(245, 158, 11, 0.8)',    // Amber orange
+                'rgba(220, 38, 38, 1)'        // Deep crimson red
               ]
             }}
           />
         </>
       )}
 
-      {/* Alternative heatmap format for testing */}
+      {/* Alert Level-Specific Heatmaps for Better Visibility */}
       {heatmapPoints.length > 0 && (
         <>
-          {console.log('Rendering alternative HeatmapLayer')}
+          {/* Low Level Alerts - Green to Cyan */}
           <HeatmapLayer
-            data={heatmapPoints.map(point => ({
-              location: point.location,
-              weight: point.weight
-            }))}
+            data={heatmapPoints.filter(point => point.weight === 1)}
             options={{
-              radius: 120,
+              radius: 80,
               opacity: 0.9,
               gradient: [
-                'rgba(0, 255, 255, 0)',      // Transparent cyan
-                'rgba(0, 255, 255, 0.4)',    // Light cyan
-                'rgba(0, 191, 255, 0.7)',    // Blue
-                'rgba(0, 0, 255, 1)'         // Bright blue
+                'rgba(16, 185, 129, 0)',      // Transparent
+                'rgba(16, 185, 129, 0.3)',    // Emerald green
+                'rgba(34, 197, 94, 0.6)',     // Green
+                'rgba(6, 182, 212, 1)'        // Cyan
+              ]
+            }}
+          />
+          
+          {/* Medium Level Alerts - Yellow to Orange */}
+          <HeatmapLayer
+            data={heatmapPoints.filter(point => point.weight === 2)}
+            options={{
+              radius: 90,
+              opacity: 0.9,
+              gradient: [
+                'rgba(245, 158, 11, 0)',      // Transparent
+                'rgba(245, 158, 11, 0.4)',    // Amber
+                'rgba(251, 146, 60, 0.7)',    // Orange
+                'rgba(249, 115, 22, 1)'       // Deep orange
+              ]
+            }}
+          />
+          
+          {/* High Level Alerts - Red to Deep Crimson */}
+          <HeatmapLayer
+            data={heatmapPoints.filter(point => point.weight === 3)}
+            options={{
+              radius: 110,
+              opacity: 0.95,
+              gradient: [
+                'rgba(239, 68, 68, 0)',       // Transparent
+                'rgba(239, 68, 68, 0.5)',     // Red
+                'rgba(220, 38, 38, 0.8)',     // Deep red
+                'rgba(185, 28, 28, 1)'        // Deep crimson
               ]
             }}
           />
         </>
       )}
 
-      {/* Test heatmap with a simple point at serre center for debugging */}
+      {/* Test heatmap with intuitive danger levels at serre center for debugging */}
       {process.env.NODE_ENV === 'development' && (
         <>
-          {console.log('Rendering test heatmap at serre center')}
+          {console.log('Rendering intuitive danger level test heatmap at serre center')}
           
-          {/* Test 1: Simple LatLng array - BRIGHT RED */}
+          {/* Test 1: Green to Cyan - Low Level Style */}
           <HeatmapLayer
             data={[
               new google.maps.LatLng(serreLocation.lat, serreLocation.lng)
             ]}
             options={{
               radius: 250,
-              opacity: 1.0,
+              opacity: 0.9,
               gradient: [
-                'rgba(255, 0, 0, 0)',
-                'rgba(255, 0, 0, 0.5)',
-                'rgba(255, 0, 0, 1)'
+                'rgba(16, 185, 129, 0)',      // Transparent
+                'rgba(16, 185, 129, 0.3)',    // Emerald green
+                'rgba(6, 182, 212, 0.7)',     // Cyan
+                'rgba(6, 182, 212, 1)'        // Bright cyan
               ]
             }}
           />
           
-          {/* Test 2: Object format with location - BRIGHT GREEN */}
+          {/* Test 2: Yellow to Orange - Medium Level Style */}
           <HeatmapLayer
             data={[
               {
@@ -299,16 +357,17 @@ export default function AlertHeatmapOverlay({
             ]}
             options={{
               radius: 200,
-              opacity: 1.0,
+              opacity: 0.9,
               gradient: [
-                'rgba(0, 255, 0, 0)',
-                'rgba(0, 255, 0, 0.6)',
-                'rgba(0, 255, 0, 1)'
+                'rgba(245, 158, 11, 0)',      // Transparent
+                'rgba(245, 158, 11, 0.4)',    // Amber
+                'rgba(249, 115, 22, 0.8)',    // Deep orange
+                'rgba(249, 115, 22, 1)'       // Bright orange
               ]
             }}
           />
           
-          {/* Test 3: Multiple points around serre - BRIGHT BLUE */}
+          {/* Test 3: Red to Deep Crimson - High Level Style */}
           <HeatmapLayer
             data={[
               new google.maps.LatLng(serreLocation.lat, serreLocation.lng),
@@ -317,23 +376,31 @@ export default function AlertHeatmapOverlay({
             ]}
             options={{
               radius: 150,
-              opacity: 1.0,
+              opacity: 0.9,
               gradient: [
-                'rgba(0, 0, 255, 0)',
-                'rgba(0, 0, 255, 0.7)',
-                'rgba(0, 0, 255, 1)'
+                'rgba(239, 68, 68, 0)',       // Transparent
+                'rgba(239, 68, 68, 0.5)',     // Red
+                'rgba(185, 28, 28, 0.8)',     // Deep crimson
+                'rgba(185, 28, 28, 1)'        // Bright deep crimson
               ]
             }}
           />
           
-          {/* Test Marker - Simple red marker for debugging */}
+          {/* Test Marker - Modern style marker for debugging */}
           <Marker
             position={new google.maps.LatLng(serreLocation.lat, serreLocation.lng)}
-            title="Test Marker - Serre Center"
+            title="Test Marker - Serre Center (Intuitive Danger Levels)"
             icon={{
               url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
                 <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <circle cx="16" cy="16" r="14" fill="red" stroke="white" stroke-width="4"/>
+                  <defs>
+                    <radialGradient id="testGradient" cx="50%" cy="50%" r="50%">
+                      <stop offset="0%" stop-color="#10b981" stop-opacity="0.8"/>
+                      <stop offset="50%" stop-color="#f59e0b" stop-opacity="0.6"/>
+                      <stop offset="100%" stop-color="#dc2626" stop-opacity="0.4"/>
+                    </radialGradient>
+                  </defs>
+                  <circle cx="16" cy="16" r="14" fill="url(#testGradient)" stroke="#dc2626" stroke-width="3"/>
                   <text x="16" y="20" text-anchor="middle" fill="white" font-size="12" font-weight="bold">T</text>
                 </svg>
               `),
