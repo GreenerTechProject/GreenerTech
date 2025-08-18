@@ -3,7 +3,7 @@ import { Marker, InfoWindow, HeatmapLayer } from '@react-google-maps/api';
 import { Alert } from '@/types/alert';
 import { AlertService } from '@/services/alertService';
 import { bilanService, Bilan } from '@/services/bilanService';
-import { AlertTriangle, MapPin, Info, Thermometer } from 'lucide-react';
+import { AlertTriangle, MapPin, Circle, Clock } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -403,118 +403,123 @@ export default function AlertHeatmapOverlay({
         </>
       )}
 
-             {/* Info window for selected alert */}
-       {selectedAlert && (
-         <InfoWindow
-           position={selectedAlert.position}
-           onCloseClick={handleInfoWindowClose}
-         >
-                       <div className="p-0 min-w-[280px] max-w-[320px]">
-              {/* Card Container */}
+                           {/* Info window for selected alert */}
+        {selectedAlert && (
+          <InfoWindow
+            position={selectedAlert.position}
+            onCloseClick={handleInfoWindowClose}
+          >
+            <div className="p-0 min-w-[240px] max-w-[260px]">
+              {/* Compact Card Container */}
               <div className="bg-white rounded-lg shadow-lg border border-gray-100 overflow-hidden">
-                {/* Header with Alert Level Badge */}
-                <div className="bg-gradient-to-r from-gray-50 to-gray-100 px-3 py-2 border-b border-gray-200">
-                  <div className="flex items-center justify-between">
-                    <h3 className="font-semibold text-gray-900 text-base truncate">
-                      {selectedAlert.alert.maladie}
-                    </h3>
-                    <div className={cn(
-                      "px-2 py-1 rounded-full text-xs font-semibold text-white",
-                      getAlertLevelColor(selectedAlert.alert.status_alert) === 'bg-red-500' && "bg-red-500",
-                      getAlertLevelColor(selectedAlert.alert.status_alert) === 'bg-orange-500' && "bg-orange-500",
-                      getAlertLevelColor(selectedAlert.alert.status_alert) === 'bg-yellow-500' && "bg-yellow-500"
-                    )}>
-                      {getAlertLevelText(selectedAlert.alert.status_alert)}
-                    </div>
-                  </div>
-                </div>
-                
-                {/* Content */}
-                <div className="p-3 space-y-2">
-                  {/* Bilan Information */}
-                  <div className="flex items-center space-x-2 p-2 bg-blue-50 rounded-md border border-blue-100">
-                    <div className="flex-shrink-0 w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center">
-                      <span className="text-blue-600 text-sm">📍</span>
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs font-medium text-blue-700 uppercase tracking-wide">Bilan</p>
-                      <p className="text-sm font-semibold text-blue-900 truncate">
-                        {selectedAlert.bilan?.nom || 'Inconnu'}
-                      </p>
-                    </div>
-                  </div>
-                  
-                  {/* Alert Level */}
-                  <div className="flex items-center space-x-2 p-2 bg-orange-50 rounded-md border border-orange-100">
-                    <div className="flex-shrink-0 w-6 h-6 bg-orange-100 rounded-full flex items-center justify-center">
-                      <span className="text-orange-600 text-sm">⚠️</span>
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs font-medium text-orange-700 uppercase tracking-wide">Niveau</p>
-                      <p className="text-sm font-semibold text-orange-900">
-                        {getAlertLevelText(selectedAlert.alert.status_alert)}
-                      </p>
-                    </div>
-                  </div>
-                  
-                  {/* Status */}
-                  <div className="flex items-center space-x-2 p-2 bg-gray-50 rounded-md border border-gray-100">
-                    <div className="flex-shrink-0 w-6 h-6 bg-gray-100 rounded-full flex items-center justify-center">
-                      <span className="text-gray-600 text-sm">🔵</span>
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs font-medium text-gray-700 uppercase tracking-wide">Statut</p>
-                      <div className={cn(
-                        "inline-flex px-2 py-1 rounded-full text-xs font-semibold",
-                        selectedAlert.alert.status === 'résolue' 
-                          ? "bg-green-100 text-green-800 border border-green-200"
-                          : "bg-red-100 text-red-800 border border-red-200"
-                      )}>
-                        {selectedAlert.alert.status === 'résolue' ? '✅ Résolue' : '❌ Non Résolue'}
-                      </div>
-                    </div>
-                  </div>
-                  
-                  {/* Detection Time */}
-                  <div className="flex items-center space-x-2 p-2 bg-purple-50 rounded-md border border-purple-100">
-                    <div className="flex-shrink-0 w-6 h-6 bg-purple-100 rounded-full flex items-center justify-center">
-                      <span className="text-purple-600 text-sm">⏱️</span>
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs font-medium text-purple-700 uppercase tracking-wide">Détecté</p>
-                      <p className="text-sm font-semibold text-purple-900">
-                        {AlertService.formatDate(selectedAlert.alert.date)}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-                
-                {/* Action Buttons */}
-                <div className="px-3 py-2 bg-gray-50 border-t border-gray-200">
-                  <div className="flex space-x-2">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="flex-1 h-8 border-orange-500 text-orange-600 hover:bg-orange-50 hover:border-orange-600 transition-all duration-200 font-medium text-xs"
-                      onClick={() => handleInterventionClick(selectedAlert.alert)}
-                    >
-                      <AlertTriangle className="h-3 w-3 mr-1" />
-                      Intervention
-                    </Button>
-                    <Button
-                      size="sm"
-                      className="flex-1 h-8 bg-[#B4CC5F] hover:bg-[#B4CC5F]/90 transition-all duration-200 font-medium shadow-sm text-xs"
-                      onClick={() => handleAlertClick(selectedAlert.alert)}
-                    >
-                      <Info className="h-3 w-3 mr-1" />
-                      Voir détails
-                    </Button>
-                  </div>
-                </div>
+                 {/* Header with Two-Column Layout */}
+                 <div className="px-3 py-2 border-b border-gray-200">
+                   <div className="flex items-center justify-between">
+                     {/* Left: Alert Type */}
+                     <div className="flex-1 min-w-0">
+                       <h3 className="font-bold text-gray-900 text-sm truncate">
+                         {selectedAlert.alert.maladie}
+                       </h3>
+                     </div>
+                     
+                     {/* Right: Status/Severity Badge */}
+                     <div className="flex-shrink-0 ml-2">
+                       <div className={cn(
+                         "px-2 py-1 rounded-full text-xs font-semibold text-white",
+                         getAlertLevelColor(selectedAlert.alert.status_alert) === 'bg-red-500' && "bg-red-500",
+                         getAlertLevelColor(selectedAlert.alert.status_alert) === 'bg-orange-500' && "bg-orange-500",
+                         getAlertLevelColor(selectedAlert.alert.status_alert) === 'bg-yellow-500' && "bg-yellow-500"
+                       )}>
+                         {getAlertLevelText(selectedAlert.alert.status_alert)}
+                       </div>
+                     </div>
+                   </div>
+                 </div>
+                 
+                 {/* Compact Content with Professional Icons */}
+                 <div className="p-3 space-y-0">
+                   {/* Bilan Information */}
+                   <div className="flex items-center space-x-3 py-2">
+                     <MapPin className="w-4 h-4 text-blue-600 flex-shrink-0" />
+                     <span className="text-xs font-medium text-gray-600 w-16">Bilan:</span>
+                     <span className="text-xs text-gray-900 truncate flex-1">
+                       {selectedAlert.bilan?.nom || 'Inconnu'}
+                     </span>
+                   </div>
+                   
+                   {/* Divider */}
+                   <div className="border-t border-gray-100 mx-2"></div>
+                   
+                   {/* Alert Level */}
+                   <div className="flex items-center space-x-3 py-2">
+                     <AlertTriangle className="w-4 h-4 text-orange-600 flex-shrink-0" />
+                     <span className="text-xs font-medium text-gray-600 w-16">Niveau:</span>
+                     <span className="text-xs text-gray-900">
+                       {getAlertLevelText(selectedAlert.alert.status_alert)}
+                     </span>
+                   </div>
+                   
+                   {/* Divider */}
+                   <div className="border-t border-gray-100 mx-2"></div>
+                   
+                   {/* Status */}
+                   <div className="flex items-center space-x-3 py-2">
+                     <Circle className={cn(
+                       "w-4 h-4 flex-shrink-0",
+                       selectedAlert.alert.status === 'résolue' 
+                         ? "text-green-600 fill-green-600"
+                         : "text-red-600 fill-red-600"
+                     )} />
+                     <span className="text-xs font-medium text-gray-600 w-16">Statut:</span>
+                     <div className={cn(
+                       "px-2 py-0.5 rounded-full text-xs font-semibold",
+                       selectedAlert.alert.status === 'résolue' 
+                         ? "bg-green-100 text-green-800 border border-green-200"
+                         : "bg-red-100 text-red-800 border border-red-200"
+                     )}>
+                       {selectedAlert.alert.status === 'résolue' ? 'Résolue' : 'Non Résolue'}
+                     </div>
+                   </div>
+                   
+                   {/* Divider */}
+                   <div className="border-t border-gray-100 mx-2"></div>
+                   
+                   {/* Detection Time */}
+                   <div className="flex items-center space-x-3 py-2">
+                     <Clock className="w-4 h-4 text-purple-600 flex-shrink-0" />
+                     <span className="text-xs font-medium text-gray-600 w-16">Détecté:</span>
+                     <span className="text-xs text-gray-900">
+                       {AlertService.formatDate(selectedAlert.alert.date)}
+                     </span>
+                   </div>
+                 </div>
+                 
+                 {/* Compact Action Buttons */}
+                 <div className="px-2 py-2 border-t border-gray-200">
+                   <div className="flex space-x-2">
+                     <Button
+                       size="sm"
+                       variant="outline"
+                       className="flex-1 h-7 border-orange-500 text-orange-600 hover:bg-orange-50 hover:border-orange-600 transition-all duration-200 font-medium text-xs px-2"
+                       onClick={() => handleInterventionClick(selectedAlert.alert)}
+                     >
+                       <AlertTriangle className="h-3 w-3 mr-1" />
+                       Intervention
+                     </Button>
+                     <Button
+                       size="sm"
+                       className="flex-1 h-7 bg-[#B4CC5F] hover:bg-[#B4CC5F]/90 transition-all duration-200 font-medium shadow-sm text-xs px-2"
+                       onClick={() => handleAlertClick(selectedAlert.alert)}
+                     >
+                       <MapPin className="h-3 w-3 mr-1" />
+                       Voir détails
+                     </Button>
+                   </div>
+                 </div>
               </div>
             </div>
-         </InfoWindow>
-       )}
+          </InfoWindow>
+        )}
     </>
   );
 }
