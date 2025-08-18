@@ -5,8 +5,8 @@ import TechnicianSidebar from "./TechnicianSidebar";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Home, Map, ChevronDown, User, LogOut, Sun, Moon, Bell, AlertTriangle, AlertCircle, AlertOctagon, CheckCircle, BarChart3, Clock } from "lucide-react";
-import { notificationService, NotificationCounts } from "../services/notificationService";
+import { Home, Map, ChevronDown, User, LogOut, Sun, Moon, Bell, AlertTriangle, AlertCircle, AlertOctagon, CheckCircle, BarChart3, Clock, Wrench, ClipboardList } from "lucide-react";
+import { notificationService, NotificationCounts, Notification } from "../services/notificationService";
 import { AlertService } from "../services/alertService";
 
 type UserRole = "technicien" | "technicien_sup";
@@ -37,6 +37,8 @@ export default function TechHeader({ role }: TechHeaderProps) {
       compte_valide: 0,
     }
   });
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [notificationsLoading, setNotificationsLoading] = useState(false);
   const [alertCounts, setAlertCounts] = useState<AlertCounts>({
     total: 0,
     high: 0,
@@ -56,10 +58,12 @@ export default function TechHeader({ role }: TechHeaderProps) {
   useEffect(() => {
     if (user) {
       fetchNotificationCounts();
+      fetchNotifications();
       fetchAlertCounts();
       // Set up interval to refresh data every 30 seconds
       const interval = setInterval(() => {
         fetchNotificationCounts();
+        fetchNotifications();
         fetchAlertCounts();
       }, 30000);
       return () => clearInterval(interval);
@@ -72,6 +76,20 @@ export default function TechHeader({ role }: TechHeaderProps) {
       setNotificationCounts(counts);
     } catch (error) {
       console.error('Error fetching notification counts:', error);
+    }
+  };
+
+  const fetchNotifications = async () => {
+    try {
+      setNotificationsLoading(true);
+      const allNotifications = await notificationService.getNotifications();
+      const unreadNotifications = allNotifications.filter(n => n.status === 'non_vue');
+      setNotifications(unreadNotifications);
+    } catch (error) {
+      console.error('Error fetching notifications:', error);
+      setNotifications([]);
+    } finally {
+      setNotificationsLoading(false);
     }
   };
 
@@ -121,6 +139,40 @@ export default function TechHeader({ role }: TechHeaderProps) {
     }
   };
 
+  const handleNotificationClick = async (notification: Notification) => {
+    try {
+      // Mark as read
+      await notificationService.markAsSeen(notification.id);
+      
+      // Update local state
+      setNotifications(prev => prev.filter(n => n.id !== notification.id));
+      
+      // Update notification counts
+      setNotificationCounts(prev => ({
+        ...prev,
+        non_vue: Math.max(0, prev.non_vue - 1),
+        total: Math.max(0, prev.total - 1)
+      }));
+      
+      // Navigate based on notification type
+      if (notification.type_notification.includes('intervention')) {
+        if (role === "technicien_sup") {
+          navigate("/technicien-sup/missions");
+        } else {
+          navigate("/technician/missions");
+        }
+      } else {
+        if (role === "technicien_sup") {
+          navigate("/technicien-sup/notifications");
+        } else {
+          navigate("/technician/notifications");
+        }
+      }
+    } catch (error) {
+      console.error('Error marking notification as read:', error);
+    }
+  };
+
   const handleLogout = async () => {
     await logout();
   };
@@ -135,8 +187,37 @@ export default function TechHeader({ role }: TechHeaderProps) {
     }
   };
 
+  const getNotificationIcon = (type: string) => {
+    if (type.includes('intervention')) {
+      return <Wrench className="h-4 w-4 text-blue-500" />;
+    }
+    return <ClipboardList className="h-4 w-4 text-gray-500" />;
+  };
+
+  const getNotificationTitle = (type: string) => {
+    if (type === 'intervention_creee') return "Demande d'intervention";
+    if (type === 'intervention_validee') return "Intervention validée";
+    if (type === 'compte_technicien') return "Compte technicien";
+    if (type === 'compte_valide') return "Compte validé";
+    return "Notification";
+  };
+
+  const formatTimestamp = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffInHours = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60));
+    
+    if (diffInHours < 1) return "il y a quelques minutes";
+    if (diffInHours === 1) return "il y a 1h";
+    if (diffInHours < 24) return `il y a ${diffInHours}h`;
+    
+    const diffInDays = Math.floor(diffInHours / 24);
+    if (diffInDays === 1) return "il y a 1 jour";
+    return `il y a ${diffInDays} jours`;
+  };
+
   return (
-    <header className="bg-white border-b sticky top-0 z-10">
+    <header className="bg-white border-b sticky top-0 z-[999999]">
       <div className="max-w-full px-3 sm:px-4 lg:px-6">
         {/* Mobile-first responsive grid */}
         <div className="flex items-center justify-between py-2 sm:py-3">
@@ -210,7 +291,7 @@ export default function TechHeader({ role }: TechHeaderProps) {
             </div>
 
             {/* Notification Bell Icon - for intervention requests */}
-            <div className="relative group">
+            <div className="relative group" style={{ zIndex: 999999 }}>
               <div 
                 className="h-8 w-8 sm:h-9 sm:w-9 rounded-xl bg-blue-100 flex items-center justify-center shadow-sm cursor-pointer hover:bg-blue-200 transition-colors duration-200 active:scale-95 border border-blue-200 flex-shrink-0"
                 onClick={handleNotifications}
@@ -226,7 +307,15 @@ export default function TechHeader({ role }: TechHeaderProps) {
               </div>
               
               {/* Notification Dropdown - Shows on hover */}
-              <div className="absolute top-full right-0 mt-2 w-80 bg-white rounded-lg shadow-xl border border-gray-200 z-50 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none group-hover:pointer-events-auto">
+              <div 
+                className="absolute top-full right-0 mt-2 w-80 bg-white rounded-lg shadow-2xl border-2 border-gray-300 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none group-hover:pointer-events-auto backdrop-blur-sm bg-white/95" 
+                style={{ 
+                  zIndex: 999999,
+                  isolation: 'isolate',
+                  position: 'absolute',
+                  transform: 'translateZ(0)'
+                }}
+              >
                 {/* Header */}
                 <div className="flex items-center justify-between p-4 border-b border-gray-100">
                   <div className="flex items-center gap-2">
@@ -242,40 +331,41 @@ export default function TechHeader({ role }: TechHeaderProps) {
 
                 {/* Notifications List */}
                 <div className="max-h-96 overflow-y-auto">
-                  {loading ? (
+                  {notificationsLoading ? (
                     <div className="p-4 text-center text-gray-500">
                       <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mx-auto mb-2"></div>
                       Chargement...
                     </div>
-                  ) : notificationCounts.non_vue === 0 ? (
+                  ) : notifications.length === 0 ? (
                     <div className="p-6 text-center text-gray-500">
                       <Bell className="h-8 w-8 text-gray-300 mx-auto mb-2" />
                       <p className="text-sm">Aucune nouvelle notification</p>
                     </div>
                   ) : (
                     <div className="divide-y divide-gray-100">
-                      {/* Show first 3 unread notifications */}
-                      {Array.from({ length: Math.min(3, notificationCounts.non_vue) }, (_, index) => (
-                        <div key={index} className="p-4 hover:bg-gray-50 cursor-pointer transition-colors">
-                          <div className="flex items-start gap-3">
-                            <div className="flex-shrink-0 mt-1">
-                              <div className="w-4 h-4 bg-blue-500 rounded-full flex items-center justify-center">
-                                <div className="w-2 h-2 bg-white rounded-full"></div>
+                                              {notifications.slice(0, 3).map((notification, index) => (
+                          <div 
+                            key={notification.id} 
+                            className="p-4 hover:bg-gray-50 cursor-pointer transition-colors"
+                            onClick={() => handleNotificationClick(notification)}
+                          >
+                                                      <div className="flex items-start gap-3">
+                              <div className="flex-shrink-0 mt-1">
+                                {getNotificationIcon(notification.type_notification)}
                               </div>
-                            </div>
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center justify-between mb-1">
                                 <p className="text-sm font-medium text-gray-900">
-                                  Nouvelle notification
+                                  {getNotificationTitle(notification.type_notification)}
                                 </p>
                               </div>
-                              <p className="text-sm text-gray-600 line-clamp-2 mb-2">
-                                Cliquez sur la cloche pour voir tous les détails
-                              </p>
-                              <div className="flex items-center gap-2 text-xs text-gray-500">
-                                <Clock className="h-3 w-3" />
-                                <span>À l'instant</span>
-                              </div>
+                                                              <p className="text-sm text-gray-600 line-clamp-2 mb-2">
+                                  {notification.description}
+                                </p>
+                                <div className="flex items-center gap-2 text-xs text-gray-500">
+                                  <Clock className="h-3 w-3" />
+                                  <span>{formatTimestamp(notification.date)}</span>
+                                </div>
                             </div>
                           </div>
                         </div>
@@ -291,7 +381,7 @@ export default function TechHeader({ role }: TechHeaderProps) {
                       onClick={handleNotifications}
                       className="w-full text-center text-sm text-blue-600 hover:text-blue-700 font-medium py-2 hover:bg-blue-50 rounded-md transition-colors"
                     >
-                      Voir toutes les notifications ({notificationCounts.total})
+                      Voir toutes les notifications ({notifications.length > 0 ? notificationCounts.total : 0})
                     </button>
                   </div>
                 )}
