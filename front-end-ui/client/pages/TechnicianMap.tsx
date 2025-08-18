@@ -45,11 +45,14 @@ import InterventionForm from "../components/InterventionForm";
 import TechHeader from "../components/TechHeader";
 import BilanCreation from "../components/BilanCreation";
 import BilanMapComponent from "../components/BilanMapComponent";
+import SerreAlertHeatmap from "../components/SerreAlertHeatmap";
+import AlertHeatmapOverlay from "../components/AlertHeatmapOverlay";
 import { cn } from "@/lib/utils";
 import { bilanService, Bilan } from "../services/bilanService";
 import { serreService } from "../services/serreService";
 import { guideService, GuideDeCulture } from "../services/guideService";
 import { etatBilanService, EtatBilan } from "../services/etatBilanService";
+import { Alert } from "@/types/alert";
 
 // Custom hook for mobile detection
 const useMediaQuery = (query: string) => {
@@ -127,7 +130,10 @@ export default function TechnicianMap() {
 
   // Mobile responsive state
   const [isMobilePanelOpen, setIsMobilePanelOpen] = useState(false);
-  const [activeMobileTab, setActiveMobileTab] = useState<'serres' | 'bilan' | 'details' | 'guides' | 'etat'>('serres');
+  const [activeMobileTab, setActiveMobileTab] = useState<'serres' | 'bilan' | 'details' | 'guides' | 'etat' | 'alerts'>('serres');
+  
+  // Alert heatmap state
+  const [showAlertHeatmap, setShowAlertHeatmap] = useState(false);
 
   // Left panel resizing and search state
   const [leftPanelWidth, setLeftPanelWidth] = useState(() => {
@@ -237,6 +243,21 @@ export default function TechnicianMap() {
       await loadGuidesForSerre(parseInt(selectedSerre.id));
     }
     setIsCreatingBilan(false);
+  };
+
+  const handleAlertClick = (alert: Alert) => {
+    console.log("Alert clicked:", alert);
+    // You can implement navigation to alert details or open a modal
+  };
+
+  const toggleAlertHeatmap = () => {
+    console.log('toggleAlertHeatmap called, current state:', showAlertHeatmap);
+    const newState = !showAlertHeatmap;
+    setShowAlertHeatmap(newState);
+    console.log('Setting showAlertHeatmap to:', newState);
+    if (!showAlertHeatmap) {
+      setActiveMobileTab('alerts');
+    }
   };
 
   // Load guides for selected serre
@@ -812,6 +833,17 @@ export default function TechnicianMap() {
                                 Intervention
                               </Button>
                             </div>
+                            <div className="flex space-x-2 mt-2">
+                              <Button
+                                onClick={toggleAlertHeatmap}
+                                size="sm"
+                                variant="outline"
+                                className="flex-1"
+                              >
+                                <Thermometer className="h-4 w-4 mr-2" />
+                                {showAlertHeatmap ? 'Masquer' : 'Voir'} Carte des Alertes
+                              </Button>
+                            </div>
                           </div>
                         )}
                       </CardContent>
@@ -1105,6 +1137,21 @@ export default function TechnicianMap() {
 
         {/* Right Map Section - Full screen on mobile */}
         <div className="flex-1 relative h-full overflow-hidden" data-testid="map-section">
+          {/* Debug info - only show when needed */}
+          {process.env.NODE_ENV === 'development' && (
+            <div className="absolute top-2 left-2 z-10 bg-black/80 text-white p-2 rounded text-xs">
+              <div>isCreatingBilan: {isCreatingBilan ? 'true' : 'false'}</div>
+              <div>showAlertHeatmap: {showAlertHeatmap ? 'true' : 'false'}</div>
+              <div>selectedSerre: {selectedSerre ? 'true' : 'false'}</div>
+              <button 
+                onClick={() => setShowAlertHeatmap(!showAlertHeatmap)}
+                className="mt-1 px-2 py-1 bg-blue-500 text-white rounded text-xs"
+              >
+                Toggle Alert Heatmap
+              </button>
+            </div>
+          )}
+          
           {isCreatingBilan && selectedSerre ? (
             <BilanMapComponent
               serreLocation={selectedSerre.location}
@@ -1114,7 +1161,25 @@ export default function TechnicianMap() {
               className="h-full"
             />
           ) : selectedSerre ? (
-          <GoogleMapsWrapper>
+          <div className="relative h-full">
+            {/* Alert Heatmap Active Indicator - Only show when showAlertHeatmap is true */}
+            {showAlertHeatmap && (
+              <>
+                <div className="absolute top-4 right-4 z-20 bg-red-500 text-white px-3 py-1 rounded-full text-sm font-medium">
+                  🔥 Alertes Actives
+                </div>
+                <div className="absolute top-4 left-4 z-20 bg-blue-500 text-white p-2 rounded text-xs max-w-[200px]">
+                  <div className="font-bold">Carte des Alertes Active</div>
+                  <div>Serre: {selectedSerre.nom}</div>
+                </div>
+                <div className="absolute top-20 left-4 z-20 bg-green-500 text-white p-2 rounded text-xs">
+                  <div>Mode: {showAlertHeatmap ? 'ON' : 'OFF'}</div>
+                  <div>Map Type: {showAlertHeatmap ? 'Roadmap' : 'Satellite'}</div>
+                </div>
+              </>
+            )}
+            
+            <GoogleMapsWrapper>
               <GoogleMap
                 mapContainerStyle={{
                   width: "100%",
@@ -1128,7 +1193,7 @@ export default function TechnicianMap() {
                   }
                 }}
                 options={{
-                  mapTypeId: "satellite",
+                  mapTypeId: "satellite", // Keep satellite view for heatmap
                   tilt: 0,
                   streetViewControl: false,
                   fullscreenControl: true,
@@ -1160,9 +1225,22 @@ export default function TechnicianMap() {
                   </div>
                 </InfoWindow>
 
+                {/* Alert Heatmap Overlay - Only show when showAlertHeatmap is true */}
+                {showAlertHeatmap && (
+                  <>
+                    {console.log('Rendering AlertHeatmapOverlay in TechnicianMap')}
+                    <AlertHeatmapOverlay
+                      serreId={parseInt(selectedSerre.id)}
+                      serreName={selectedSerre.nom}
+                      serreLocation={selectedSerre.location}
+                      onAlertClick={handleAlertClick}
+                    />
+                  </>
+                )}
 
               </GoogleMap>
             </GoogleMapsWrapper>
+          </div>
           ) : (
             <div className="flex items-center justify-center h-full bg-gray-100">
               <div className="text-center text-gray-500">
@@ -1225,6 +1303,7 @@ export default function TechnicianMap() {
                 { key: 'bilan', label: 'Bilans', icon: FileText },
                 { key: 'guides', label: 'Guides', icon: BookOpen },
                 { key: 'etat', label: 'État', icon: BarChart3 },
+                { key: 'alerts', label: 'Alertes', icon: Thermometer },
               ].map(({ key, label, icon: Icon }) => (
                 <button
                   key={key}
@@ -1471,6 +1550,37 @@ export default function TechnicianMap() {
                   ))}
                 </div>
               )}
+
+              {activeMobileTab === 'alerts' && selectedSerre && (
+                <div className="space-y-3">
+                  <Card className="border-2 border-dashed border-red-300 bg-red-50">
+                    <CardContent className="p-4">
+                      <div className="text-center space-y-3">
+                        <div className="flex items-center justify-center space-x-2">
+                          <Thermometer className="h-5 w-5 text-red-500" />
+                          <h4 className="font-semibold text-red-700">
+                            Carte des Alertes pour {selectedSerre.nom}
+                          </h4>
+                        </div>
+                        <p className="text-xs text-red-600">
+                          Activez la visualisation des alertes sur la carte existante
+                        </p>
+                        <Button
+                          onClick={() => {
+                            toggleAlertHeatmap();
+                            setIsMobilePanelOpen(false);
+                          }}
+                          className="w-full bg-red-500 hover:bg-red-600 text-white"
+                          size="sm"
+                        >
+                          <Thermometer className="h-4 w-4 mr-2" />
+                          {showAlertHeatmap ? 'Masquer' : 'Activer'} les Alertes
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+              )}
             </div>
           </div>
         )}
@@ -1517,6 +1627,20 @@ export default function TechnicianMap() {
                   >
                     <FileText className="h-4 w-4 mr-2" />
                     Voir bilans
+                  </Button>
+                </div>
+                <div className="flex space-x-2 mt-2">
+                  <Button
+                    onClick={() => {
+                      toggleAlertHeatmap();
+                      setIsMobilePanelOpen(false);
+                    }}
+                    variant="outline"
+                    size="sm"
+                    className="flex-1"
+                  >
+                    <Thermometer className="h-4 w-4 mr-2" />
+                    {showAlertHeatmap ? 'Masquer' : 'Voir'} Alertes
                   </Button>
                 </div>
               </div>
