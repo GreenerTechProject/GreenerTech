@@ -440,7 +440,7 @@ export default function BilanCreation({
     <>
       {isMobile ? (
         // Mobile Layout - Fullscreen Map with Bottom Sheet
-        <div className="h-full flex flex-col bg-white relative">
+        <div className="h-full flex flex-col bg-white relative overflow-hidden">
           {/* Mobile Header - Floating */}
           <div className="absolute top-2 left-2 right-2 z-20">
             <div className="bg-white/95 backdrop-blur-sm rounded-lg shadow-lg border border-gray-200 p-3">
@@ -466,7 +466,7 @@ export default function BilanCreation({
           </div>
 
           {/* Fullscreen Map - Takes remaining space */}
-          <div className="flex-1 w-full min-h-0">
+          <div className="flex-1 w-full min-h-0 relative pb-4">
             {!isMapLoaded ? (
               <div className="flex items-center justify-center h-full bg-gray-50">
                 <div className="text-center">
@@ -487,14 +487,14 @@ export default function BilanCreation({
           </div>
 
           {/* Mobile Control Panel - Fixed at Bottom, Stretchable */}
-          <div className="bg-white border-t-2 border-[#B4CC5F] shadow-2xl rounded-t-3xl flex-shrink-0">
+          <div className="bg-white border-t-2 border-[#B4CC5F] shadow-2xl rounded-t-3xl flex-shrink-0 max-h-[60vh] min-h-[250px] relative z-30 ring-1 ring-gray-200/50">
             {/* Drag Handle - More Prominent */}
             <div className="flex justify-center pt-3 pb-2">
               <div className="w-16 h-1.5 bg-[#B4CC5F] rounded-full"></div>
             </div>
             
             {/* Control Panel Header - Always Visible */}
-            <div className="px-4 pb-3 border-b border-gray-100 bg-gradient-to-r from-green-50 to-blue-50">
+            <div className="px-4 pb-3 border-b border-gray-100 bg-gradient-to-r from-green-50 to-blue-50 flex-shrink-0">
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-2">
                   <MapPin className="h-5 w-5 text-[#B4CC5F]" />
@@ -512,8 +512,8 @@ export default function BilanCreation({
             </div>
 
             {/* Control Panel Content - Scrollable */}
-            <ScrollArea className="max-h-[50vh] min-h-[200px]">
-              <div className="p-4 space-y-4">
+            <ScrollArea className="flex-1 max-h-[calc(60vh-120px)] min-h-[150px] px-4">
+              <div className="py-4 space-y-4">
                 {/* Bilan Name Input */}
                 <div className="space-y-2">
                   <Label htmlFor="bilanName" className="text-sm font-medium text-gray-700">Nom du bilan *</Label>
@@ -528,29 +528,30 @@ export default function BilanCreation({
 
                 {/* GPS Controls */}
                 <div className="space-y-3">
-                  <h4 className="font-medium text-gray-900 text-sm flex items-center gap-2">
-                    <Navigation className="h-4 w-4 text-blue-600" />
+                  <h4 className="font-medium text-sm flex items-center gap-2 text-gray-700">
+                    <Navigation className="h-4 w-4" />
                     Contrôles GPS
                   </h4>
-                  <div className="grid grid-cols-2 gap-3">
+                  
+                  <div className="grid grid-cols-2 gap-2">
                     {!isTracking ? (
                       <Button 
                         onClick={startTracking}
-                        className="w-full bg-[#B4CC5F] hover:bg-[#B4CC5F]/90 text-white font-medium"
+                        className="w-full bg-[#B4CC5F] hover:bg-[#B4CC5F]/90 text-white text-xs"
                         disabled={!currentLocation}
                         size="sm"
                       >
-                        <Play className="h-4 w-4 mr-2" />
+                        <Play className="h-3 w-3 mr-1" />
                         Démarrer
                       </Button>
                     ) : (
                       <Button 
                         onClick={stopTracking}
                         variant="outline"
-                        className="w-full border-[#B4CC5F] text-[#B4CC5F] hover:bg-[#B4CC5F]/10 font-medium"
+                        className="w-full text-xs"
                         size="sm"
                       >
-                        <Pause className="h-4 w-4 mr-2" />
+                        <Pause className="h-3 w-3 mr-1" />
                         Arrêter
                       </Button>
                     )}
@@ -558,10 +559,10 @@ export default function BilanCreation({
                     <Button 
                       onClick={getCurrentLocation}
                       variant="outline"
-                      className="w-full border-gray-300 text-gray-700 hover:bg-gray-50 font-medium"
+                      className="w-full text-xs"
                       size="sm"
                     >
-                      <Target className="h-4 w-4 mr-2" />
+                      <Target className="h-3 w-3 mr-1" />
                       Actualiser
                     </Button>
                   </div>
@@ -569,26 +570,25 @@ export default function BilanCreation({
 
                 {/* Point Management */}
                 <div className="space-y-3">
-                  <h4 className="font-medium text-gray-900 text-sm flex items-center gap-2">
-                    <MapPin className="h-4 w-4 text-blue-600" />
+                  <h4 className="font-medium text-sm flex items-center gap-2 text-gray-700">
+                    <MapPin className="h-4 w-4" />
                     Points du bilan
                   </h4>
+                  
                   <div className="space-y-2">
-                    <div className="flex items-center justify-between text-sm">
+                    <div className="flex items-center justify-between text-xs">
                       <span className="text-gray-600">Points collectés:</span>
-                      <Badge variant="outline" className="text-xs border-[#B4CC5F] text-[#B4CC5F]">
-                        {selectedPoints.length}/4
-                      </Badge>
+                      <span className="font-medium">{selectedPoints.length}/4</span>
                     </div>
                     
                     <div className="grid grid-cols-2 gap-2">
                       <Button 
                         onClick={addCurrentPosition}
-                        className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium"
+                        className="w-full bg-blue-600 hover:bg-blue-700 text-white text-xs"
                         disabled={!currentLocation || !isTracking || selectedPoints.length >= 4}
                         size="sm"
                       >
-                        <MapPin className="h-4 w-4 mr-2" />
+                        <MapPin className="h-3 w-3 mr-1" />
                         Ajouter
                       </Button>
                       
@@ -597,9 +597,9 @@ export default function BilanCreation({
                         variant="outline"
                         size="sm"
                         disabled={selectedPoints.length === 0}
-                        className="w-full border-gray-300 text-gray-700 hover:bg-gray-50 font-medium"
+                        className="w-full text-xs"
                       >
-                        <RotateCcw className="h-4 w-4 mr-2" />
+                        <RotateCcw className="h-3 w-3 mr-1" />
                         Annuler
                       </Button>
                     </div>
@@ -607,14 +607,14 @@ export default function BilanCreation({
                 </div>
 
                 {/* Progress and Status */}
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between text-sm">
+                <div className="space-y-2 pt-2">
+                  <div className="flex items-center justify-between text-xs">
                     <span className="text-gray-600">Progression:</span>
-                    <span className="font-semibold text-[#B4CC5F]">{Math.round((selectedPoints.length / 4) * 100)}%</span>
+                    <span className="font-medium">{Math.round((selectedPoints.length / 4) * 100)}%</span>
                   </div>
-                  <div className="w-full bg-gray-200 rounded-full h-3">
+                  <div className="w-full bg-gray-200 rounded-full h-2">
                     <div 
-                      className="bg-[#B4CC5F] h-3 rounded-full transition-all duration-300 shadow-sm"
+                      className="bg-[#B4CC5F] h-2 rounded-full transition-all duration-300"
                       style={{ width: `${(selectedPoints.length / 4) * 100}%` }}
                     ></div>
                   </div>
@@ -623,25 +623,31 @@ export default function BilanCreation({
                 {/* Create Bilan Button */}
                 <Button 
                   onClick={handleCreateBilan}
-                  className="w-full bg-[#B4CC5F] hover:bg-[#B4CC5F]/90 text-white h-12 text-base font-semibold shadow-lg"
+                  className="w-full bg-[#B4CC5F] hover:bg-[#B4CC5F]/90 text-white font-medium"
                   disabled={!canCreateBilan}
+                  size="sm"
                 >
-                  <CheckCircle className="h-5 w-5 mr-2" />
-                  {isCreating ? "Création en cours..." : "Créer le Bilan"}
+                  <CheckCircle className="h-4 w-4 mr-2" />
+                  {isCreating ? "Création..." : "Créer le Bilan"}
                 </Button>
 
                 {/* Error/Success Messages */}
                 {error && (
                   <div className="p-3 bg-red-50 border border-red-200 rounded-md">
-                    <p className="text-sm text-red-600">{error}</p>
+                    <p className="text-xs text-red-600">{error}</p>
                   </div>
                 )}
                 
                 {success && (
                   <div className="p-3 bg-green-50 border border-green-200 rounded-md">
-                    <p className="text-sm text-green-600">{success}</p>
+                    <p className="text-xs text-green-600">{success}</p>
                   </div>
                 )}
+
+                {/* Scroll Indicator */}
+                <div className="flex justify-center pt-2 pb-4">
+                  <div className="w-8 h-1 bg-gray-300 rounded-full opacity-50"></div>
+                </div>
               </div>
             </ScrollArea>
           </div>
@@ -1045,7 +1051,7 @@ export default function BilanCreation({
                           variant="outline"
                           size="sm"
                           disabled={selectedPoints.length === 0}
-                          className="w-full border-gray-300 text-gray-700 hover:bg-gray-50 font-medium"
+                          className="w-full text-xs"
                         >
                           <RotateCcw className="h-3 w-3 mr-1" />
                           Annuler
