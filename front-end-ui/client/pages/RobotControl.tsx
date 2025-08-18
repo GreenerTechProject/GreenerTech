@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import PageHeader from '@/components/PageHeader';
+import { robotService } from '@/services/robotService';
 import {
   Play,
   Pause,
@@ -47,7 +48,6 @@ interface Robot {
   referance: string;
 }
 
-
 export default function RobotControl() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [qrCodes, setQrCodes] = useState<QRData[]>([]);
@@ -65,61 +65,37 @@ export default function RobotControl() {
   const [isFullScreen, setIsFullScreen] = useState<boolean>(false);
   const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
   
-  
-  
-  
-  
-  
-  // Add this state variable with your other state declarations
+  // New state for robots
   const [robots, setRobots] = useState<Robot[]>([]);
-  
-  const createAuthenticatedRequest = () => {
-  const token = tokenManager.getToken();
-  return {
-      headers: {
-        "Content-Type": "application/json",
-        ...(token && { Authorization: `Bearer ${token}` }),
-      },
-    };
-  };
-  
-  
+  const [isLoadingRobots, setIsLoadingRobots] = useState<boolean>(false);
+  const [robotsError, setRobotsError] = useState<string | null>(null);
 
-  // Update your default robots to use string IDs
-  const setDefaultRobots = () => {
-    setRobots([
-      { id: '1', nom: 'Robot #1', referance: '1' },
-      { id: '2', nom: 'Robot #2', referance: '2' }
-    ]);
-  };
-  
-  // Add this function to fetch robots
-  const fetchRobots = async () => {
-    try {
-      const response = await axios.get(
-        `${window.location.protocol}//${window.location.hostname}:5000/api/robot`,
-        createAuthenticatedRequest()
-      );
-      
-      if (response.data) {
-        setRobots(response.data);
-      } else {
-        console.error('No data received from robots API');
-        setDefaultRobots();
-      }
-    } catch (error) {
-      console.error('Error fetching robots:', error);
-      setDefaultRobots();
-    }
-  };
-  
-  
 
   // WebSocket references
   const qrWsRef = useRef<WebSocket | null>(null);
   const controlWsRef = useRef<WebSocket | null>(null);
   const sensorWsRef = useRef<WebSocket | null>(null);
   const pcRef = useRef<RTCPeerConnection | null>(null);
+
+  // Fetch robots from the service
+  const fetchRobots = async () => {
+    try {
+      setIsLoadingRobots(true);
+      setRobotsError(null);
+      const fetchedRobots = await robotService.getAllRobots();
+      setRobots(fetchedRobots);
+      
+      // Set the first robot as selected if no robot is currently selected
+      if (fetchedRobots.length > 0 && !selectedRobot) {
+        setSelectedRobot(fetchedRobots[0].id.toString());
+      }
+    } catch (error: any) {
+      console.error('Failed to fetch robots:', error);
+      setRobotsError(error.message || 'Erreur lors de la récupération des robots');
+    } finally {
+      setIsLoadingRobots(false);
+    }
+  };
 
   const updateSelectedFromUrl = () => {
     const params = new URLSearchParams(window.location.search);
@@ -340,6 +316,13 @@ export default function RobotControl() {
     //sendCommand('SELECT_ROBOT');
   };
 
+  // Update selected robot when robots are loaded
+  useEffect(() => {
+    if (robots.length > 0 && !robots.find(r => r.id.toString() === selectedRobot)) {
+      setSelectedRobot(robots[0].id.toString());
+    }
+  }, [robots, selectedRobot]);
+
   // Handle button press/release
   const handleButtonDown = (mode: string) => {
     console.log("Sending mode:", mode);
@@ -453,6 +436,11 @@ export default function RobotControl() {
       document.removeEventListener('fullscreenchange', handleFullscreenChange);
     };
   }, []);
+
+  // Fetch robots on component mount
+  useEffect(() => {
+    fetchRobots();
+  }, []);
   
   const [pressedButton, setPressedButton] = useState<string | null>(null);
   const pressedKeys = useRef<Set<string>>(new Set());
@@ -516,6 +504,10 @@ export default function RobotControl() {
     };
   }, [selectedRobot, selectedCamera]);
 
+  // Fetch robots on component mount
+  useEffect(() => {
+    fetchRobots();
+  }, []);
 
 
   return (
@@ -554,22 +546,36 @@ export default function RobotControl() {
                 Robot
               </CardTitle>
             </CardHeader>
-            <CardContent>
-			
-              <Select value={selectedRobot} onValueChange={handleRobotChange}>
-			    <SelectTrigger className="h-8 text-sm">
-				  <SelectValue placeholder="Choisir" />
-			    </SelectTrigger>
-			    <SelectContent>
-				  {robots.map((robot) => (
-				    <SelectItem key={robot.referance} value={robot.referance}>
-				  	{robot.nom} ({robot.referance})
-				    </SelectItem>
-				  ))}
-			    </SelectContent>
-			  </Select>
-			  
-			  
+            <CardContent className="space-y-2">
+              <Select value={selectedRobot} onValueChange={handleRobotChange} disabled={isLoadingRobots || !!robotsError}>
+                <SelectTrigger className="h-8 text-sm">
+                  <SelectValue placeholder={isLoadingRobots ? "Chargement..." : robotsError ? "Erreur" : "Choisir un robot"} />
+                </SelectTrigger>
+                <SelectContent>
+                  {robots.map((robot) => (
+                    <SelectItem key={robot.id} value={robot.id.toString()}>
+                      {robot.nom} ({robot.referance})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              
+              {robotsError && (
+                <div className="text-xs text-red-600 bg-red-50 p-2 rounded">
+                  {robotsError}
+                </div>
+              )}
+              
+              <Button
+                onClick={fetchRobots}
+                disabled={isLoadingRobots}
+                className="w-full h-6 text-xs"
+                variant="outline"
+              >
+                <RefreshCw className={`h-3 w-3 mr-1 ${isLoadingRobots ? 'animate-spin' : ''}`} />
+                Actualiser les robots
+              </Button>
+
             </CardContent>
           </Card>
 
@@ -766,12 +772,17 @@ export default function RobotControl() {
               <div className="text-sm space-y-1">
                 <div className="flex items-center gap-2">
                   <Bot className="h-3 w-3 text-blue-400" />
-                  <span>Robot: {selectedRobot.toUpperCase()}</span>
+                  <span>Robot: {robots.find(r => r.id.toString() === selectedRobot)?.nom || 'Chargement...'}</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <Camera className="h-3 w-3 text-green-400" />
                   <span>Caméra: {selectedCamera === 'left' ? 'Gauche' : 'Droite'}</span>
                 </div>
+                {robots.find(r => r.id.toString() === selectedRobot)?.referance && (
+                  <div className="flex items-center gap-2 text-xs text-gray-300">
+                    <span>Ref: {robots.find(r => r.id.toString() === selectedRobot)?.referance}</span>
+                  </div>
+                )}
               </div>
             </div>
           </div>

@@ -95,6 +95,30 @@ export const guideService = {
       } as ApiError;
     }
   },
+
+  // Get guides by serre ID
+  getGuidesBySerre: async (serreId: number): Promise<GuideDeCulture[]> => {
+    try {
+      console.log("Fetching guides for serre:", serreId);
+      const response = await axios.get<GuideDeCulture[]>(
+        `${API_BASE_URL}/guide_culture/serre/${serreId}`, 
+        createAuthenticatedRequest()
+      );
+      console.log("Received guides for serre:", response.data);
+      return response.data;
+    } catch (error: any) {
+      console.error("Erreur lors de la récupération des guides pour la serre:", error);
+
+      const errorMessage =
+        error.response?.data?.message ||
+        "Erreur lors de la récupération des guides de culture pour cette serre";
+
+      throw {
+        message: errorMessage,
+        status: error.response?.status || 500,
+      } as ApiError;
+    }
+  },
 };
 
 export default guideService;

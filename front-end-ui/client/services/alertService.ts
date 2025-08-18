@@ -58,7 +58,7 @@ export class AlertService {
   static async getAlertsByAssignedSerres(): Promise<Alert[]> {
     try {
       const response = await axios.get(
-        `${API_BASE_URL}/alerte/assigned`,
+        `${API_BASE_URL}/alerte`,
         createAuthenticatedRequest()
       );
       return response.data;

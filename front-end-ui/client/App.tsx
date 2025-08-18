@@ -47,7 +47,9 @@ import DirectorProfileEdit from "./pages/DirectorProfileEdit";
 import DirectorMapConfig from "./pages/DirectorMapConfig";
 import DirectorHeader from "./components/DirectorHeader";
 import { MissionManagement } from "./pages/MissionManagement";
-import RobotControl from "./pages/RobotControle";
+import RobotControl from "./pages/RobotControl";
+import TechnicianReportsPage from "./pages/TechnicianReportsPage";
+import TechnicianReportCreation from "./pages/TechnicianReportCreation";
 
 const queryClient = new QueryClient();
 
@@ -272,6 +274,24 @@ const App = () => (
               element={
                 <ProtectedRoute requiredRole="technicien">
                   <MissionManagement />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/technician/reports"
+              element={
+                <ProtectedRoute requiredRole="technicien">
+                  <TechnicianReportsPage />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/technician/reports/create"
+              element={
+                <ProtectedRoute requiredRole="technicien">
+                  <TechnicianReportCreation />
                 </ProtectedRoute>
               }
             />

@@ -395,7 +395,7 @@ def create_alerts(bilan: Bilan, count: int = 5):
     for i in range(count):
         alerte = Alerte(
             id_bilan=bilan.id,
-            status_alert=randint(1, 10),
+            status_alert=randint(0, 2),  # 0=Low/Faible, 1=Medium/Moyenne, 2=High/Critique
             maladie=choice(maladies),
             lien_image=f"https://picsum.photos/seed/gt{bilan.id * 100 + i}/400/300",
             x1=uniform(0.0, 1.0),

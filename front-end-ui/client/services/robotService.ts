@@ -1,6 +1,7 @@
 import axios from 'axios';
 import { tokenManager } from './authService';
 
+// Use the correct backend port
 const API_BASE_URL = `${window.location.protocol}//${window.location.hostname}:5000/api`;
 
 interface Robot {

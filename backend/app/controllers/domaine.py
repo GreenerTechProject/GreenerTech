@@ -27,13 +27,23 @@ def create_domaine(current_user):
     if not entreprise:
         return jsonify({"message": "Aucune entreprise associée à cet utilisateur"}), 404
 
-    name = data.get('nom')
-    area = data.get('surface')
+    name = data.get('name')
+    area = data.get('area')
     center = data.get('center')
-    path = data.get('position')
+    path = data.get('path')
 
-    if not name or not area or not center or not path:
+    if not name or area is None or not center or not path:
         return jsonify({"message": "Les champs name, area, center et path sont obligatoires"}), 400
+    
+    # Validate data types
+    if not isinstance(name, str) or not isinstance(area, (int, float)):
+        return jsonify({"message": "Le nom doit être une chaîne et l'aire doit être un nombre"}), 400
+    
+    if not isinstance(center, dict) or 'lat' not in center or 'lng' not in center:
+        return jsonify({"message": "Le centre doit contenir les coordonnées lat et lng"}), 400
+    
+    if not isinstance(path, list) or len(path) < 3:
+        return jsonify({"message": "Le chemin doit être une liste d'au moins 3 points GPS"}), 400
 
 
     # Récupérer le dernier id_group_cor existant (max)
@@ -44,7 +54,7 @@ def create_domaine(current_user):
     id_group_cor = last_id_group_cor + 1
 
 
-    gps_points = data.get('position', [])
+    gps_points = data.get('path', [])
     if not gps_points:
         return jsonify({"message": "Veuillez fournir une liste de points GPS"}), 400
 
@@ -52,8 +62,8 @@ def create_domaine(current_user):
     for point in gps_points:
         gc = GroupCor(
             id_group_cor=id_group_cor,
-            point_x=point['latitude'],
-            point_y=point['longitude'],
+            point_x=point['lat'],
+            point_y=point['lng'],
             ordre=point.get('ordre', 0)
         )
         db.session.add(gc)
@@ -63,8 +73,8 @@ def create_domaine(current_user):
         nom=name,
         id_group_cor=id_group_cor,
         surface=area,
-        center_lat=center.get('latitude'),
-        center_lng=center.get('longitude'),
+        center_lat=center.get('lat'),
+        center_lng=center.get('lng'),
         #path=path,
         id_entreprise=entreprise.id
     )
@@ -133,15 +143,15 @@ def update_domaine(current_user, id):
 
     data = request.get_json()
 
-    domaine.nom = data.get('nom', domaine.nom)
-    domaine.surface = data.get('surface', domaine.surface)
+    domaine.nom = data.get('name', domaine.nom)
+    domaine.surface = data.get('area', domaine.surface)
 
     center = data.get('center')
     if center:
-        domaine.center_lat = center.get('longitude', domaine.center_lat)
-        domaine.center_lng = center.get('longitude', domaine.center_lng)
+        domaine.center_lat = center.get('lat', domaine.center_lat)
+        domaine.center_lng = center.get('lng', domaine.center_lng)
 
-    path = data.get('position')
+    path = data.get('path')
     if path:
         domaine.path = path
 

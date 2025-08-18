@@ -49,6 +49,7 @@ export default function BilanCreation({
   const [rowWidthMeters, setRowWidthMeters] = useState<number>(0.8);
   const [creationMode, setCreationMode] = useState<'gps' | 'manual' | 'rectangleCenterline'>('manual');
   const [rectangleParams, setRectangleParams] = useState<{ length: number; width: number }>({ length: 10, width: 0.8 });
+  const [isMapLoaded, setIsMapLoaded] = useState(false);
   const lastAcceptedPositionRef = useRef<{ lat: number; lng: number } | null>(null);
   
   const watchIdRef = useRef<number | null>(null);
@@ -65,6 +66,46 @@ export default function BilanCreation({
       }
     };
   }, [serreName]);
+
+  // Check if Google Maps is loaded
+  useEffect(() => {
+    const checkGoogleMaps = () => {
+      try {
+        if (typeof window !== 'undefined' && 
+            window.google && 
+            window.google.maps && 
+            typeof window.google.maps.Size === 'function' &&
+            typeof window.google.maps.LatLng === 'function' &&
+            typeof window.google.maps.Map === 'function') {
+          // Add a small delay to ensure all libraries are fully loaded
+          setTimeout(() => {
+            // Double-check that everything is still available
+            if (typeof window !== 'undefined' && 
+                window.google && 
+                window.google.maps && 
+                typeof window.google.maps.Size === 'function' &&
+                typeof window.google.maps.LatLng === 'function' &&
+                typeof window.google.maps.Map === 'function') {
+              setIsMapLoaded(true);
+            } else {
+              // If not available, retry
+              setTimeout(checkGoogleMaps, 200);
+            }
+          }, 500);
+        } else {
+          // Retry after a short delay
+          setTimeout(checkGoogleMaps, 200);
+        }
+      } catch (error) {
+        console.warn('Error checking Google Maps availability:', error);
+        // Retry after a short delay
+        setTimeout(checkGoogleMaps, 200);
+      }
+    };
+    
+    // Start checking after a short initial delay
+    setTimeout(checkGoogleMaps, 100);
+  }, []);
 
   const getCurrentLocation = () => {
     if (!navigator.geolocation) {
@@ -745,14 +786,30 @@ export default function BilanCreation({
 
               {/* Right Panel - Map */}
               <div className="lg:col-span-2 h-full min-h-[300px] sm:min-h-[400px]">
-                <BilanMapComponent
-                  serreLocation={serreLocation}
-                  selectedPoints={selectedPoints}
-                  currentLocation={currentLocation}
-                  isTracking={isTracking}
-                  className="h-full"
-                  onMapClick={handleMapClick}
-                />
+                {!isMapLoaded ? (
+                  <Card className="h-full">
+                    <CardContent className="flex items-center justify-center h-full">
+                      <div className="text-center">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600 mx-auto mb-2"></div>
+                        <p className="text-sm text-gray-600">Chargement de Google Maps...</p>
+                        <p className="text-xs text-gray-500 mt-1">Veuillez patienter pendant le chargement</p>
+                        <div className="mt-2 text-xs text-gray-500">
+                          <p>Vérification de l'API Google Maps...</p>
+                          <p>Chargement des bibliothèques...</p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ) : (
+                  <BilanMapComponent
+                    serreLocation={serreLocation}
+                    selectedPoints={selectedPoints}
+                    currentLocation={currentLocation}
+                    isTracking={isTracking}
+                    className="h-full"
+                    onMapClick={handleMapClick}
+                  />
+                )}
               </div>
             </div>
           </CardContent>

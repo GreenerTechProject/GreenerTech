@@ -545,7 +545,7 @@ export default function SerreCreation({
 
       {/* Right Panel - Map */}
       <div className="flex-1">
-        <GoogleMapsWrapper apiKey={GOOGLE_MAPS_API_KEY}>
+        <GoogleMapsWrapper>
           <MapComponent
             onShapeComplete={handleShapeComplete}
             existingShapes={getAllShapes()}

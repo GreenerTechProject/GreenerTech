@@ -6,7 +6,7 @@ import { useSidebar } from '@/hooks/useSidebar';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import MapComponent, { DrawnShape } from '@/components/MapComponent';
 import GoogleMapsWrapper from '@/components/GoogleMapsWrapper';
-import { GOOGLE_MAPS_CONFIG } from '@/config/maps';
+
 import { AlertService } from '@/services/alertService';
 import { bilanService, Bilan } from '@/services/bilanService';
 import { serreService } from '@/services/serreService';
@@ -111,7 +111,7 @@ export default function DirectorAlertMap() {
               </CardHeader>
               <CardContent className="h-[70vh]">
                 {!loading && (
-                  <GoogleMapsWrapper apiKey={GOOGLE_MAPS_CONFIG.API_KEY}>
+                  <GoogleMapsWrapper>
                     <MapComponent
                       onShapeComplete={() => {}}
                       existingShapes={shapes}
