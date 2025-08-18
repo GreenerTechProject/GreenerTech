@@ -133,7 +133,7 @@ export default function TechnicianMap() {
   const [activeMobileTab, setActiveMobileTab] = useState<'serres' | 'bilan' | 'details' | 'guides' | 'etat' | 'alerts'>('serres');
   
   // Alert heatmap state
-  const [showAlertHeatmap, setShowAlertHeatmap] = useState(false);
+  const [showAlertHeatmap, setShowAlertHeatmap] = useState(true);
 
   // Left panel resizing and search state
   const [leftPanelWidth, setLeftPanelWidth] = useState(() => {
@@ -336,14 +336,14 @@ export default function TechnicianMap() {
       // Set active mobile tab to 'etat' for mobile users
       if (window.innerWidth <= 768) {
         setActiveMobileTab('etat');
-        // Add a smooth transition effect
+        // Add a smooth transition effect with delay for better UX
         setTimeout(() => {
           // Scroll to the etat section smoothly
           const etatSection = document.querySelector('[data-tab="etat"]');
           if (etatSection) {
             etatSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
           }
-        }, 100);
+        }, 150);
       }
       
       // For desktop, ensure we have a selected bilan to show etat
@@ -351,14 +351,17 @@ export default function TechnicianMap() {
         // Auto-select the first bilan if none is selected
         handleBilanSelect(bilans[0]);
         
-        // Add a visual highlight effect to the etat section
-        const etatSection = document.querySelector('[data-section="etat-bilan"]');
-        if (etatSection) {
-          etatSection.classList.add('ring-2', 'ring-green-500', 'ring-opacity-50');
-          setTimeout(() => {
-            etatSection.classList.remove('ring-2', 'ring-green-500', 'ring-opacity-50');
-          }, 2000);
-        }
+        // Add a smooth visual highlight effect to the etat section
+        setTimeout(() => {
+          const etatSection = document.querySelector('[data-section="etat-bilan"]');
+          if (etatSection) {
+            etatSection.classList.add('ring-2', 'ring-green-500', 'ring-opacity-50', 'scale-105', 'transition-all', 'duration-500', 'ease-in-out');
+            etatSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            setTimeout(() => {
+              etatSection.classList.remove('ring-2', 'ring-green-500', 'ring-opacity-50', 'scale-105');
+            }, 2000);
+          }
+        }, 200);
       }
       
       console.log('Checking etat bilan for serre:', selectedSerre.nom);
@@ -405,13 +408,19 @@ export default function TechnicianMap() {
       }, 100);
     }
     
-    // For desktop, add a visual highlight effect to the etat section
+    // For desktop, add a smooth visual highlight effect to the etat section
     setTimeout(() => {
       const etatSection = document.querySelector('[data-section="etat-bilan"]');
       if (etatSection) {
-        etatSection.classList.add('ring-2', 'ring-green-500', 'ring-opacity-50');
+        // Add smooth transition classes
+        etatSection.classList.add('ring-2', 'ring-green-500', 'ring-opacity-50', 'scale-105', 'transition-all', 'duration-500', 'ease-in-out');
+        
+        // Smoothly scroll to the etat section
+        etatSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        
+        // Remove highlight effect after animation
         setTimeout(() => {
-          etatSection.classList.remove('ring-2', 'ring-green-500', 'ring-opacity-50');
+          etatSection.classList.remove('ring-2', 'ring-green-500', 'ring-opacity-50', 'scale-105');
         }, 2000);
       }
     }, 300);
@@ -1055,7 +1064,7 @@ export default function TechnicianMap() {
                           showAlertHeatmap ? "text-red-100" : "text-emerald-100"
                         )} />
                         <span className="font-semibold text-base">
-                          {showAlertHeatmap ? '🔥 Alertes Actives - Cliquer pour Masquer' : '🔍 Activer la Carte des Alertes'}
+                          {showAlertHeatmap ? ' Alertes Actives - Cliquer pour Masquer' : '🔍 Activer la Carte des Alertes'}
                         </span>
                       </div>
                       
@@ -1311,7 +1320,7 @@ export default function TechnicianMap() {
                                   }}
                                   size="sm"
                                   variant="outline"
-                                  className="flex-1 border-green-600 text-green-600 hover:bg-green-50 hover:border-green-700 text-xs"
+                                  className="flex-1 border-green-600 text-green-600 hover:bg-green-50 hover:border-green-700 hover:scale-105 transition-all duration-200 ease-in-out text-xs shadow-sm hover:shadow-md"
                                 >
                                   <BarChart3 className="h-3 w-3 mr-1" />
                                   État
@@ -1328,7 +1337,13 @@ export default function TechnicianMap() {
 
               {/* Etat de Bilan Section */}
               {selectedBilan && (
-                <div className="space-y-4 pt-2" data-section="etat-bilan">
+                <div 
+                  className="space-y-4 pt-2 transition-all duration-500 ease-in-out transform animate-in slide-in-from-bottom-2" 
+                  data-section="etat-bilan"
+                  style={{
+                    animation: 'slideInFromBottom 0.5s ease-out forwards'
+                  }}
+                >
                   <h4 className="text-lg font-semibold text-gray-900 flex items-center space-x-2">
                     <BarChart3 className="h-5 w-5" />
                     <span>État du Bilan: {selectedBilan.nom}</span>
@@ -1421,7 +1436,7 @@ export default function TechnicianMap() {
                 <div className="absolute top-4 right-4 z-20 bg-gradient-to-r from-red-500 to-red-600 text-white px-4 py-2 rounded-full text-sm font-medium shadow-lg shadow-red-500/25 border-2 border-red-300 animate-pulse">
                   <div className="flex items-center space-x-2">
                     <div className="w-2 h-2 bg-red-200 rounded-full animate-ping" />
-                    <span>🔥 Alertes Actives</span>
+                    <span> Alertes Actives</span>
                   </div>
                 </div>
 
@@ -1832,9 +1847,16 @@ export default function TechnicianMap() {
               )}
 
               {activeMobileTab === 'etat' && selectedBilan && (
-                <div className="space-y-3" data-tab="etat">
-                  {etatBilans.map((etat) => (
-                    <Card key={etat.id} className="border-gray-200">
+                <div className="space-y-3 transition-all duration-500 ease-in-out" data-tab="etat">
+                  {etatBilans.map((etat, index) => (
+                    <Card 
+                      key={etat.id} 
+                      className="border-gray-200 transition-all duration-300 ease-in-out transform animate-in slide-in-from-bottom-2"
+                      style={{
+                        animationDelay: `${index * 100}ms`,
+                        animation: 'slideInFromBottom 0.5s ease-out forwards'
+                      }}
+                    >
                       <CardContent className="p-3">
                         <div className="space-y-2">
                           <div className="flex items-center justify-between">
