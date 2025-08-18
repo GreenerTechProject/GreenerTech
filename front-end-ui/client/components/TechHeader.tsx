@@ -1,11 +1,14 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import TechnicianSidebar from "./TechnicianSidebar";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Home, Map, ChevronDown, User, LogOut, Sun, Moon, Bell, AlertTriangle } from "lucide-react";
+import { Home, Map, ChevronDown, User, LogOut, Sun, Moon, Bell, AlertTriangle, AlertCircle, AlertOctagon, CheckCircle, BarChart3 } from "lucide-react";
+import { notificationService, NotificationCounts } from "../services/notificationService";
+import { AlertService } from "../services/alertService";
+import NotificationDropdown from "./NotificationDropdown";
 
 type UserRole = "technicien" | "technicien_sup";
 
@@ -13,10 +16,36 @@ interface TechHeaderProps {
   role: UserRole;
 }
 
+interface AlertCounts {
+  total: number;
+  high: number;      // status_alert = 2 (very dangerous)
+  medium: number;    // status_alert = 1 (medium)
+  low: number;       // status_alert = 0 (low)
+}
+
 export default function TechHeader({ role }: TechHeaderProps) {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [isDarkMode, setIsDarkMode] = React.useState(false);
+  const [notificationCounts, setNotificationCounts] = useState<NotificationCounts>({
+    total: 0,
+    non_vue: 0,
+    vue: 0,
+    byType: {
+      intervention_creee: 0,
+      intervention_validee: 0,
+      compte_technicien: 0,
+      compte_valide: 0,
+    }
+  });
+  const [alertCounts, setAlertCounts] = useState<AlertCounts>({
+    total: 0,
+    high: 0,
+    medium: 0,
+    low: 0
+  });
+  const [loading, setLoading] = useState(true);
+  const [isNotificationDropdownOpen, setIsNotificationDropdownOpen] = useState(false);
 
   const initials = (user?.name || user?.email || "U")
     .split(" ")
@@ -24,6 +53,51 @@ export default function TechHeader({ role }: TechHeaderProps) {
     .join("")
     .slice(0, 2)
     .toUpperCase();
+
+  // Fetch notification counts and alert counts on component mount and when user changes
+  useEffect(() => {
+    if (user) {
+      fetchNotificationCounts();
+      fetchAlertCounts();
+      // Set up interval to refresh data every 30 seconds
+      const interval = setInterval(() => {
+        fetchNotificationCounts();
+        fetchAlertCounts();
+      }, 30000);
+      return () => clearInterval(interval);
+    }
+  }, [user]);
+
+  const fetchNotificationCounts = async () => {
+    try {
+      const counts = await notificationService.getNotificationCounts();
+      setNotificationCounts(counts);
+    } catch (error) {
+      console.error('Error fetching notification counts:', error);
+    }
+  };
+
+  const fetchAlertCounts = async () => {
+    try {
+      // Get alerts from user's assigned serres
+      const alerts = await AlertService.getAlertsByAssignedSerres();
+      
+      // Count alerts by severity level
+      const counts: AlertCounts = {
+        total: alerts.length,
+        high: alerts.filter(alert => alert.status_alert === 2).length,      // Very dangerous
+        medium: alerts.filter(alert => alert.status_alert === 1).length,    // Medium
+        low: alerts.filter(alert => alert.status_alert === 0).length        // Low
+      };
+      
+      setAlertCounts(counts);
+    } catch (error) {
+      console.error('Error fetching alert counts:', error);
+      setAlertCounts({ total: 0, high: 0, medium: 0, low: 0 });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleProfile = () => {
     if (role === "technicien_sup") {
@@ -63,6 +137,10 @@ export default function TechHeader({ role }: TechHeaderProps) {
     }
   };
 
+  const toggleNotificationDropdown = () => {
+    setIsNotificationDropdownOpen(!isNotificationDropdownOpen);
+  };
+
   return (
     <header className="bg-white border-b sticky top-0 z-10">
       <div className="max-w-full px-3 sm:px-4 lg:px-6">
@@ -93,27 +171,43 @@ export default function TechHeader({ role }: TechHeaderProps) {
 
           {/* Right: Alerts, Notifications and User dropdown */}
           <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
-            {/* Alert Triangle Icon - for alerts/alerts */}
+            {/* Alert Triangle Icon - for REAL alerts from assigned serres */}
             <div className="relative group">
               <div 
                 className="h-8 w-8 sm:h-9 sm:w-9 rounded-xl bg-orange-100 flex items-center justify-center shadow-sm cursor-pointer hover:bg-orange-200 transition-colors duration-200 active:scale-95 border border-orange-200 flex-shrink-0"
                 onClick={handleAlerts}
-                title="Alertes"
+                title="Alertes des serres assignées"
               >
                 <AlertTriangle className="h-4 w-4 sm:h-5 sm:w-5 text-orange-600" />
-                {/* Alert Badge */}
-                <div className="absolute -top-1 -right-1 w-3 h-3 sm:w-4 sm:h-4 bg-orange-500 text-white text-xs rounded-full flex items-center justify-center">
-                  <span className="text-xs sm:text-xs">5</span>
-                </div>
+                {/* Alert Badge - Real alert data */}
+                {alertCounts.total > 0 && (
+                  <div className="absolute -top-1 -right-1 w-3 h-3 sm:w-4 sm:h-4 bg-orange-500 text-white text-xs rounded-full flex items-center justify-center">
+                    <span className="text-xs sm:text-xs">{alertCounts.total}</span>
+                  </div>
+                )}
               </div>
               
-              {/* Tooltip below the Alert icon */}
+              {/* Tooltip below the Alert icon - Real alert data */}
               <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
                 <div className="text-center">
-                  <div className="font-medium mb-1">Alertes</div>
+                  <div className="font-medium mb-1">Alertes des Serres</div>
                   <div className="space-y-1 text-gray-300">
-                    <div>🔴 3 alertes élevées</div>
-                    <div>🟡 2 alertes moyennes</div>
+                    <div className="flex items-center justify-center gap-2">
+                      <AlertOctagon className="h-3 w-3 text-red-400" />
+                      <span>{alertCounts.high} alerte(s) critique(s)</span>
+                    </div>
+                    <div className="flex items-center justify-center gap-2">
+                      <AlertCircle className="h-3 w-3 text-yellow-400" />
+                      <span>{alertCounts.medium} alerte(s) moyenne(s)</span>
+                    </div>
+                    <div className="flex items-center justify-center gap-2">
+                      <CheckCircle className="h-3 w-3 text-green-400" />
+                      <span>{alertCounts.low} alerte(s) faible(s)</span>
+                    </div>
+                    <div className="border-t border-gray-600 pt-1 mt-1 flex items-center justify-center gap-2">
+                      <BarChart3 className="h-3 w-3 text-blue-400" />
+                      <span>Total: {alertCounts.total} alerte(s)</span>
+                    </div>
                   </div>
                 </div>
                 {/* Arrow pointing up to the Alert icon */}
@@ -125,28 +219,28 @@ export default function TechHeader({ role }: TechHeaderProps) {
             <div className="relative group">
               <div 
                 className="h-8 w-8 sm:h-9 sm:w-9 rounded-xl bg-blue-100 flex items-center justify-center shadow-sm cursor-pointer hover:bg-blue-200 transition-colors duration-200 active:scale-95 border border-blue-200 flex-shrink-0"
-                onClick={handleNotifications}
+                onClick={toggleNotificationDropdown}
                 title="Demandes d'intervention"
               >
                 <Bell className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600" />
-                {/* Notification Badge */}
-                <div className="absolute -top-1 -right-1 w-3 h-3 sm:w-4 sm:h-4 bg-blue-500 text-white text-xs rounded-full flex items-center justify-center">
-                  <span className="text-xs sm:text-xs">2</span>
-                </div>
+                {/* Notification Badge - Real notification data */}
+                {notificationCounts.non_vue > 0 && (
+                  <div className="absolute -top-1 -right-1 w-3 h-3 sm:w-4 sm:h-4 bg-blue-500 text-white text-xs rounded-full flex items-center justify-center">
+                    <span className="text-xs sm:text-xs">{notificationCounts.non_vue}</span>
+                  </div>
+                )}
               </div>
               
-              {/* Tooltip below the Bell icon */}
-              <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
-                <div className="text-center">
-                  <div className="font-medium mb-1">Demandes d'intervention</div>
-                  <div className="space-y-1 text-gray-300">
-                    <div>✅ 1 intervention acceptée</div>
-                    <div>⏳ 1 demande en attente</div>
-                  </div>
-                </div>
-                {/* Arrow pointing up to the Bell icon */}
-                <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900"></div>
-              </div>
+              {/* Notification Dropdown */}
+              <NotificationDropdown
+                isOpen={isNotificationDropdownOpen}
+                onClose={() => setIsNotificationDropdownOpen(false)}
+                notificationCounts={{
+                  non_vue: notificationCounts.non_vue,
+                  total: notificationCounts.total
+                }}
+                role={role}
+              />
             </div>
 
             {/* User Dropdown */}
