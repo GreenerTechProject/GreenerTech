@@ -88,7 +88,7 @@ const App = () => (
             <Route path="/email-verification" element={<EmailVerification />} />
             <Route path="/verify-email" element={<VerifyEmail />} />
             <Route path="/technicien-registration" element={<TechnicienRegistration />} />
-
+      
             {/* Dashboard alias -> role home redirect */}
             <Route
               path="/dashboard"

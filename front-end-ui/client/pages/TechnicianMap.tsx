@@ -158,7 +158,7 @@ export default function TechnicianMap() {
         setIsLoadingSerres(true);
         setSerresError(null);
         
-        console.log('Loading serres for technician:', user.id);
+
         const assignedSerres = await serreService.getSerresByCurrentUser();
         
         // Transform the backend data to match our Serre interface
@@ -176,7 +176,7 @@ export default function TechnicianMap() {
           lastUpdate: new Date(),
         }));
         
-        console.log('Transformed serres:', transformedSerres);
+
         setSerres(transformedSerres);
         
         // If there are serres, select the first one by default
@@ -209,12 +209,10 @@ export default function TechnicianMap() {
   const loadBilansForSerre = async (serreId: number) => {
     try {
       setIsLoadingBilans(true);
-      console.log('Loading bilans for serre:', serreId);
-      console.log('Current user:', user);
-      console.log('User role:', user?.role);
+      
       
       const serreBilans = await bilanService.getBilansBySerre(serreId);
-      console.log('Received bilans:', serreBilans);
+      
       
       // Ensure we always set an array, even if the API returns unexpected data
       if (Array.isArray(serreBilans)) {
@@ -246,15 +244,13 @@ export default function TechnicianMap() {
   };
 
   const handleAlertClick = (alert: Alert) => {
-    console.log("Alert clicked:", alert);
+    
     // You can implement navigation to alert details or open a modal
   };
 
   const toggleAlertHeatmap = () => {
-    console.log('toggleAlertHeatmap called, current state:', showAlertHeatmap);
     const newState = !showAlertHeatmap;
     setShowAlertHeatmap(newState);
-    console.log('Setting showAlertHeatmap to:', newState);
     if (!showAlertHeatmap) {
       setActiveMobileTab('alerts');
     }
@@ -264,26 +260,26 @@ export default function TechnicianMap() {
   const loadGuidesForSerre = async (serreId: number) => {
     try {
       setIsLoadingGuides(true);
-      console.log('Loading guides for serre:', serreId);
+      
       
       // Try to use the new method first, fallback to filtering if it doesn't exist
       try {
         const serreGuides = await guideService.getGuidesBySerre(serreId);
-        console.log('Received guides for serre via API:', serreGuides);
+        
         setGuides(serreGuides);
       } catch (apiError: any) {
         // Fallback to fetching all guides and filtering
-        console.log('Falling back to filtering guides:', apiError.message);
+        
         const allGuides = await guideService.getGuides();
-        console.log('All guides received:', allGuides);
+        
         
         const filteredGuides = allGuides.filter(guide => {
           const guideSerreId = parseInt(guide.id_serre);
           const matches = guideSerreId === serreId;
-          console.log(`Guide ${guide.id}: serre ID ${guideSerreId} matches ${serreId}? ${matches}`);
+          
           return matches;
         });
-        console.log('Filtered guides for serre:', filteredGuides);
+        
       setGuides(filteredGuides);
       }
     } catch (error: any) {
@@ -298,10 +294,10 @@ export default function TechnicianMap() {
   const loadEtatBilanForBilan = async (bilanId: number) => {
     try {
       setIsLoadingEtatBilans(true);
-      console.log('Loading etat de bilan for bilan:', bilanId);
+      
       
       const etatBilanData = await etatBilanService.getEtatBilanByBilan(bilanId);
-      console.log('Received etat de bilan:', etatBilanData);
+      
       
       // Ensure we always set an array
       if (Array.isArray(etatBilanData)) {
@@ -489,7 +485,7 @@ export default function TechnicianMap() {
   };
 
   const handleInterventionSubmit = (data: any) => {
-    console.log("Intervention submitted:", data);
+    
     // TODO: Send to backend API
     // Here you would typically call an API to save the intervention
   };
@@ -516,7 +512,10 @@ export default function TechnicianMap() {
   );
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className={cn(
+      "min-h-screen bg-gray-50 transition-all duration-500 ease-in-out",
+      showAlertHeatmap && "bg-gradient-to-br from-gray-50 via-red-50/30 to-red-50/50"
+    )}>
       {/* Header */}
       <TechHeader role="technicien" />
 
@@ -837,11 +836,40 @@ export default function TechnicianMap() {
                               <Button
                                 onClick={toggleAlertHeatmap}
                                 size="sm"
-                                variant="outline"
-                                className="flex-1"
+                                className={cn(
+                                  "flex-1 transition-all duration-300 ease-in-out relative overflow-hidden group",
+                                  showAlertHeatmap
+                                    ? "bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white shadow-lg shadow-red-500/25 border-0"
+                                    : "bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white shadow-lg shadow-emerald-500/25 border-0"
+                                )}
                               >
-                                <Thermometer className="h-4 w-4 mr-2" />
-                                {showAlertHeatmap ? 'Masquer' : 'Voir'} Carte des Alertes
+                                {/* Animated background effect */}
+                                <div className={cn(
+                                  "absolute inset-0 bg-gradient-to-r from-white/20 to-transparent transform transition-transform duration-500",
+                                  showAlertHeatmap ? "translate-x-full" : "-translate-x-full"
+                                )} />
+                                
+                                {/* Icon with animation */}
+                                <div className={cn(
+                                  "flex items-center justify-center transition-all duration-300",
+                                  showAlertHeatmap ? "scale-110" : "scale-100"
+                                )}>
+                                  <Thermometer className={cn(
+                                    "h-4 w-4 mr-2 transition-all duration-300",
+                                    showAlertHeatmap ? "text-red-100" : "text-emerald-100"
+                                  )} />
+                                  <span className="font-medium">
+                                    {showAlertHeatmap ? '🔥 Masquer Alertes' : '🔍 Voir Carte des Alertes'}
+                                  </span>
+                                </div>
+                                
+                                {/* Status indicator */}
+                                <div className={cn(
+                                  "absolute top-1 right-1 w-2 h-2 rounded-full transition-all duration-300",
+                                  showAlertHeatmap 
+                                    ? "bg-red-200 animate-pulse" 
+                                    : "bg-emerald-200"
+                                )} />
                               </Button>
                             </div>
                           </div>
@@ -873,6 +901,47 @@ export default function TechnicianMap() {
 
                   <div className="text-sm text-gray-600">
                     {selectedSerre.surface} m² • Zones: {selectedSerre.zones ? selectedSerre.zones.length : 0}
+                  </div>
+                  
+                  {/* Main Alert Heatmap Toggle */}
+                  <div className="mt-4">
+                    <Button
+                      onClick={toggleAlertHeatmap}
+                      className={cn(
+                        "w-full transition-all duration-300 ease-in-out relative overflow-hidden group shadow-lg py-3",
+                        showAlertHeatmap
+                          ? "bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white shadow-red-500/25 border-0"
+                          : "bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white shadow-emerald-500/25 border-0"
+                      )}
+                    >
+                      {/* Animated background effect */}
+                      <div className={cn(
+                        "absolute inset-0 bg-gradient-to-r from-white/20 to-transparent transform transition-transform duration-500",
+                        showAlertHeatmap ? "translate-x-full" : "-translate-x-full"
+                      )} />
+                      
+                      {/* Icon with animation */}
+                      <div className={cn(
+                        "flex items-center justify-center transition-all duration-300",
+                        showAlertHeatmap ? "scale-110" : "scale-100"
+                      )}>
+                        <Thermometer className={cn(
+                          "h-5 w-5 mr-3 transition-all duration-300",
+                          showAlertHeatmap ? "text-red-100" : "text-emerald-100"
+                        )} />
+                        <span className="font-semibold text-base">
+                          {showAlertHeatmap ? '🔥 Alertes Actives - Cliquer pour Masquer' : '🔍 Activer la Carte des Alertes'}
+                        </span>
+                      </div>
+                      
+                      {/* Status indicator */}
+                      <div className={cn(
+                        "absolute top-2 right-2 w-3 h-3 rounded-full transition-all duration-300",
+                        showAlertHeatmap 
+                          ? "bg-red-200 animate-pulse" 
+                          : "bg-emerald-200"
+                      )} />
+                    </Button>
                   </div>
 
                   {/* Zones List */}
@@ -1137,20 +1206,7 @@ export default function TechnicianMap() {
 
         {/* Right Map Section - Full screen on mobile */}
         <div className="flex-1 relative h-full overflow-hidden" data-testid="map-section">
-          {/* Debug info - only show when needed */}
-          {process.env.NODE_ENV === 'development' && (
-            <div className="absolute top-2 left-2 z-10 bg-black/80 text-white p-2 rounded text-xs">
-              <div>isCreatingBilan: {isCreatingBilan ? 'true' : 'false'}</div>
-              <div>showAlertHeatmap: {showAlertHeatmap ? 'true' : 'false'}</div>
-              <div>selectedSerre: {selectedSerre ? 'true' : 'false'}</div>
-              <button 
-                onClick={() => setShowAlertHeatmap(!showAlertHeatmap)}
-                className="mt-1 px-2 py-1 bg-blue-500 text-white rounded text-xs"
-              >
-                Toggle Alert Heatmap
-              </button>
-            </div>
-          )}
+
           
           {isCreatingBilan && selectedSerre ? (
             <BilanMapComponent
@@ -1161,21 +1217,20 @@ export default function TechnicianMap() {
               className="h-full"
             />
           ) : selectedSerre ? (
-          <div className="relative h-full">
+          <div className={cn(
+            "relative h-full transition-all duration-500 ease-in-out",
+            showAlertHeatmap && "ring-4 ring-red-500/20 ring-opacity-50"
+          )}>
             {/* Alert Heatmap Active Indicator - Only show when showAlertHeatmap is true */}
             {showAlertHeatmap && (
               <>
-                <div className="absolute top-4 right-4 z-20 bg-red-500 text-white px-3 py-1 rounded-full text-sm font-medium">
-                  🔥 Alertes Actives
+                <div className="absolute top-4 right-4 z-20 bg-gradient-to-r from-red-500 to-red-600 text-white px-4 py-2 rounded-full text-sm font-medium shadow-lg shadow-red-500/25 border-2 border-red-300 animate-pulse">
+                  <div className="flex items-center space-x-2">
+                    <div className="w-2 h-2 bg-red-200 rounded-full animate-ping" />
+                    <span>🔥 Alertes Actives</span>
+                  </div>
                 </div>
-                <div className="absolute top-4 left-4 z-20 bg-blue-500 text-white p-2 rounded text-xs max-w-[200px]">
-                  <div className="font-bold">Carte des Alertes Active</div>
-                  <div>Serre: {selectedSerre.nom}</div>
-                </div>
-                <div className="absolute top-20 left-4 z-20 bg-green-500 text-white p-2 rounded text-xs">
-                  <div>Mode: {showAlertHeatmap ? 'ON' : 'OFF'}</div>
-                  <div>Map Type: {showAlertHeatmap ? 'Roadmap' : 'Satellite'}</div>
-                </div>
+
               </>
             )}
             
@@ -1227,15 +1282,16 @@ export default function TechnicianMap() {
 
                 {/* Alert Heatmap Overlay - Only show when showAlertHeatmap is true */}
                 {showAlertHeatmap && (
-                  <>
-                    {console.log('Rendering AlertHeatmapOverlay in TechnicianMap')}
-                    <AlertHeatmapOverlay
-                      serreId={parseInt(selectedSerre.id)}
-                      serreName={selectedSerre.nom}
-                      serreLocation={selectedSerre.location}
-                      onAlertClick={handleAlertClick}
-                    />
-                  </>
+                  <AlertHeatmapOverlay
+                    serreId={parseInt(selectedSerre.id)}
+                    serreName={selectedSerre.nom}
+                    serreLocation={selectedSerre.location}
+                    onAlertClick={handleAlertClick}
+                    onInterventionClick={(alert) => {
+                      setIsInterventionFormOpen(true);
+                      // You can pass the alert data to the intervention form if needed
+                    }}
+                  />
                 )}
 
               </GoogleMap>
@@ -1570,11 +1626,41 @@ export default function TechnicianMap() {
                             toggleAlertHeatmap();
                             setIsMobilePanelOpen(false);
                           }}
-                          className="w-full bg-red-500 hover:bg-red-600 text-white"
+                          className={cn(
+                            "w-full transition-all duration-300 ease-in-out relative overflow-hidden group shadow-lg",
+                            showAlertHeatmap
+                              ? "bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white shadow-red-500/25"
+                              : "bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white shadow-emerald-500/25"
+                          )}
                           size="sm"
                         >
-                          <Thermometer className="h-4 w-4 mr-2" />
-                          {showAlertHeatmap ? 'Masquer' : 'Activer'} les Alertes
+                          {/* Animated background effect */}
+                          <div className={cn(
+                            "absolute inset-0 bg-gradient-to-r from-white/20 to-transparent transform transition-transform duration-500",
+                            showAlertHeatmap ? "translate-x-full" : "-translate-x-full"
+                          )} />
+                          
+                          {/* Icon with animation */}
+                          <div className={cn(
+                            "flex items-center justify-center transition-all duration-300",
+                            showAlertHeatmap ? "scale-110" : "scale-100"
+                          )}>
+                            <Thermometer className={cn(
+                              "h-4 w-4 mr-2 transition-all duration-300",
+                              showAlertHeatmap ? "text-red-100" : "text-emerald-100"
+                            )} />
+                            <span className="font-medium">
+                              {showAlertHeatmap ? 'Masquer' : 'Activer'} les Alertes
+                            </span>
+                          </div>
+                          
+                          {/* Status indicator */}
+                          <div className={cn(
+                            "absolute top-2 right-2 w-2 h-2 rounded-full transition-all duration-300",
+                            showAlertHeatmap 
+                              ? "bg-red-200 animate-pulse" 
+                              : "bg-emerald-200"
+                          )} />
                         </Button>
                       </div>
                     </CardContent>
@@ -1592,6 +1678,19 @@ export default function TechnicianMap() {
         >
           {isMobilePanelOpen ? '×' : '≡'}
         </Button>
+
+        {/* Alert Heatmap Status Indicator */}
+        {showAlertHeatmap && (
+          <div className="fixed bottom-6 right-6 z-40">
+            <div className="bg-gradient-to-r from-red-500 to-red-600 text-white px-4 py-3 rounded-full shadow-2xl shadow-red-500/25 border-2 border-red-300 animate-pulse">
+              <div className="flex items-center space-x-2">
+                <div className="w-2 h-2 bg-red-200 rounded-full animate-ping" />
+                <span className="text-sm font-medium">Alertes Actives</span>
+                <Thermometer className="h-4 w-4 text-red-100" />
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Mobile Serre Selection Notification */}
         {selectedSerre && (
@@ -1635,12 +1734,41 @@ export default function TechnicianMap() {
                       toggleAlertHeatmap();
                       setIsMobilePanelOpen(false);
                     }}
-                    variant="outline"
                     size="sm"
-                    className="flex-1"
+                    className={cn(
+                      "flex-1 transition-all duration-300 ease-in-out relative overflow-hidden group",
+                      showAlertHeatmap
+                        ? "bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white shadow-lg shadow-red-500/25 border-0"
+                        : "bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white shadow-lg shadow-emerald-500/25 border-0"
+                    )}
                   >
-                    <Thermometer className="h-4 w-4 mr-2" />
-                    {showAlertHeatmap ? 'Masquer' : 'Voir'} Alertes
+                    {/* Animated background effect */}
+                    <div className={cn(
+                      "absolute inset-0 bg-gradient-to-r from-white/20 to-transparent transform transition-transform duration-500",
+                      showAlertHeatmap ? "translate-x-full" : "-translate-x-full"
+                    )} />
+                    
+                    {/* Icon with animation */}
+                    <div className={cn(
+                      "flex items-center justify-center transition-all duration-300",
+                      showAlertHeatmap ? "scale-110" : "scale-100"
+                    )}>
+                      <Thermometer className={cn(
+                        "h-4 w-4 mr-2 transition-all duration-300",
+                        showAlertHeatmap ? "text-red-100" : "text-emerald-100"
+                      )} />
+                      <span className="font-medium">
+                        {showAlertHeatmap ? 'Masquer' : 'Voir'} Alertes
+                      </span>
+                    </div>
+                    
+                    {/* Status indicator */}
+                    <div className={cn(
+                      "absolute top-1 right-1 w-2 h-2 rounded-full transition-all duration-300",
+                      showAlertHeatmap 
+                        ? "bg-red-200 animate-pulse" 
+                        : "bg-emerald-200"
+                    )} />
                   </Button>
                 </div>
               </div>
