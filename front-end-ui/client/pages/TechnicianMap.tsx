@@ -51,6 +51,23 @@ import { serreService } from "../services/serreService";
 import { guideService, GuideDeCulture } from "../services/guideService";
 import { etatBilanService, EtatBilan } from "../services/etatBilanService";
 
+// Custom hook for mobile detection
+const useMediaQuery = (query: string) => {
+  const [matches, setMatches] = useState(false);
+
+  useEffect(() => {
+    const media = window.matchMedia(query);
+    if (media.matches !== matches) {
+      setMatches(media.matches);
+    }
+    const listener = () => setMatches(media.matches);
+    media.addEventListener('change', listener);
+    return () => media.removeEventListener('change', listener);
+  }, [matches, query]);
+
+  return matches;
+};
+
 interface Serre {
   id: string;
   nom: string;
@@ -89,6 +106,7 @@ interface Intervention {
 
 export default function TechnicianMap() {
   const { user, logout } = useAuth();
+  const isMobile = useMediaQuery('(max-width: 1024px)');
   const [serres, setSerres] = useState<Serre[]>([]);
   const [selectedSerre, setSelectedSerre] = useState<Serre | null>(null);
   const [isCreatingBilan, setIsCreatingBilan] = useState(false);
@@ -675,20 +693,24 @@ export default function TechnicianMap() {
 
               {/* Bilan Creation Form */}
               {selectedSerre && isCreatingBilan && (
-                <Card className="border-2 border-[#B4CC5F] bg-[#B4CC5F]/5">
+                <Card className={cn(
+                  "border-2 border-[#B4CC5F] bg-[#B4CC5F]/5",
+                  isMobile ? "h-full min-h-screen" : ""
+                )}>
                   <CardHeader className="pb-3">
                     <CardTitle className="text-lg text-[#B4CC5F] flex items-center space-x-2">
                       <MapPin className="h-5 w-5" />
                       <span>Création de bilan</span>
                     </CardTitle>
                   </CardHeader>
-                  <CardContent>
+                  <CardContent className={isMobile ? "p-0 h-full" : ""}>
                     <BilanCreation
                       serreId={parseInt(selectedSerre.id)}
                       serreName={selectedSerre.nom}
                       serreLocation={selectedSerre.location}
                       onBilanCreated={handleBilanCreated}
                       onCancel={() => setIsCreatingBilan(false)}
+                      isMobile={isMobile}
                     />
                   </CardContent>
                 </Card>
@@ -1169,17 +1191,28 @@ export default function TechnicianMap() {
 
       {/* Mobile Interface */}
       <div className="lg:hidden">
-    
+        {/* Mobile Bilan Creation - Fullscreen when creating bilan */}
+        {isCreatingBilan && selectedSerre ? (
+          <div className="fixed inset-0 z-50 bg-white">
+            <BilanCreation
+              serreId={parseInt(selectedSerre.id)}
+              serreName={selectedSerre.nom}
+              serreLocation={selectedSerre.location}
+              onBilanCreated={handleBilanCreated}
+              onCancel={() => setIsCreatingBilan(false)}
+              isMobile={true}
+            />
+          </div>
+        ) : (
+          /* Mobile Bottom Panel - Only show when not creating bilan */
+          <div
+            className={cn(
+              "fixed bottom-0 left-0 right-0 bg-white border-t-2 border-gray-200 transition-transform duration-300 ease-in-out z-30 shadow-2xl",
+              isMobilePanelOpen ? "translate-y-0" : "translate-y-full"
+            )}
+            style={{ maxHeight: "70vh" }}
+          >
 
-        {/* Mobile Bottom Panel */}
-        <div
-          className={cn(
-            "fixed bottom-0 left-0 right-0 bg-white border-t-2 border-gray-200 transition-transform duration-300 ease-in-out z-30 shadow-2xl",
-            isMobilePanelOpen ? "translate-y-0" : "translate-y-full"
-          )}
-          style={{ maxHeight: "70vh" }}
-        >
-          <div className="p-6">
             {/* Panel Handle */}
             <div className="flex justify-center mb-6">
               <div className="w-16 h-1.5 bg-gray-400 rounded-full"></div>
@@ -1440,7 +1473,7 @@ export default function TechnicianMap() {
               )}
             </div>
           </div>
-        </div>
+        )}
 
         {/* Mobile Floating Action Button */}
         <Button
