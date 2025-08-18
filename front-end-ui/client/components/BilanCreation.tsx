@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -36,23 +36,80 @@ export default function BilanCreation({
   serreLocation,
   onBilanCreated,
   onCancel,
-  isMobile = false,
+  isMobile = false
 }: BilanCreationProps) {
-  const [isTracking, setIsTracking] = useState(false);
-  const [currentLocation, setCurrentLocation] = useState<{ lat: number; lng: number; accuracy?: number } | null>(null);
+  const [bilanName, setBilanName] = useState('');
   const [selectedPoints, setSelectedPoints] = useState<BilanPoint[]>([]);
+  const [currentLocation, setCurrentLocation] = useState<{ lat: number; lng: number; accuracy?: number } | null>(null);
+  const [isTracking, setIsTracking] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
-  const [bilanName, setBilanName] = useState('');
+  const [isMapLoaded, setIsMapLoaded] = useState(false);
+  const [isPanelOpen, setIsPanelOpen] = useState(true);
+  
+  // Mobile panel resize state
+  const [mobilePanelHeight, setMobilePanelHeight] = useState(250);
+  const [isResizingMobile, setIsResizingMobile] = useState(false);
+  
+  // Advanced options state
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [snapEnabled, setSnapEnabled] = useState<boolean>(false);
   const [useCenterlineBuffer, setUseCenterlineBuffer] = useState<boolean>(false);
   const [rowWidthMeters, setRowWidthMeters] = useState<number>(0.8);
   const [creationMode, setCreationMode] = useState<'gps' | 'manual' | 'rectangleCenterline'>('manual');
   const [rectangleParams, setRectangleParams] = useState<{ length: number; width: number }>({ length: 10, width: 0.8 });
-  const [isMapLoaded, setIsMapLoaded] = useState(false);
-  const [isPanelOpen, setIsPanelOpen] = useState(true); // New state for panel visibility
+  
+  // Mobile panel resize handlers
+  const handleMobileResizeStart = (e: React.MouseEvent | React.TouchEvent) => {
+    setIsResizingMobile(true);
+    e.preventDefault();
+  };
+
+  const handleMobileResizeMove = useCallback((e: MouseEvent | TouchEvent) => {
+    if (!isResizingMobile) return;
+    
+    let clientY: number;
+    if (e instanceof MouseEvent) {
+      clientY = e.clientY;
+    } else {
+      clientY = e.touches[0].clientY;
+    }
+    
+    const windowHeight = window.innerHeight;
+    const newHeight = windowHeight - clientY;
+    
+    // Constrain height between 200px and 80% of viewport
+    const constrainedHeight = Math.max(200, Math.min(newHeight, windowHeight * 0.8));
+    setMobilePanelHeight(constrainedHeight);
+  }, [isResizingMobile]);
+
+  const handleMobileResizeEnd = useCallback(() => {
+    setIsResizingMobile(false);
+  }, []);
+
+  // Add/remove resize event listeners
+  useEffect(() => {
+    if (isResizingMobile) {
+      document.addEventListener('mousemove', handleMobileResizeMove);
+      document.addEventListener('mouseup', handleMobileResizeEnd);
+      document.addEventListener('touchmove', handleMobileResizeMove);
+      document.addEventListener('touchend', handleMobileResizeEnd);
+    } else {
+      document.removeEventListener('mousemove', handleMobileResizeMove);
+      document.removeEventListener('mouseup', handleMobileResizeEnd);
+      document.removeEventListener('touchmove', handleMobileResizeMove);
+      document.removeEventListener('touchend', handleMobileResizeEnd);
+    }
+
+    return () => {
+      document.removeEventListener('mousemove', handleMobileResizeMove);
+      document.removeEventListener('mouseup', handleMobileResizeEnd);
+      document.removeEventListener('touchmove', handleMobileResizeMove);
+      document.removeEventListener('touchend', handleMobileResizeEnd);
+    };
+  }, [isResizingMobile, handleMobileResizeMove, handleMobileResizeEnd]);
+  
   const lastAcceptedPositionRef = useRef<{ lat: number; lng: number } | null>(null);
   
   const watchIdRef = useRef<number | null>(null);
@@ -487,10 +544,39 @@ export default function BilanCreation({
           </div>
 
           {/* Mobile Control Panel - Fixed at Bottom, Stretchable */}
-          <div className="bg-white border-t-2 border-[#B4CC5F] shadow-2xl rounded-t-3xl flex-shrink-0 max-h-[60vh] min-h-[250px] relative z-30 ring-1 ring-gray-200/50">
-            {/* Drag Handle - More Prominent */}
-            <div className="flex justify-center pt-3 pb-2">
-              <div className="w-16 h-1.5 bg-[#B4CC5F] rounded-full"></div>
+          <div 
+            className="bg-white border-t-2 border-[#B4CC5F] shadow-2xl rounded-t-3xl flex-shrink-0 relative z-30 ring-1 ring-gray-200/50 transition-all duration-200 ease-out"
+            style={{ height: `${mobilePanelHeight}px` }}
+          >
+            {/* Drag Handle - Resizable */}
+            <div 
+              className={`flex justify-center pt-3 pb-2 cursor-ns-resize select-none transition-colors ${
+                isResizingMobile ? 'bg-gray-50' : 'hover:bg-gray-50'
+              }`}
+              onMouseDown={handleMobileResizeStart}
+              onTouchStart={handleMobileResizeStart}
+            >
+              <div className={`w-16 h-1.5 rounded-full transition-all duration-200 ${
+                isResizingMobile 
+                  ? 'bg-[#B4CC5F] scale-110' 
+                  : 'bg-[#B4CC5F] hover:bg-[#B4CC5F]/80'
+              }`}></div>
+              {isResizingMobile && (
+                <div className="absolute top-1 right-4 text-xs text-gray-500 bg-white px-2 py-1 rounded shadow-sm">
+                  {mobilePanelHeight}px
+                </div>
+              )}
+              {/* Reset Size Button */}
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setMobilePanelHeight(250);
+                }}
+                className="absolute top-1 left-4 text-xs text-gray-500 bg-white px-2 py-1 rounded shadow-sm hover:bg-gray-50 transition-colors"
+                title="Reset to default size"
+              >
+                ↺
+              </button>
             </div>
             
             {/* Control Panel Header - Always Visible */}
@@ -499,6 +585,9 @@ export default function BilanCreation({
                 <div className="flex items-center space-x-2">
                   <MapPin className="h-5 w-5 text-[#B4CC5F]" />
                   <h3 className="font-semibold text-gray-900 text-base">Contrôles Bilan GPS</h3>
+                  <span className="text-xs text-gray-500 bg-white px-2 py-1 rounded-full">
+                    {Math.round(mobilePanelHeight)}px
+                  </span>
                 </div>
                 <div className="flex items-center space-x-2">
                   <Badge variant={currentLocation ? "default" : "secondary"} className="text-xs bg-green-100 text-green-800">
@@ -512,7 +601,7 @@ export default function BilanCreation({
             </div>
 
             {/* Control Panel Content - Scrollable */}
-            <ScrollArea className="flex-1 max-h-[calc(60vh-120px)] min-h-[150px] px-4">
+            <ScrollArea className="flex-1 h-[calc(100%-80px)] px-4">
               <div className="py-4 space-y-4">
                 {/* Bilan Name Input */}
                 <div className="space-y-2">
