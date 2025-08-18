@@ -320,6 +320,92 @@ export default function TechnicianMap() {
     loadEtatBilanForBilan(bilan.id);
   };
 
+  // Handle QR code generation for bilans
+  const handleGenerateQRCode = () => {
+    if (selectedSerre && bilans.length > 0) {
+      // TODO: Implement QR code generation logic
+      console.log('Generating QR code for serre:', selectedSerre.nom);
+      // This could open a modal or navigate to a QR generation page
+      alert(`Génération du QR Code pour ${selectedSerre.nom} - Fonctionnalité à implémenter`);
+    }
+  };
+
+  // Handle checking etat bilan with transition
+  const handleCheckEtatBilan = () => {
+    if (selectedSerre && bilans.length > 0) {
+      // Set active mobile tab to 'etat' for mobile users
+      if (window.innerWidth <= 768) {
+        setActiveMobileTab('etat');
+        // Add a smooth transition effect
+        setTimeout(() => {
+          // Scroll to the etat section smoothly
+          const etatSection = document.querySelector('[data-tab="etat"]');
+          if (etatSection) {
+            etatSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }
+        }, 100);
+      }
+      
+      // For desktop, ensure we have a selected bilan to show etat
+      if (!selectedBilan && bilans.length > 0) {
+        // Auto-select the first bilan if none is selected
+        handleBilanSelect(bilans[0]);
+        
+        // Add a visual highlight effect to the etat section
+        const etatSection = document.querySelector('[data-section="etat-bilan"]');
+        if (etatSection) {
+          etatSection.classList.add('ring-2', 'ring-green-500', 'ring-opacity-50');
+          setTimeout(() => {
+            etatSection.classList.remove('ring-2', 'ring-green-500', 'ring-opacity-50');
+          }, 2000);
+        }
+      }
+      
+      console.log('Checking etat bilan for serre:', selectedSerre.nom);
+      // The etat bilan section will automatically show when a bilan is selected
+    }
+  };
+
+  // Handle QR code generation for specific bilan
+  const handleGenerateQRCodeForBilan = (bilan: Bilan) => {
+    console.log('Generating QR code for bilan:', bilan.nom);
+    // TODO: Implement QR code generation logic for specific bilan
+    alert(`Génération du QR Code pour le bilan: ${bilan.nom} - Fonctionnalité à implémenter`);
+  };
+
+  // Handle checking etat bilan for specific bilan with transition
+  const handleCheckEtatBilanForBilan = (bilan: Bilan) => {
+    // First select the bilan
+    handleBilanSelect(bilan);
+    
+    // Set active mobile tab to 'etat' for mobile users
+    if (window.innerWidth <= 768) {
+      setActiveMobileTab('etat');
+      // Add a smooth transition effect
+      setTimeout(() => {
+        // Scroll to the etat section smoothly
+        const etatSection = document.querySelector('[data-tab="etat"]');
+        if (etatSection) {
+          etatSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      }, 100);
+    }
+    
+    // For desktop, add a visual highlight effect to the etat section
+    setTimeout(() => {
+      const etatSection = document.querySelector('[data-section="etat-bilan"]');
+      if (etatSection) {
+        etatSection.classList.add('ring-2', 'ring-green-500', 'ring-opacity-50');
+        setTimeout(() => {
+          etatSection.classList.remove('ring-2', 'ring-green-500', 'ring-opacity-50');
+        }, 2000);
+      }
+    }, 300);
+    
+    console.log('Checking etat bilan for bilan:', bilan.nom);
+    // The etat bilan section will automatically show when the bilan is selected
+  };
+
   // Refresh guides for current serre
   const refreshGuides = async () => {
     if (selectedSerre) {
@@ -1092,6 +1178,7 @@ export default function TechnicianMap() {
                     <span>Billons ({bilans.length})</span>
                   </h4>
                   
+               
                   {isLoadingBilans ? (
                     <div className="text-center py-4 text-gray-500">
                       <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500 mx-auto mb-2"></div>
@@ -1109,20 +1196,54 @@ export default function TechnicianMap() {
                         <Card 
                           key={bilan.id} 
                           className={cn(
-                            "cursor-pointer transition-all duration-200 hover:shadow-md border",
+                            "transition-all duration-200 hover:shadow-md border",
                             selectedBilan?.id === bilan.id
                               ? "ring-2 ring-[#B4CC5F] border-[#B4CC5F] shadow-md"
                               : "border-gray-200 hover:border-[#B4CC5F]/50",
                           )}
-                          onClick={() => handleBilanSelect(bilan)}
                         >
                           <CardContent className="p-4">
-                            <div className="space-y-2">
-                              <h5 className="font-medium text-gray-900">{bilan.nom}</h5>
-                              <p className="text-sm text-gray-600">Surface: {bilan.surface || 'Non calculée'} m²</p>
-                              <p className="text-xs text-gray-500">
-                                Points GPS: {bilan.position?.length || 0}
-                              </p>
+                            <div className="space-y-3">
+                              {/* Bilan Header - Clickable */}
+                              <div 
+                                className="cursor-pointer"
+                                onClick={() => handleBilanSelect(bilan)}
+                              >
+                                <h5 className="font-medium text-gray-900">{bilan.nom}</h5>
+                                <p className="text-sm text-gray-600">Surface: {bilan.surface || 'Non calculée'} m²</p>
+                                <p className="text-xs text-gray-500">
+                                  Points GPS: {bilan.position?.length || 0}
+                                </p>
+                              </div>
+                              
+                              {/* Action Buttons */}
+                              <div className="flex space-x-2 pt-2 border-t border-gray-100">
+                                <Button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleGenerateQRCodeForBilan(bilan);
+                                  }}
+                                  size="sm"
+                                  className="flex-1 bg-blue-600 hover:bg-blue-700 text-white text-xs"
+                                >
+                                  <svg className="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V6a1 1 0 00-1-1H5a1 1 0 00-1 1v1a1 1 0 001 1zm12 0h2a1 1 0 001-1V6a1 1 0 00-1-1h-2a1 1 0 00-1 1v1a1 1 0 001 1zM5 20h2a1 1 0 001-1v-1a1 1 0 00-1-1H5a1 1 0 00-1 1v1a1 1 0 001 1z" />
+                                  </svg>
+                                  QR Code
+                                </Button>
+                                <Button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleCheckEtatBilanForBilan(bilan);
+                                  }}
+                                  size="sm"
+                                  variant="outline"
+                                  className="flex-1 border-green-600 text-green-600 hover:bg-green-50 hover:border-green-700 text-xs"
+                                >
+                                  <BarChart3 className="h-3 w-3 mr-1" />
+                                  État
+                                </Button>
+                              </div>
                             </div>
                           </CardContent>
                         </Card>
@@ -1134,7 +1255,7 @@ export default function TechnicianMap() {
 
               {/* Etat de Bilan Section */}
               {selectedBilan && (
-                <div className="space-y-4 pt-2">
+                <div className="space-y-4 pt-2" data-section="etat-bilan">
                   <h4 className="text-lg font-semibold text-gray-900 flex items-center space-x-2">
                     <BarChart3 className="h-5 w-5" />
                     <span>État du Bilan: {selectedBilan.nom}</span>
@@ -1525,6 +1646,29 @@ export default function TechnicianMap() {
                         </CardContent>
                       </Card>
 
+                      {/* Action Buttons for Bilans */}
+                      <div className="space-y-2">
+                        <Button
+                          onClick={() => handleGenerateQRCode()}
+                          size="sm"
+                          className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+                        >
+                          <svg className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V6a1 1 0 00-1-1H5a1 1 0 00-1 1v1a1 1 0 001 1zm12 0h2a1 1 0 001-1V6a1 1 0 00-1-1h-2a1 1 0 00-1 1v1a1 1 0 001 1zM5 20h2a1 1 0 001-1v-1a1 1 0 00-1-1H5a1 1 0 00-1 1v1a1 1 0 001 1z" />
+                          </svg>
+
+                        </Button>
+                        <Button
+                          onClick={() => handleCheckEtatBilan()}
+                          size="sm"
+                          variant="outline"
+                          className="w-full border-green-600 text-green-600 hover:bg-green-50 hover:border-green-700"
+                        >
+                          <BarChart3 className="h-4 w-4 mr-2" />
+
+                        </Button>
+                      </div>
+
                       {/* Existing Bilans */}
                       <div className="space-y-2">
                         <h5 className="text-sm font-medium text-gray-700 px-1">
@@ -1534,22 +1678,56 @@ export default function TechnicianMap() {
                           <Card
                             key={bilan.id}
                             className={cn(
-                              "cursor-pointer transition-all duration-200",
+                              "transition-all duration-200",
                               selectedBilan?.id === bilan.id
                                 ? "ring-2 ring-[#B4CC5F] border-[#B4CC5F]"
                                 : "border-gray-200"
                             )}
-                            onClick={() => handleBilanSelect(bilan)}
                           >
                             <CardContent className="p-3">
-                              <div className="space-y-2">
-                                <h4 className="font-medium text-sm">{bilan.nom}</h4>
-                                <p className="text-xs text-gray-600">
-                                  Surface: {bilan.surface || 'Non calculée'} m²
-                                </p>
-                                <div className="flex items-center justify-between text-xs text-gray-500">
-                                  <span>Points: {bilan.position?.length || 0}/4</span>
-                                  <span>Créé le {new Date().toLocaleDateString()}</span>
+                              <div className="space-y-3">
+                                {/* Bilan Header - Clickable */}
+                                <div 
+                                  className="cursor-pointer"
+                                  onClick={() => handleBilanSelect(bilan)}
+                                >
+                                  <h4 className="font-medium text-sm">{bilan.nom}</h4>
+                                  <p className="text-xs text-gray-600">
+                                    Surface: {bilan.surface || 'Non calculée'} m²
+                                  </p>
+                                  <div className="flex items-center justify-between text-xs text-gray-500">
+                                    <span>Points: {bilan.position?.length || 0}/4</span>
+                                    <span>Créé le {new Date().toLocaleDateString()}</span>
+                                  </div>
+                                </div>
+                                
+                                {/* Action Buttons */}
+                                <div className="flex space-x-2 pt-2 border-t border-gray-100">
+                                  <Button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleGenerateQRCodeForBilan(bilan);
+                                    }}
+                                    size="sm"
+                                    className="flex-1 bg-blue-600 hover:bg-blue-700 text-white text-xs"
+                                  >
+                                    <svg className="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V6a1 1 0 00-1-1H5a1 1 0 00-1 1v1a1 1 0 001 1zm12 0h2a1 1 0 001-1V6a1 1 0 00-1-1h-2a1 1 0 00-1 1v1a1 1 0 001 1z" />
+                                    </svg>
+                                    QR Code
+                                  </Button>
+                                  <Button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleCheckEtatBilanForBilan(bilan);
+                                    }}
+                                    size="sm"
+                                    variant="outline"
+                                    className="flex-1 border-green-600 text-green-600 hover:bg-green-50 hover:border-green-700 text-xs"
+                                  >
+                                    <BarChart3 className="h-3 w-3 mr-1" />
+                                    État
+                                  </Button>
                                 </div>
                               </div>
                             </CardContent>
@@ -1581,7 +1759,7 @@ export default function TechnicianMap() {
               )}
 
               {activeMobileTab === 'etat' && selectedBilan && (
-                <div className="space-y-3">
+                <div className="space-y-3" data-tab="etat">
                   {etatBilans.map((etat) => (
                     <Card key={etat.id} className="border-gray-200">
                       <CardContent className="p-3">
