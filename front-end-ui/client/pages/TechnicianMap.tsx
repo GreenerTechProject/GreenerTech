@@ -45,7 +45,6 @@ import InterventionForm from "../components/InterventionForm";
 import TechHeader from "../components/TechHeader";
 import BilanCreation from "../components/BilanCreation";
 import BilanMapComponent from "../components/BilanMapComponent";
-import SerreAlertHeatmap from "../components/SerreAlertHeatmap";
 import AlertHeatmapOverlay from "../components/AlertHeatmapOverlay";
 import { cn } from "@/lib/utils";
 import { bilanService, Bilan } from "../services/bilanService";
@@ -127,6 +126,7 @@ export default function TechnicianMap() {
   const [etatBilans, setEtatBilans] = useState<EtatBilan[]>([]);
   const [isLoadingGuides, setIsLoadingGuides] = useState(false);
   const [isLoadingEtatBilans, setIsLoadingEtatBilans] = useState(false);
+  const [bilanQRCodes, setBilanQRCodes] = useState<{ [bilanId: number]: Blob }>({});
 
   // Mobile responsive state
   const [isMobilePanelOpen, setIsMobilePanelOpen] = useState(false);
@@ -367,10 +367,24 @@ export default function TechnicianMap() {
   };
 
   // Handle QR code generation for specific bilan
-  const handleGenerateQRCodeForBilan = (bilan: Bilan) => {
-    console.log('Generating QR code for bilan:', bilan.nom);
-    // TODO: Implement QR code generation logic for specific bilan
-    alert(`Génération du QR Code pour le bilan: ${bilan.nom} - Fonctionnalité à implémenter`);
+  const handleGenerateQRCodeForBilan = async (bilan: Bilan) => {
+    try {
+      console.log('Generating QR code for bilan:', bilan.nom);
+      
+      // Generate QR code using the bilan service
+      const qrCodeBlob = await bilanService.generateBilanQRCode(bilan.id);
+      
+      // Store the QR code in state
+      setBilanQRCodes(prev => ({
+        ...prev,
+        [bilan.id]: qrCodeBlob
+      }));
+      
+      console.log('QR code generated successfully');
+    } catch (error) {
+      console.error('Error generating QR code:', error);
+      alert(`Erreur lors de la génération du QR Code: ${error instanceof Error ? error.message : 'Erreur inconnue'}`);
+    }
   };
 
   // Handle checking etat bilan for specific bilan with transition
@@ -597,13 +611,38 @@ export default function TechnicianMap() {
     0,
   );
 
+  // Handle viewing QR code for specific bilan
+  const handleViewQRCodeForBilan = (bilan: Bilan) => {
+    const qrCodeBlob = bilanQRCodes[bilan.id];
+    if (qrCodeBlob) {
+      const url = URL.createObjectURL(qrCodeBlob);
+      window.open(url, '_blank');
+      URL.revokeObjectURL(url);
+    }
+  };
+
+  // Handle downloading QR code for specific bilan
+  const handleDownloadQRCodeForBilan = (bilan: Bilan) => {
+    const qrCodeBlob = bilanQRCodes[bilan.id];
+    if (qrCodeBlob) {
+      const url = URL.createObjectURL(qrCodeBlob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `bilan_${bilan.nom}_qrcode.png`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+  };
+
   return (
     <div className={cn(
       "min-h-screen bg-gray-50 transition-all duration-500 ease-in-out",
       showAlertHeatmap && "bg-gradient-to-br from-gray-50 via-red-50/30 to-red-50/50"
     )}>
       {/* Header */}
-      <TechHeader role="technicien" />
+      <TechHeader role="technicien" bilanId={selectedBilan?.id} />
 
       <div className="flex flex-col lg:flex-row h-[calc(100vh-73px)] overflow-hidden">
 
@@ -1218,19 +1257,53 @@ export default function TechnicianMap() {
                               
                               {/* Action Buttons */}
                               <div className="flex space-x-2 pt-2 border-t border-gray-100">
-                                <Button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleGenerateQRCodeForBilan(bilan);
-                                  }}
-                                  size="sm"
-                                  className="flex-1 bg-blue-600 hover:bg-blue-700 text-white text-xs"
-                                >
-                                  <svg className="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V6a1 1 0 00-1-1H5a1 1 0 00-1 1v1a1 1 0 001 1zm12 0h2a1 1 0 001-1V6a1 1 0 00-1-1h-2a1 1 0 00-1 1v1a1 1 0 001 1zM5 20h2a1 1 0 001-1v-1a1 1 0 00-1-1H5a1 1 0 00-1 1v1a1 1 0 001 1z" />
-                                  </svg>
-                                  QR Code
-                                </Button>
+                                {!bilanQRCodes[bilan.id] ? (
+                                  <Button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleGenerateQRCodeForBilan(bilan);
+                                    }}
+                                    size="sm"
+                                    className="flex-1 bg-blue-600 hover:bg-blue-700 text-white text-xs"
+                                  >
+                                    <svg className="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V6a1 1 0 00-1-1H5a1 1 0 00-1 1v1a1 1 0 001 1zm12 0h2a1 1 0 001-1V6a1 1 0 00-1-1h-2a1 1 0 00-1 1v1a1 1 0 001 1zM5 20h2a1 1 0 001-1v-1a1 1 0 00-1-1H5a1 1 0 00-1 1v1a1 1 0 001 1z" />
+                                    </svg>
+                                    Générer QR
+                                  </Button>
+                                ) : (
+                                  <div className="flex gap-1 flex-1">
+                                    <Button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleViewQRCodeForBilan(bilan);
+                                      }}
+                                      size="sm"
+                                      variant="outline"
+                                      className="flex-1 border-green-600 text-green-600 hover:bg-green-50 hover:border-green-700 text-xs"
+                                    >
+                                      <svg className="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                      </svg>
+                                      Voir
+                                    </Button>
+                                    <Button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleDownloadQRCodeForBilan(bilan);
+                                      }}
+                                      size="sm"
+                                      variant="outline"
+                                      className="flex-1 border-green-600 text-green-600 hover:bg-green-50 hover:border-green-700 text-xs"
+                                    >
+                                      <svg className="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                                      </svg>
+                                      Télécharger
+                                    </Button>
+                                  </div>
+                                )}
                                 <Button
                                   onClick={(e) => {
                                     e.stopPropagation();
@@ -1714,7 +1787,7 @@ export default function TechnicianMap() {
                                     <svg className="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V6a1 1 0 00-1-1H5a1 1 0 00-1 1v1a1 1 0 001 1zm12 0h2a1 1 0 001-1V6a1 1 0 00-1-1h-2a1 1 0 00-1 1v1a1 1 0 001 1z" />
                                     </svg>
-                                    QR Code
+                                    {!bilanQRCodes[bilan.id] ? "Générer QR" : "QR Généré"}
                                   </Button>
                                   <Button
                                     onClick={(e) => {

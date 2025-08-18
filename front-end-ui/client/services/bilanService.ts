@@ -164,5 +164,26 @@ export const bilanService = {
         status: error.response?.status || 500,
       } as ApiError;
     }
+  },
+
+  // Generate QR code for bilan
+  generateBilanQRCode: async (bilanId: number): Promise<Blob> => {
+    try {
+      const response = await axios.get(
+        `${API_BASE_URL}/bilan/${bilanId}/qrcode`,
+        {
+          ...createAuthenticatedRequest(),
+          responseType: 'blob'
+        }
+      );
+      return response.data;
+    } catch (error: any) {
+      const errorMessage = error.response?.data?.message || 
+        "Erreur lors de la génération du QR code";
+      throw {
+        message: errorMessage,
+        status: error.response?.status || 500,
+      } as ApiError;
+    }
   }
 };
