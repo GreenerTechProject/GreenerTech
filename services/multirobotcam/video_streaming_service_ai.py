@@ -11,6 +11,12 @@ import time
 import requests
 from collections import defaultdict
 
+import asyncpg
+from datetime import datetime, timezone, timedelta
+
+
+DB_URL = "postgresql://postgres:postgres@localhost:5433/greenertech"
+
 qr_detector = QRCodeDetector()
 
 # Data store for each robot+camera combination
@@ -85,6 +91,55 @@ async def video_stream_handler(request):
                                     if data["nom"] != data2["nom"]:
                                         print(f"[{key}] Old bilan: {data2['nom']}")
                                         print(get_latest_sensor_data())
+                                        
+                                        
+                                        conn = None
+                                        try:
+                                            conn = await asyncpg.connect(DB_URL)
+                                            
+                                            robot_reference = request.query.get("robot")
+                                            
+                                            robot = await conn.fetchrow(
+                                                "SELECT id FROM robots WHERE referance = $1", 
+                                                robot_reference
+                                            )
+                                            
+                                            if not robot:
+                                                raise ValueError(f"Robot with reference {robot_reference} not found")
+                                            
+                                            mission = await conn.fetchrow(
+                                                "SELECT id, bilans FROM missions_robot WHERE id_robot = $1 AND executed = True ORDER BY id DESC LIMIT 1",
+                                                robot['id']
+                                            )
+                                            
+                                            if not mission:
+                                                raise ValueError(f"No executed mission found for robot {robot['id']}")
+                                            
+                                            
+                                            try:
+                                                bilans = json.loads(mission['bilans']) if isinstance(mission['bilans'], str) else mission['bilans']
+                                                last_bilan = {'id': max(bilans)}
+                                            except (json.JSONDecodeError, TypeError, ValueError) as e:
+                                                raise ValueError(f"Invalid bilans format: {mission['bilans']}")
+                                            
+                                        
+                                            if data2["id"] == last_bilan or data["nom"] == "--Fin--" :
+                                                print ("You are in last bilan")
+                                                #data2['id']
+                                                
+                                                await conn.execute(f"""
+                                                    UPDATE missions_robot SET date_fin = $1
+                                                    WHERE id = $2
+                                                """, datetime.now(timezone(timedelta(hours=1))), mission['id'])
+                                            
+                                        except Exception as e:
+                                            print(f"❌ Database error: {str(e)}")
+                                            raise
+                                        finally:
+                                            if conn is not None:
+                                                await conn.close()
+                                        
+                                        
 
                                         data3 = {
                                             "id_bilan": data2["id"],

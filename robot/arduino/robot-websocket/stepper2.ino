@@ -11,20 +11,12 @@ float speed2 = 0;
 float speed3 = 0;
 float speed4 = 0;
 
-// Fins de course pour motor1
-const int endstopLeftPin  = 10;  // Fin de course gauche
-const int endstopRightPin = 11;  // Fin de course droite
-
 void setup() {
   Serial.begin(9600);
   motor1.setMaxSpeed(1000);
   motor2.setMaxSpeed(1000);
   //motor3.setMaxSpeed(1000);
   //motor4.setMaxSpeed(1000);
-
-  // Configurer capteurs de fin de course
-  pinMode(endstopLeftPin, INPUT_PULLUP);
-  pinMode(endstopRightPin, INPUT_PULLUP);
 }
 
 void loop() {
@@ -36,14 +28,6 @@ void loop() {
     } else {
       input += c;
     }
-  }
-
-  // Vérifier fins de course pour motor1
-  if (digitalRead(endstopLeftPin) == LOW && speed1 < 0) {
-    speed1 = 0;  // Stop si on veut aller à gauche mais on est en butée gauche
-  }
-  if (digitalRead(endstopRightPin) == LOW && speed1 > 0) {
-    speed1 = 0;  // Stop si on veut aller à droite mais on est en butée droite
   }
 
   motor1.setSpeed(speed1);
@@ -64,17 +48,17 @@ void processCommand(String command) {
     speed2 = -500000;
   } else if (command == "LEFT") {
     speed2 = 500000;
-
+	
   } else if (command == "RIGHTCAM1") {
     speed3 = -500000;
   } else if (command == "LEFTCAM1") {
     speed3 = 500000;
-
+	
   } else if (command == "RIGHTCAM2") {
     speed4 = -500000;
   } else if (command == "LEFTCAM2") {
     speed4 = 500000;
-
+	
   } else if (command == "STOP") {
     speed1 = 0;
     speed2 = 0;
