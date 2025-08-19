@@ -19,7 +19,7 @@ import {
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import GoogleMapsWrapper from "./GoogleMapsWrapper";
-import { getGoogleMapsAPIKey } from "@/config/maps";
+
 
 interface Domain {
   id: string;
@@ -83,7 +83,7 @@ type SelectedItem = {
   center?: google.maps.LatLng;
 } | null;
 
-const GOOGLE_MAPS_API_KEY = getGoogleMapsAPIKey();
+
 
 export default function FinalOverview({
   companyInfo,
@@ -456,7 +456,7 @@ export default function FinalOverview({
 
       {/* Right Panel - Map */}
       <div className="flex-1 relative">
-        <GoogleMapsWrapper apiKey={GOOGLE_MAPS_API_KEY}>
+        <GoogleMapsWrapper>
           <div ref={mapRef} className="w-full h-full" />
         </GoogleMapsWrapper>
 

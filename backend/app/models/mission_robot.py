@@ -1,4 +1,5 @@
-from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, JSON
+from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, JSON 
+from sqlalchemy.orm import relationship
 from database.config import db
 from datetime import datetime, timedelta, timezone
 
@@ -18,12 +19,21 @@ class MissionRobot(db.Model):
     executed = db.Column(db.Boolean, default=False)
     bilans = Column(JSON, default=[])  # <-- Nouveau champ JSON pour les IDs des bilans
 
+    id_entreprise = Column(Integer, ForeignKey('entreprises.id'), nullable=False)
+    id_user = Column(Integer, ForeignKey('users.id'), nullable=False)
+    # --- Relations ORM (optionnel mais très pratique) ---
+    user = relationship("User", backref="missions_robot")
+    entreprise = relationship("Entreprise", backref="missions_robot")
+    robot = relationship("Robot", backref="missions_robot")
+    serre = relationship("Serre", backref="missions_robot")
 
     def to_dict(self):
         return {
             'id': self.id,
             'id_robot': self.id_robot,
             'id_serre': self.id_serre,
+            'id_user': self.id_user,
+            'id_entreprise': self.id_entreprise,
             'rep_jr': self.rep_jr,
             'rep_sem': self.rep_sem,
             'jour': self.jour,
@@ -32,7 +42,7 @@ class MissionRobot(db.Model):
             'date_debut': self.date_debut.isoformat() if self.date_debut else None,
             'date_fin': self.date_fin.isoformat() if self.date_fin else None,
             'executed': self.executed,
-            'bilans' : self.bilans if self.bilans else []
+            'bilans': self.bilans if self.bilans else []
         }
 
 

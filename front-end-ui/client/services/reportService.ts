@@ -23,9 +23,36 @@ export interface ApiReport {
   domaine?: string;
   entreprise?: string;
   bilans?: string[];
+  // Additional properties from backend
+  serre_nom?: string;
+  domaine_nom?: string;
+  entreprise_nom?: string;
+  user_nom?: string;
+}
+
+export interface CreateReportData {
+  description: string;
+  id_serre: number;
+  date_debut?: string;
+  date_fin?: string;
+  ids_bilans: number[];
 }
 
 export class ReportService {
+  static async createReport(reportData: CreateReportData): Promise<ApiReport> {
+    try {
+      const response = await axios.post<ApiReport>(
+        `${API_BASE_URL}/rapport`,
+        reportData,
+        createAuthenticatedRequest()
+      );
+      return response.data;
+    } catch (error) {
+      console.error("Error creating report:", error);
+      throw error;
+    }
+  }
+
   static async getReportsByDirectorEnterprise(): Promise<ApiReport[]> {
     try {
       const response = await axios.get<ApiReport[]>(
@@ -35,6 +62,32 @@ export class ReportService {
       return response.data;
     } catch (error) {
       console.error("Error fetching enterprise reports:", error);
+      throw error;
+    }
+  }
+
+  static async getReportsByAssignedSerres(): Promise<ApiReport[]> {
+    try {
+      const response = await axios.get<ApiReport[]>(
+        `${API_BASE_URL}/rapport/assigned`,
+        createAuthenticatedRequest()
+      );
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching assigned serre reports:", error);
+      throw error;
+    }
+  }
+
+  static async getReportsByUser(): Promise<ApiReport[]> {
+    try {
+      const response = await axios.get<ApiReport[]>(
+        `${API_BASE_URL}/rapport`,
+        createAuthenticatedRequest()
+      );
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching user reports:", error);
       throw error;
     }
   }

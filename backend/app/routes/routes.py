@@ -18,9 +18,10 @@ from app.controllers.autorisation_domaine import create_autorisation_domaine, ge
 from app.controllers.autorisation_serre import create_autorisation_serre, get_autorisation_serre, delete_autorisation_serre
 from app.controllers.autorisation_bilan import create_autorisation_bilan, get_autorisation_bilan, delete_autorisation_bilan
 
-from app.controllers.mission_robot import create_mission_robot, get_mission_robot, update_mission_robot, get_all_missions_robot, delete_mission_robot
+from app.controllers.mission_robot import create_mission_robot, get_mission_robot, update_mission_robot, get_all_missions_robot, delete_mission_robot, get_missions_robot_by_user
 from app.controllers.robot import create_robot, get_robot, update_robot, get_all_robots, delete_robot
-from app.controllers.etat_bilan import create_etat_bilan, get_etat_bilan, update_etat_bilan, get_etat_bilan_by_bilan, get_last_etat_bilan_by_serre, delete_etat_bilan
+from app.controllers.etat_bilan import create_etat_bilan, get_etat_bilan, update_etat_bilan, get_etat_bilan_by_bilan, get_last_etat_bilan_by_serre, delete_etat_bilan, get_last_etat_bilan_by_bilan
+
 from app.controllers.alerte import (
     get_alertes, get_alerte, update_alerte,
     get_alertes_by_entreprise, get_alertes_by_director_entreprise
@@ -133,7 +134,8 @@ all_bp.route('/autorisation_bilan/<int:autorisation_id>', methods=['DELETE'])(de
 
 
 all_bp.route('/mission_robot', methods=['POST'])(create_mission_robot)
-all_bp.route('/mission_robot', methods=['GET'])(get_all_missions_robot)
+# all_bp.route('/mission_robot', methods=['GET'])(get_all_missions_robot)
+all_bp.route('/mission_robot', methods=['GET'])(get_missions_robot_by_user)
 all_bp.route('/mission_robot/<int:mission_id>', methods=['PUT'])(update_mission_robot)
 all_bp.route('/mission_robot/<int:mission_id>', methods=['GET'])(get_mission_robot)
 all_bp.route('/mission_robot/<int:mission_id>', methods=['DELETE'])(delete_mission_robot)
@@ -152,6 +154,8 @@ all_bp.route('/etat_bilan', methods=['POST'])(create_etat_bilan)
 all_bp.route('/etat_bilan/<int:etat_bilan_id>', methods=['GET'])(get_etat_bilan)
 #all_bp.route('/etat_bilan/serre/<int:serre_id>', methods=['GET'])(get_last_etat_bilan_by_serre)
 all_bp.route('/etat_bilan/bilan/<int:bilan_id>', methods=['GET'])(get_etat_bilan_by_bilan)
+all_bp.route('/etat_bilan_last/bilan/<int:bilan_id>', methods=['GET'])(get_last_etat_bilan_by_bilan)
+
 all_bp.route('/etat_bilan/<int:etat_bilan_id>', methods=['PUT'])(update_etat_bilan)
 all_bp.route('/etat_bilan/<int:etat_bilan_id>', methods=['DELETE'])(delete_etat_bilan)
 
