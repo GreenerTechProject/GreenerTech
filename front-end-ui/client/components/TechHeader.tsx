@@ -391,14 +391,15 @@ export default function TechHeader({ role }: TechHeaderProps) {
             {/* User Dropdown */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="px-2 sm:px-3 h-8 sm:h-9">
+                <Button variant="ghost" className="px-1 sm:px-2 lg:px-3 h-8 sm:h-9">
                   <div className="flex items-center gap-1 sm:gap-2">
                     <Avatar className="h-6 w-6 sm:h-7 sm:w-7">
                       <AvatarFallback className="bg-blue-100 text-blue-700 text-xs sm:text-sm">
                         {initials}
                       </AvatarFallback>
                     </Avatar>
-                    <div className="text-left hidden sm:block">
+                    {/* Show name and email only on larger screens (lg and above) */}
+                    <div className="text-left hidden lg:block">
                       <div className="text-sm font-medium text-gray-900 leading-none">
                         {user?.name || "Utilisateur"}
                       </div>
@@ -406,16 +407,18 @@ export default function TechHeader({ role }: TechHeaderProps) {
                         {user?.email}
                       </div>
                     </div>
-                    <ChevronDown className="h-3 w-3 sm:h-4 sm:w-4 text-gray-400" />
+                    {/* Show chevron only on larger screens (lg and above) */}
+                    <ChevronDown className="h-3 w-3 sm:h-4 sm:w-4 text-gray-400 hidden lg:block" />
                   </div>
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56">
-                <div className="px-2 py-1.5">
+              <DropdownMenuContent align="end" className="w-48 sm:w-56 z-[999999]">
+                {/* Show user info only on larger screens */}
+                <div className="px-2 py-1.5 hidden lg:block">
                   <div className="text-sm font-medium text-gray-900">{user?.name || "Utilisateur"}</div>
                   <div className="text-xs text-gray-500">{user?.email}</div>
                 </div>
-                <DropdownMenuSeparator />
+                <DropdownMenuSeparator className="hidden lg:block" />
                 <DropdownMenuItem onClick={handleProfile} className="cursor-pointer">
                   <User className="h-4 w-4 mr-2" /> Profile
                 </DropdownMenuItem>
