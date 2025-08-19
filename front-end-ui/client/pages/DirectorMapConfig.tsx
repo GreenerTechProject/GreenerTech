@@ -10,13 +10,14 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { MapPin, Plus, Trash2, Home, Loader2, Info, X, Building2, Leaf, BarChart3, Eye, EyeOff } from "lucide-react";
+import { MapPin, Plus, Trash2, Home, Loader2, Info, X, Building2, Leaf, BarChart3, Eye, EyeOff, BookOpen } from "lucide-react";
 import { useLoadScript } from "@react-google-maps/api";
 import MapComponent, { DrawnShape } from "@/components/MapComponent";
 import { getGoogleMapsAPIKey } from "@/config/maps";
 import { companyMapService, CompanyMapData, DomainWithSerresAndBilans } from "@/services/companyMapService";
 import { domainService } from "@/services/domainService";
 import { serreService } from "@/services/serreService";
+import { guideService, CreateGuideRequest } from "@/services/guideService";
 
 interface ExtendedSerre {
   id: string;
@@ -43,14 +44,27 @@ export default function DirectorMapConfig() {
   const [isLoading, setIsLoading] = useState(true);
   const [isCreatingDomain, setIsCreatingDomain] = useState(false);
   const [isCreatingSerre, setIsCreatingSerre] = useState(false);
+  const [isCreatingGuide, setIsCreatingGuide] = useState(false);
   const [newDomainName, setNewDomainName] = useState("");
   const [newSerreName, setNewSerreName] = useState("");
   const [pendingShape, setPendingShape] = useState<DrawnShape | null>(null);
   const [selectedDomainId, setSelectedDomainId] = useState<string | null>(null);
   const [showHelp, setShowHelp] = useState(false);
-  const [activeTab, setActiveTab] = useState<"domains" | "serres" | "bilans">("domains");
+  const [activeTab, setActiveTab] = useState<"domains" | "serres" | "bilans" | "guides">("domains");
   const [showBilans, setShowBilans] = useState(true);
   const [showSerres, setShowSerres] = useState(true);
+  
+  // Guide culture form state
+  const [guideFormData, setGuideFormData] = useState<CreateGuideRequest>({
+    nom: "",
+    variete: "",
+    rendement: 0,
+    nombre_de_plants: 0,
+    date_debut_saison: "",
+    date_fin_saison: "",
+    id_serre: ""
+  });
+  const [newlyCreatedSerreId, setNewlyCreatedSerreId] = useState<string | null>(null);
 
   // Use the proper Google Maps loading hook
   const { isLoaded, loadError } = useLoadScript({
@@ -211,21 +225,85 @@ export default function DirectorMapConfig() {
           )
         } : null);
 
-        setNewSerreName("");
-        setPendingShape(null);
+        setNewlyCreatedSerreId(response.id?.toString() || response.serreId?.toString() || "");
+        setGuideFormData(prev => ({
+          ...prev,
+          nom: newSerreName.trim(),
+          id_serre: response.id?.toString() || response.serreId?.toString() || ""
+        }));
         
         toast({
           title: "Serre créée",
-          description: `La serre "${newSerreName.trim()}" a été créée avec succès`,
+          description: `La serre "${newSerreName.trim()}" a été créée avec succès. Maintenant, créez le guide de culture.`,
         });
-        // Close the creation form after successful save
+        
+        // Transition to guide culture creation
         setIsCreatingSerre(false);
+        setIsCreatingGuide(true);
       }
     } catch (error: any) {
       console.error("Error creating serre:", error);
       toast({
         title: "Erreur",
         description: error.message || "Échec de la création de la serre",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleSaveGuide = async () => {
+    if (!guideFormData.nom.trim() || !guideFormData.variete.trim() || !guideFormData.id_serre) return;
+
+    try {
+      setIsLoading(true);
+      
+      const response = await guideService.createGuide(guideFormData);
+      
+      if (response.guideId) {
+        // Update the serre with the guide ID
+        setCompanyData(prev => prev ? {
+          ...prev,
+          domains: prev.domains.map(domain => 
+            domain.serres.some(serre => serre.id === guideFormData.id_serre)
+              ? {
+                  ...domain,
+                  serres: domain.serres.map(serre => 
+                    serre.id === guideFormData.id_serre
+                      ? { ...serre, guideId: response.guideId }
+                      : serre
+                  )
+                }
+              : domain
+          )
+        } : null);
+        
+        toast({
+          title: "Guide de culture créé",
+          description: `Le guide de culture pour "${guideFormData.nom}" a été créé avec succès`,
+        });
+        
+        // Reset form and close
+        setGuideFormData({
+          nom: "",
+          variete: "",
+          rendement: 0,
+          nombre_de_plants: 0,
+          date_debut_saison: "",
+          date_fin_saison: "",
+          id_serre: ""
+        });
+        setNewSerreName("");
+        setPendingShape(null);
+        setNewlyCreatedSerreId(null);
+        setIsCreatingGuide(false);
+      }
+    } catch (error: any) {
+      console.error("Error creating guide:", error);
+      toast({
+        title: "Erreur",
+        description: error.message || "Échec de la création du guide de culture",
         variant: "destructive",
       });
     } finally {
@@ -325,9 +403,20 @@ export default function DirectorMapConfig() {
   const cancelDrawing = () => {
     setIsCreatingDomain(false);
     setIsCreatingSerre(false);
+    setIsCreatingGuide(false);
     setPendingShape(null);
     setNewDomainName("");
     setNewSerreName("");
+    setGuideFormData({
+      nom: "",
+      variete: "",
+      rendement: 0,
+      nombre_de_plants: 0,
+      date_debut_saison: "",
+      date_fin_saison: "",
+      id_serre: ""
+    });
+    setNewlyCreatedSerreId(null);
   };
 
   const allShapes = useMemo((): DrawnShape[] => {
@@ -464,7 +553,7 @@ export default function DirectorMapConfig() {
             <div className="flex space-x-2 mb-4">
               <Button
                 onClick={startDrawingDomain}
-                disabled={isCreatingDomain || isCreatingSerre}
+                disabled={isCreatingDomain || isCreatingSerre || isCreatingGuide}
                 className="flex-1"
                 variant="default"
               >
@@ -473,7 +562,7 @@ export default function DirectorMapConfig() {
               </Button>
               <Button
                 onClick={startDrawingSerre}
-                disabled={isCreatingDomain || isCreatingSerre || !selectedDomainId}
+                disabled={isCreatingDomain || isCreatingSerre || isCreatingGuide || !selectedDomainId}
                 className="flex-1"
                 variant="outline"
               >
@@ -535,7 +624,9 @@ export default function DirectorMapConfig() {
               <p className="text-sm text-blue-700">
                 <strong>Domaines:</strong> Cliquez sur "Nouveau Domaine" pour dessiner un nouveau domaine sur la carte.<br/>
                 <strong>Serres:</strong> Sélectionnez d'abord un domaine, puis cliquez sur "Nouvelle Serre" pour dessiner une serre à l'intérieur du domaine sélectionné.<br/>
-                <strong>Billons:</strong> Les billons de culture sont automatiquement affichés sur la carte pour chaque serre.
+                <strong>Guide de Culture:</strong> Après avoir créé une serre, vous devrez créer un guide de culture avec les informations de plantation.<br/>
+                <strong>Billons:</strong> Les billons de culture sont automatiquement affichés sur la carte pour chaque serre.<br/>
+                <strong>Onglets:</strong> Utilisez les onglets pour naviguer entre Domaines, Serres, Billons et Guides de culture.
               </p>
             </div>
           )}
@@ -615,6 +706,130 @@ export default function DirectorMapConfig() {
             </div>
           )}
 
+          {/* Guide Culture Creation Form */}
+          {isCreatingGuide && (
+            <div className="p-4 border-b border-gray-200 bg-blue-50">
+              <h3 className="font-medium text-gray-900 mb-3 flex items-center">
+                <BookOpen className="h-4 w-4 mr-2 text-blue-600" />
+                Créer le guide de culture pour {guideFormData.nom}
+              </h3>
+              <div className="space-y-3">
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <Label htmlFor="guideNom">Nom du guide</Label>
+                    <Input
+                      id="guideNom"
+                      value={guideFormData.nom}
+                      onChange={(e) => setGuideFormData(prev => ({ ...prev, nom: e.target.value }))}
+                      placeholder="Nom du guide de culture"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="guideVariete">Variété</Label>
+                    <Input
+                      id="guideVariete"
+                      value={guideFormData.variete}
+                      onChange={(e) => setGuideFormData(prev => ({ ...prev, variete: e.target.value }))}
+                      placeholder="Variété de culture"
+                    />
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <Label htmlFor="guideRendement">Rendement (kg/m²)</Label>
+                    <Input
+                      id="guideRendement"
+                      type="number"
+                      step="0.1"
+                      min="0"
+                      value={guideFormData.rendement}
+                      onChange={(e) => setGuideFormData(prev => ({ ...prev, rendement: parseFloat(e.target.value) || 0 }))}
+                      placeholder="0.0"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="guidePlants">Nombre de plants</Label>
+                    <Input
+                      id="guidePlants"
+                      type="number"
+                      min="0"
+                      value={guideFormData.nombre_de_plants}
+                      onChange={(e) => setGuideFormData(prev => ({ ...prev, nombre_de_plants: parseInt(e.target.value) || 0 }))}
+                      placeholder="0"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <Label htmlFor="guideDebut">Date début saison</Label>
+                    <Input
+                      id="guideDebut"
+                      type="date"
+                      value={guideFormData.date_debut_saison}
+                      onChange={(e) => setGuideFormData(prev => ({ ...prev, date_debut_saison: e.target.value }))}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="guideFin">Date fin saison</Label>
+                    <Input
+                      id="guideFin"
+                      type="date"
+                      value={guideFormData.date_fin_saison}
+                      onChange={(e) => setGuideFormData(prev => ({ ...prev, date_fin_saison: e.target.value }))}
+                    />
+                  </div>
+                </div>
+
+                <div className="text-sm text-gray-600 bg-white p-2 rounded border">
+                  <strong>Serre:</strong> {guideFormData.nom} | <strong>Domaine:</strong> {selectedDomain?.name}
+                </div>
+
+                <div className="flex space-x-2">
+                  <Button
+                    onClick={handleSaveGuide}
+                    disabled={!guideFormData.nom.trim() || !guideFormData.variete.trim() || !guideFormData.date_debut_saison || !guideFormData.date_fin_saison}
+                    className="flex-1"
+                  >
+                    Créer le guide
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      // Skip guide creation but keep the serre
+                      setIsCreatingGuide(false);
+                      setNewSerreName("");
+                      setPendingShape(null);
+                      setNewlyCreatedSerreId(null);
+                      setGuideFormData({
+                        nom: "",
+                        variete: "",
+                        rendement: 0,
+                        nombre_de_plants: 0,
+                        date_debut_saison: "",
+                        date_fin_saison: "",
+                        id_serre: ""
+                      });
+                      toast({
+                        title: "Guide ignoré",
+                        description: "La serre a été créée sans guide de culture. Vous pourrez l'ajouter plus tard.",
+                      });
+                    }}
+                  >
+                    Ignorer pour l'instant
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={cancelDrawing}
+                  >
+                    Annuler
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Tab Navigation */}
           <div className="flex border-b border-gray-200">
             <button
@@ -649,6 +864,17 @@ export default function DirectorMapConfig() {
             >
               <BarChart3 className="h-4 w-4 inline mr-2" />
               Billon ({companyData?.domains.reduce((acc, d) => acc + d.serres.reduce((sacc, s) => sacc + s.bilans.length, 0), 0) || 0})
+            </button>
+            <button
+              onClick={() => setActiveTab("guides")}
+              className={`flex-1 px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+                activeTab === "guides"
+                  ? "border-[#9C27B0] text-[#9C27B0]"
+                  : "border-transparent text-gray-500 hover:text-gray-700"
+              }`}
+            >
+              <BookOpen className="h-4 w-4 inline mr-2" />
+              Guides ({companyData?.domains.reduce((acc, d) => acc + d.serres.filter(s => s.guideId).length, 0) || 0})
             </button>
           </div>
 
@@ -736,23 +962,117 @@ export default function DirectorMapConfig() {
                                     <BarChart3 className="h-3 w-3 text-blue-500" />
                                     <span className="text-xs text-gray-500">{serre.bilans.length} billon{serre.bilans.length > 1 ? 's' : ''}</span>
                                   </div>
+                                  <div className="flex items-center space-x-2">
+                                    <BookOpen className="h-3 w-3 text-purple-500" />
+                                    <span className="text-xs text-gray-500">
+                                      {serre.guideId ? 'Guide de culture configuré' : 'Aucun guide de culture'}
+                                    </span>
+                                  </div>
                                 </div>
                               </div>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleDeleteSerre(serre.id, domain.id);
-                                }}
-                                className="text-red-500 hover:text-red-700 hover:bg-red-50"
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
+                              <div className="flex items-center space-x-2">
+                                {!serre.guideId ? (
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setGuideFormData({
+                                        nom: serre.nom,
+                                        variete: "",
+                                        rendement: 0,
+                                        nombre_de_plants: 0,
+                                        date_debut_saison: "",
+                                        date_fin_saison: "",
+                                        id_serre: serre.id
+                                      });
+                                      setNewlyCreatedSerreId(serre.id);
+                                      setIsCreatingGuide(true);
+                                    }}
+                                    className="text-purple-600 hover:text-purple-700 hover:bg-purple-50"
+                                  >
+                                    <BookOpen className="h-4 w-4 mr-1" />
+                                    Ajouter Guide
+                                  </Button>
+                                ) : (
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      // TODO: Implement guide editing functionality
+                                      toast({
+                                        title: "Fonctionnalité à venir",
+                                        description: "L'édition des guides de culture sera bientôt disponible.",
+                                      });
+                                    }}
+                                    className="text-green-600 hover:text-green-700 hover:bg-green-50"
+                                  >
+                                    <BookOpen className="h-4 w-4 mr-1" />
+                                    Modifier Guide
+                                  </Button>
+                                )}
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleDeleteSerre(serre.id, domain.id);
+                                  }}
+                                  className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </div>
                             </div>
                           </CardContent>
                         </Card>
                       ))
+                    )}
+                  </div>
+                )}
+              </div>
+            ) : activeTab === "guides" ? (
+              <div className="p-4">
+                {!companyData || companyData.domains.reduce((acc, d) => acc + d.serres.filter(s => s.guideId).length, 0) === 0 ? (
+                  <p className="text-sm text-gray-500 text-center py-8">
+                    Aucun guide de culture configuré. Créez des serres et configurez leurs guides de culture.
+                  </p>
+                ) : (
+                  <div className="space-y-3">
+                    {companyData.domains.map((domain) => 
+                      domain.serres
+                        .filter(serre => serre.guideId)
+                        .map((serre) => (
+                          <Card
+                            key={`guide-${serre.id}`}
+                            className="cursor-pointer transition-colors hover:bg-gray-50"
+                          >
+                            <CardContent className="p-4">
+                              <div className="flex items-start justify-between">
+                                <div className="flex-1">
+                                  <div className="flex items-center space-x-2 mb-2">
+                                    <BookOpen className="h-4 w-4 text-[#9C27B0]" />
+                                    <h4 className="font-medium text-gray-900">Guide de culture - {serre.nom}</h4>
+                                  </div>
+                                  <div className="text-sm text-gray-600 space-y-1">
+                                    <div className="flex items-center space-x-2">
+                                      <Leaf className="h-3 w-3 text-red-500" />
+                                      <span className="text-xs text-gray-500">{serre.nom}</span>
+                                    </div>
+                                    <div className="flex items-center space-x-2">
+                                      <Building2 className="h-3 w-3 text-green-500" />
+                                      <span className="text-xs text-gray-500">{domain.name}</span>
+                                    </div>
+                                    <div className="text-xs text-purple-600 bg-purple-50 p-2 rounded">
+                                      <strong>Guide ID:</strong> {serre.guideId}
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        ))
                     )}
                   </div>
                 )}
@@ -827,12 +1147,58 @@ export default function DirectorMapConfig() {
                         <span className="text-sm">{serre.nom}</span>
                       </div>
                       <div className="flex items-center space-x-2">
-                      <Badge variant="outline" className="text-xs">
-                        {(serre.surface / 10000).toFixed(2)} ha
-                      </Badge>
+                        <Badge variant="outline" className="text-xs">
+                          {(serre.surface / 10000).toFixed(2)} ha
+                        </Badge>
                         <Badge variant="outline" className="text-xs text-blue-600">
                           {serre.bilans.length} billon{serre.bilans.length > 1 ? 's' : ''}
                         </Badge>
+                        <Badge 
+                          variant={serre.guideId ? "default" : "outline"} 
+                          className={`text-xs ${serre.guideId ? 'bg-green-100 text-green-700 border-green-200' : 'text-gray-500'}`}
+                        >
+                          <BookOpen className="h-3 w-3 mr-1" />
+                          {serre.guideId ? 'Guide' : 'Sans guide'}
+                        </Badge>
+                        {!serre.guideId ? (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              setGuideFormData({
+                                nom: serre.nom,
+                                variete: "",
+                                rendement: 0,
+                                nombre_de_plants: 0,
+                                date_debut_saison: "",
+                                date_fin_saison: "",
+                                id_serre: serre.id
+                              });
+                              setNewlyCreatedSerreId(serre.id);
+                              setIsCreatingGuide(true);
+                            }}
+                            className="text-xs text-purple-600 hover:text-purple-700 hover:bg-purple-50"
+                          >
+                            <BookOpen className="h-3 w-3 mr-1" />
+                            Ajouter Guide
+                          </Button>
+                        ) : (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              // TODO: Implement guide editing functionality
+                              toast({
+                                title: "Fonctionnalité à venir",
+                                description: "L'édition des guides de culture sera bientôt disponible.",
+                              });
+                            }}
+                            className="text-xs text-green-600 hover:text-green-700 hover:bg-green-50"
+                          >
+                            <BookOpen className="h-3 w-3 mr-1" />
+                            Modifier Guide
+                          </Button>
+                        )}
                       </div>
                     </div>
                   ))}
