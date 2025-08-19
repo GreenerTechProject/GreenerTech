@@ -1,10 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
-import TechHeader from "../components/TechHeader";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Bell, Wrench, ClipboardList, Clock, Filter, CheckCircle, Circle } from "lucide-react";
+import { Bell, Circle, CheckCircle, Filter, X, AlertTriangle, FileText, MapPin, Calendar, Clock, CheckCircle2, XCircle } from "lucide-react";
 import { notificationService, Notification } from "../services/notificationService";
 import { cn } from "@/lib/utils";
 
@@ -72,47 +71,72 @@ export default function TechSupNotificationsPage() {
   };
 
   const handleNotificationClick = async (notification: Notification) => {
+    console.log('🔔 TechSupNotificationsPage - Notification clicked:', {
+      id: notification.id,
+      type: notification.type_notification,
+      description: notification.description,
+      status: notification.status,
+      date: notification.date,
+      id_intervention: notification.id_intervention
+    });
+
     if (notification.status === 'non_vue') {
       try {
         await notificationService.markAsSeen(notification.id);
+        console.log('✅ TechSupNotificationsPage - Notification marked as seen');
         
         // Update local state
-        setNotifications(prev => 
-          prev.map(n => 
-            n.id === notification.id ? { ...n, status: 'vue' as const } : n
-          )
-        );
-        
-        // Update stats
+        setNotifications(prev => prev.map(n => 
+          n.id === notification.id ? { ...n, status: 'vue' as const } : n
+        ));
         setStats(prev => ({
           ...prev,
           unread: prev.unread - 1,
           read: prev.read + 1
         }));
       } catch (error) {
-        console.error('Error marking notification as read:', error);
+        console.error('❌ TechSupNotificationsPage - Error marking notification as seen:', error);
       }
     }
-    
+
     // Navigate based on notification type
     if (notification.type_notification.includes('intervention')) {
-      navigate("/technicien-sup/missions");
+      console.log('🔧 TechSupNotificationsPage - Intervention notification detected');
+      
+      // If there's an intervention ID, go to interventions page with highlighting
+      if (notification.id_intervention) {
+        console.log('🎯 TechSupNotificationsPage - Navigating to interventions page with highlight:', `/technicien-sup/interventions?highlight=${notification.id_intervention}`);
+        console.log('📋 TechSupNotificationsPage - Intervention details will be highlighted in the list');
+        navigate(`/technicien-sup/interventions?highlight=${notification.id_intervention}`);
+      } else {
+        console.log('⚠️ TechSupNotificationsPage - No intervention ID found, navigating to missions');
+        navigate("/technicien-sup/missions");
+      }
+    } else {
+      console.log('ℹ️ TechSupNotificationsPage - Non-intervention notification, staying on notifications page');
     }
   };
 
   const getNotificationIcon = (type: string) => {
     if (type.includes('intervention')) {
-      return <Wrench className="h-5 w-5 text-blue-500" />;
+      return <Circle className="h-5 w-5 text-blue-500" />;
     }
-    return <ClipboardList className="h-5 w-5 text-gray-500" />;
+    return <FileText className="h-5 w-5 text-gray-500" />;
   };
 
-  const getNotificationTitle = (type: string) => {
-    if (type === 'intervention_creee') return "Demande d'intervention";
-    if (type === 'intervention_validee') return "Intervention validée";
-    if (type === 'compte_technicien') return "Compte technicien";
-    if (type === 'compte_valide') return "Compte validé";
+  const getNotificationTitle = (notification: Notification) => {
+    if (notification.type_notification.includes('intervention')) {
+      if (notification.id_intervention) {
+        return `Intervention #${notification.id_intervention}`;
+      }
+      return "Nouvelle intervention";
+    }
     return "Notification";
+  };
+
+  const getNotificationDescription = (notification: Notification) => {
+    // Show the actual notification description instead of generic text
+    return notification.description;
   };
 
   const getNotificationBadge = (type: string) => {
@@ -131,18 +155,37 @@ export default function TechSupNotificationsPage() {
     return "bg-gray-100 text-gray-800";
   };
 
-  const formatTimestamp = (dateString: string) => {
+  const getNotificationTime = (dateString: string) => {
     const date = new Date(dateString);
     const now = new Date();
     const diffInHours = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60));
     
-    if (diffInHours < 1) return "il y a quelques minutes";
-    if (diffInHours === 1) return "il y a 1h";
-    if (diffInHours < 24) return `il y a ${diffInHours}h`;
-    
-    const diffInDays = Math.floor(diffInHours / 24);
-    if (diffInDays === 1) return "il y a 1 jour";
-    return `il y a ${diffInDays} jours`;
+    if (diffInHours < 1) {
+      return "À l'instant";
+    } else if (diffInHours < 24) {
+      return `Il y a ${diffInHours}h`;
+    } else {
+      return date.toLocaleDateString('fr-FR', { 
+        day: '2-digit', 
+        month: '2-digit', 
+        hour: '2-digit', 
+        minute: '2-digit' 
+      });
+    }
+  };
+
+  const getNotificationTypeLabel = (type: string) => {
+    const typeLabels: { [key: string]: string } = {
+      'intervention': '🔧 Intervention',
+      'intervention_creee': '🆕 Intervention créée',
+      'intervention_validee': '✅ Intervention validée',
+      'success': '✅ Succès',
+      'info': 'ℹ️ Information',
+      'reminder': '⏰ Rappel',
+      'warning': '⚠️ Avertissement',
+      'error': '❌ Erreur'
+    };
+    return typeLabels[type] || type;
   };
 
   const formatDate = (dateString: string) => {
@@ -158,8 +201,6 @@ export default function TechSupNotificationsPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <TechHeader role="technicien_sup" />
-      
       <div className="max-w-4xl mx-auto px-4 py-6">
         {/* Header */}
         <div className="mb-6">
@@ -287,7 +328,7 @@ export default function TechSupNotificationsPage() {
                         <div className="flex-1">
                           <div className="flex items-center gap-3 mb-1">
                             <h3 className="text-sm font-medium text-gray-900">
-                              {getNotificationTitle(notification.type_notification)}
+                              {getNotificationTitle(notification)}
                             </h3>
                             <Badge 
                               variant="secondary" 
@@ -302,7 +343,7 @@ export default function TechSupNotificationsPage() {
                             )}
                           </div>
                           <p className="text-sm text-gray-600 leading-relaxed">
-                            {notification.description}
+                            {getNotificationDescription(notification)}
                           </p>
                         </div>
                       </div>
@@ -311,7 +352,7 @@ export default function TechSupNotificationsPage() {
                         <div className="flex items-center gap-4 text-xs text-gray-500">
                           <div className="flex items-center gap-1">
                             <Clock className="h-3 w-3" />
-                            <span>{formatTimestamp(notification.date)}</span>
+                            <span>{getNotificationTime(notification.date)}</span>
                           </div>
                           <span>•</span>
                           <span>{formatDate(notification.date)}</span>

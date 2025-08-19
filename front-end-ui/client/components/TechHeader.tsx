@@ -9,7 +9,7 @@ import { Home, Map, ChevronDown, User, LogOut, Sun, Moon, Bell, AlertTriangle, A
 import { notificationService, NotificationCounts, Notification } from "../services/notificationService";
 import { AlertService } from "../services/alertService";
 
-type UserRole = "technicien" | "technicien_sup";
+type UserRole = "technicien" | "technicien_sup" | "technicien_superieur";
 
 interface TechHeaderProps {
   role: UserRole;
@@ -116,7 +116,7 @@ export default function TechHeader({ role }: TechHeaderProps) {
   };
 
   const handleProfile = () => {
-    if (role === "technicien_sup") {
+    if (role === "technicien_sup" || role === "technicien_superieur") {
       navigate("/technicien-sup/profile");
     } else {
       navigate("/technicien/profile");
@@ -124,7 +124,7 @@ export default function TechHeader({ role }: TechHeaderProps) {
   };
 
   const handleAlerts = () => {
-    if (role === "technicien_sup") {
+    if (role === "technicien_sup" || role === "technicien_superieur") {
       navigate("/technicien-sup/alerts");
     } else {
       navigate("/technician/alerts");
@@ -132,7 +132,7 @@ export default function TechHeader({ role }: TechHeaderProps) {
   };
 
   const handleNotifications = () => {
-    if (role === "technicien_sup") {
+    if (role === "technicien_sup" || role === "technicien_superieur") {
       navigate("/technicien-sup/notifications");
     } else {
       navigate("/technician/notifications");
@@ -156,13 +156,13 @@ export default function TechHeader({ role }: TechHeaderProps) {
       
       // Navigate based on notification type
       if (notification.type_notification.includes('intervention')) {
-        if (role === "technicien_sup") {
+        if (role === "technicien_sup" || role === "technicien_superieur") {
           navigate("/technicien-sup/missions");
         } else {
           navigate("/technician/missions");
         }
       } else {
-        if (role === "technicien_sup") {
+        if (role === "technicien_sup" || role === "technicien_superieur") {
           navigate("/technicien-sup/notifications");
         } else {
           navigate("/technician/notifications");
@@ -230,14 +230,14 @@ export default function TechHeader({ role }: TechHeaderProps) {
           <div className="flex-1 flex items-center justify-center gap-3 px-2">
             <div 
               className="h-9 w-9 rounded-xl bg-[#B4CC5F] flex items-center justify-center shadow-sm cursor-pointer hover:bg-[#9BB84F] transition-colors duration-200 active:scale-95 flex-shrink-0"
-              onClick={() => navigate(role === "technicien_sup" ? "/technicien-sup/home" : "/technician/dashboard")}
+              onClick={() => navigate(role === "technicien_sup" || role === "technicien_superieur" ? "/technicien-sup/home" : "/technician/dashboard")}
               title="Accueil"
             >
               <Home className="h-5 w-5 text-white" />
             </div>
             <div 
               className="cursor-pointer hover:scale-110 transition-transform duration-200 active:scale-95 flex-shrink-0"
-              onClick={() => navigate(role === "technicien_sup" ? "/technicien-sup" : "/technician/map")}
+              onClick={() => navigate(role === "technicien_sup" || role === "technicien_superieur" ? "/technicien-sup" : "/technician/map")}
               title="Carte"
             >
               <Map className="h-5 w-5 text-blue-700" />
@@ -245,7 +245,7 @@ export default function TechHeader({ role }: TechHeaderProps) {
           </div>
 
           {/* Right: Alerts, Notifications and User dropdown */}
-          <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
+          <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0 relative">
             {/* Alert Triangle Icon - for REAL alerts from assigned serres */}
             <div className="relative group">
               <div 
@@ -391,7 +391,7 @@ export default function TechHeader({ role }: TechHeaderProps) {
             {/* User Dropdown */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="px-2 sm:px-3 h-8 sm:h-9">
+                <Button variant="ghost" className="px-2 sm:px-3 h-8 sm:h-9 relative">
                   <div className="flex items-center gap-1 sm:gap-2">
                     <Avatar className="h-6 w-6 sm:h-7 sm:w-7">
                       <AvatarFallback className="bg-blue-100 text-blue-700 text-xs sm:text-sm">
@@ -410,7 +410,13 @@ export default function TechHeader({ role }: TechHeaderProps) {
                   </div>
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56">
+              <DropdownMenuContent 
+                align="end" 
+                className="w-56 z-[999998] mt-1 shadow-2xl border-2 border-gray-200 bg-white"
+                sideOffset={5}
+                alignOffset={0}
+                avoidCollisions={true}
+              >
                 <div className="px-2 py-1.5">
                   <div className="text-sm font-medium text-gray-900">{user?.name || "Utilisateur"}</div>
                   <div className="text-xs text-gray-500">{user?.email}</div>
