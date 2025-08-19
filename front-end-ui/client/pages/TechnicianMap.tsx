@@ -39,6 +39,7 @@ import {
   AlertCircle,
   BookOpen,
   BarChart3,
+  TrendingUp,
 } from "lucide-react";
 import TechnicianSidebar from "../components/TechnicianSidebar";
 import InterventionForm from "../components/InterventionForm";
@@ -82,6 +83,11 @@ interface Serre {
   status: "active" | "inactive" | "maintenance";
   zones: Zone[];
   lastUpdate: Date;
+  billonCount?: number; // Add billon count
+  cultureGuide?: {      // Add culture guide info
+    variete: string;
+    rendement: number;
+  };
 }
 
 interface Zone {
@@ -162,18 +168,46 @@ export default function TechnicianMap() {
         const assignedSerres = await serreService.getSerresByCurrentUser();
         
         // Transform the backend data to match our Serre interface
-        const transformedSerres: Serre[] = assignedSerres.map((serre: any) => ({
-          id: serre.id?.toString() || serre.id_serre?.toString() || '',
-          nom: serre.nom || 'Serre sans nom',
-          variety: serre.variety || serre.variete || 'Variété non spécifiée',
-          surface: serre.surface || 0,
-          location: {
-            lat: serre.center?.lat || serre.latitude || serre.lat || 46.7051,
-            lng: serre.center?.lng || serre.longitude || serre.lng || 1.7291,
-          },
-          status: serre.status || 'active',
-          zones: serre.zones || [], // Backend might not have zones data
-          lastUpdate: new Date(),
+        const transformedSerres: Serre[] = await Promise.all(assignedSerres.map(async (serre: any) => {
+          // Get billons count for this serre
+          let billonCount = 0;
+          try {
+            const serreBilans = await bilanService.getBilansBySerre(parseInt(serre.id || serre.id_serre));
+            billonCount = Array.isArray(serreBilans) ? serreBilans.length : 0;
+          } catch (error) {
+            console.warn('Could not load billons for serre:', serre.id, error);
+          }
+
+          // Get culture guide for this serre
+          let cultureGuide = undefined;
+          try {
+            const serreGuides = await guideService.getGuidesBySerre(parseInt(serre.id || serre.id_serre));
+            if (serreGuides && serreGuides.length > 0) {
+              const guide = serreGuides[0]; // Take the first guide
+              cultureGuide = {
+                variete: guide.variete || 'Non spécifiée',
+                rendement: guide.rendement || 0
+              };
+            }
+          } catch (error) {
+            console.warn('Could not load culture guide for serre:', serre.id, error);
+          }
+
+          return {
+            id: serre.id?.toString() || serre.id_serre?.toString() || '',
+            nom: serre.nom || 'Serre sans nom',
+            variety: serre.variety || serre.variete || 'Variété non spécifiée',
+            surface: serre.surface || 0,
+            location: {
+              lat: serre.center?.lat || serre.latitude || serre.lat || 46.7051,
+              lng: serre.center?.lng || serre.longitude || serre.lng || 1.7291,
+            },
+            status: serre.status || 'active',
+            zones: serre.zones || [], // Backend might not have zones data
+            lastUpdate: new Date(),
+            billonCount,
+            cultureGuide,
+          };
         }));
         
 
@@ -239,8 +273,74 @@ export default function TechnicianMap() {
       await loadBilansForSerre(parseInt(selectedSerre.id));
       // Also refresh guides when a new bilan is created
       await loadGuidesForSerre(parseInt(selectedSerre.id));
+      // Refresh serre data to update billon count
+      await refreshSerreData();
     }
     setIsCreatingBilan(false);
+  };
+
+  // Function to refresh serre data (including billon count and culture guide)
+  const refreshSerreData = async () => {
+    if (!user) return;
+    
+    try {
+      const assignedSerres = await serreService.getSerresByCurrentUser();
+      
+      // Transform the backend data to match our Serre interface
+      const transformedSerres: Serre[] = await Promise.all(assignedSerres.map(async (serre: any) => {
+        // Get billons count for this serre
+        let billonCount = 0;
+        try {
+          const serreBilans = await bilanService.getBilansBySerre(parseInt(serre.id || serre.id_serre));
+          billonCount = Array.isArray(serreBilans) ? serreBilans.length : 0;
+        } catch (error) {
+          console.warn('Could not load billons for serre:', serre.id, error);
+        }
+
+        // Get culture guide for this serre
+        let cultureGuide = undefined;
+        try {
+          const serreGuides = await guideService.getGuidesBySerre(parseInt(serre.id || serre.id_serre));
+          if (serreGuides && serreGuides.length > 0) {
+            const guide = serreGuides[0]; // Take the first guide
+            cultureGuide = {
+              variete: guide.variete || 'Non spécifiée',
+              rendement: guide.rendement || 0
+            };
+          }
+        } catch (error) {
+          console.warn('Could not load culture guide for serre:', serre.id, error);
+        }
+
+        return {
+          id: serre.id?.toString() || serre.id_serre?.toString() || '',
+          nom: serre.nom || 'Serre sans nom',
+          variety: serre.variety || serre.variete || 'Variété non spécifiée',
+          surface: serre.surface || 0,
+          location: {
+            lat: serre.center?.lat || serre.latitude || serre.lat || 46.7051,
+            lng: serre.center?.lng || serre.longitude || serre.lng || 1.7291,
+          },
+          status: serre.status || 'active',
+          zones: serre.zones || [], // Backend might not have zones data
+          lastUpdate: new Date(),
+          billonCount,
+          cultureGuide,
+        };
+      }));
+
+      setSerres(transformedSerres);
+      
+      // Update selected serre if it exists
+      if (selectedSerre) {
+        const updatedSelectedSerre = transformedSerres.find(s => s.id === selectedSerre.id);
+        if (updatedSelectedSerre) {
+          setSelectedSerre(updatedSelectedSerre);
+        }
+      }
+    } catch (error: any) {
+      console.error('Error refreshing serre data:', error);
+    }
   };
 
   const handleAlertClick = (alert: Alert) => {
@@ -448,7 +548,8 @@ export default function TechnicianMap() {
     // Search in serres
     const matchingSerres = serres.filter(serre => 
       serre.nom.toLowerCase().includes(lowerQuery) ||
-      serre.variety?.toLowerCase().includes(lowerQuery)
+      serre.variety?.toLowerCase().includes(lowerQuery) ||
+      serre.cultureGuide?.variete?.toLowerCase().includes(lowerQuery)
     );
 
     // Search in guides
@@ -616,7 +717,7 @@ export default function TechnicianMap() {
 
   const totalSerres = serres.length;
   const totalZones = serres.reduce(
-    (total, serre) => total + serre.zones.length,
+            (total, serre) => total + (serre.billonCount || 0),
     0,
   );
 
@@ -651,7 +752,7 @@ export default function TechnicianMap() {
       showAlertHeatmap && "bg-gradient-to-br from-gray-50 via-red-50/30 to-red-50/50"
     )}>
       {/* Header */}
-      <TechHeader role="technicien" bilanId={selectedBilan?.id} />
+      <TechHeader role="technicien" />
 
       <div className="flex flex-col lg:flex-row h-[calc(100vh-73px)] overflow-hidden">
 
@@ -739,7 +840,7 @@ export default function TechnicianMap() {
                         }}
                       >
                         <div className="text-sm font-medium text-blue-900">{serre.nom}</div>
-                        <div className="text-xs text-blue-600">{serre.variety}</div>
+                        <div className="text-xs text-blue-600">{serre.cultureGuide?.variete || serre.variety || 'Non spécifiée'}</div>
                       </div>
                     ))}
                   </div>
@@ -913,14 +1014,14 @@ export default function TechnicianMap() {
                               {serre.nom}
                             </h4>
                             <p className="text-sm text-gray-600">
-                              {serre.variety}
+                              {serre.cultureGuide?.variete || serre.variety || 'Non spécifiée'}
                             </p>
                             <div className="flex items-center space-x-2 mt-2">
                               <Badge variant="outline" className="text-xs">
                                 {serre.surface} m²
                               </Badge>
                               <Badge variant="outline" className="text-xs">
-                                {serre.zones.length} zones
+                                {serre.billonCount || 0} billon{serre.billonCount !== 1 ? 's' : ''}
                               </Badge>
                             </div>
                           </div>
@@ -1034,7 +1135,7 @@ export default function TechnicianMap() {
                   </div>
 
                   <div className="text-sm text-gray-600">
-                    {selectedSerre.surface} m² • Zones: {selectedSerre.zones ? selectedSerre.zones.length : 0}
+                    {selectedSerre.surface} m² • Billons: {selectedSerre.billonCount || 0}
                   </div>
                   
                   {/* Main Alert Heatmap Toggle */}
@@ -1078,37 +1179,26 @@ export default function TechnicianMap() {
                     </Button>
                   </div>
 
-                  {/* Zones List */}
-                  {selectedSerre.zones && selectedSerre.zones.length > 0 && (
+                  {/* Billons List */}
+                  {selectedSerre.billonCount && selectedSerre.billonCount > 0 && (
                     <div className="space-y-2">
                       <h5 className="font-medium text-gray-900">
-                        Zones ({selectedSerre.zones.length})
+                        Billons ({selectedSerre.billonCount})
                       </h5>
-                      {selectedSerre.zones.map((zone) => (
-                        <div
-                          key={zone.id}
-                          className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
-                        >
-                          <div className="flex items-center space-x-2">
-                            {getZoneIcon(zone.type)}
-                        <div>
-                              <h6 className="font-medium text-gray-900">
-                                {zone.name}
-                              </h6>
-                              <p className="text-sm text-gray-600">
-                                {zone.value} {zone.unit}
-                              </p>
-                            </div>
+                      <div className="p-3 bg-gray-50 rounded-lg">
+                        <div className="flex items-center space-x-2">
+                          <BarChart3 className="h-5 w-5 text-purple-600" />
+                          <div>
+                            <h6 className="font-medium text-gray-900">
+                              Billons de culture
+                            </h6>
+                            <p className="text-sm text-gray-600">
+                              {selectedSerre.billonCount} billon{selectedSerre.billonCount !== 1 ? 's' : ''} actif{selectedSerre.billonCount !== 1 ? 's' : ''}
+                            </p>
                           </div>
-                          <Badge
-                            variant="outline"
-                            className={cn("text-xs", getStatusColor(zone.status))}
-                          >
-                            {zone.status}
-                          </Badge>
                         </div>
-                      ))}
-                        </div>
+                      </div>
+                    </div>
                   )}
                       </div>
               )}
@@ -1460,10 +1550,14 @@ export default function TechnicianMap() {
                   mapTypeId: "satellite", // Keep satellite view for heatmap
                   tilt: 0,
                   streetViewControl: false,
-                  fullscreenControl: true,
-                  mapTypeControl: true,
-                  zoomControl: true,
-                  scaleControl: true,
+                  fullscreenControl: false,
+                  mapTypeControl: false,
+                  zoomControl: false,
+                  scaleControl: false,
+                  rotateControl: false,
+                  clickableIcons: false,
+                  gestureHandling: "cooperative",
+                  disableDefaultUI: true,
                 }}
               >
                 {/* Serre Marker */}
@@ -1476,16 +1570,69 @@ export default function TechnicianMap() {
                 <InfoWindow
                   position={selectedSerre.location}
                 >
-                  <div className="p-2">
-                    <h3 className="font-semibold text-gray-900 text-sm">
-                      {selectedSerre.nom}
-                    </h3>
-                    <p className="text-xs text-gray-600">
-                      {selectedSerre.variety}
-                    </p>
-                    <p className="text-xs text-gray-500">
-                      {selectedSerre.surface} m² • Zones: {selectedSerre.zones ? selectedSerre.zones.length : 0}
-                    </p>
+                  <div className="p-2 bg-white rounded-lg shadow-lg border border-gray-200 min-w-[180px] max-w-[200px]">
+                    {/* Header */}
+                    <div className="flex items-center space-x-2 mb-1">
+                      <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                      <h3 className="font-bold text-gray-900 text-sm">
+                        {selectedSerre.nom}
+                      </h3>
+                    </div>
+                    
+                    {/* Main content - more compact */}
+                    <div className="space-y-1">
+                      {/* Variete from culture guide */}
+                      <div className="flex items-center space-x-2">
+                        <Sprout className="h-3 w-3 text-green-600" />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs text-gray-500">Variété</p>
+                          <p className="text-xs text-gray-700 font-medium truncate">
+                            {selectedSerre.cultureGuide?.variete || 'Non spécifiée'}
+                          </p>
+                        </div>
+                      </div>
+                      
+                      {/* Surface area */}
+                      <div className="flex items-center space-x-2">
+                        <Layers className="h-3 w-3 text-blue-600" />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs text-gray-500">Surface</p>
+                          <p className="text-xs text-gray-700 font-medium">
+                            {selectedSerre.surface} m²
+                          </p>
+                        </div>
+                      </div>
+                      
+                      {/* Billon count */}
+                      <div className="flex items-center space-x-2">
+                        <BarChart3 className="h-3 w-3 text-purple-600" />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs text-gray-500">Billons</p>
+                          <p className="text-xs text-gray-700 font-medium">
+                            {selectedSerre.billonCount || 0}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {/* Status indicator - compact */}
+                    <div className="mt-1 pt-1 border-t border-gray-100">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs text-gray-500">
+                          {selectedSerre.lastUpdate.toLocaleDateString('fr-FR')}
+                        </span>
+                        <div className={`px-1.5 py-0.5 rounded-full text-xs font-medium ${
+                          selectedSerre.status === 'active' 
+                            ? 'bg-green-100 text-green-800' 
+                            : selectedSerre.status === 'maintenance' 
+                            ? 'bg-yellow-100 text-yellow-800' 
+                            : 'bg-red-100 text-red-800'
+                        }`}>
+                          {selectedSerre.status === 'active' ? 'Active' : 
+                           selectedSerre.status === 'maintenance' ? 'Maint.' : 'Inactive'}
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </InfoWindow>
 
@@ -1639,13 +1786,13 @@ export default function TechnicianMap() {
                         <div className="flex items-center justify-between">
                           <div className="flex-1">
                             <h4 className="font-medium text-sm text-gray-900">{serre.nom}</h4>
-                            <p className="text-xs text-gray-600">{serre.variety}</p>
+                            <p className="text-xs text-gray-600">{serre.cultureGuide?.variete || serre.variety || 'Non spécifiée'}</p>
                             <div className="flex items-center space-x-2 mt-1">
                               <Badge variant="outline" className="text-xs">
                                 {serre.surface} m²
                               </Badge>
                               <Badge variant="outline" className="text-xs">
-                                {serre.zones.length} zones
+                                {serre.billonCount || 0} billon{serre.billonCount !== 1 ? 's' : ''}
                               </Badge>
                             </div>
                           </div>

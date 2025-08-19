@@ -1,6 +1,7 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useAuth } from "../contexts/AuthContext";
 import GoogleMapsWrapper from "../components/GoogleMapsWrapper";
+import { GoogleMap, Marker, InfoWindow } from "@react-google-maps/api";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -245,7 +246,7 @@ export default function TechnicienSupDashboard(): JSX.Element {
   const [companyTechnicians, setCompanyTechnicians] = useState<ApiTechnician[]>([]);
   const [isLoadingTechnicians, setIsLoadingTechnicians] = useState(false);
   const [isInterventionFormOpen, setIsInterventionFormOpen] = useState(false);
-  const mapRef = useRef<HTMLDivElement>(null);
+
   const [assignedSerresRaw, setAssignedSerresRaw] = useState<any[]>([]);
   const [domainsRaw, setDomainsRaw] = useState<BackendDomain[]>([]);
 
@@ -280,114 +281,17 @@ export default function TechnicienSupDashboard(): JSX.Element {
     { id: "tech4", name: "Sophie Durand", email: "sophie.durand@example.com" },
   ];
 
-  // Initialize map (wait until Google Maps script is loaded)
+  // Initialize map when Google Maps script is loaded
   useEffect(() => {
-    if (map || !mapRef.current) return;
+    if (map) return;
 
     const tryInit = () => {
       // @ts-ignore
       if (typeof google === 'undefined' || !google.maps) {
         return false;
       }
-      // @ts-ignore
-      const newMap = new google.maps.Map(mapRef.current!, {
-        center: { lat: 46.7051, lng: 1.7191 },
-        // @ts-ignore
-        mapTypeId: google.maps.MapTypeId.SATELLITE,
-        zoom: 13,
-        mapTypeControl: false,
-        streetViewControl: false,
-        fullscreenControl: false,
-        styles: [
-          { featureType: "poi", elementType: "labels", stylers: [{ visibility: "off" }] },
-        ],
-      });
-      setMap(newMap);
       // eslint-disable-next-line no-console
-      console.debug('[TechSup] Map initialized');
-      // Once map exists, load alerts and build heatmap
-      (async () => {
-        try {
-          const { alerts } = await AlertService.getAllAlerts(1, 1000);
-          // Build weighted points from alerts. We need coordinates: try alerte.x1/y1 (if represent lat/lng); fallback to related serre center by bilan
-          const weights: google.maps.visualization.WeightedLocation[] = [];
-          let low = 0, med = 0, high = 0;
-          const createdMarkers: google.maps.Marker[] = [];
-          for (const a of alerts as any[]) {
-            const lvl = getAlertLevelFromInt(a.status_alert);
-            if (lvl === 'low') low++; else if (lvl === 'medium') med++; else high++;
-            let lat = a.x1; // assuming y1 ~ lat
-            let lng = a.y1; // assuming x1 ~ lng
-            if (typeof lat !== 'number' || typeof lng !== 'number') {
-              // Try fetch bilan -> serre center
-              try {
-                const bilanResp = await axios.get(`${window.location.protocol}//${window.location.hostname}:5000/api/bilan/${a.id_bilan}`);
-                const id_serre = bilanResp.data?.id_serre;
-                if (id_serre) {
-                  const serreResp = await axios.get(`${window.location.protocol}//${window.location.hostname}:5000/api/serre/${id_serre}`);
-                  lat = serreResp.data?.center?.lat;
-                  lng = serreResp.data?.center?.lng;
-                  if ((typeof lat !== 'number' || typeof lng !== 'number') && Array.isArray(serreResp.data?.position) && serreResp.data.position.length > 0) {
-                    lat = serreResp.data.position[0]?.lat;
-                    lng = serreResp.data.position[0]?.lng;
-                  }
-                }
-              } catch {}
-            }
-            if (typeof lat === 'number' && typeof lng === 'number') {
-              weights.push({ location: new google.maps.LatLng(lat, lng), weight: getWeightFromLevel(lvl) });
-              // Create alert marker with severity color
-              const color = lvl === 'high' ? '#ef4444' : lvl === 'medium' ? '#f59e0b' : '#22c55e';
-              const marker = new google.maps.Marker({
-                position: { lat, lng },
-                map: newMap,
-                title: `${a.maladie} (${lvl})`,
-                icon: {
-                  path: google.maps.SymbolPath.CIRCLE,
-                  scale: 8,
-                  fillColor: color,
-                  fillOpacity: 0.9,
-                  strokeWeight: 1,
-                  strokeColor: '#ffffff',
-                },
-              });
-              createdMarkers.push(marker);
-            }
-          }
-          setAlertsSummary({ low, medium: med, high });
-          // Create or update heatmap
-          if (weights.length > 0) {
-            if (heatmapRef.current) {
-              heatmapRef.current.setData(weights as any);
-            } else if ((google.maps.visualization as any)?.HeatmapLayer) {
-              const hm = new google.maps.visualization.HeatmapLayer({ data: weights as any, dissipating: true, radius: 35 });
-              hm.setMap(newMap);
-              heatmapRef.current = hm;
-            }
-          }
-          // Place markers and adjust viewport
-          if (createdMarkers.length > 0) {
-            alertMarkersRef.current.forEach((m) => m.setMap(null));
-            alertMarkersRef.current = createdMarkers;
-            if (createdMarkers.length === 1) {
-              const pos = createdMarkers[0].getPosition();
-              if (pos) {
-                newMap.panTo(pos);
-                newMap.setZoom(16);
-              }
-            } else {
-              const bounds = new google.maps.LatLngBounds();
-              createdMarkers.forEach((m) => {
-                const p = m.getPosition();
-                if (p) bounds.extend(p);
-              });
-              newMap.fitBounds(bounds);
-            }
-          }
-        } catch (e) {
-          // non-blocking if alerts fail
-        }
-      })();
+      console.debug('[TechSup] Google Maps script loaded');
       return true;
     };
 
@@ -399,7 +303,7 @@ export default function TechnicienSupDashboard(): JSX.Element {
       }, 150);
       return () => window.clearInterval(id);
     }
-  }, [map, mapRef.current]);
+  }, [map]);
 
   // Fetch assigned serres as soon as user is known
   useEffect(() => {
@@ -844,6 +748,95 @@ export default function TechnicienSupDashboard(): JSX.Element {
     }
   };
 
+  const loadAlertsAndHeatmap = useCallback(async (mapInstance: google.maps.Map) => {
+    try {
+      setIsMapLoading(true);
+      const { alerts } = await AlertService.getAllAlerts(1, 1000);
+      // Build weighted points from alerts. We need coordinates: try alerte.x1/y1 (if represent lat/lng); fallback to related serre center by bilan
+      const weights: google.maps.visualization.WeightedLocation[] = [];
+      let low = 0, med = 0, high = 0;
+      const createdMarkers: google.maps.Marker[] = [];
+      for (const a of alerts as any[]) {
+        const lvl = getAlertLevelFromInt(a.status_alert);
+        if (lvl === 'low') low++; else if (lvl === 'medium') med++; else high++;
+        let lat = a.x1; // assuming y1 ~ lat
+        let lng = a.y1; // assuming x1 ~ lng
+        if (typeof lat !== 'number' || typeof lng !== 'number') {
+          // Try fetch bilan -> serre center
+          try {
+            const bilanResp = await axios.get(`${window.location.protocol}//${window.location.hostname}:5000/api/bilan/${a.id_bilan}`);
+            const id_serre = bilanResp.data?.id_serre;
+            if (id_serre) {
+              const serreResp = await axios.get(`${window.location.protocol}//${window.location.hostname}:5000/api/serre/${id_serre}`);
+              lat = serreResp.data?.center?.lat;
+              lng = serreResp.data?.center?.lng;
+              if ((typeof lat !== 'number' || typeof lng !== 'number') && Array.isArray(serreResp.data?.position) && serreResp.data.position.length > 0) {
+                lat = serreResp.data.position[0]?.lat;
+                lng = serreResp.data.position[0]?.lng;
+              }
+            }
+          } catch {}
+        }
+        if (typeof lat === 'number' && typeof lng === 'number') {
+          weights.push({ location: new google.maps.LatLng(lat, lng), weight: getWeightFromLevel(lvl) });
+          // Create alert marker with severity color
+          const color = lvl === 'high' ? '#ef4444' : lvl === 'medium' ? '#f59e0b' : '#22c55e';
+          const marker = new google.maps.Marker({
+            position: { lat, lng },
+            map: mapInstance,
+            title: `${a.maladie} (${lvl})`,
+            icon: {
+              path: google.maps.SymbolPath.CIRCLE,
+              scale: 8,
+              fillColor: color,
+              fillOpacity: 0.9,
+              strokeWeight: 1,
+              strokeColor: '#ffffff',
+            },
+          });
+          createdMarkers.push(marker);
+        }
+      }
+      setAlertsSummary({ low, medium: med, high });
+      // Create or update heatmap
+      if (weights.length > 0) {
+        if (heatmapRef.current) {
+          heatmapRef.current.setData(weights as any);
+        } else if ((google.maps.visualization as any)?.HeatmapLayer) {
+          const hm = new google.maps.visualization.HeatmapLayer({ data: weights as any, dissipating: true, radius: 35 });
+          hm.setMap(mapInstance);
+          heatmapRef.current = hm;
+        }
+      }
+      // Place markers and adjust viewport
+      if (createdMarkers.length > 0) {
+        alertMarkersRef.current.forEach((m) => m.setMap(null));
+        alertMarkersRef.current = createdMarkers;
+        if (createdMarkers.length === 1) {
+          const pos = createdMarkers[0].getPosition();
+          if (pos) {
+            mapInstance.panTo(pos);
+            mapInstance.setZoom(16);
+          }
+        } else {
+          const bounds = new google.maps.LatLngBounds();
+          createdMarkers.forEach((m) => {
+            const p = m.getPosition();
+            if (p) bounds.extend(p);
+          });
+          mapInstance.fitBounds(bounds);
+        }
+      }
+    } catch (e) {
+      // non-blocking if alerts fail
+      console.error('Failed to load alerts:', e);
+    } finally {
+      setIsMapLoading(false);
+    }
+  }, [showHeatmap]);
+
+  const [isMapLoading, setIsMapLoading] = useState(true);
+
   return (
     <div className="h-[calc(100vh-73px)] relative">
       {/* Mobile Header Overlay */}
@@ -859,7 +852,22 @@ export default function TechnicienSupDashboard(): JSX.Element {
               {isMobilePanelOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
             </Button>
             <div className="flex items-center gap-2">
-              <Bell className="h-4 w-4 text-red-500" />
+              <div className="relative group">
+                <Bell className="h-4 w-4 text-red-500 cursor-pointer" />
+                {/* Tooltip below the Bell icon */}
+                <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
+                  <div className="text-center">
+                    <div className="font-medium mb-1">Notifications</div>
+                    <div className="space-y-1 text-gray-300">
+                      <div>🔴 {alertsSummary.high} alertes élevées</div>
+                      <div>🟡 {alertsSummary.medium} alertes moyennes</div>
+                      <div>🟢 {alertsSummary.low} alertes faibles</div>
+                    </div>
+                  </div>
+                  {/* Arrow pointing up to the Bell icon */}
+                  <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900"></div>
+                </div>
+              </div>
               <span className="text-sm font-medium">Technicien Sup</span>
             </div>
           </div>
@@ -929,7 +937,129 @@ export default function TechnicienSupDashboard(): JSX.Element {
           <ResizablePanel defaultSize={72} minSize={55} className="min-w-0">
             <div className="h-full relative min-h-[500px] w-full flex-1" data-testid="map-section">
               <GoogleMapsWrapper>
-                <div ref={mapRef} className="w-full h-full min-h-[500px] min-w-[400px] flex-1" />
+                <GoogleMap
+                  mapContainerStyle={{
+                    width: "100%",
+                    height: "100%",
+                  }}
+                  center={{ lat: 46.7051, lng: 1.7191 }}
+                  zoom={10}
+                  onLoad={(mapInstance) => {
+                    if (mapInstance) {
+                      setMap(mapInstance);
+                      // Load alerts and create heatmap when map loads
+                      loadAlertsAndHeatmap(mapInstance);
+                    }
+                  }}
+                  options={{
+                    mapTypeId: "satellite",
+                    tilt: 0,
+                    streetViewControl: false,
+                    fullscreenControl: true,
+                    mapTypeControl: true,
+                    zoomControl: true,
+                    scaleControl: true,
+                  }}
+                >
+                  {/* Render markers for all assigned serres */}
+                  {assignedSerresRaw.map((serre) => {
+                    // Get the correct position from serre data
+                    const position = serre.center && serre.center.lat != null && serre.center.lng != null 
+                      ? serre.center 
+                      : serre.position && serre.position.length > 0 
+                        ? serre.position[0] 
+                        : { lat: 46.7051, lng: 1.7191 }; // fallback coordinates
+                    
+                    return (
+                      <Marker
+                        key={serre.id}
+                        position={position}
+                        title={serre.nom}
+                        onClick={() => setSelectedSerre({
+                          id: serre.id.toString(),
+                          nom: serre.nom,
+                          variety: serre.variete || 'Non spécifiée',
+                          surface: serre.surface || 0,
+                          location: position,
+                          status: serre.statut || 'active',
+                          zones: [],
+                          lastUpdate: new Date(),
+                          supervisedBy: serre.superviseur,
+                          bilansCount: serre.nombre_billons || 0,
+                          assignedTechnicians: serre.techniciens_associes || []
+                        })}
+                      />
+                    );
+                  })}
+
+                  {/* Info Window for selected serre */}
+                  {selectedSerre && (
+                    <InfoWindow
+                      position={selectedSerre.location}
+                      onCloseClick={() => setSelectedSerre(null)}
+                    >
+                      <div className="p-4 bg-white rounded-lg shadow-lg border border-gray-200 min-w-[280px]">
+                        <div className="flex items-start justify-between mb-3">
+                          <div className="flex items-center space-x-2">
+                            <div className={cn(
+                              "w-3 h-3 rounded-full",
+                              selectedSerre.status === "active" ? "bg-green-500" :
+                              selectedSerre.status === "maintenance" ? "bg-yellow-500" : "bg-red-500"
+                            )}></div>
+                            <h3 className="font-bold text-gray-900 text-lg">
+                              {selectedSerre.nom}
+                            </h3>
+                          </div>
+                        </div>
+
+                        <div className="space-y-3">
+                          <div className="flex items-center space-x-2">
+                            <MapPin className="h-4 w-4 text-green-600" />
+                            <div>
+                              <p className="text-sm font-medium text-gray-700">Variété</p>
+                              <p className="text-sm text-gray-600">{selectedSerre.variety}</p>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center space-x-2">
+                            <Layers className="h-4 w-4 text-blue-600" />
+                            <div>
+                              <p className="text-sm font-medium text-gray-700">Surface</p>
+                              <p className="text-sm text-gray-600">{selectedSerre.surface} m²</p>
+                            </div>
+                          </div>
+
+                          {selectedSerre.bilansCount > 0 && (
+                            <div className="flex items-center space-x-2">
+                              <Layers className="h-4 w-4 text-purple-600" />
+                              <div>
+                                <p className="text-sm font-medium text-gray-700">Billons</p>
+                                <p className="text-sm text-gray-600">{selectedSerre.bilansCount} billon{selectedSerre.bilansCount !== 1 ? 's' : ''}</p>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="mt-4 pt-3 border-t border-gray-100">
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs text-gray-500">
+                              Dernière mise à jour: {selectedSerre.lastUpdate.toLocaleDateString('fr-FR')}
+                            </span>
+                            <div className={cn(
+                              "px-2 py-1 rounded-full text-xs font-medium",
+                              selectedSerre.status === 'active' ? 'bg-green-100 text-green-800' :
+                              selectedSerre.status === 'maintenance' ? 'bg-yellow-100 text-yellow-800' :
+                              'bg-red-100 text-red-800'
+                            )}>
+                              {selectedSerre.status === 'active' ? 'Active' :
+                               selectedSerre.status === 'maintenance' ? 'Maintenance' : 'Inactive'}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </InfoWindow>
+                  )}
+                </GoogleMap>
               </GoogleMapsWrapper>
 
               {/* Map Overlay Info */}
@@ -1014,9 +1144,235 @@ export default function TechnicienSupDashboard(): JSX.Element {
 
       {/* Mobile Layout - Full Screen Map */}
       <div className="lg:hidden h-full relative">
-                    <GoogleMapsWrapper>
-          <div ref={mapRef} className="w-full h-full" />
-        </GoogleMapsWrapper>
+        {/* Loading overlay for mobile */}
+        {isMapLoading && (
+          <div className="absolute inset-0 bg-white/80 backdrop-blur-sm z-10 flex items-center justify-center">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#B4CC5F] mx-auto mb-4"></div>
+              <p className="text-sm text-gray-600">Chargement de la carte et des alertes...</p>
+            </div>
+          </div>
+        )}
+        
+        {/* Mobile Map Container - Full screen */}
+        <div className="w-full h-full relative">
+          <GoogleMapsWrapper>
+            <GoogleMap
+              mapContainerStyle={{
+                width: "100%",
+                height: "100%",
+              }}
+              center={{ lat: 46.7051, lng: 1.7191 }}
+              zoom={10}
+              onLoad={(mapInstance) => {
+                if (mapInstance) {
+                  setMap(mapInstance);
+                  // Load alerts and create heatmap when map loads
+                  loadAlertsAndHeatmap(mapInstance);
+                }
+              }}
+              options={{
+                mapTypeId: "satellite",
+                tilt: 0,
+                streetViewControl: false,
+                fullscreenControl: true,
+                mapTypeControl: true,
+                zoomControl: true,
+                scaleControl: true,
+              }}
+            >
+              {/* Render markers for all assigned serres */}
+              {assignedSerresRaw.map((serre) => {
+                // Get the correct position from serre data
+                const position = serre.center && serre.center.lat != null && serre.center.lng != null 
+                  ? serre.center 
+                  : serre.position && serre.position.length > 0 
+                    ? serre.position[0] 
+                    : { lat: 46.7051, lng: 1.7191 }; // fallback coordinates
+                
+                return (
+                  <Marker
+                    key={serre.id}
+                    position={position}
+                    title={serre.nom}
+                    onClick={() => setSelectedSerre({
+                      id: serre.id.toString(),
+                      nom: serre.nom,
+                      variety: serre.variete || 'Non spécifiée',
+                      surface: serre.surface || 0,
+                      location: position,
+                      status: serre.statut || 'active',
+                      zones: [],
+                      lastUpdate: new Date(),
+                      supervisedBy: serre.superviseur,
+                      bilansCount: serre.nombre_billons || 0,
+                      assignedTechnicians: serre.techniciens_associes || []
+                    })}
+                  />
+                );
+              })}
+
+              {/* Info Window for selected serre */}
+              {selectedSerre && (
+                <InfoWindow
+                  position={selectedSerre.location}
+                  onCloseClick={() => setSelectedSerre(null)}
+                >
+                  <div className="p-4 bg-white rounded-lg shadow-lg border border-gray-200 min-w-[280px]">
+                    <div className="flex items-start justify-between mb-3">
+                      <div className="flex items-center space-x-2">
+                        <div className={cn(
+                          "w-3 h-3 rounded-full",
+                          selectedSerre.status === "active" ? "bg-green-500" :
+                          selectedSerre.status === "maintenance" ? "bg-yellow-500" : "bg-red-500"
+                        )}></div>
+                        <h3 className="font-bold text-gray-900 text-lg">
+                          {selectedSerre.nom}
+                        </h3>
+                      </div>
+                    </div>
+
+                    <div className="space-y-3">
+                      <div className="flex items-center space-x-2">
+                        <MapPin className="h-4 w-4 text-green-600" />
+                        <div>
+                          <p className="text-sm font-medium text-gray-700">Variété</p>
+                          <p className="text-sm text-gray-600">{selectedSerre.variety}</p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center space-x-2">
+                        <Layers className="h-4 w-4 text-blue-600" />
+                        <div>
+                          <p className="text-sm font-medium text-gray-700">Surface</p>
+                          <p className="text-sm text-gray-600">{selectedSerre.surface} m²</p>
+                        </div>
+                      </div>
+
+                      {selectedSerre.bilansCount > 0 && (
+                        <div className="flex items-center space-x-2">
+                          <Layers className="h-4 w-4 text-purple-600" />
+                          <div>
+                            <p className="text-sm font-medium text-gray-700">Billons</p>
+                            <p className="text-sm text-gray-600">{selectedSerre.bilansCount} billon{selectedSerre.bilansCount !== 1 ? 's' : ''}</p>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="mt-4 pt-3 border-t border-gray-100">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs text-gray-500">
+                          Dernière mise à jour: {selectedSerre.lastUpdate.toLocaleDateString('fr-FR')}
+                        </span>
+                        <div className={cn(
+                          "px-2 py-1 rounded-full text-xs font-medium",
+                          selectedSerre.status === 'active' ? 'bg-green-100 text-green-800' :
+                          selectedSerre.status === 'maintenance' ? 'bg-yellow-100 text-yellow-800' :
+                          'bg-red-100 text-red-800'
+                        )}>
+                          {selectedSerre.status === 'active' ? 'Active' :
+                           selectedSerre.status === 'maintenance' ? 'Maintenance' : 'Inactive'}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </InfoWindow>
+              )}
+            </GoogleMap>
+          </GoogleMapsWrapper>
+
+          {/* Mobile Map Overlay Info */}
+          {selectedSerre && (
+            <div className="absolute top-20 left-4 right-4 z-10 bg-white rounded-xl shadow-lg p-4 border border-gray-200">
+              <div className="flex items-start justify-between mb-3">
+                <div className="flex-1">
+                  <div className="flex items-center space-x-2 mb-2">
+                    <div
+                      className={cn(
+                        "w-3 h-3 rounded-full",
+                        selectedSerre.status === "active"
+                          ? "bg-green-500"
+                          : selectedSerre.status === "maintenance"
+                            ? "bg-yellow-500"
+                            : "bg-red-500",
+                      )}
+                    />
+                    <h4 className="font-semibold text-gray-900 text-base">
+                      {selectedSerre.nom}
+                    </h4>
+                  </div>
+                  <p className="text-sm text-gray-600 mb-1">
+                    {selectedSerre.variety}
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    {selectedSerre.surface} m² • {selectedSerre.zones.length} zones
+                  </p>
+                  {selectedSerre.supervisedBy && (
+                    <p className="text-xs text-blue-600 mt-1">
+                      {selectedSerre.supervisedBy}
+                    </p>
+                  )}
+                </div>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setSelectedSerre(null)}
+                  className="p-2 h-8 w-8"
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+
+              <div className="flex gap-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="flex-1"
+                  onClick={() => setIsAssignDialogOpen(true)}
+                >
+                  Assigner un technicien
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {/* Mobile Alerts Overlay Panel on Map */}
+          <div className="absolute top-4 left-4 z-10 bg-white/95 backdrop-blur rounded-lg shadow p-3 border">
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <Bell className="h-4 w-4 text-red-500" />
+                <span className="font-semibold text-sm">Alertes</span>
+              </div>
+              <div className="flex items-center gap-2 text-xs">
+                <span className="px-1.5 py-0.5 rounded bg-green-100 text-green-700">Faible: {alertsSummary.low}</span>
+                <span className="px-1.5 py-0.5 rounded bg-yellow-100 text-yellow-700">Moyen: {alertsSummary.medium}</span>
+                <span className="px-1.5 py-0.5 rounded bg-red-100 text-red-700">Élevé: {alertsSummary.high}</span>
+              </div>
+            </div>
+            <div className="mt-2 flex items-center justify-between gap-3">
+              <label className="text-xs text-gray-600">Heatmap</label>
+              <div className="flex items-center gap-2">
+                <input type="checkbox" checked={showHeatmap} onChange={(e) => {
+                  setShowHeatmap(e.target.checked);
+                  if (heatmapRef.current) {
+                    heatmapRef.current.setMap(e.target.checked ? map : null);
+                  }
+                }} />
+                {map && (
+                  <button
+                    onClick={() => loadAlertsAndHeatmap(map)}
+                    disabled={isMapLoading}
+                    className="p-1 text-xs bg-gray-100 hover:bg-gray-200 rounded transition-colors disabled:opacity-50"
+                    title="Actualiser les alertes"
+                  >
+                    🔄
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
 
         {/* Mobile Floating Action Button */}
         <div className="absolute bottom-6 right-4 z-10">
