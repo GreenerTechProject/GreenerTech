@@ -11,15 +11,26 @@ import time
 import requests
 from collections import defaultdict
 
+
 import sys
 
-# ensure root path is visible
-#sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../")))
-PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../ia/models"))
-if PROJECT_ROOT not in sys.path:
-    sys.path.insert(0, PROJECT_ROOT)
+# save current working directory
+cwd = os.getcwd()
 
+# change to ia/models so ALL.py can find the model file
+os.chdir(os.path.join(cwd, '../../ia/models'))
+
+# ensure this path is in sys.path for the import
+if os.getcwd() not in sys.path:
+    sys.path.insert(0, os.getcwd())
+
+# import the functions
 from ALL import detect_frame, predict_frame
+
+# return to original working directory
+os.chdir(cwd)
+
+
 
 
 import asyncpg
