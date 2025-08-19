@@ -346,9 +346,11 @@ export default function RobotControl() {
     sendCommand(mode);
   };
 
-  const handleButtonUp = () => {
-    console.log("Sending mode: STOP");
-    sendCommand("STOP");
+  const handleButtonUp = (mode?: string) => {
+    if (!mode || !["PAUSE_MISSION", "PLAY_MISSION"].includes(mode)) {
+      console.log("Sending mode: STOP");
+      sendCommand("STOP");
+    }
   };
   
   const [isMouseDown, setIsMouseDown] = useState(false);
@@ -366,12 +368,12 @@ export default function RobotControl() {
     }}
 	onMouseUp={() => {
       setIsMouseDown(false);
-      handleButtonUp();
+      handleButtonUp(mode);
     }}
 	onMouseLeave={() => {
       if (isMouseDown) {
         setIsMouseDown(false);
-        handleButtonUp();
+        handleButtonUp(mode);
       }
     }}
 	className={`w-full ${className} ${pressedButton === mode ? "ring-4 ring-yellow-300" : ""}`}

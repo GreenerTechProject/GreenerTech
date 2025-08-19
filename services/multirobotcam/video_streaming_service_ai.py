@@ -88,18 +88,30 @@ async def video_stream_handler(request):
 
                                         data3 = {
                                             "id_bilan": data2["id"],
-                                            "temperature": get_latest_sensor_data()["mean_temperature"],
-                                            "humidite": get_latest_sensor_data()["mean_humidity"],
-                                            "luminosite": get_latest_sensor_data()["mean_luminosite"],
-                                            "co2": get_latest_sensor_data()["mean_co2"],
+                                            
+                                            "mean_temperature": get_latest_sensor_data()["mean_temperature"],
+                                            "mean_humidite": get_latest_sensor_data()["mean_humidity"],
+                                            "mean_luminosite": get_latest_sensor_data()["mean_luminosite"],
+                                            "mean_co2": get_latest_sensor_data()["mean_co2"],
+                                            
+                                            "max_temperature": get_latest_sensor_data()["max_temperature"],
+                                            "max_humidite": get_latest_sensor_data()["max_humidity"],
+                                            "max_luminosite": get_latest_sensor_data()["max_luminosite"],
+                                            "max_co2": get_latest_sensor_data()["max_co2"],
+                                            
+                                            "min_temperature": get_latest_sensor_data()["min_temperature"],
+                                            "min_humidite": get_latest_sensor_data()["min_humidity"],
+                                            "min_luminosite": get_latest_sensor_data()["min_luminosite"],
+                                            "min_co2": get_latest_sensor_data()["min_co2"],
+                                            
                                             "nombre_tomates_maladies": 0,
                                             "nombre_tomates_non_maladies": 0,
                                             "nombre_malade1": 0,
                                             "nombre_malade2": 0,
-                                            "rendement": 0
+                                            #"rendement": 0
                                         }
                                         try:
-                                            response = requests.post("http://greenertech.mywire.org:5000/api/etat_bilan", json=data3)
+                                            response = requests.post(os.getenv("BACKTEND_URL", "http://localhost:5000") + "/api/etat_bilan", json=data3)
                                             print(f"[{key}] ✅ etat_bilan sent:", response.status_code, response.text)
                                         except Exception as e:
                                             print(f"[{key}] ❌ Failed to send etat_bilan:", e)
