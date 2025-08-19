@@ -489,8 +489,8 @@ CREATE TABLE public.missions_robot (
     id integer NOT NULL,
     id_robot integer NOT NULL,
     id_serre integer NOT NULL,
-    id_user integer NOT NULL REFERENCES users(id),
-    id_entreprise integer NOT NULL REFERENCES entreprises(id),
+    id_user integer NOT NULL,
+    id_entreprise integer NOT NULL,
     rep_jr integer,
     rep_sem integer,
     jour  integer, 
@@ -1537,6 +1537,20 @@ ALTER TABLE ONLY public.missions_robot
 
 ALTER TABLE ONLY public.missions_robot
     ADD CONSTRAINT missions_robot_id_serre_fkey FOREIGN KEY (id_serre) REFERENCES public.serres(id);
+
+--
+-- Name: missions_robot missions_robot_id_user_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.missions_robot
+    ADD CONSTRAINT missions_robot_id_user_fkey FOREIGN KEY (id_user) REFERENCES public.users(id);
+
+--
+-- Name: missions_robot missions_robot_id_entreprise_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.missions_robot
+    ADD CONSTRAINT missions_robot_id_entreprise_fkey FOREIGN KEY (id_entreprise) REFERENCES public.bilans(id);
 
 
 --
