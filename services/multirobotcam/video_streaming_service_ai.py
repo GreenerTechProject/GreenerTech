@@ -64,6 +64,176 @@ class RelayStreamTrack(VideoStreamTrack):
         return self.av_frame
 
 
+
+
+
+
+
+
+
+async def process_robot_video(track, key):
+    global stream_data
+    while True:
+        frame = await track.recv()
+        frame = frame.to_ndarray(format="bgr24")
+
+        
+        #npdata = np.frombuffer(msg.data, dtype=np.uint8)
+        #frame = cv2.imdecode(npdata, cv2.IMREAD_COLOR)
+
+        qr_results = []
+        retval, decoded_info, points, _ = qr_detector.detectAndDecodeMulti(frame)
+        if retval and points is not None:
+            for i, text in enumerate(decoded_info):
+                if text:
+                    try:
+                        data = json.loads(text)
+                        print(f"[{key}] Detected bilan: {data['nom']}")
+                        prev_qrs = stream_data[key]["latest_qr_results"]
+                        if prev_qrs and text != prev_qrs[0]:
+                            data2 = json.loads(prev_qrs[0])
+                            if data["nom"] != data2["nom"]:
+                                print(f"[{key}] Old bilan: {data2['nom']}")
+                                print(get_latest_sensor_data())
+                                
+                                
+                                conn = None
+                                try:
+                                    conn = await asyncpg.connect(DB_URL)
+                                    
+                                    robot_reference = request.query.get("robot")
+                                    
+                                    robot = await conn.fetchrow(
+                                        "SELECT id FROM robots WHERE referance = $1", 
+                                        robot_reference
+                                    )
+                                    
+                                    if not robot:
+                                        raise ValueError(f"Robot with reference {robot_reference} not found")
+                                    
+                                    mission = await conn.fetchrow(
+                                        "SELECT id, bilans FROM missions_robot WHERE id_robot = $1 AND executed = True ORDER BY id DESC LIMIT 1",
+                                        robot['id']
+                                    )
+                                    
+                                    if not mission:
+                                        raise ValueError(f"No executed mission found for robot {robot['id']}")
+                                    
+                                    
+                                    try:
+                                        bilans = json.loads(mission['bilans']) if isinstance(mission['bilans'], str) else mission['bilans']
+                                        last_bilan = {'id': max(bilans)}
+                                    except (json.JSONDecodeError, TypeError, ValueError) as e:
+                                        raise ValueError(f"Invalid bilans format: {mission['bilans']}")
+                                    
+                                
+                                    if data2["id"] == last_bilan or data["nom"] == "--Fin--" :
+                                        print ("You are in last bilan")
+                                        #data2['id']
+                                        
+                                        await conn.execute(f"""
+                                            UPDATE missions_robot SET date_fin = $1
+                                            WHERE id = $2
+                                        """, datetime.now(timezone(timedelta(hours=1))), mission['id'])
+                                    
+                                except Exception as e:
+                                    print(f"❌ Database error: {str(e)}")
+                                    raise
+                                finally:
+                                    if conn is not None:
+                                        await conn.close()
+                                
+                                
+
+                                data3 = {
+                                    "id_bilan": data2["id"],
+                                    
+                                    "mean_temperature": get_latest_sensor_data()["mean_temperature"],
+                                    "mean_humidite": get_latest_sensor_data()["mean_humidity"],
+                                    "mean_luminosite": get_latest_sensor_data()["mean_luminosite"],
+                                    "mean_co2": get_latest_sensor_data()["mean_co2"],
+                                    
+                                    "max_temperature": get_latest_sensor_data()["max_temperature"],
+                                    "max_humidite": get_latest_sensor_data()["max_humidity"],
+                                    "max_luminosite": get_latest_sensor_data()["max_luminosite"],
+                                    "max_co2": get_latest_sensor_data()["max_co2"],
+                                    
+                                    "min_temperature": get_latest_sensor_data()["min_temperature"],
+                                    "min_humidite": get_latest_sensor_data()["min_humidity"],
+                                    "min_luminosite": get_latest_sensor_data()["min_luminosite"],
+                                    "min_co2": get_latest_sensor_data()["min_co2"],
+                                    
+                                    "nombre_tomates_maladies": 0,
+                                    "nombre_tomates_non_maladies": 0,
+                                    "nombre_malade1": 0,
+                                    "nombre_malade2": 0,
+                                    #"rendement": 0
+                                }
+                                try:
+                                    response = requests.post(os.getenv("BACKTEND_URL", "http://localhost:5000") + "/api/etat_bilan", json=data3)
+                                    print(f"[{key}] ✅ etat_bilan sent:", response.status_code, response.text)
+                                except Exception as e:
+                                    print(f"[{key}] ❌ Failed to send etat_bilan:", e)
+                    except json.JSONDecodeError:
+                        print(f"[{key}] No json", text)
+
+                    pts = points[i].astype(int)
+                    for j in range(4):
+                        pt1 = tuple(pts[j])
+                        pt2 = tuple(pts[(j + 1) % 4])
+                        cv2.line(frame, pt1, pt2, (0, 255, 0), 2)
+                    x, y = pts[0]
+                    cv2.putText(frame, text, (x, y - 10),
+                                cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+                    qr_results.append(text)
+
+        stream_data[key]["latest_frame"] = frame
+        if qr_results:
+            if qr_results != stream_data[key]["latest_qr_results"]:
+                stream_data[key]["latest_qr_results"] = qr_results
+        stream_data[key]["last_frame_time"] = time.time()
+
+
+
+async def video_stream_handler(request):
+    from sensors_realtime_service import get_latest_sensor_data
+    key = get_key_from_request(request)
+    try:
+        params = await request.json()
+        offer = params["offer"]
+
+        pc = RTCPeerConnection()
+
+        @pc.on("connectionstatechange")
+        async def on_connectionstatechange():
+            print(f"[{key}] Robot connection state:", pc.connectionState)
+
+        @pc.on("track")
+        def on_track(track):
+            print(f"[{key}] 📡 Robot stream track received: {track.kind}")
+            if track.kind == "video":
+                asyncio.ensure_future(process_robot_video(track, key))
+
+        await pc.setRemoteDescription(
+            RTCSessionDescription(sdp=offer["sdp"], type=offer["type"])
+        )
+        answer = await pc.createAnswer()
+        await pc.setLocalDescription(answer)
+
+        return web.json_response({
+            "sdp": pc.localDescription.sdp,
+            "type": pc.localDescription.type
+        })
+
+    except Exception as e:
+        return web.json_response({"error": str(e)}, status=500)
+
+
+
+
+
+
+"""
 async def video_stream_handler(request):
     key = get_key_from_request(request)
     from sensors_realtime_service import get_latest_sensor_data
@@ -193,6 +363,7 @@ async def video_stream_handler(request):
                 print(f"[{key}] ❌ Error decoding video frame: {e}")
 
     return ws
+"""
 
 
 async def qr_data_handler(request):
