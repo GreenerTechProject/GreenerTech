@@ -82,6 +82,10 @@ async def video_stream_handler(request):
                                 prev_qrs = stream_data[key]["latest_qr_results"]
                                 if prev_qrs and text != prev_qrs[0]:
                                     data2 = json.loads(prev_qrs[0])
+
+
+
+
                                     if data["nom"] != data2["nom"]:
                                         print(f"[{key}] Old bilan: {data2['nom']}")
                                         print(get_latest_sensor_data())
