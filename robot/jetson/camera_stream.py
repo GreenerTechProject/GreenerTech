@@ -6,7 +6,7 @@ import json
 #import serial
 
 
-host = "greenertech.mywire.org"
+host = "localhost"
 
 async def send_video(robot_ref, camera, idcamera):
     cap = cv2.VideoCapture(idcamera)
@@ -222,13 +222,13 @@ async def listen_missions(robot_referance):
 
 async def main():
     #robot_ref = "robot_123"
-    robot_ref = get_or_create_robot_referance()
+    robot_ref = "1"#get_or_create_robot_referance()
     await asyncio.gather(
         send_video(robot_ref, "right", 0),
         send_video(robot_ref, "left", 1),
         receive_controls(robot_ref),
         simulate_sensor_data(robot_ref),
-        listen_missions(robot_ref) 
+        #listen_missions(robot_ref) 
         )
     
 
