@@ -628,7 +628,8 @@ ALTER SEQUENCE public.rapport_id_seq OWNED BY public.rapport.id;
 CREATE TABLE public.robots (
     id integer NOT NULL,
     nom character varying(100) NOT NULL,
-    referance character varying(100)
+    referance character varying(100),
+    id_entreprise integer
 );
 
 
@@ -1068,8 +1069,8 @@ COPY public.rapport (id, date, description, lien_pdf, id_serre, user_id) FROM st
 -- Data for Name: robots; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.robots (id, nom, referance) FROM stdin;
-1	Robot 1	abcabc46-58c1-4531-b88f-99d3288bfabc
+COPY public.robots (id, nom, referance, id_entreprise) FROM stdin;
+1	Robot 1	abcabc46-58c1-4531-b88f-99d3288bfabc	1
 \.
 
 
