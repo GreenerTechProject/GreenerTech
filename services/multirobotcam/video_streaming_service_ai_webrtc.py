@@ -15,7 +15,7 @@ import sys
 
 # ensure root path is visible
 #sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../")))
-PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../"))
+PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../ia/models"))
 if PROJECT_ROOT not in sys.path:
     sys.path.insert(0, PROJECT_ROOT)
 
