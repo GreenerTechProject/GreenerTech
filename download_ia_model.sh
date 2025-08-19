@@ -7,4 +7,4 @@ rm dataset.zip
 #mv ./ia/models/Detect_Frame2.py ./ia/models/classificationmaladies.py
 #mv ./ia/models/ReelTime2Frame.py ./ia/models/detectobjects.py
 
-pip install -r ia/models/requirements.txt
+pip install -r ia/models/requirements.txt --break-system-packages
