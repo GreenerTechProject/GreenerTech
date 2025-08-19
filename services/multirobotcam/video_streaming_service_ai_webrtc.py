@@ -220,7 +220,7 @@ async def process_robot_video(track, key):
 
 
 async def video_stream_handler(request):
-    from sensors_realtime_service import get_latest_sensor_data
+    from multirobotcam.sensors_realtime_service import get_latest_sensor_data
     key = get_key_from_request(request)
     try:
         params = await request.json()
