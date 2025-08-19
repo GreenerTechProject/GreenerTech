@@ -18,7 +18,7 @@ import sys
 cwd = os.getcwd()
 
 # change to ia/models so ALL.py can find the model file
-os.chdir(os.path.join(cwd, '../../ia/models'))
+os.chdir(os.path.join(cwd, '../ia/models'))
 
 # ensure this path is in sys.path for the import
 if os.getcwd() not in sys.path:
