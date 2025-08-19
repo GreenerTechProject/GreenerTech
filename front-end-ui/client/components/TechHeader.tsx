@@ -220,7 +220,7 @@ export default function TechHeader({ role }: TechHeaderProps) {
     <header className="bg-white border-b sticky top-0 z-[999999]">
       <div className="max-w-full px-3 sm:px-4 lg:px-6">
         {/* Mobile-first responsive grid */}
-        <div className="flex items-center py-2 sm:py-3 relative">
+        <div className="flex items-center justify-between py-2 sm:py-3">
           {/* Left: Hamburger / Navigation */}
           <div className="flex-shrink-0">
             <TechnicianSidebar userRole={role} />
@@ -230,14 +230,14 @@ export default function TechHeader({ role }: TechHeaderProps) {
           <div className="absolute left-1/2 transform -translate-x-1/2 flex items-center gap-3 px-2">
             <div 
               className="h-9 w-9 rounded-xl bg-[#B4CC5F] flex items-center justify-center shadow-sm cursor-pointer hover:bg-[#9BB84F] transition-colors duration-200 active:scale-95 flex-shrink-0"
-              onClick={() => navigate(role === "technicien_sup" || role === "technicien_superieur" ? "/technicien-sup/home" : "/technician/dashboard")}
+              onClick={() => navigate(role === "technicien_sup" ? "/technicien-sup/home" : "/technician/dashboard")}
               title="Accueil"
             >
               <Home className="h-5 w-5 text-white" />
             </div>
             <div 
               className="cursor-pointer hover:scale-110 transition-transform duration-200 active:scale-95 flex-shrink-0"
-              onClick={() => navigate(role === "technicien_sup" || role === "technicien_superieur" ? "/technicien-sup" : "/technician/map")}
+              onClick={() => navigate(role === "technicien_sup" ? "/technicien-sup" : "/technician/map")}
               title="Carte"
             >
               <Map className="h-5 w-5 text-blue-700" />
@@ -245,7 +245,7 @@ export default function TechHeader({ role }: TechHeaderProps) {
           </div>
 
           {/* Right: Alerts, Notifications and User dropdown */}
-          <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0 ml-auto">
+          <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
             {/* Alert Triangle Icon - for REAL alerts from assigned serres */}
             <div className="relative group">
               <div 
