@@ -19,6 +19,8 @@ class Serre(db.Model):
         lazy="joined",
         viewonly=True
     )
+    
+    domaine = relationship("Domaine", back_populates="serres")
 
     def to_dict(self):
         return {

@@ -10,10 +10,10 @@ from app.controllers.serre import create_serre, get_serre, get_all_serres, updat
 
 from app.controllers.guide_culture import create_guide_culture , update_guide_culture, delete_guide, get_guide_culture, get_all_guides
 
-from app.controllers.intervention import create_intervention, validate_intervention, get_all_interention, get_intervention, get_interventions_by_assigned_serres, get_interventions_by_entreprise
+from app.controllers.intervention import create_intervention, validate_intervention, reject_intervention, get_all_interention, get_intervention, get_interventions_by_assigned_serres, get_interventions_by_entreprise
 from app.controllers.type_tache import create_type_tache , get_type_tache, get_all_type_taches
 
-from app.controllers.notification import get_notifications_by_user, mark_notification_as_seen , get_all_notifications
+from app.controllers.notification import get_notifications_by_user, mark_notification_as_seen , get_all_notifications, mark_all_notifications_as_seen
 from app.controllers.autorisation_domaine import create_autorisation_domaine, get_autorisation_domaine, delete_autorisation_domaine
 from app.controllers.autorisation_serre import create_autorisation_serre, get_autorisation_serre, delete_autorisation_serre
 from app.controllers.autorisation_bilan import create_autorisation_bilan, get_autorisation_bilan, delete_autorisation_bilan
@@ -108,7 +108,8 @@ all_bp.route('/types-tache', methods=['GET'])(get_all_type_taches)
 
 all_bp.route('/intervention', methods=['POST'])(create_intervention)
 
-all_bp.route('/intervention/<int:id>', methods=['PUT'])(validate_intervention)
+all_bp.route('/intervention/<int:id>/validate', methods=['PUT'])(validate_intervention)
+all_bp.route('/intervention/<int:id>/reject', methods=['PUT'])(reject_intervention)
 all_bp.route('/intervention', methods=['GET'])(get_all_interention)
 all_bp.route('/intervention/assigned', methods=['GET'])(get_interventions_by_assigned_serres)
 all_bp.route('/intervention/entreprise/<int:entreprise_id>', methods=['GET'])(get_interventions_by_entreprise)
@@ -173,6 +174,7 @@ all_bp.route('/notifications/all', methods=['GET'])(get_all_notifications)
 all_bp.route('/notifications', methods=['GET'])(get_notifications_by_user)
 
 all_bp.route('/notifications/vue/<int:id>', methods=['PUT'])(mark_notification_as_seen)
+all_bp.route('/notifications/mark-all-vue', methods=['PUT'])(mark_all_notifications_as_seen)
 
 
 

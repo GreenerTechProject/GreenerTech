@@ -5,7 +5,6 @@ from app.models.serre import Serre
 from app.utils.security import token_required , role_required
 from database.config import db
 from app.models.user import User
-from app.models.serre import Serre
 from app.models.type_tache import TypeTache
 
 # controllers/intervention.py
@@ -83,6 +82,30 @@ def validate_intervention(current_user,id):
         return jsonify({'message': 'Intervention validée'}), 200
     except Exception as e:
         return jsonify({'error': str(e)}), 400
+
+@token_required
+@role_required("directeur", "technicien_superieur")
+def reject_intervention(current_user, id):
+    try:
+        data = request.get_json() or {}
+        reason = data.get('reason', 'Aucune raison spécifiée')
+        
+        intervention = Intervention.query.get_or_404(id)
+        intervention.valid = False
+        intervention.status = StatutInterventionEnum.EN_ATTENTE  # Reset status to pending
+        
+        # Notify the technician (creator of the intervention)
+        envoyer_notification(
+            description=f"Votre intervention a été rejetée. Raison: {reason}",
+            id_user=intervention.id_user,
+            id_intervention=intervention.id,
+            type_notification="intervention_rejetee"
+        )
+        
+        db.session.commit()
+        return jsonify({'message': 'Intervention rejetée'}), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 400
     
 @token_required
 @role_required("directeur", "technicien_superieur")
@@ -145,7 +168,28 @@ def get_interventions_by_assigned_serres(current_user):
 def get_intervention(current_user, id):
     try:
         intervention = Intervention.query.get_or_404(id)
-        return jsonify(intervention.to_dict()), 200
+        intervention_data = intervention.to_dict()
+        
+        # Get serre information
+        serre = Serre.query.get(intervention.id_serre)
+        if serre:
+            intervention_data['serre_nom'] = serre.nom
+            if hasattr(serre, 'domaine') and serre.domaine:
+                intervention_data['domaine_nom'] = serre.domaine.nom
+            else:
+                intervention_data['domaine_nom'] = "Domaine inconnu"
+        
+        # Get type_tache information
+        type_tache = TypeTache.query.get(intervention.id_type_tache)
+        if type_tache:
+            intervention_data['type_tache'] = type_tache.nom
+        
+        # Get technician information
+        technician = User.query.get(intervention.id_user)
+        if technician:
+            intervention_data['technician_name'] = technician.name if technician.name else technician.email
+        
+        return jsonify(intervention_data), 200
     except Exception as e:
         return jsonify({'error': str(e)}), 400
     

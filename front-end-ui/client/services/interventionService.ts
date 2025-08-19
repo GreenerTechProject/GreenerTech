@@ -17,7 +17,7 @@ const createAuthenticatedRequest = () => {
 export interface Intervention {
   id: number;
   description: string;
-  status: 'encours' | 'terminé';
+  status: 'encours' | 'terminé' | 'en_attente';
   id_user: number;
   id_serre: number;
   id_type_tache: number;
@@ -28,6 +28,8 @@ export interface Intervention {
   serre_nom?: string;
   domaine_nom?: string;
   type_nom?: string;
+  type_tache?: string;
+  technician_name?: string;
   created_at?: string;
   updated_at?: string;
 }
@@ -84,9 +86,18 @@ export class InterventionService {
 
   static async validateIntervention(id: number): Promise<void> {
     try {
-      await axios.put(`${API_BASE_URL}/intervention/${id}`, {}, createAuthenticatedRequest());
+      await axios.put(`${API_BASE_URL}/intervention/${id}/validate`, {}, createAuthenticatedRequest());
     } catch (error) {
       console.error("Error validating intervention:", error);
+      throw error;
+    }
+  }
+
+  static async rejectIntervention(id: number, reason?: string): Promise<void> {
+    try {
+      await axios.put(`${API_BASE_URL}/intervention/${id}/reject`, { reason }, createAuthenticatedRequest());
+    } catch (error) {
+      console.error("Error rejecting intervention:", error);
       throw error;
     }
   }

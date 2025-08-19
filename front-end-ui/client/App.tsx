@@ -23,6 +23,7 @@ import TechnicianMap from "./pages/TechnicianMap";
 import TechnicienSupDashboard from "./pages/TechnicienSupDashboard";
 import TechnicienSupAlerts from "./pages/TechnicienSupAlerts";
 import TechnicienSupInterventions from "./pages/TechnicienSupInterventions";
+import TechnicienSupReports from "./pages/TechnicienSupReports";
 import TechnicienSupLayout from "./components/TechnicienSupLayout";
 import Accueil from "./pages/Accueil";
 import ReportsPage from "./pages/ReportsPage";
@@ -50,6 +51,8 @@ import { MissionManagement } from "./pages/MissionManagement";
 import RobotControl from "./pages/RobotControl";
 import TechnicianReportsPage from "./pages/TechnicianReportsPage";
 import TechnicianReportCreation from "./pages/TechnicianReportCreation";
+import TechSupNotificationsPage from "./pages/TechSupNotificationsPage";
+import InterventionRequestDetails from "./pages/InterventionRequestDetails";
 
 const queryClient = new QueryClient();
 
@@ -296,6 +299,15 @@ const App = () => (
               }
             />
 
+            <Route
+              path="/technician/notifications"
+              element={
+                <ProtectedRoute requiredRole="technicien">
+                  <TechSupNotificationsPage />
+                </ProtectedRoute>
+              }
+            />
+
             {/* Technicien Sup Routes with Persistent Header */}
             <Route
               path="/technicien-sup"
@@ -311,8 +323,10 @@ const App = () => (
               <Route path="dashboard" element={<TechnicienSupDashboard />} />
               <Route path="alerts" element={<TechnicienSupAlerts />} />
               <Route path="interventions" element={<TechnicienSupInterventions />} />
-              <Route path="reports" element={<ReportsPage />} />
+              <Route path="reports" element={<TechnicienSupReports />} />
               <Route path="missions" element={<MissionManagement />} />
+              <Route path="notifications" element={<TechSupNotificationsPage />} />
+              <Route path="intervention-request/:id" element={<InterventionRequestDetails />} />
             </Route>
 
             <Route

@@ -35,10 +35,10 @@ const createAuthenticatedRequest = () => {
 };
 
 export const notificationService = {
-  // Get all notifications for current user
+  // Get all notifications for current user - CORRECT ENDPOINT
   async getNotifications(): Promise<Notification[]> {
     try {
-      const response = await axios.get(`${API_BASE_URL}/notification`, createAuthenticatedRequest());
+      const response = await axios.get(`${API_BASE_URL}/notifications`, createAuthenticatedRequest());
       return response.data;
     } catch (error) {
       console.error('Error fetching notifications:', error);
@@ -80,10 +80,10 @@ export const notificationService = {
     }
   },
 
-  // Get tech sup specific notifications
+  // Get tech sup specific notifications - CORRECT ENDPOINT
   async getTechSupNotifications(): Promise<Notification[]> {
     try {
-      const response = await axios.get(`${API_BASE_URL}/notification`, createAuthenticatedRequest());
+      const response = await axios.get(`${API_BASE_URL}/notifications`, createAuthenticatedRequest());
       return response.data;
     } catch (error) {
       console.error('Error fetching tech sup notifications:', error);
@@ -91,12 +91,22 @@ export const notificationService = {
     }
   },
 
-  // Mark notification as seen
+  // Mark notification as seen - CORRECT ENDPOINT
   async markAsSeen(notificationId: number): Promise<void> {
     try {
-      await axios.put(`${API_BASE_URL}/notification/${notificationId}`, {}, createAuthenticatedRequest());
+      await axios.put(`${API_BASE_URL}/notifications/vue/${notificationId}`, {}, createAuthenticatedRequest());
     } catch (error) {
       console.error('Error marking notification as seen:', error);
+      throw error;
+    }
+  },
+
+  // Mark all notifications as seen for current user
+  async markAllAsSeen(): Promise<void> {
+    try {
+      await axios.put(`${API_BASE_URL}/notifications/mark-all-vue`, {}, createAuthenticatedRequest());
+    } catch (error) {
+      console.error('Error marking all notifications as seen:', error);
       throw error;
     }
   }

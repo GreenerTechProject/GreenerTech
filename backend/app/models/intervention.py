@@ -5,6 +5,7 @@ from enum import Enum
 from sqlalchemy import Column, Integer, String, Date, Float, ForeignKey, Boolean, Enum as SQLAlchemyEnum
 
 class StatutInterventionEnum(str, Enum):
+    EN_ATTENTE = "en_attente"
     ENCOURS = "encours"
     TERMINE = "terminé"
 
@@ -27,12 +28,13 @@ class Intervention(db.Model):
         return {
             "id": self.id,
             "description": self.description,
-            "status": self.status,
+            "status": self.status.value if self.status else "encours",
             "date_debut": self.date_debut.isoformat() if self.date_debut else None,
             "date_fin": self.date_fin.isoformat() if self.date_fin else None,
             "total_charges": self.total_charges,
             "id_user": self.id_user,
             "id_serre": self.id_serre,
             "id_type_tache": self.id_type_tache,
-            "valid": self.valid
+            "valid": self.valid,
+            "created_at": self.date_debut.isoformat() if self.date_debut else None
             }
