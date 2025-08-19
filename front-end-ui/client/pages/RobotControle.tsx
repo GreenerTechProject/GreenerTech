@@ -311,7 +311,7 @@ export default function RobotControl() {
   const handleRobotChange = (robot: string) => {
     setSelectedRobot(robot);
     // Send robot selection command
-    sendCommand('SELECT_ROBOT');
+    //sendCommand('SELECT_ROBOT');
   };
 
   // Update selected robot when robots are loaded

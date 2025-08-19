@@ -69,8 +69,6 @@ export default function RobotControl() {
   const [robots, setRobots] = useState<Robot[]>([]);
   const [isLoadingRobots, setIsLoadingRobots] = useState<boolean>(false);
   const [robotsError, setRobotsError] = useState<string | null>(null);
-
-
   // WebSocket references
   const qrWsRef = useRef<WebSocket | null>(null);
   const controlWsRef = useRef<WebSocket | null>(null);
@@ -329,9 +327,11 @@ export default function RobotControl() {
     sendCommand(mode);
   };
 
-  const handleButtonUp = () => {
-    console.log("Sending mode: STOP");
-    sendCommand("STOP");
+  const handleButtonUp = (mode?: string) => {
+    if (!mode || !["PAUSE_MISSION", "PLAY_MISSION"].includes(mode)) {
+      console.log("Sending mode: STOP");
+      sendCommand("STOP");
+    }
   };
   
   const [isMouseDown, setIsMouseDown] = useState(false);
@@ -349,12 +349,12 @@ export default function RobotControl() {
     }}
 	onMouseUp={() => {
       setIsMouseDown(false);
-      handleButtonUp();
+      handleButtonUp(mode);
     }}
 	onMouseLeave={() => {
       if (isMouseDown) {
         setIsMouseDown(false);
-        handleButtonUp();
+        handleButtonUp(mode);
       }
     }}
 	className={`w-full ${className} ${pressedButton === mode ? "ring-4 ring-yellow-300" : ""}`}
@@ -504,10 +504,6 @@ export default function RobotControl() {
     };
   }, [selectedRobot, selectedCamera]);
 
-  // Fetch robots on component mount
-  useEffect(() => {
-    fetchRobots();
-  }, []);
 
 
   return (
@@ -571,11 +567,11 @@ export default function RobotControl() {
                 disabled={isLoadingRobots}
                 className="w-full h-6 text-xs"
                 variant="outline"
+                size="sm"
               >
                 <RefreshCw className={`h-3 w-3 mr-1 ${isLoadingRobots ? 'animate-spin' : ''}`} />
                 Actualiser les robots
               </Button>
-
             </CardContent>
           </Card>
 
