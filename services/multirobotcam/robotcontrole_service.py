@@ -24,6 +24,11 @@ async def control_handler(request):
                         control_mode = data["control_mode"]
                         print(f"[Robot {robot_id}] Control mode received: {control_mode}")
 
+                        if control_mode == "PAUSE_MISSION" :
+                            control_mode == "STOP"
+                        elif control_mode == "PLAY_MISSION" :
+                            control_mode == "LEFT"
+                        
                         # Broadcast ONLY to clients of the same robot
                         for client_ws, client_robot_id in control_clients.items():
                             if (
