@@ -14,7 +14,9 @@ from collections import defaultdict
 import sys
 
 # ensure root path is visible
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../")))
+#sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../")))
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../", "ia", "models")))
+
 
 from ia.models.ALL import detect_frame, predict_frame
 
