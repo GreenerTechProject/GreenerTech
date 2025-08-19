@@ -16,7 +16,7 @@ import sys
 # ensure root path is visible
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../")))
 
-from ia.models.all import detect_frame, predict_frame
+from ia.models.ALL import detect_frame, predict_frame
 
 
 import asyncpg
