@@ -7,7 +7,7 @@ import json
 import serial
 
 
-host = "greenertech.mywire.org"
+host = "localhost"
 
 
 def usb_camera_pipeline(device=0, width=1280, height=720, fps=30):

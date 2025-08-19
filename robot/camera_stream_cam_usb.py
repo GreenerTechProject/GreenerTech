@@ -7,7 +7,7 @@ import json
 import serial
 
 
-host = "greenertech.mywire.org"
+host = "localhost"
 
 
 def usb_camera_pipeline(device=0, width=1280, height=720, fps=30):
@@ -286,7 +286,7 @@ async def main():
     robot_ref = get_or_create_robot_referance()
     await asyncio.gather(
         send_video(robot_ref, "right", 0, "usb"),
-#        send_video(robot_ref, "left", 1, "usb"),
+        send_video(robot_ref, "left", 1, "usb"),
         receive_controls(robot_ref),
         simulate_sensor_data(robot_ref),
         listen_missions(robot_ref)
