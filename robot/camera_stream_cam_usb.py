@@ -1,15 +1,75 @@
+#!/usr/bin/env python3
 import cv2
 import asyncio
 import websockets
 import json
 
-#import serial
+import serial
 
 
 host = "localhost"
 
-async def send_video(robot_ref, camera, idcamera):
-    cap = cv2.VideoCapture(idcamera)
+
+def usb_camera_pipeline(device=0, width=1280, height=720, fps=30):
+    return (
+        f"v4l2src device=/dev/video{device} ! "
+        f"image/jpeg, width={width}, height={height}, framerate={fps}/1 ! "
+        f"appsink drop=true max-buffers=1"
+    )
+
+"""
+def usb_camera_pipeline(device=0, width=1280, height=720, fps=30):
+    return (
+        f"v4l2src device=/dev/video{device} ! "
+        f"image/jpeg, width={width}, height={height}, framerate={fps}/1 ! "
+        f"jpegdec ! videoconvert ! video/x-raw, format=BGR ! "
+        f"appsink drop=true max-buffers=1"
+    )
+"""
+"""
+def usb_camera_pipeline(device=0, width=1920, height=1080, fps=30):
+    return f"v4l2src device=/dev/video{device} ! video/x-raw, width={width}, height={height}, framerate={fps}/1 ! videoconvert ! video/x-raw, format=BGR ! appsink"
+"""
+"""
+def gstreamer_pipeline(
+    sensor_id=0,
+    capture_width=640,
+    capture_height=480,
+    display_width=640,
+    display_height=480,
+    framerate=30,
+    flip_method=0,
+):
+    return (
+        f"nvarguscamerasrc sensor-id={sensor_id} ! "
+        f"video/x-raw(memory:NVMM), width={capture_width}, height={capture_height}, "
+        f"format=NV12, framerate={framerate}/1 ! "
+        f"nvvidconv flip-method={flip_method} ! "
+        f"video/x-raw, width={display_width}, height={display_height}, format=BGRx ! "
+        f"videoconvert ! "
+        f"video/x-raw, format=BGR ! appsink"
+    )
+
+"""
+
+def gstreamer_pipeline(sensor_id=0, width=640, height=480, fps=30, flip_method=0):
+    return (
+        f"nvarguscamerasrc sensor-id={sensor_id} ! "
+        f"video/x-raw(memory:NVMM), width=(int){width}, height=(int){height}, "
+        f"format=NV12, framerate={fps}/1 ! "
+        f"nvvidconv flip-method={flip_method} ! "
+        f"video/x-raw, format=BGRx ! appsink"
+    )
+
+
+async def send_video(robot_ref, camera, idcamera, type=0):
+
+    if type == "usb" :
+      pipeline = usb_camera_pipeline(idcamera)
+    else :
+      pipeline = gstreamer_pipeline(idcamera)
+
+    cap = cv2.VideoCapture(pipeline, cv2.CAP_GSTREAMER)
 
     while True:
         try:
@@ -23,8 +83,9 @@ async def send_video(robot_ref, camera, idcamera):
                         print("Échec de la lecture de la trame depuis la caméra")
                         break
 
-                    _, buffer = cv2.imencode(".jpg", frame)
-                    await websocket.send(buffer.tobytes())
+                    #_, buffer = cv2.imencode(".jpg", frame)
+                    #await websocket.send(buffer.tobytes())
+                    await websocket.send(frame.tobytes())
                     await asyncio.sleep(0.03)  # 1/0.03=33 ~30fps
                     #await asyncio.sleep(0.06)  # 1/0.06=16 ~15fps
                     #await asyncio.sleep(0.12)  # 1/0.12=8 ~8
@@ -106,17 +167,17 @@ async def receive_controls(robot_ref):
                     data = json.loads(message)
                     if "control_mode" in data:
                         print(f"Commande contrôle reçue: {data['control_mode']}")
-                        
 
-                        #arduino.write((data['control_mode'] + "\n").encode())
+
+                        arduino.write((data['control_mode'] + "\n").encode())
 
 
         except (websockets.exceptions.ConnectionClosedError, ConnectionRefusedError) as e:
-            #arduino.write(("STOP" + "\n").encode())
+            arduino.write(("STOP" + "\n").encode())
             print(f"❌ Connexion contrôle échouée ou perdue : {e}. Nouvelle tentative dans 2 secondes...")
             await asyncio.sleep(2)
         except Exception as e:
-            #arduino.write(("STOP" + "\n").encode())
+            arduino.write(("STOP" + "\n").encode())
             print(f"❌ Erreur contrôle inattendue : {e}. Nouvelle tentative dans 2 secondes...")
             await asyncio.sleep(2)
 
@@ -170,8 +231,8 @@ def get_or_create_robot_referance():
     with open(REFERENCE_FILE, "w") as f:
         f.write(new_ref)
     return new_ref
-    
-    
+
+
 #async def listen_missions(robot_referance):
 #    uri = f"ws://"+host+":8080/service/missions?referance={robot_referance}"
 #    async with websockets.connect(uri) as websocket:
@@ -205,11 +266,11 @@ async def listen_missions(robot_referance):
                     if mission:
                         print("Received mission:", mission)
                         # Here you can add code to handle the mission (e.g., start tasks)
-                        
+
                         # Ouvre le port série vers Arduino (adapter le port si besoin)
                         #arduino = serial.Serial('/dev/ttyACM0', 9600)
                         #arduino.write((mission+ "\n").encode())
-                        #arduino.write(("LEFT"+ "\n").encode())
+                        arduino.write(("LEFT"+ "\n").encode())
                     else:
                         print("No mission at this time.")
         except (websockets.exceptions.ConnectionClosedError, ConnectionRefusedError) as e:
@@ -224,13 +285,13 @@ async def main():
     #robot_ref = "robot_123"
     robot_ref = get_or_create_robot_referance()
     await asyncio.gather(
-        send_video(robot_ref, "right", 0),
-        send_video(robot_ref, "left", 1),
+        send_video(robot_ref, "right", 0, "usb"),
+        send_video(robot_ref, "left", 1, "usb"),
         receive_controls(robot_ref),
         simulate_sensor_data(robot_ref),
-        listen_missions(robot_ref) 
+        listen_missions(robot_ref)
         )
-    
+
 
 if __name__ == "__main__":
     asyncio.run(main())

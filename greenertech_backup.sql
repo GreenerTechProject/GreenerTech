@@ -318,11 +318,23 @@ CREATE TABLE public.etat_bilans (
     nombre_tomates_non_maladies integer,
     nombre_malade1 integer,
     nombre_malade2 integer,
-    temperature double precision,
-    humidite double precision,
-    luminosite double precision,
-    co2 double precision,
-    rendement double precision,
+	
+    mean_temperature double precision,
+    mean_humidite double precision,
+    mean_luminosite double precision,
+    mean_co2 double precision,
+	
+    max_temperature double precision,
+    max_humidite double precision,
+    max_luminosite double precision,
+    max_co2 double precision,
+	
+    min_temperature double precision,
+    min_humidite double precision,
+    min_luminosite double precision,
+    min_co2 double precision,
+	
+---    rendement double precision,
     date timestamp without time zone
 );
 
@@ -958,8 +970,12 @@ COPY public.entreprises (id, nom, id_user, status_juridique, adresse, cie, id_fi
 -- Data for Name: etat_bilans; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.etat_bilans (id, id_bilan, nombre_tomates_maladies, nombre_tomates_non_maladies, nombre_malade1, nombre_malade2, temperature, humidite, luminosite, co2, rendement, date) FROM stdin;
-1	1	2	10	1	1	28.5	70	800	300	16	2025-08-03 01:00:32.583078
+---COPY public.etat_bilans (id, id_bilan, nombre_tomates_maladies, nombre_tomates_non_maladies, nombre_malade1, nombre_malade2, temperature, humidite, luminosite, co2, rendement, date) FROM stdin;
+---1	1	2	10	1	1	28.5	70	800	300	16	2025-08-03 01:00:32.583078
+---\.
+
+COPY public.etat_bilans (id, id_bilan, nombre_tomates_maladies, nombre_tomates_non_maladies, nombre_malade1, nombre_malade2, mean_temperature, mean_humidite, mean_luminosite, mean_co2, max_temperature, max_humidite, max_luminosite, max_co2, min_temperature, min_humidite, min_luminosite, min_co2, date) FROM stdin;
+1	1	2	10	1	1	28.5	70	800	300	28.5	70	800	300	28.5	70	800	300	2025-08-03 01:00:32.583078
 \.
 
 

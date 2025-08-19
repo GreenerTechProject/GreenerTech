@@ -8,6 +8,65 @@ import json
 
 host = "localhost"
 
+
+
+import cv2
+import asyncio
+import aiohttp
+from aiortc import RTCPeerConnection, RTCSessionDescription, VideoStreamTrack
+from av import VideoFrame
+
+class CameraVideoTrack(VideoStreamTrack):
+    def __init__(self, device=0, width=640, height=480, fps=30, type=0):
+        super().__init__()
+        self.cap = cv2.VideoCapture(device)
+        #self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, width)
+        #self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
+        #self.cap.set(cv2.CAP_PROP_FPS, fps)
+        #self.cap.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc(*"MJPG"))
+
+        if not self.cap.isOpened():
+            raise RuntimeError(f"❌ Camera {device} not available")
+
+    async def recv(self):
+        pts, time_base = await self.next_timestamp()
+        ret, frame = self.cap.read()
+        if not ret:
+            print("⚠️ Camera returned empty frame")
+            await asyncio.sleep(0.1)
+            return await self.recv()  # حاول مرة ثانية بدل ما يوقف
+        #print("📹 Capturing frame")
+
+        frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        av_frame = VideoFrame.from_ndarray(frame_rgb, format="rgb24")
+        av_frame.pts = pts
+        av_frame.time_base = time_base
+        return av_frame
+
+
+async def send_video(robot_ref, camera, idcamera, type=0):
+    pc = RTCPeerConnection()
+    pc.addTrack(CameraVideoTrack(device=idcamera, type=0))
+
+    offer = await pc.createOffer()
+    await pc.setLocalDescription(offer)
+
+    async with aiohttp.ClientSession() as session:
+        async with session.post(
+            f"http://{host}:8080/service/video_stream_handler?robot={robot_ref}&camera={camera}",
+            json={"offer": {"sdp": pc.localDescription.sdp, "type": pc.localDescription.type}},
+        ) as resp:
+            answer = await resp.json()
+
+    await pc.setRemoteDescription(
+        RTCSessionDescription(sdp=answer["sdp"], type=answer["type"])
+    )
+
+    print("✅ WebRTC connection established with server")
+
+    await asyncio.Future()
+
+"""
 async def send_video(robot_ref, camera, idcamera):
     cap = cv2.VideoCapture(idcamera)
 
@@ -36,7 +95,7 @@ async def send_video(robot_ref, camera, idcamera):
         except Exception as e:
             print(f"❌ Erreur vidéo inattendue : {e}. Nouvelle tentative dans 2 secondes...")
             await asyncio.sleep(2)
-
+"""
 
 # import asyncio
 # import websockets

@@ -108,16 +108,16 @@ async def sensor_data_handler(request):
                             # Send alert
                             alert_data = {
                                 "id_bilan": qrdata["id"],
-                                "status_alert": 1,
-                                "maladie": "M1",
+                                "status_alert": 1, #1, 2, 3
+                                "maladie": warning,
                                 "lien_image": f"/static/images/{image_filename}",
                                 "x1": x,
                                 "y1": y,
-                                "status": "résolue"
+                                "status": "non_vue" #non_vue vue résolue
                             }
                             try:
                                 response = requests.post(
-                                    os.getenv("BACKTEND_URL", "http://localhost:3000") + "/api/alerte",
+                                    os.getenv("BACKTEND_URL", "http://localhost:5000") + "/api/alerte",
                                     json=alert_data
                                 )
                                 print(f"[{key}] ✅ Alert sent:", response.status_code, response.text)
