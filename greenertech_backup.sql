@@ -500,8 +500,8 @@ CREATE TABLE public.missions_robot (
     date_fin timestamp without time zone,
     executed boolean,
     bilans json DEFAULT '[]'  -- par défaut un tableau vide JSON
+);
 
--- );
 ---CREATE TABLE public.missions_robot (
 ---    id SERIAL PRIMARY KEY,
 ---    id_robot INT NOT NULL,
