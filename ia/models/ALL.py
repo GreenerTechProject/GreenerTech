@@ -66,6 +66,7 @@ def predict_frame(bgr_frame):
     
     return Billan_dicts
 
+"""
 img = cv2.imread("img1.png",1)
 dct = predict_frame(img)
 detect = detect_frame(img)
@@ -73,3 +74,4 @@ print(dct)
 cv2.imshow("Frame",detect)
 cv2.waitKey(0)
 cv2.destroyAllWindows()
+"""

@@ -1,10 +1,10 @@
 #mkdir -p ia
 curl -L -o dataset.zip "https://www.kaggle.com/api/v1/datasets/download/abdellahelazzaoui/tomato-2-verus-datasets-yolo-datasets"
-unzip -o dataset.zip -d services
+unzip -o dataset.zip -d ia/models
 rm dataset.zip
 
 
-mv ./services/Detect_Frame2.py ./services/classificationmaladies.py
-mv ./services/ReelTime2Frame.py ./services/detectobjects.py
+#mv ./ia/models/Detect_Frame2.py ./ia/models/classificationmaladies.py
+#mv ./ia/models/ReelTime2Frame.py ./ia/models/detectobjects.py
 
-pip install -r services/requirements.txt
+pip install -r ia/models/requirements.txt

@@ -11,6 +11,14 @@ import time
 import requests
 from collections import defaultdict
 
+import sys
+
+# ensure root path is visible
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../")))
+
+from ia.models.all import detect_frame, predict_frame
+
+
 import asyncpg
 from datetime import datetime, timezone, timedelta
 
@@ -49,7 +57,8 @@ class RelayStreamTrack(VideoStreamTrack):
     async def recv(self):
         data = stream_data[self.key]
         pts, time_base = await self.next_timestamp()
-        frame_to_use = data["latest_frame"] if data["latest_frame"] is not None else self.fallback_frame
+        #frame_to_use = data["latest_frame"] if data["latest_frame"] is not None else self.fallback_frame
+        frame_to_use = detect_frame(data["latest_frame"]) if data["latest_frame"] is not None else self.fallback_frame
 
         if frame_to_use is None:
             raise Exception("No video stream and no fallback image found!")
