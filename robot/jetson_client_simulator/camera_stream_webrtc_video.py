@@ -30,9 +30,9 @@ class CameraVideoTrack(VideoStreamTrack):
 
     async def recv(self):
         pts, time_base = await self.next_timestamp()
-        self.cap.set(cv2.CAP_PROP_POS_FRAMES, 0)
         ret, frame = self.cap.read()
         if not ret:
+            self.cap.set(cv2.CAP_PROP_POS_FRAMES, 0)
             print("⚠️ Camera returned empty frame")
             await asyncio.sleep(0.1)
             return await self.recv()
