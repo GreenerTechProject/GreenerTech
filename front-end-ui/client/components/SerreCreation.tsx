@@ -402,6 +402,9 @@ export default function SerreCreation({
                     <Plus className="h-5 w-5" />
                     Nouvelle Serre
                   </CardTitle>
+                  <p className="text-sm text-gray-600 mt-2">
+                    Étape 1: Donnez un nom à votre serre et créez son guide de culture unique
+                  </p>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div>
@@ -416,39 +419,53 @@ export default function SerreCreation({
                     />
                   </div>
 
-                  <div>
-                    <Label htmlFor="guide-select">Guide de culture</Label>
-                    <Select
-                      value={serreForm.selectedGuideId}
-                      onValueChange={(value) =>
-                        setSerreForm((prev) => ({ ...prev, selectedGuideId: value }))
-                      }
+                  {/* Guide Creation - Each serre needs its own guide */}
+                  <div className="text-center">
+                    <Button
+                      variant="outline"
+                      onClick={() => setShowCreateGuide(true)}
+                      className="w-full"
                     >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Choisir un guide" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {guides.map((guide) => (
-                          <SelectItem key={guide.id} value={guide.id}>
-                            {guide.nom} - {guide.variete}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                      <BookOpen className="h-4 w-4 mr-2" />
+                      Créer le guide de culture pour cette serre
+                    </Button>
                   </div>
 
-                  {!serreForm.selectedGuideId && (
-                    <div className="text-center">
-                      <Button
-                        variant="outline"
-                        onClick={() => setShowCreateGuide(true)}
-                        className="w-full"
-                      >
-                        <BookOpen className="h-4 w-4 mr-2" />
-                        Créer un nouveau guide
-                      </Button>
+                  {/* Show selected guide info */}
+                  {serreForm.selectedGuideId && (
+                    <div className="p-3 border rounded-lg bg-gray-50">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="font-medium text-sm">
+                            Guide sélectionné: {guides.find(g => g.id === serreForm.selectedGuideId)?.nom}
+                          </p>
+                          <p className="text-xs text-gray-600">
+                            Variété: {guides.find(g => g.id === serreForm.selectedGuideId)?.variete}
+                          </p>
+                        </div>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setSerreForm(prev => ({ ...prev, selectedGuideId: "" }))}
+                        >
+                          Changer
+                        </Button>
+                      </div>
                     </div>
                   )}
+
+                  {/* Validation feedback */}
+                  <div className="text-sm text-gray-600">
+                    {!serreForm.nom.trim() && (
+                      <p className="text-amber-600">⚠️ Veuillez entrer un nom pour la serre</p>
+                    )}
+                    {serreForm.nom.trim() && !serreForm.selectedGuideId && (
+                      <p className="text-amber-600">⚠️ Veuillez créer le guide de culture pour cette serre</p>
+                    )}
+                    {serreForm.nom.trim() && serreForm.selectedGuideId && (
+                      <p className="text-green-600">✅ Prêt à dessiner la serre</p>
+                    )}
+                  </div>
 
                   <div className="flex gap-2">
                     <Button
@@ -457,7 +474,7 @@ export default function SerreCreation({
                       className="flex-1"
                     >
                       <Plus className="h-4 w-4 mr-2" />
-                      Dessiner la serre
+                      Étape 2: Dessiner la serre
                     </Button>
                     {pendingSerre && (
                       <Button
@@ -472,6 +489,9 @@ export default function SerreCreation({
 
                   {pendingSerre && (
                     <div className="space-y-2">
+                      <div className="text-sm text-gray-600 mb-2">
+                        Étape 3: Vérifiez les informations et sauvegardez
+                      </div>
                       <div className="flex justify-between text-sm">
                         <span>Surface:</span>
                         <span className="font-medium">
@@ -710,6 +730,16 @@ export default function SerreCreation({
                 >
                   Annuler
                 </Button>
+              </div>
+
+              {/* Guide form validation */}
+              <div className="text-xs text-gray-600 mt-2">
+                {!guideForm.nom && <p className="text-amber-600">⚠️ Nom requis</p>}
+                {!guideForm.variete && <p className="text-amber-600">⚠️ Variété requise</p>}
+                {!guideForm.rendement && <p className="text-amber-600">⚠️ Rendement requis</p>}
+                {!guideForm.nombre_de_plants && <p className="text-amber-600">⚠️ Nombre de plants requis</p>}
+                {!guideForm.date_debut_saison && <p className="text-amber-600">⚠️ Date de début requise</p>}
+                {!guideForm.date_fin_saison && <p className="text-amber-600">⚠️ Date de fin requise</p>}
               </div>
             </div>
           </div>

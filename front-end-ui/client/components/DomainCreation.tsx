@@ -1,14 +1,25 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { MapPin, Plus, Trash2 } from "lucide-react";
+import { MapPin, Plus, Trash2, GripVertical } from "lucide-react";
 import GoogleMapsWrapper from "./GoogleMapsWrapper";
 import MapComponent, { DrawnShape } from "./MapComponent";
 
+// Local interface that's compatible with both Google Maps and plain objects
+interface LocalDrawnShape {
+  id: string;
+  type: "domain" | "serre" | "bilan";
+  name: string;
+  path: Array<{ lat: number; lng: number }> | google.maps.LatLng[];
+  area: number;
+  center: { lat: number; lng: number } | google.maps.LatLng;
+  color?: string;
+  domainId?: string;
+}
 
 interface Domain {
   id: string;
@@ -33,12 +44,6 @@ interface DomainCreationProps {
   onContinue: (domains: Domain[]) => void;
   onBack?: () => void;
   initialDomains?: Domain[];
-   createDomain: (domainData: {
-    name: string;
-    area: number;
-    center : number;
-    path: Array<{ lat: number; lng: number }>;
-  }) => Promise<{ id: string }>; // Add this prop
 }
 
 
@@ -51,23 +56,39 @@ export default function DomainCreation({
   const [domains, setDomains] = useState<Domain[]>(initialDomains);
   const [isDrawing, setIsDrawing] = useState(false);
   const [newDomainName, setNewDomainName] = useState("");
-  const [pendingShape, setPendingShape] = useState<DrawnShape | null>(null);
+  const [pendingShape, setPendingShape] = useState<LocalDrawnShape | null>(null);
   const [selectedDomainId, setSelectedDomainId] = useState<string | null>(null);
+  const [leftPanelWidth, setLeftPanelWidth] = useState(500);
+  const [isDragging, setIsDragging] = useState(false);
 
   const handleShapeComplete = (shape: DrawnShape) => {
-    setPendingShape(shape);
+    console.log("handleShapeComplete called with shape:", shape);
+    // Convert Google Maps shape to local shape
+    const localShape: LocalDrawnShape = {
+      id: shape.id,
+      type: shape.type,
+      name: shape.name,
+      path: shape.path,
+      area: shape.area,
+      center: shape.center,
+      color: shape.color,
+      domainId: shape.domainId,
+    };
+    console.log("Setting pending shape to:", localShape);
+    setPendingShape(localShape);
     setIsDrawing(false);
   };
 
   const handleSaveDomain = () => {
     if (!pendingShape || !newDomainName.trim()) return;
 
+    // Convert local shape to Domain
     const newDomain: Domain = {
       id: pendingShape.id,
       name: newDomainName.trim(),
       area: pendingShape.area,
-      center: pendingShape.center,
-      path: pendingShape.path,
+      center: pendingShape.center as google.maps.LatLng,
+      path: pendingShape.path as google.maps.LatLng[],
       serres: [],
     };
 
@@ -94,6 +115,35 @@ export default function DomainCreation({
     setPendingShape(null);
     setNewDomainName("");
   };
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    setIsDragging(true);
+    e.preventDefault();
+  };
+
+  const handleMouseMove = (e: MouseEvent) => {
+    if (isDragging) {
+      const newWidth = e.clientX;
+      if (newWidth > 250 && newWidth < 1200) {
+        setLeftPanelWidth(newWidth);
+      }
+    }
+  };
+
+  const handleMouseUp = () => {
+    setIsDragging(false);
+  };
+
+  useEffect(() => {
+    if (isDragging) {
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+      return () => {
+        document.removeEventListener('mousemove', handleMouseMove);
+        document.removeEventListener('mouseup', handleMouseUp);
+      };
+    }
+  }, [isDragging]);
 
   const getAllShapes = (): DrawnShape[] => {
     const shapes: DrawnShape[] = [];
@@ -125,9 +175,19 @@ export default function DomainCreation({
       });
     });
 
-    // Add pending shape
+    // Add pending shape - convert local shape to DrawnShape
     if (pendingShape) {
-      shapes.push(pendingShape);
+      const drawnShape: DrawnShape = {
+        id: pendingShape.id,
+        type: pendingShape.type,
+        name: pendingShape.name,
+        path: pendingShape.path as google.maps.LatLng[],
+        area: pendingShape.area,
+        center: pendingShape.center as google.maps.LatLng,
+        color: pendingShape.color,
+        domainId: pendingShape.domainId,
+      };
+      shapes.push(drawnShape);
     }
 
     return shapes;
@@ -136,7 +196,11 @@ export default function DomainCreation({
   return (
     <div className="h-screen flex">
       {/* Left Panel */}
-      <div className="w-1/3 bg-white border-r flex flex-col">
+      <div
+        className="w-1/3 bg-white border-r flex flex-col"
+        style={{ width: `${leftPanelWidth}px` }}
+        onMouseDown={handleMouseDown}
+      >
         <div className="p-6 border-b">
           <h2 className="text-2xl font-bold text-gray-900 mb-2">
             Créer vos domaines
@@ -148,6 +212,13 @@ export default function DomainCreation({
         </div>
 
         <div className="flex-1 overflow-y-auto p-6">
+          {/* Debug Info */}
+          <div className="mb-4 p-3 bg-gray-100 rounded text-xs">
+            <div>Debug - isDrawing: {isDrawing.toString()}</div>
+            <div>Debug - pendingShape: {pendingShape ? 'exists' : 'null'}</div>
+            <div>Debug - newDomainName: "{newDomainName}"</div>
+          </div>
+
           {/* Drawing Controls */}
           <Card className="mb-6">
             <CardHeader>
@@ -155,10 +226,32 @@ export default function DomainCreation({
             </CardHeader>
             <CardContent className="space-y-4">
               {!isDrawing && !pendingShape && (
-                <Button onClick={startDrawing} className="w-full">
-                  <Plus className="mr-2 h-4 w-4" />
-                  Dessiner un domaine
-                </Button>
+                <div className="space-y-2">
+                  <Button onClick={startDrawing} className="w-full">
+                    <Plus className="mr-2 h-4 w-4" />
+                    Dessiner un domaine
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    onClick={() => {
+                      console.log("Test button clicked - setting pending shape manually");
+                      const testShape: LocalDrawnShape = {
+                        id: "test-" + Date.now(),
+                        type: "domain",
+                        name: "Test Domain",
+                        path: [],
+                        area: 10000,
+                        center: { lat: 33.9716, lng: -6.8498 },
+                        color: "#B4CC5F"
+                      };
+                      console.log("Setting test shape:", testShape);
+                      setPendingShape(testShape);
+                    }}
+                    className="w-full text-xs"
+                  >
+                    🧪 Test: Simuler un domaine dessiné
+                  </Button>
+                </div>
               )}
 
               {isDrawing && (
@@ -180,13 +273,25 @@ export default function DomainCreation({
               {pendingShape && (
                 <div className="space-y-3">
                   <div>
-                    <Label htmlFor="domainName">Nom du domaine</Label>
+                    <Label htmlFor="domainName">Nom du domaine *</Label>
                     <Input
                       id="domainName"
+                      name="domainName"
+                      type="text"
                       value={newDomainName}
                       onChange={(e) => setNewDomainName(e.target.value)}
+                      onFocus={(e) => e.target.select()}
                       placeholder="Ex: Parcelle Nord"
+                      className="w-full"
+                      autoFocus
+                      disabled={false}
+                      autoComplete="off"
                     />
+                    {newDomainName && (
+                      <div className="text-xs text-green-600 mt-1">
+                        ✓ Nom saisi: {newDomainName}
+                      </div>
+                    )}
                   </div>
                   <div className="text-xs text-gray-500">
                     Surface: {(pendingShape.area / 10000).toFixed(2)} hectares
@@ -288,15 +393,26 @@ export default function DomainCreation({
         </div>
       </div>
 
+      {/* Resizable Handle */}
+      <div
+        className="w-1 bg-gray-200 cursor-col-resize hover:bg-gray-300 transition-colors"
+        onMouseDown={handleMouseDown}
+      >
+        <div className="w-full h-full flex items-center justify-center">
+          <GripVertical className="h-6 w-6 text-gray-400" />
+        </div>
+      </div>
+
       {/* Right Panel - Map */}
       <div className="flex-1">
         <GoogleMapsWrapper>
-          <MapComponent
-            onShapeComplete={handleShapeComplete}
-            existingShapes={getAllShapes()}
-            drawingMode={isDrawing ? "domain" : null}
-            className="w-full h-full"
-          />
+                  <MapComponent
+          onShapeComplete={handleShapeComplete}
+          existingShapes={getAllShapes()}
+          drawingMode={isDrawing ? "domain" : null}
+          className="w-full h-full"
+          hideZoomControls={true}
+        />
         </GoogleMapsWrapper>
       </div>
     </div>
