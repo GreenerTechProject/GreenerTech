@@ -266,6 +266,56 @@ export default function RobotControl() {
     }
   };
 
+  // Toggle AI detection
+  const toggleAIDetection = () => {
+    const newState = !isAIDetectionEnabled;
+    setIsAIDetectionEnabled(newState);
+    sendCommand(newState ? 'ENABLE_AI' : 'DISABLE_AI');
+  };
+
+  // Zoom controls
+  const zoomIn = () => {
+    setVideoZoom(prev => Math.min(prev + 0.25, 3));
+  };
+
+  const zoomOut = () => {
+    setVideoZoom(prev => Math.max(prev - 0.25, 0.5));
+  };
+
+  const resetZoom = () => {
+    setVideoZoom(1);
+    setVideoPosition({ x: 0, y: 0 });
+  };
+
+  // Capture image from video
+  const captureImage = () => {
+    if (videoRef.current) {
+      const video = videoRef.current;
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+
+      if (ctx) {
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        ctx.drawImage(video, 0, 0);
+
+        // Create download link
+        canvas.toBlob((blob) => {
+          if (blob) {
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `robot-${selectedRobot}-camera-${selectedCamera}-${new Date().toISOString().replace(/[:.]/g, '-')}.jpg`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+          }
+        }, 'image/jpeg', 0.9);
+      }
+    }
+  };
+
   // Refresh connections
   const refreshConnections = async () => {
     setIsRefreshing(true);
