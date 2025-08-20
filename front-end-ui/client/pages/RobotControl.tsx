@@ -22,7 +22,13 @@ import {
   Maximize,
   Minimize,
   Camera,
-  Bot
+  Bot,
+  ZoomIn,
+  ZoomOut,
+  Download,
+  Eye,
+  EyeOff,
+  Move
 } from 'lucide-react';
 import axios from 'axios';
 import { tokenManager } from "../services/authService";
