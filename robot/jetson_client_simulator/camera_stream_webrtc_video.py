@@ -10,6 +10,27 @@ host = "greenertech.mywire.org"
 
 
 
+import os
+import sys
+
+# save current working directory
+cwd = os.getcwd()
+
+# change to ia/models so ALL.py can find the model file
+os.chdir(os.path.join(cwd, '../../ia/models'))
+
+# ensure this path is in sys.path for the import
+if os.getcwd() not in sys.path:
+    sys.path.insert(0, os.getcwd())
+
+# import the functions
+from ALL import detect_frame, predict_frame
+
+# return to original working directory
+os.chdir(cwd)
+
+
+
 import cv2
 import asyncio
 import aiohttp
@@ -31,6 +52,7 @@ class CameraVideoTrack(VideoStreamTrack):
     async def recv(self):
         pts, time_base = await self.next_timestamp()
         ret, frame = self.cap.read()
+        frame = detect_frame(frame)
         if not ret:
             self.cap.set(cv2.CAP_PROP_POS_FRAMES, 0)
             ret, frame = self.cap.read()
