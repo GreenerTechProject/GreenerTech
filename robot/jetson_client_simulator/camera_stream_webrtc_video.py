@@ -33,9 +33,9 @@ class CameraVideoTrack(VideoStreamTrack):
         ret, frame = self.cap.read()
         if not ret:
             self.cap.set(cv2.CAP_PROP_POS_FRAMES, 0)
-            print("⚠️ Camera returned empty frame")
-            await asyncio.sleep(0.1)
-            return await self.recv()
+            ret, frame = self.cap.read()
+            if not ret:
+                raise RuntimeError("❌ Failed to read frame from video")
         #print("📹 Capturing frame")
 
         frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
