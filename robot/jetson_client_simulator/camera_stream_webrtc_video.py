@@ -24,7 +24,7 @@ if os.getcwd() not in sys.path:
     sys.path.insert(0, os.getcwd())
 
 # import the functions
-from ALL import detect_frame, predict_frame
+from detectobjects import detect_frame#, predict_frame
 
 # return to original working directory
 os.chdir(cwd)
