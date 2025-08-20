@@ -10,6 +10,7 @@ host = "greenertech.mywire.org"
 
 
 
+import os
 import sys
 
 # save current working directory
