@@ -58,7 +58,6 @@ interface Technician {
   email: string;
   password: string;
   role: "technicien_superieur" | "technicien";
-  assignedSerres: string[];
   supervisorId?: string;
 }
 
@@ -119,12 +118,9 @@ export default function FinalOverview({
   const totalRegularTechnicians = technicians.filter(t => t.role === "technicien").length;
   const assignedTechnicians = technicians.filter(t => t.role === "technicien" && t.id_assigned).length;
   
-  // Calculate assigned serres from technicians' assignedSerres arrays
-  const assignedSerres = technicians.reduce((total, tech) => {
-    // Ensure assignedSerres is always an array
-    const techAssignedSerres = tech.assignedSerres || [];
-    console.log(`Technician ${tech.fullName} assignedSerres:`, techAssignedSerres);
-    return total + techAssignedSerres.length;
+  // Calculate assigned serres from serreAssignments data
+  const assignedSerres = serreAssignments.reduce((total, assignment) => {
+    return total + assignment.supervisorIds.length;
   }, 0);
   
   const unassignedSerres = totalSerres - assignedSerres;
@@ -134,11 +130,9 @@ export default function FinalOverview({
     assignedSerres,
     unassignedSerres,
     techniciansCount: technicians.length,
-    technicians: technicians.map(t => ({ 
-      id: t.id, 
-      fullName: t.fullName, 
-      role: t.role, 
-      assignedSerres: t.assignedSerres || [] 
+    serreAssignments: serreAssignments.map(a => ({
+      serreId: a.serreId,
+      supervisorIds: a.supervisorIds
     }))
   });
 
@@ -226,7 +220,16 @@ export default function FinalOverview({
 
   const getTechnicianForSerre = (serreId: string | number) => {
     const serreIdStr = serreId.toString();
-    return technicians.find((tech) => tech.assignedSerres && tech.assignedSerres.includes(serreIdStr));
+    // Find serre assignment for this serre
+    const assignment = serreAssignments.find(a => a.serreId === serreIdStr);
+    if (!assignment) return null;
+    
+    // Find the first supervisor assigned to this serre
+    const supervisorId = assignment.supervisorIds[0];
+    if (!supervisorId) return null;
+    
+    // Find the technician with this ID
+    return technicians.find(tech => tech.id === supervisorId);
   };
 
   const getDomainsWithSerres = () => {

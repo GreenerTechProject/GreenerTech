@@ -15,6 +15,7 @@ from app.models.etat_bilan import Etat_bilan
 from app.models.intervention import Intervention
 from app.models.notification import Notification
 from app.models.mission_robot import MissionRobot
+from app.models.user import User
 
 
 @token_required
@@ -277,5 +278,128 @@ def get_serres_by_user(current_user):
         serres_data.append(serre_dict)
     
     return jsonify(serres_data), 200
+
+
+@token_required
+@role_required("directeur", "technicien_superieur")
+def assign_user_to_serre(current_user):
+    """Assign a user to a serre"""
+    try:
+        data = request.get_json()
+        user_id = data.get('user_id')
+        serre_id = data.get('serre_id')
+        
+        if not user_id or not serre_id:
+            return jsonify({"message": "user_id et serre_id sont requis"}), 400
+        
+        # Check if current user has permission (must be in same company)
+        if current_user.id_entreprise is None:
+            return jsonify({"message": "Vous devez être associé à une entreprise"}), 403
+        
+        # Get the user and serre
+        user = User.query.get(user_id)
+        serre = Serre.query.get(serre_id)
+        
+        if not user or not serre:
+            return jsonify({"message": "Utilisateur ou serre non trouvé"}), 404
+        
+        # Check if serre belongs to current user's company
+        domaine = Domaine.query.get(serre.id_domaine)
+        if not domaine or domaine.id_entreprise != current_user.id_entreprise:
+            return jsonify({"message": "Non autorisé - serre hors de votre entreprise"}), 403
+        
+        # Check if user is in the same company
+        if user.id_entreprise != current_user.id_entreprise:
+            return jsonify({"message": "Non autorisé - utilisateur hors de votre entreprise"}), 403
+        
+        # Check if assignment already exists
+        existing_auth = Autorisation_serre.query.filter_by(
+            id_user=user_id, 
+            id_serre=serre_id
+        ).first()
+        
+        if existing_auth:
+            return jsonify({"message": "L'utilisateur est déjà assigné à cette serre"}), 409
+        
+        # Create the authorization
+        autorisation = Autorisation_serre(
+            id_user=user_id,
+            id_serre=serre_id
+        )
+        db.session.add(autorisation)
+        db.session.commit()
+        
+        return jsonify({
+            "message": f"Utilisateur {user.name} assigné à la serre {serre.nom}",
+            "authorization": autorisation.to_dict(),
+            "user": user.to_dict(),
+            "serre": serre.to_dict()
+        }), 201
+        
+    except Exception as e:
+        print(f"Error in assign_user_to_serre: {str(e)}")
+        db.session.rollback()
+        return jsonify({"error": "Erreur lors de l'assignation"}), 500
+
+
+@token_required
+@role_required("directeur", "technicien_superieur")
+def remove_user_from_serre(current_user):
+    """Remove a user's assignment from a serre"""
+    try:
+        data = request.get_json()
+        user_id = data.get('user_id')
+        serre_id = data.get('serre_id')
+        
+        if not user_id or not serre_id:
+            return jsonify({"message": "user_id et serre_id sont requis"}), 400
+        
+        # Check if current user has permission (must be in same company)
+        if current_user.id_entreprise is None:
+            return jsonify({"message": "Vous devez être associé à une entreprise"}), 403
+        
+        # Get the user and serre
+        user = User.query.get(user_id)
+        serre = Serre.query.get(serre_id)
+        
+        if not user or not serre:
+            return jsonify({"message": "Utilisateur ou serre non trouvé"}), 404
+        
+        # Check if serre belongs to current user's company
+        domaine = Domaine.query.get(serre.id_domaine)
+        if not domaine or domaine.id_entreprise != current_user.id_entreprise:
+            return jsonify({"message": "Non autorisé - serre hors de votre entreprise"}), 403
+        
+        # Check if user is in the same company
+        if user.id_entreprise != current_user.id_entreprise:
+            return jsonify({"message": "Non autorisé - utilisateur hors de votre entreprise"}), 403
+        
+        # Find and remove the authorization
+        autorisation = Autorisation_serre.query.filter_by(
+            id_user=user_id, 
+            id_serre=serre_id
+        ).first()
+        
+        if not autorisation:
+            return jsonify({"message": "Aucune assignation trouvée pour cet utilisateur et cette serre"}), 404
+        
+        # Check if trying to remove the last authorized user (prevent orphaned serres)
+        remaining_auths = Autorisation_serre.query.filter_by(id_serre=serre_id).count()
+        if remaining_auths <= 1:
+            return jsonify({"message": "Impossible de supprimer la dernière assignation de la serre"}), 400
+        
+        db.session.delete(autorisation)
+        db.session.commit()
+        
+        return jsonify({
+            "message": f"Utilisateur {user.name} retiré de la serre {serre.nom}",
+            "user": user.to_dict(),
+            "serre": serre.to_dict()
+        }), 200
+        
+    except Exception as e:
+        print(f"Error in remove_user_from_serre: {str(e)}")
+        db.session.rollback()
+        return jsonify({"error": "Erreur lors de la suppression de l'assignation"}), 500
 
 

@@ -51,13 +51,18 @@ interface Technician {
   fullName: string;
   email: string;
   role: "technicien_superieur" | "technicien";
-  assignedSerres: string[];
+}
+
+interface SerreAssignment {
+  serreId: string;
+  supervisorIds: string[];
 }
 
 interface CompletedSetupData {
   companyInfo: CompanyInfo;
   domains: Domain[];
   technicians: Technician[];
+  serreAssignments: SerreAssignment[];
 }
 
 export default function DirecteurSetup() {
@@ -201,9 +206,9 @@ export default function DirecteurSetup() {
                   ? guide.date_debut_saison.split('T')[0] // Convert to YYYY-MM-DD format
                   : guide.date_debut_saison.toISOString().split('T')[0],
               date_fin_saison:
-                typeof guide.date_fin_saison === "string"
-                  ? guide.date_fin_saison.split('T')[0] // Convert to YYYY-MM-DD format
-                  : guide.date_fin_saison.toISOString().split('T')[0],
+                typeof guide.date_debut_saison === "string"
+                  ? guide.date_debut_saison.split('T')[0] // Convert to YYYY-MM-DD format
+                  : guide.date_debut_saison.toISOString().split('T')[0],
               id_serre: serreId.toString(), // Link to the actual created serre
             };
 
@@ -214,13 +219,12 @@ export default function DirecteurSetup() {
       }
 
       // Step 5: Create technicians
-      let createdTechnicians: { id: number; email: string; role: Technician["role"]; assignedSerres: string[] }[] = [];
+      let createdTechnicians: { id: number; email: string; role: Technician["role"]; supervisorId?: string }[] = [];
       if (setupData.technicians.length > 0) {
         const technicianRequests = setupData.technicians.map((technician) => ({
           fullName: technician.fullName,
           email: technician.email,
           role: technician.role,
-          assignedSerres: technician.assignedSerres,
           companyId: parseInt(companyId.toString(), 10),
         }));
 
@@ -230,26 +234,80 @@ export default function DirecteurSetup() {
           id: res.id,
           email: technicianRequests[idx].email,
           role: technicianRequests[idx].role,
-          assignedSerres: technicianRequests[idx].assignedSerres,
         }));
+        
+        // Step 5b: Reset all technicians to have id_assigned = null initially
+        console.log("Resetting all technicians to have no supervisor initially...");
+        for (const tech of createdTechnicians) {
+          try {
+            console.log(`Resetting ${tech.email} (${tech.role}) to have no supervisor...`);
+            const response = await fetch(`${window.location.protocol}//${window.location.hostname}:5000/api/user`, {
+              method: 'PUT',
+              headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${localStorage.getItem('auth_token') || ''}`,
+              },
+              body: JSON.stringify({ 
+                id: tech.id,
+                id_assigned: null 
+              }),
+            });
+            
+            if (!response.ok) {
+              const errorData = await response.json();
+              throw new Error(`HTTP ${response.status}: ${errorData.message || 'Unknown error'}`);
+            }
+            
+            const result = await response.json();
+            console.log(`Successfully reset ${tech.email} (${tech.role}) to have no supervisor:`, result);
+          } catch (e) {
+            console.warn("Failed to reset technician supervisor assignment", tech.email, e);
+          }
+        }
       }
 
       // Step 6: Create autorisations_serre for each technician assigned to serres
-      if (createdTechnicians.length > 0) {
-        for (const tech of createdTechnicians) {
-          for (const assignedTempId of tech.assignedSerres) {
-            const targetSerreId = serreIdMap.get(assignedTempId) ?? parseInt(assignedTempId, 10);
-            if (!targetSerreId || Number.isNaN(targetSerreId)) continue;
-            try {
-              await serreService.createAutorisationSerre({
-                id_user: tech.id,
-                id_serre: targetSerreId,
-              });
-            } catch (e) {
-              console.warn("Failed to create autorisation_serre for", tech.email, assignedTempId, e);
+      // NOTE: This step is skipped since serres are not assigned during technician creation
+      // Serre assignments will be handled separately in the technician hierarchy step
+      console.log("Skipping serre autorisations - serres will be assigned later in technician hierarchy");
+
+      // Step 7: Create serre assignments to supervisors
+      if (setupData.serreAssignments.length > 0) {
+        for (const assignment of setupData.serreAssignments) {
+          const backendSerreId = serreIdMap.get(assignment.serreId);
+          if (!backendSerreId) continue;
+
+          for (const supervisorId of assignment.supervisorIds) {
+            const supervisor = createdTechnicians.find(t => 
+              t.email === setupData.technicians.find(tech => tech.id === supervisorId)?.email
+            );
+            
+            if (supervisor) {
+              try {
+                console.log(`Creating serre authorization for supervisor ${supervisor.email} (ID: ${supervisor.id}) for serre ID: ${backendSerreId}`);
+                const result = await serreService.createAutorisationSerre({
+                  id_user: supervisor.id,
+                  id_serre: backendSerreId,
+                });
+                console.log(`Successfully created serre authorization:`, result);
+              } catch (e) {
+                console.error("Failed to create serre authorization for supervisor", supervisor.email, e);
+                throw e; // Re-throw to stop the setup process
+              }
             }
           }
         }
+      }
+
+      // Step 8: Update technician hierarchy (supervisor assignments)
+      // NOTE: Technician hierarchy assignments are handled in the TechnicianHierarchy component
+      // and will be processed when the setup is completed through the wizard flow
+      console.log("Technician hierarchy assignments will be handled in the next step");
+
+      // Step 9: Log final technician hierarchy state
+      console.log("=== FINAL TECHNICIAN HIERARCHY STATE ===");
+      for (const tech of createdTechnicians) {
+        console.log(`${tech.email} (${tech.role}): created successfully`);
       }
 
       // Update user context with setup_completed = true
@@ -261,10 +319,11 @@ export default function DirecteurSetup() {
         0,
       );
       const totalTechnicians = setupData.technicians.length;
+      const totalAssignments = setupData.serreAssignments.length;
 
       toast({
         title: "Configuration terminée !",
-        description: `Votre entreprise, ${setupData.domains.length} domaine(s), ${totalSerres} serre(s) et ${totalTechnicians} technicien(s) ont été configurés avec succès.`,
+        description: `Votre entreprise, ${setupData.domains.length} domaine(s), ${totalSerres} serre(s), ${totalTechnicians} technicien(s) et ${totalAssignments} assignation(s) ont été configurés avec succès.`,
       });
 
       // Redirect to the main directeur dashboard

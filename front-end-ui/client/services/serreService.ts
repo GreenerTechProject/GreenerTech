@@ -47,6 +47,13 @@ const API_BASE_URL = `${window.location.protocol}//${window.location.hostname}:5
 // Create axios instance with auth headers
 const createAuthenticatedRequest = () => {
   const token = tokenManager.getToken();
+  console.log("=== AUTH DEBUG ===");
+  console.log("Token exists:", !!token);
+  console.log("Token value:", token ? `${token.substring(0, 20)}...` : "null");
+  console.log("Headers:", {
+    "Content-Type": "application/json",
+    ...(token && { Authorization: `Bearer ${token}` }),
+  });
   return {
     headers: {
       "Content-Type": "application/json",
@@ -59,16 +66,85 @@ export const serreService = {
   // Create a single serre
   createSerre: async (serre: CreateSerreRequest): Promise<CreateSerreResponse> => {
     try {
+      console.log("=== SERRE CREATION DEBUG ===");
       console.log("Creating serre:", serre);
+      console.log("API URL:", `${API_BASE_URL}/serre`);
+      console.log("Request data:", JSON.stringify(serre, null, 2));
+      
+      const authHeaders = createAuthenticatedRequest();
+      console.log("Auth headers:", authHeaders);
+      
+      // Check if token exists and is valid
+      const token = tokenManager.getToken();
+      console.log("=== TOKEN DEBUG ===");
+      console.log("Token exists:", !!token);
+      console.log("Token length:", token ? token.length : 0);
+      console.log("Token preview:", token ? `${token.substring(0, 50)}...` : "null");
+      
+      if (!token) {
+        throw new Error("No authentication token found");
+      }
+      
+      // Try to refresh token if it might be expired
+      try {
+        const refreshToken = tokenManager.getRefreshToken();
+        if (refreshToken) {
+          console.log("Attempting token refresh...");
+          const refreshResponse = await axios.post(`${API_BASE_URL}/auth/refresh`, {
+            refreshToken,
+          });
+          const newToken = refreshResponse.data.token;
+          tokenManager.setToken(newToken);
+          console.log("Token refreshed successfully");
+          
+          // Update auth headers with new token
+          const newAuthHeaders = createAuthenticatedRequest();
+          console.log("New auth headers:", newAuthHeaders);
+          
+          const response = await axios.post<CreateSerreResponse>(
+            `${API_BASE_URL}/serre`,
+            serre,
+            newAuthHeaders,
+          );
+          console.log("Serre creation response:", response.data);
+          return response.data;
+        }
+      } catch (refreshError) {
+        console.log("Token refresh failed, continuing with current token:", refreshError);
+      }
+      
+      // Test authentication first
+      try {
+        console.log("Testing authentication...");
+        const testResponse = await axios.get(`${API_BASE_URL}/user`, authHeaders);
+        console.log("Auth test successful:", testResponse.data);
+        console.log("User role:", testResponse.data?.role);
+        console.log("User ID:", testResponse.data?.id);
+      } catch (authError: any) {
+        console.error("Auth test failed:", authError.response?.status, authError.response?.data);
+        throw new Error(`Authentication failed: ${authError.response?.data?.message || 'Unknown error'}`);
+      }
+      
+      console.log("=== FINAL SERRE REQUEST ===");
+      console.log("URL:", `${API_BASE_URL}/serre`);
+      console.log("Headers:", JSON.stringify(authHeaders, null, 2));
+      console.log("Data:", JSON.stringify(serre, null, 2));
+      
       const response = await axios.post<CreateSerreResponse>(
         `${API_BASE_URL}/serre`,
         serre,
-        createAuthenticatedRequest(),
+        authHeaders,
       );
       console.log("Serre creation response:", response.data);
+      console.log("Response status:", response.status);
+      console.log("Response headers:", response.headers);
       return response.data;
     } catch (error: any) {
+      console.error("=== SERRE CREATION ERROR ===");
       console.error("Erreur lors de la création de la serre:", error);
+      console.error("Error response:", error.response?.data);
+      console.error("Error status:", error.response?.status);
+      console.error("Error headers:", error.response?.headers);
 
       const errorMessage =
         error.response?.data?.message ||

@@ -818,3 +818,54 @@ def get_interventions_by_technicien(current_user, id):
     except Exception as e:
         print(f"Error in get_interventions_by_technicien: {str(e)}")
         return jsonify({"success": False, "message": str(e)}), 500
+
+@token_required
+@role_required("directeur", "technicien_superieur")
+def assign_technician_to_supervisor(current_user):
+    """Assign a technician to a supervisor"""
+    try:
+        data = request.get_json()
+        technician_id = data.get('technician_id')
+        supervisor_id = data.get('supervisor_id')
+        
+        if not technician_id or not supervisor_id:
+            return jsonify({"message": "technician_id et supervisor_id sont requis"}), 400
+        
+        # Check if current user has permission (must be in same company)
+        if current_user.id_entreprise is None:
+            return jsonify({"message": "Vous devez être associé à une entreprise"}), 403
+        
+        # Get the technician and supervisor
+        technician = User.query.get(technician_id)
+        supervisor = User.query.get(supervisor_id)
+        
+        if not technician or not supervisor:
+            return jsonify({"message": "Technicien ou superviseur non trouvé"}), 404
+        
+        # Check if both users are in the same company
+        if (technician.id_entreprise != current_user.id_entreprise or 
+            supervisor.id_entreprise != current_user.id_entreprise):
+            return jsonify({"message": "Non autorisé - utilisateurs hors de votre entreprise"}), 403
+        
+        # Check if supervisor has appropriate role
+        if supervisor.role not in ["technicien_superieur", "directeur"]:
+            return jsonify({"message": "Le superviseur doit être un technicien supérieur ou directeur"}), 400
+        
+        # Check if technician has appropriate role
+        if technician.role != "technicien":
+            return jsonify({"message": "L'utilisateur doit être un technicien"}), 400
+        
+        # Assign the technician to the supervisor
+        technician.id_assigned = supervisor_id
+        db.session.commit()
+        
+        return jsonify({
+            "message": f"Technicien {technician.name} assigné au superviseur {supervisor.name}",
+            "technician": technician.to_dict(),
+            "supervisor": supervisor.to_dict()
+        }), 200
+        
+    except Exception as e:
+        print(f"Error in assign_technician_to_supervisor: {str(e)}")
+        db.session.rollback()
+        return jsonify({"error": "Erreur lors de l'assignation"}), 500

@@ -1,16 +1,16 @@
 from flask import Blueprint
 
 
-from app.controllers.user import register, login, get_user, update_user, delete_user, create_technicien, register_technicien, verify_email, validate_technicien, get_technicien_by_email, get_all_technicians, get_techniciens_by_company,get_alltechniciens_by_company, get_pending_technicians_by_company, update_technicien, delete_technicien, get_interventions_by_technicien
+from app.controllers.user import register, login, get_user, update_user, delete_user, create_technicien, register_technicien, verify_email, validate_technicien, get_technicien_by_email, get_all_technicians, get_techniciens_by_company,get_alltechniciens_by_company, get_pending_technicians_by_company, update_technicien, delete_technicien, get_interventions_by_technicien, assign_technician_to_supervisor
 
-from app.controllers.entreprise import create_entreprise, get_entreprise, get_all_entreprises, update_entreprise, delete_entreprise, get_company_map_data
+from app.controllers.entreprise import create_entreprise, get_entreprise, get_all_entreprises, update_entreprise, delete_entreprise, get_company_map_data, get_company_assignments
 from app.controllers.domaine import create_domaine, get_domaine, get_all_domaines, update_domaine, delete_domaine, get_serres_by_domaine
 from app.controllers.bilan import create_bilan, get_bilan, get_all_bilans, update_bilan, delete_bilan, generate_bilan_qrcode
-from app.controllers.serre import create_serre, get_serre, get_all_serres, update_serre, delete_serre, get_bilans_by_serre, get_guides_by_serre, get_serres_by_user
+from app.controllers.serre import create_serre, get_serre, get_all_serres, update_serre, delete_serre, get_bilans_by_serre, get_guides_by_serre, get_serres_by_user, assign_user_to_serre, remove_user_from_serre
 
 from app.controllers.guide_culture import create_guide_culture , update_guide_culture, delete_guide, get_guide_culture, get_all_guides
 
-from app.controllers.intervention import create_intervention, validate_intervention, reject_intervention, get_all_interention, get_intervention, get_interventions_by_assigned_serres, get_interventions_by_entreprise
+from app.controllers.intervention import create_intervention, validate_intervention, get_all_interention, get_intervention, get_interventions_by_assigned_serres, get_interventions_by_entreprise
 from app.controllers.type_tache import create_type_tache , get_type_tache, get_all_type_taches
 
 from app.controllers.notification import get_notifications_by_user, mark_notification_as_seen , get_all_notifications, mark_all_notifications_as_seen
@@ -108,8 +108,7 @@ all_bp.route('/types-tache', methods=['GET'])(get_all_type_taches)
 
 all_bp.route('/intervention', methods=['POST'])(create_intervention)
 
-all_bp.route('/intervention/<int:id>/validate', methods=['PUT'])(validate_intervention)
-all_bp.route('/intervention/<int:id>/reject', methods=['PUT'])(reject_intervention)
+all_bp.route('/intervention/<int:id>', methods=['PUT'])(validate_intervention)
 all_bp.route('/intervention', methods=['GET'])(get_all_interention)
 all_bp.route('/intervention/assigned', methods=['GET'])(get_interventions_by_assigned_serres)
 all_bp.route('/intervention/entreprise/<int:entreprise_id>', methods=['GET'])(get_interventions_by_entreprise)
@@ -125,6 +124,12 @@ all_bp.route('/autorisation_domaine/<int:autorisation_id>', methods=['DELETE'])(
 all_bp.route('/autorisation_serre', methods=['POST'])(create_autorisation_serre)
 all_bp.route('/autorisation_serre', methods=['GET'])(get_autorisation_serre)
 all_bp.route('/autorisation_serre/<int:autorisation_id>', methods=['DELETE'])(delete_autorisation_serre)
+
+# Assignment management routes
+all_bp.route('/assignments/company', methods=['GET'])(get_company_assignments)
+all_bp.route('/users/assign-supervisor', methods=['PUT'])(assign_technician_to_supervisor)
+all_bp.route('/serres/assign-user', methods=['POST'])(assign_user_to_serre)
+all_bp.route('/serres/remove-user', methods=['DELETE'])(remove_user_from_serre)
 
 
 

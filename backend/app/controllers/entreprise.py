@@ -6,6 +6,7 @@ from app.models.bilan import Bilan
 from database.config import db
 from app.utils.security import token_required, role_required
 from app.models.user import User
+from app.models.autorisation_serre import Autorisation_serre
 
 @token_required
 @role_required("directeur")
@@ -199,3 +200,48 @@ def get_company_map_data(current_user, company_id):
     except Exception as e:
         print("Erreur dans get_company_map_data:", str(e))
         return jsonify({"error": "Erreur lors de la récupération des données de la carte"}), 500
+
+@token_required
+@role_required("directeur", "technicien_superieur")
+def get_company_assignments(current_user):
+    """Get all assignments for the current user's company"""
+    try:
+        # Get the company of the current user
+        entreprise = Entreprise.query.filter_by(id_user=current_user.id).first()
+        if not entreprise:
+            return jsonify({"message": "Aucune entreprise trouvée"}), 404
+
+        # Get all users in the company
+        users = User.query.filter_by(id_entreprise=entreprise.id).all()
+        
+        # Get all serres in the company
+        domaines = Domaine.query.filter_by(id_entreprise=entreprise.id).all()
+        domaine_ids = [d.id for d in domaines]
+        serres = Serre.query.filter(Serre.id_domaine.in_(domaine_ids)).all()
+        
+        # Get all serre authorizations
+        serre_authorizations = Autorisation_serre.query.join(Serre).filter(
+            Serre.id_domaine.in_(domaine_ids)
+        ).all()
+        
+        # Build the response
+        assignments = {
+            "company": entreprise.to_dict(),
+            "users": [user.to_dict() for user in users],
+            "serres": [serre.to_dict() for serre in serres],
+            "assignments": [
+                {
+                    "user_id": auth.id_user,
+                    "serre_id": auth.id_serre,
+                    "serre_name": next((s.nom for s in serres if s.id == auth.id_serre), "Unknown"),
+                    "user_name": next((u.name for u in users if u.id == auth.id_user), "Unknown")
+                }
+                for auth in serre_authorizations
+            ]
+        }
+        
+        return jsonify(assignments), 200
+        
+    except Exception as e:
+        print(f"Error in get_company_assignments: {str(e)}")
+        return jsonify({"error": "Erreur lors de la récupération des assignations"}), 500
