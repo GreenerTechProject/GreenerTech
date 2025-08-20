@@ -19,22 +19,24 @@ from av import VideoFrame
 class CameraVideoTrack(VideoStreamTrack):
     def __init__(self, device=0, width=640, height=480, fps=30, type=0):
         super().__init__()
-        self.cap = cv2.VideoCapture(device)
+        #self.cap = cv2.VideoCapture(device)
+        self.cap = cv2.imread("image.jpg")
         #self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, width)
         #self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
         #self.cap.set(cv2.CAP_PROP_FPS, fps)
         #self.cap.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc(*"MJPG"))
 
-        if not self.cap.isOpened():
-            raise RuntimeError(f"❌ Camera {device} not available")
+        #if not self.cap.isOpened():
+        #    raise RuntimeError(f"❌ Camera {device} not available")
 
     async def recv(self):
         pts, time_base = await self.next_timestamp()
-        ret, frame = self.cap.read()
-        if not ret:
-            print("⚠️ Camera returned empty frame")
-            await asyncio.sleep(0.1)
-            return await self.recv()
+        frame = self.cap
+        #ret, frame = self.cap.read()
+        #if not ret:
+        #    print("⚠️ Camera returned empty frame")
+        #    await asyncio.sleep(0.1)
+        #    return await self.recv()
         #print("📹 Capturing frame")
 
         frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
