@@ -2,7 +2,7 @@ import axios from "axios";
 import { tokenManager } from "./authService";
 
 export interface Technician {
-  id: number;
+  id: number | string; // Allow string for temp IDs in setup mode
   fullName: string;
   email: string;
   role: "technicien_superieur" | "technicien";
@@ -10,7 +10,7 @@ export interface Technician {
   birthday: string | null;
   created_at: string | null;
   updated_at: string | null;
-  id_assigned: number | null;
+  id_assigned: number | string | null; // Allow string for temp IDs in setup mode
   setup_completed: boolean;
   directeur_valide: boolean;
   email_valide: boolean;

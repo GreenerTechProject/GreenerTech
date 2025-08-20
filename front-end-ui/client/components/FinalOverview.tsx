@@ -15,10 +15,12 @@ import {
   Building,
   CheckCircle,
   Loader2,
+  UserCheck,
 } from "lucide-react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import GoogleMapsWrapper from "./GoogleMapsWrapper";
+import { Label } from "@/components/ui/label";
 
 
 interface Domain {
@@ -57,6 +59,12 @@ interface Technician {
   password: string;
   role: "technicien_superieur" | "technicien";
   assignedSerres: string[];
+  supervisorId?: string;
+}
+
+interface SerreAssignment {
+  serreId: string;
+  supervisorIds: string[];
 }
 
 interface CompanyInfo {
@@ -71,6 +79,7 @@ interface FinalOverviewProps {
   companyInfo: CompanyInfo;
   domains: Domain[];
   technicians: Technician[];
+  serreAssignments?: SerreAssignment[];
   onComplete: () => void;
   onBack: () => void;
   isSubmitting?: boolean;
@@ -89,6 +98,7 @@ export default function FinalOverview({
   companyInfo,
   domains,
   technicians,
+  serreAssignments = [],
   onComplete,
   onBack,
   isSubmitting = false,
@@ -98,25 +108,39 @@ export default function FinalOverview({
   const mapRef = useRef<HTMLDivElement>(null);
 
   // Calculate statistics
-  const totalSerres = domains.reduce(
-    (total, domain) => total + domain.serres.length,
-    0,
+  const totalDomains = domains.length;
+  const totalSerres = domains.reduce((total, domain) => total + domain.serres.length, 0);
+  const totalDomainArea = domains.reduce((total, domain) => total + domain.area, 0);
+  const totalSerreArea = domains.reduce((total, domain) => 
+    total + domain.serres.reduce((serreTotal, serre) => serreTotal + serre.surface, 0), 0
   );
-  const totalDomainArea = domains.reduce(
-    (total, domain) => total + domain.area,
-    0,
-  );
-  const totalSerreArea = domains.reduce(
-    (total, domain) =>
-      total +
-      domain.serres.reduce((serreTotal, serre) => serreTotal + serre.surface, 0),
-    0,
-  );
-  const assignedSerres = technicians.reduce(
-    (total, tech) => total + tech.assignedSerres.length,
-    0,
-  );
+  const totalTechnicians = technicians.length;
+  const totalSupervisors = technicians.filter(t => t.role === "technicien_superieur").length;
+  const totalRegularTechnicians = technicians.filter(t => t.role === "technicien").length;
+  const assignedTechnicians = technicians.filter(t => t.role === "technicien" && t.id_assigned).length;
+  
+  // Calculate assigned serres from technicians' assignedSerres arrays
+  const assignedSerres = technicians.reduce((total, tech) => {
+    // Ensure assignedSerres is always an array
+    const techAssignedSerres = tech.assignedSerres || [];
+    console.log(`Technician ${tech.fullName} assignedSerres:`, techAssignedSerres);
+    return total + techAssignedSerres.length;
+  }, 0);
+  
   const unassignedSerres = totalSerres - assignedSerres;
+  
+  console.log("FinalOverview calculations:", {
+    totalSerres,
+    assignedSerres,
+    unassignedSerres,
+    techniciansCount: technicians.length,
+    technicians: technicians.map(t => ({ 
+      id: t.id, 
+      fullName: t.fullName, 
+      role: t.role, 
+      assignedSerres: t.assignedSerres || [] 
+    }))
+  });
 
   // Initialize map
   useEffect(() => {
@@ -200,8 +224,9 @@ export default function FinalOverview({
     }
   };
 
-  const getTechnicianForSerre = (serreId: string) => {
-    return technicians.find((tech) => tech.assignedSerres.includes(serreId));
+  const getTechnicianForSerre = (serreId: string | number) => {
+    const serreIdStr = serreId.toString();
+    return technicians.find((tech) => tech.assignedSerres && tech.assignedSerres.includes(serreIdStr));
   };
 
   const getDomainsWithSerres = () => {
@@ -375,48 +400,154 @@ export default function FinalOverview({
               ))}
             </div>
 
-            {/* Technicians */}
-            <div>
-              <h3 className="font-semibold text-gray-900 mb-3 flex items-center">
-                <Users className="mr-2 h-4 w-4" />
-                Équipe technique
-              </h3>
+            {/* Technicians Section */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Users className="h-5 w-5 text-blue-600" />
+                  Techniciens ({totalTechnicians})
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Supervisors */}
+                  <div>
+                    <h4 className="font-medium text-gray-900 mb-3 flex items-center gap-2">
+                      <UserCheck className="h-4 w-4 text-blue-600" />
+                      Techniciens Supérieurs ({totalSupervisors})
+                    </h4>
+                    <div className="space-y-2">
+                      {technicians
+                        .filter((tech) => tech.role === "technicien_superieur")
+                        .map((tech) => (
+                          <div key={tech.id} className="flex items-center justify-between p-2 bg-blue-50 rounded">
+                            <div>
+                              <p className="font-medium text-sm">{tech.fullName}</p>
+                              <p className="text-xs text-gray-600">{tech.email}</p>
+                            </div>
+                            <Badge variant="default" className="text-xs">
+                              Superviseur
+                            </Badge>
+                          </div>
+                        ))}
+                    </div>
+                  </div>
 
-              {technicians.map((technician) => (
-                <Card key={technician.id} className="mb-2">
-                  <CardContent className="p-3">
-                    <div className="flex items-center justify-between">
+                  {/* Regular Technicians */}
+                  <div>
+                    <h4 className="font-medium text-gray-900 mb-3 flex items-center gap-2">
+                      <Users className="h-4 w-4 text-orange-600" />
+                      Techniciens ({totalRegularTechnicians})
+                    </h4>
+                    <div className="space-y-2">
+                      {technicians
+                        .filter((tech) => tech.role === "technicien")
+                        .map((tech) => {
+                          const supervisor = technicians.find(t => t.id === tech.supervisorId);
+                          return (
+                            <div key={tech.id} className="flex items-center justify-between p-2 bg-orange-50 rounded">
+                              <div>
+                                <p className="font-medium text-sm">{tech.fullName}</p>
+                                <p className="text-xs text-gray-600">{tech.email}</p>
+                                {supervisor && (
+                                  <p className="text-xs text-blue-600">
+                                    Supervisé par: {supervisor.fullName}
+                                  </p>
+                                )}
+                              </div>
+                              <Badge 
+                                variant={tech.supervisorId ? "default" : "secondary"} 
+                                className="text-xs"
+                              >
+                                {tech.supervisorId ? "Assigné" : "Non assigné"}
+                              </Badge>
+                            </div>
+                          );
+                        })}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Hierarchy Summary */}
+                {totalSupervisors > 0 && totalRegularTechnicians > 0 && (
+                  <div className="mt-4 p-3 bg-gray-50 rounded">
+                    <h5 className="font-medium text-sm text-gray-700 mb-2">
+                      Résumé de la hiérarchie:
+                    </h5>
+                    <div className="grid grid-cols-2 gap-4 text-sm">
                       <div>
-                        <div className="font-medium text-sm">
-                          {technician.fullName}
-                        </div>
-                        <div className="text-xs text-gray-500">
-                          {technician.email}
-                        </div>
+                        <span className="text-gray-600">Techniciens assignés:</span>
+                        <span className="font-medium ml-2">{assignedTechnicians}/{totalRegularTechnicians}</span>
                       </div>
-                      <div className="flex items-center space-x-2">
-                        <Badge
-                          variant={
-                            technician.role === "technicien_superieur"
-                              ? "default"
-                              : "secondary"
-                          }
-                          className="text-xs"
-                        >
-                          {technician.role === "technicien_superieur"
-                            ? "Sup."
-                            : "Tech."}
-                        </Badge>
-                        <Badge variant="outline" className="text-xs">
-                          {technician.assignedSerres.length} serre
-                          {technician.assignedSerres.length > 1 ? "s" : ""}
-                        </Badge>
+                      <div>
+                        <span className="text-gray-600">Taux d'assignation:</span>
+                        <span className="font-medium ml-2">
+                          {totalRegularTechnicians > 0 
+                            ? Math.round((assignedTechnicians / totalRegularTechnicians) * 100)
+                            : 0}%
+                        </span>
                       </div>
                     </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Serre Assignments Section */}
+            {serreAssignments.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <UserCheck className="h-5 w-5 text-green-600" />
+                    Assignations des Serres ({assignedSerres})
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {serreAssignments.map((assignment) => {
+                      const serre = domains
+                        .flatMap(d => d.serres)
+                        .find(s => s.id === assignment.serreId);
+                      const assignedSupervisors = technicians
+                        .filter(t => t.role === "technicien_superieur" && assignment.supervisorIds.includes(t.id));
+
+                      if (!serre) return null;
+
+                      return (
+                        <div key={assignment.serreId} className="border rounded-lg p-3">
+                          <div className="flex items-center justify-between mb-2">
+                            <div className="flex items-center gap-2">
+                              <Home className="h-4 w-4 text-green-600" />
+                              <span className="font-medium">{serre.nom}</span>
+                              <Badge variant="outline" className="text-xs">
+                                {domains.find(d => d.serres.some(s => s.id === serre.id))?.name}
+                              </Badge>
+                            </div>
+                            <Badge variant="default" className="text-xs">
+                              {assignedSupervisors.length} superviseur(s)
+                            </Badge>
+                          </div>
+                          
+                          <div className="ml-6">
+                            <Label className="text-sm text-gray-600">
+                              Techniciens Supérieurs assignés:
+                            </Label>
+                            <div className="flex flex-wrap gap-2 mt-1">
+                              {assignedSupervisors.map((supervisor) => (
+                                <Badge key={supervisor.id} variant="secondary" className="text-xs">
+                                  <Users className="h-3 w-3 mr-1" />
+                                  {supervisor.fullName}
+                                </Badge>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
           </div>
         </ScrollArea>
 
@@ -524,3 +655,4 @@ export default function FinalOverview({
     </div>
   );
 }
+ 
