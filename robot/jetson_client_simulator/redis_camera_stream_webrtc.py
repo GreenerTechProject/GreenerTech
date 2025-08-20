@@ -150,34 +150,74 @@ async def send_video(robot_ref, camera, idcamera):
 
 
 
-# Ouvre le port série vers Arduino (adapter le port si besoin)
-#arduino = serial.Serial('/dev/ttyACM0', 9600)
+# # Ouvre le port série vers Arduino (adapter le port si besoin)
+# #arduino = serial.Serial('/dev/ttyACM0', 9600)
 
-async def receive_controls(robot_ref):
-    while True:
-        try:
-            print("Tentative de connexion au serveur contrôle...")
-            control_uri = "ws://"+host+":8080/service/control?robot="+robot_ref
-            async with websockets.connect(control_uri) as websocket:
-                print("Connecté au serveur contrôle avec succès")
-                async for message in websocket:
+# async def receive_controls(robot_ref):
+#     while True:
+#         try:
+#             print("Tentative de connexion au serveur contrôle...")
+#             control_uri = "ws://"+host+":8080/service/control?robot="+robot_ref
+#             async with websockets.connect(control_uri) as websocket:
+#                 print("Connecté au serveur contrôle avec succès")
+#                 async for message in websocket:
 
-                    data = json.loads(message)
-                    if "control_mode" in data:
-                        print(f"Commande contrôle reçue: {data['control_mode']}")
+#                     data = json.loads(message)
+#                     if "control_mode" in data:
+#                         print(f"Commande contrôle reçue: {data['control_mode']}")
                         
 
-                        #arduino.write((data['control_mode'] + "\n").encode())
+#                         #arduino.write((data['control_mode'] + "\n").encode())
 
 
-        except (websockets.exceptions.ConnectionClosedError, ConnectionRefusedError) as e:
-            #arduino.write(("STOP" + "\n").encode())
-            print(f"❌ Connexion contrôle échouée ou perdue : {e}. Nouvelle tentative dans 2 secondes...")
-            await asyncio.sleep(2)
+#         except (websockets.exceptions.ConnectionClosedError, ConnectionRefusedError) as e:
+#             #arduino.write(("STOP" + "\n").encode())
+#             print(f"❌ Connexion contrôle échouée ou perdue : {e}. Nouvelle tentative dans 2 secondes...")
+#             await asyncio.sleep(2)
+#         except Exception as e:
+#             #arduino.write(("STOP" + "\n").encode())
+#             print(f"❌ Erreur contrôle inattendue : {e}. Nouvelle tentative dans 2 secondes...")
+#             await asyncio.sleep(2)
+
+
+
+
+import asyncio
+import redis
+import json
+
+# Connexion Redis (localhost par défaut)
+r = redis.Redis(host="localhost", port=6379, db=0, decode_responses=True)
+
+async def receive_controls_redis(robot_ref):
+    """
+    Le robot s'abonne au canal Redis correspondant à son robot_ref
+    et reçoit les commandes en temps réel.
+    """
+    pubsub = r.pubsub()
+    channel_name = f"robot:{robot_ref}"
+    pubsub.subscribe(channel_name)
+    print(f"🔔 Robot '{robot_ref}' abonné au canal Redis '{channel_name}'")
+
+    loop = asyncio.get_event_loop()
+
+    while True:
+        try:
+            # Utiliser get_message non bloquant pour ne pas bloquer l'event loop
+            message = pubsub.get_message(ignore_subscribe_messages=True, timeout=1)
+            if message:
+                data = json.loads(message['data'])
+                if "control_mode" in data:
+                    commande = data["control_mode"]
+                    print(f"➡️ Commande contrôle reçue via Redis: {commande}")
+
+                    # Ici, envoie à Arduino ou exécution locale
+                    # arduino.write((commande + "\n").encode())
+            await asyncio.sleep(0.05)  # petite pause pour ne pas bloquer la boucle
         except Exception as e:
-            #arduino.write(("STOP" + "\n").encode())
-            print(f"❌ Erreur contrôle inattendue : {e}. Nouvelle tentative dans 2 secondes...")
-            await asyncio.sleep(2)
+            print(f"❌ Erreur réception commande Redis: {e}")
+            await asyncio.sleep(1)
+
 
 
 """
@@ -336,7 +376,8 @@ async def main():
     await asyncio.gather(
         send_video(robot_ref, "right", 0),
         # send_video(robot_ref, "left", 1),
-        receive_controls(robot_ref),
+        # receive_controls(robot_ref),
+        receive_controls_redis(robot_ref),  # <-- utiliser Redis
         simulate_sensor_data(robot_ref),
         #spin_sensor_node(robot_ref),
         listen_missions(robot_ref) 
