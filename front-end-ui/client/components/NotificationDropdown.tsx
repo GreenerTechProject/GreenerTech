@@ -55,7 +55,12 @@ export default function NotificationDropdown({
       // Navigate based on notification type
       if (notification.type_notification.includes('intervention')) {
         if (role === "technicien_sup") {
-          navigate("/technicien-sup/missions");
+          // For technician supervisors, navigate to intervention request details
+          if (notification.id_intervention) {
+            navigate(`/technicien-sup/intervention-request/${notification.id_intervention}?notificationId=${notification.id}`);
+          } else {
+            navigate("/technicien-sup/interventions");
+          }
         } else {
           navigate("/technician/missions");
         }

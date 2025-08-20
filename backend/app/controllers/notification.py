@@ -39,7 +39,7 @@ def get_all_notifications():
 
 # ✅ Marquer une notification comme "vue"
 @token_required
-def mark_notification_as_seen(id):
+def mark_notification_as_seen(current_user, id):
     try:
         notif = Notification.query.get_or_404(id)
         notif.status = 'vue'

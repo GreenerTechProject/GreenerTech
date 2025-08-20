@@ -103,11 +103,10 @@ export default function TechSupNotificationsPage() {
     if (notification.type_notification.includes('intervention')) {
       console.log('🔧 TechSupNotificationsPage - Intervention notification detected');
       
-      // If there's an intervention ID, go to interventions page with highlighting
+      // If there's an intervention ID, go to intervention request details page
       if (notification.id_intervention) {
-        console.log('🎯 TechSupNotificationsPage - Navigating to interventions page with highlight:', `/technicien-sup/interventions?highlight=${notification.id_intervention}`);
-        console.log('📋 TechSupNotificationsPage - Intervention details will be highlighted in the list');
-        navigate(`/technicien-sup/interventions?highlight=${notification.id_intervention}`);
+        console.log('🎯 TechSupNotificationsPage - Navigating to intervention request details:', `/technicien-sup/intervention-request/${notification.id_intervention}?notificationId=${notification.id}`);
+        navigate(`/technicien-sup/intervention-request/${notification.id_intervention}?notificationId=${notification.id}`);
       } else {
         console.log('⚠️ TechSupNotificationsPage - No intervention ID found, navigating to missions');
         navigate("/technicien-sup/missions");
