@@ -435,7 +435,7 @@ export default function RobotControl() {
               <div key={index} className="ml-4">
                 {typeof item === "object" ? 
                   renderQRValue(`Item ${index + 1}`, item, depth + 1) : 
-                  <div>• {item}</div>
+                  <div>�� {item}</div>
                 }
               </div>
             ))}
@@ -710,6 +710,28 @@ export default function RobotControl() {
                   <>
                     <Maximize className="h-3 w-3 mr-1" />
                     Plein Écran
+                  </>
+                )}
+              </Button>
+
+              <Button
+                onClick={toggleAIDetection}
+                className={`w-full h-8 text-sm ${
+                  isAIDetectionEnabled
+                    ? 'bg-green-500 hover:bg-green-600 text-white'
+                    : 'bg-gray-200 hover:bg-gray-300 text-gray-800'
+                }`}
+                variant="outline"
+              >
+                {isAIDetectionEnabled ? (
+                  <>
+                    <Eye className="h-3 w-3 mr-1" />
+                    IA Activée
+                  </>
+                ) : (
+                  <>
+                    <EyeOff className="h-3 w-3 mr-1" />
+                    IA Désactivée
                   </>
                 )}
               </Button>
