@@ -64,6 +64,9 @@ export default function RobotControl() {
   const [selectedRobot, setSelectedRobot] = useState<string>('1');
   const [isFullScreen, setIsFullScreen] = useState<boolean>(false);
   const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
+  const [isAIDetectionEnabled, setIsAIDetectionEnabled] = useState<boolean>(false);
+  const [videoZoom, setVideoZoom] = useState<number>(1);
+  const [videoPosition, setVideoPosition] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
   
   // New state for robots
   const [robots, setRobots] = useState<Robot[]>([]);
