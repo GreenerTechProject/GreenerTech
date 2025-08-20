@@ -637,6 +637,49 @@ export default function RobotControl() {
             </CardContent>
           </Card>
 
+          {/* Video Controls */}
+          <Card className="text-sm">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm">Contrôles Vidéo</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              <div className="flex gap-1">
+                <Button
+                  onClick={zoomOut}
+                  className="flex-1 h-8 text-sm"
+                  variant="outline"
+                  disabled={videoZoom <= 0.5}
+                >
+                  <ZoomOut className="h-3 w-3" />
+                </Button>
+                <Button
+                  onClick={resetZoom}
+                  className="flex-1 h-8 text-sm"
+                  variant="outline"
+                >
+                  {Math.round(videoZoom * 100)}%
+                </Button>
+                <Button
+                  onClick={zoomIn}
+                  className="flex-1 h-8 text-sm"
+                  variant="outline"
+                  disabled={videoZoom >= 3}
+                >
+                  <ZoomIn className="h-3 w-3" />
+                </Button>
+              </div>
+
+              <Button
+                onClick={captureImage}
+                className="w-full h-8 text-sm"
+                variant="outline"
+              >
+                <Download className="h-3 w-3 mr-1" />
+                Capturer Image
+              </Button>
+            </CardContent>
+          </Card>
+
           {/* Control Actions */}
           <Card className="text-sm">
             <CardHeader className="pb-2">
