@@ -761,7 +761,7 @@ export default function RobotControl() {
 
         {/* Full Screen Video Area */}
         <div className="flex-1 relative">
-          <div className="absolute inset-0 bg-black">
+          <div className="absolute inset-0 bg-black overflow-hidden">
             <video
               ref={videoRef}
               autoPlay
