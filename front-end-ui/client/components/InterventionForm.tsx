@@ -53,6 +53,11 @@ export default function InterventionForm({
     estimatedCharges: "",
     description: "",
   });
+  
+  // Debug form data changes
+  useEffect(() => {
+    console.log("📝 Form data updated:", formData);
+  }, [formData]);
 
   const [errors, setErrors] = useState<Partial<InterventionData>>({});
   const { toast } = useToast();
@@ -74,6 +79,8 @@ export default function InterventionForm({
           (firstField as HTMLElement).focus();
         }
       }, 300);
+    } else {
+      console.log("🚪 Form closing, resetting data");
     }
   }, [isOpen]);
 
@@ -150,28 +157,57 @@ export default function InterventionForm({
       newErrors.description = "Description requise";
     }
 
+    // Validate charges if provided
+    if (formData.estimatedCharges && formData.estimatedCharges.trim() !== "") {
+      const charges = parseFloat(formData.estimatedCharges);
+      if (isNaN(charges) || charges < 0) {
+        newErrors.estimatedCharges = "Les charges doivent être un nombre positif";
+      }
+    }
+
     console.log("🔍 Form validation errors:", newErrors);
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
   const handleSubmit = async () => {
+    console.log("🚀 Submit button clicked");
+    console.log("📝 Current form data:", formData);
+    
     if (validateForm()) {
       setIsSubmitting(true);
       try {
         console.log("📝 Form data before mapping:", formData);
+        console.log("💰 Estimated charges value:", formData.estimatedCharges);
+        console.log("💰 Estimated charges type:", typeof formData.estimatedCharges);
         
         // Map form data to backend format with proper validation
+        let totalCharges = 0.0;
+        if (formData.estimatedCharges && formData.estimatedCharges.trim() !== "") {
+          const parsed = parseFloat(formData.estimatedCharges);
+          if (!isNaN(parsed) && parsed >= 0) {
+            totalCharges = parsed;
+            console.log("💰 Parsed charges value:", parsed);
+          } else {
+            console.warn("⚠️ Invalid charges value:", formData.estimatedCharges);
+          }
+        } else {
+          console.log("💰 No charges provided, using default 0.0");
+        }
+        
         const createRequest: CreateInterventionRequest = {
           description: formData.description || "Intervention créée par le technicien", // Ensure description is never empty
           id_serre: parseInt(formData.serreId),
           id_type_tache: parseInt(formData.interventionType),
           date_debut: formData.interventionDate,
-          total_charges: 0.0, // Default value as per backend model
+          total_charges: totalCharges, // Use validated charges value
           // date_fin is optional and not set initially
         };
 
         console.log("🔄 Backend request data:", createRequest);
+        console.log("💰 Total charges in request:", createRequest.total_charges);
+        console.log("💰 Total charges type:", typeof createRequest.total_charges);
+        console.log("💰 Validated charges value:", totalCharges);
 
         // Validate the mapped data
         if (isNaN(createRequest.id_serre) || isNaN(createRequest.id_type_tache)) {
@@ -198,6 +234,7 @@ export default function InterventionForm({
         
         console.log("✅ Intervention created successfully:", createdIntervention);
         console.log("📊 Backend response data:", createdIntervention);
+        console.log("💰 Total charges in response:", createdIntervention.total_charges);
         
         // Call parent callback if provided
         onSubmit?.(formData);
@@ -213,6 +250,11 @@ export default function InterventionForm({
         }, 1500);
       } catch (error) {
         console.error("❌ Error creating intervention:", error);
+        console.error("❌ Error details:", {
+          message: error instanceof Error ? error.message : 'Unknown error',
+          error: error
+        });
+        
         let errorMessage = "Une erreur est survenue lors de l'envoi de l'intervention.";
         
         if (error instanceof Error) {
@@ -235,6 +277,7 @@ export default function InterventionForm({
   const handleClose = () => {
     setIsSubmitting(false);
     setTimeout(() => {
+      console.log("🧹 Resetting form data");
       setFormData({
         interventionType: "",
         serreId: "",
@@ -249,6 +292,7 @@ export default function InterventionForm({
   };
 
   const updateFormData = (field: keyof InterventionData, value: string) => {
+    console.log(`🔄 Updating ${field}:`, value);
     setFormData(prev => ({ ...prev, [field]: value }));
     if (errors[field]) {
       setErrors(prev => ({ ...prev, [field]: undefined }));
@@ -423,12 +467,21 @@ export default function InterventionForm({
                     step="0.01"
                     min="0"
                     value={formData.estimatedCharges}
-                    onChange={(e) => updateFormData("estimatedCharges", e.target.value)}
+                    onChange={(e) => {
+                      console.log("💰 Input change event:", e.target.value);
+                      updateFormData("estimatedCharges", e.target.value);
+                    }}
+                    onBlur={(e) => {
+                      console.log("💰 Input blur event:", e.target.value);
+                    }}
                     className="h-10 sm:h-11 px-3 pl-10 rounded-lg border border-border bg-card hover:border-[#B4CC5F] focus:border-[#B4CC5F] focus:ring-[#B4CC5F] focus:ring-2 transition-colors text-foreground font-medium text-sm"
                     placeholder="0.00"
                   />
                   <Tag className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-[#B4CC5F]" />
                 </div>
+                {errors.estimatedCharges && (
+                  <p className="text-xs text-red-500">{errors.estimatedCharges}</p>
+                )}
               </div>
             </div>
 
