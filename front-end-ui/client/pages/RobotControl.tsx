@@ -492,6 +492,9 @@ export default function RobotControl() {
     if (sensorWsRef.current) sensorWsRef.current.close();
 
     initializeWebSockets(selectedRobot, selectedCamera);
+
+    // Reset sensor data
+    setSensorData(null);
     
     if (pcRef.current) pcRef.current.close();
     startWebRTC(selectedRobot, selectedCamera);
