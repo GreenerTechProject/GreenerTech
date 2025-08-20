@@ -9,6 +9,8 @@ import serial
 
 host = "greenertech.mywire.org"
 
+AI_ENABLED = False
+
 
 
 import os
@@ -110,10 +112,14 @@ class CameraVideoTrack(VideoStreamTrack):
         #self.cap.set(cv2.CAP_PROP_FPS, fps)
 
     async def recv(self):
+        global AI_ENABLED
         pts, time_base = await self.next_timestamp()
         ret, frame = self.cap.read()
         if not ret:
             raise Exception("❌ Failed to read from camera")
+        
+        if AI_ENABLED:
+            frame = detect_frame(frame)  # only apply detection when enabled
 
         # BGR → RGB → VideoFrame
         frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
@@ -239,6 +245,7 @@ async def send_video(robot_ref, camera, idcamera, type=0):
 #arduino = serial.Serial('/dev/ttyACM0', 9600)
 
 async def receive_controls(robot_ref):
+    global AI_ENABLED
     while True:
         try:
             print("Tentative de connexion au serveur contrôle...")
@@ -250,6 +257,12 @@ async def receive_controls(robot_ref):
                     data = json.loads(message)
                     if "control_mode" in data:
                         print(f"Commande contrôle reçue: {data['control_mode']}")
+                        
+
+                        if data['control_mode'] == "ENABLE_AI":
+                            AI_ENABLED = True
+                        elif data['control_mode'] == "DISABLE_AI":
+                            AI_ENABLED = False
 
 
                         arduino.write((data['control_mode'] + "\n").encode())
