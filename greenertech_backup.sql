@@ -485,39 +485,39 @@ ALTER SEQUENCE public.intervention_id_seq OWNED BY public.intervention.id;
 -- Name: missions_robot; Type: TABLE; Schema: public; Owner: postgres
 --
 
--- CREATE TABLE public.missions_robot (
---     id integer NOT NULL,
---     id_robot integer NOT NULL,
---     id_serre integer NOT NULL,
---     id_user integer NOT NULL REFERENCES users(id),
---     id_entreprise integer NOT NULL REFERENCES entreprises(id),
---     rep_jr integer,
---     rep_sem integer,
---     jour  integer, 
---     heure  integer,  
---     minute  integer, 
---     date_debut timestamp without time zone,
---     date_fin timestamp without time zone,
---     executed boolean,
---     bilans json DEFAULT '[]'  -- par défaut un tableau vide JSON
-
--- );
 CREATE TABLE public.missions_robot (
-    id SERIAL PRIMARY KEY,
-    id_robot INT NOT NULL,
-    id_serre INT NOT NULL,
-    rep_jr INT,
-    rep_sem INT,
-    jour INT,
-    heure INT,
-    minute INT,
-    date_debut DATE,
-    date_fin DATE,
-    executed BOOLEAN DEFAULT FALSE,
-    bilans JSON DEFAULT '[]',
-    id_entreprise INT,
-    id_user INT
+    id integer NOT NULL,
+    id_robot integer NOT NULL,
+    id_serre integer NOT NULL,
+    id_user integer NOT NULL,
+    id_entreprise integer NOT NULL,
+    rep_jr integer,
+    rep_sem integer,
+    jour  integer, 
+    heure  integer,  
+    minute  integer, 
+    date_debut timestamp without time zone,
+    date_fin timestamp without time zone,
+    executed boolean,
+    bilans json DEFAULT '[]'  -- par défaut un tableau vide JSON
 );
+
+---CREATE TABLE public.missions_robot (
+---    id SERIAL PRIMARY KEY,
+---    id_robot INT NOT NULL,
+---    id_serre INT NOT NULL,
+---    rep_jr INT,
+---    rep_sem INT,
+---    jour INT,
+---    heure INT,
+---    minute INT,
+---    date_debut DATE,
+---    date_fin DATE,
+---    executed BOOLEAN DEFAULT FALSE,
+---    bilans JSON DEFAULT '[]',
+---    id_entreprise INT,
+---    id_user INT
+---);
 
 
 ALTER TABLE public.missions_robot OWNER TO postgres;
@@ -628,7 +628,8 @@ ALTER SEQUENCE public.rapport_id_seq OWNED BY public.rapport.id;
 CREATE TABLE public.robots (
     id integer NOT NULL,
     nom character varying(100) NOT NULL,
-    referance character varying(100)
+    referance character varying(100),
+    id_entreprise integer
 );
 
 
@@ -1038,11 +1039,14 @@ COPY public.intervention (id, description, status, date_debut, date_fin, total_c
 -- Data for Name: missions_robot; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-INSERT INTO public.missions_robot (
-    id, id_robot, id_serre, id_user, id_entreprise, rep_jr, rep_sem, jour, heure, minute, date_debut, date_fin, executed, bilans
-) VALUES (
-    1, 1, 1, 1, 1, 1, 0, NULL, 9, 30, NULL, NULL, false, '[]'
-);
+---INSERT INTO public.missions_robot (
+---    id, id_robot, id_serre, id_user, id_entreprise, rep_jr, rep_sem, jour, heure, minute, date_debut, date_fin, executed, bilans
+---) VALUES (
+---    1, 1, 1, 1, 1, 1, 0, NULL, 9, 30, NULL, NULL, false, '[]'
+---);
+COPY public.missions_robot (id, id_robot, id_serre, id_user, id_entreprise, rep_jr, rep_sem, jour, heure, minute, date_debut, date_fin, executed, bilans) FROM stdin;
+1	1	1	3	1	1	0	\N	9	30	\N	\N	f	[]
+\.
 --
 -- Data for Name: notification; Type: TABLE DATA; Schema: public; Owner: postgres
 --
@@ -1065,8 +1069,8 @@ COPY public.rapport (id, date, description, lien_pdf, id_serre, user_id) FROM st
 -- Data for Name: robots; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.robots (id, nom, referance) FROM stdin;
-1	Robot 1	abcabc46-58c1-4531-b88f-99d3288bfabc
+COPY public.robots (id, nom, referance, id_entreprise) FROM stdin;
+1	Robot 1	abcabc46-58c1-4531-b88f-99d3288bfabc	1
 \.
 
 
@@ -1534,6 +1538,20 @@ ALTER TABLE ONLY public.missions_robot
 
 ALTER TABLE ONLY public.missions_robot
     ADD CONSTRAINT missions_robot_id_serre_fkey FOREIGN KEY (id_serre) REFERENCES public.serres(id);
+
+--
+-- Name: missions_robot missions_robot_id_user_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.missions_robot
+    ADD CONSTRAINT missions_robot_id_user_fkey FOREIGN KEY (id_user) REFERENCES public.users(id);
+
+--
+-- Name: missions_robot missions_robot_id_entreprise_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.missions_robot
+    ADD CONSTRAINT missions_robot_id_entreprise_fkey FOREIGN KEY (id_entreprise) REFERENCES public.bilans(id);
 
 
 --

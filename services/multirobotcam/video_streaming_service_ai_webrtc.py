@@ -11,6 +11,28 @@ import time
 import requests
 from collections import defaultdict
 
+
+import sys
+
+# save current working directory
+cwd = os.getcwd()
+
+# change to ia/models so ALL.py can find the model file
+os.chdir(os.path.join(cwd, '../ia/models'))
+
+# ensure this path is in sys.path for the import
+if os.getcwd() not in sys.path:
+    sys.path.insert(0, os.getcwd())
+
+# import the functions
+from ALL import detect_frame, predict_frame
+
+# return to original working directory
+os.chdir(cwd)
+
+
+
+
 import asyncpg
 from datetime import datetime, timezone, timedelta
 
@@ -50,6 +72,7 @@ class RelayStreamTrack(VideoStreamTrack):
         data = stream_data[self.key]
         pts, time_base = await self.next_timestamp()
         frame_to_use = data["latest_frame"] if data["latest_frame"] is not None else self.fallback_frame
+        #frame_to_use = detect_frame(data["latest_frame"]) if data["latest_frame"] is not None else self.fallback_frame
 
         if frame_to_use is None:
             raise Exception("No video stream and no fallback image found!")
@@ -197,7 +220,7 @@ async def process_robot_video(track, key):
 
 
 async def video_stream_handler(request):
-    from sensors_realtime_service import get_latest_sensor_data
+    from multirobotcam.sensors_realtime_service import get_latest_sensor_data
     key = get_key_from_request(request)
     try:
         params = await request.json()

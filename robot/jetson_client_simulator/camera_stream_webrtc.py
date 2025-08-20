@@ -6,7 +6,7 @@ import json
 #import serial
 
 
-host = "localhost"
+host = "greenertech.mywire.org"
 
 
 
@@ -180,6 +180,57 @@ async def receive_controls(robot_ref):
             await asyncio.sleep(2)
 
 
+"""
+import rclpy
+from rclpy.node import Node
+from std_msgs.msg import String
+
+# -------------------- Sensor Data --------------------
+class SensorDataNode(Node):
+    def __init__(self, robot_ref):
+        super().__init__('sensor_data_node')
+        self.subscription = self.create_subscription(
+            String,
+            'arduino_data',
+            self.send_ws,
+            10
+        )
+        self.ws = None
+        self.uri = f"ws://{host}:8080/service/sensor_data?robot="+robot_ref
+
+    async def connect_ws(self):
+        while self.ws is None:
+            try:
+                self.ws = await websockets.connect(self.uri)
+                print("Sensor WebSocket connected")
+            except Exception as e:
+                print(f"Sensor WS error: {e}. Retry in 2s...")
+                await asyncio.sleep(2)
+
+    def send_ws(self, msg: String):
+        asyncio.create_task(self._send(msg))
+
+    async def _send(self, msg: String):
+        try:
+            if self.ws:
+                #data = {"data": msg.data}
+                await self.ws.send(json.dumps(msg.data))
+        except Exception as e:
+            print(f"Error sending sensor data via WS: {e}")
+            self.ws = None
+            asyncio.create_task(self.connect_ws())
+
+
+async def spin_sensor_node(robot_ref):
+    rclpy.init(args=None)
+    node = SensorDataNode(robot_ref)
+    await node.connect_ws()
+
+    loop = asyncio.get_running_loop()
+    await loop.run_in_executor(None, rclpy.spin, node)
+"""
+
+
 import random
 
 async def simulate_sensor_data(robot_ref):
@@ -283,10 +334,11 @@ async def main():
     #robot_ref = "robot_123"
     robot_ref = get_or_create_robot_referance()
     await asyncio.gather(
-        send_video(robot_ref, "right", 0),
+        #send_video(robot_ref, "right", 0),
         send_video(robot_ref, "left", 1),
         receive_controls(robot_ref),
         simulate_sensor_data(robot_ref),
+        #spin_sensor_node(robot_ref),
         listen_missions(robot_ref) 
         )
     

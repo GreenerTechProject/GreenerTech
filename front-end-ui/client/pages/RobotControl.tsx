@@ -69,8 +69,6 @@ export default function RobotControl() {
   const [robots, setRobots] = useState<Robot[]>([]);
   const [isLoadingRobots, setIsLoadingRobots] = useState<boolean>(false);
   const [robotsError, setRobotsError] = useState<string | null>(null);
-
-
   // WebSocket references
   const qrWsRef = useRef<WebSocket | null>(null);
   const controlWsRef = useRef<WebSocket | null>(null);
@@ -87,7 +85,7 @@ export default function RobotControl() {
       
       // Set the first robot as selected if no robot is currently selected
       if (fetchedRobots.length > 0 && !selectedRobot) {
-        setSelectedRobot(fetchedRobots[0].id.toString());
+        setSelectedRobot(fetchedRobots[0].referance.toString());
       }
     } catch (error: any) {
       console.error('Failed to fetch robots:', error);
@@ -318,8 +316,8 @@ export default function RobotControl() {
 
   // Update selected robot when robots are loaded
   useEffect(() => {
-    if (robots.length > 0 && !robots.find(r => r.id.toString() === selectedRobot)) {
-      setSelectedRobot(robots[0].id.toString());
+    if (robots.length > 0 && !robots.find(r => r.referance.toString() === selectedRobot)) {
+      setSelectedRobot(robots[0].referance.toString());
     }
   }, [robots, selectedRobot]);
 
@@ -329,9 +327,11 @@ export default function RobotControl() {
     sendCommand(mode);
   };
 
-  const handleButtonUp = () => {
-    console.log("Sending mode: STOP");
-    sendCommand("STOP");
+  const handleButtonUp = (mode?: string) => {
+    if (!mode || !["PAUSE_MISSION", "PLAY_MISSION"].includes(mode)) {
+      console.log("Sending mode: STOP");
+      sendCommand("STOP");
+    }
   };
   
   const [isMouseDown, setIsMouseDown] = useState(false);
@@ -349,12 +349,12 @@ export default function RobotControl() {
     }}
 	onMouseUp={() => {
       setIsMouseDown(false);
-      handleButtonUp();
+      handleButtonUp(mode);
     }}
 	onMouseLeave={() => {
       if (isMouseDown) {
         setIsMouseDown(false);
-        handleButtonUp();
+        handleButtonUp(mode);
       }
     }}
 	className={`w-full ${className} ${pressedButton === mode ? "ring-4 ring-yellow-300" : ""}`}
@@ -504,10 +504,6 @@ export default function RobotControl() {
     };
   }, [selectedRobot, selectedCamera]);
 
-  // Fetch robots on component mount
-  useEffect(() => {
-    fetchRobots();
-  }, []);
 
 
   return (
@@ -553,7 +549,7 @@ export default function RobotControl() {
                 </SelectTrigger>
                 <SelectContent>
                   {robots.map((robot) => (
-                    <SelectItem key={robot.id} value={robot.id.toString()}>
+                    <SelectItem key={robot.referance} value={robot.referance.toString()}>
                       {robot.nom} ({robot.referance})
                     </SelectItem>
                   ))}
@@ -571,11 +567,11 @@ export default function RobotControl() {
                 disabled={isLoadingRobots}
                 className="w-full h-6 text-xs"
                 variant="outline"
+                size="sm"
               >
                 <RefreshCw className={`h-3 w-3 mr-1 ${isLoadingRobots ? 'animate-spin' : ''}`} />
                 Actualiser les robots
               </Button>
-
             </CardContent>
           </Card>
 
@@ -772,15 +768,15 @@ export default function RobotControl() {
               <div className="text-sm space-y-1">
                 <div className="flex items-center gap-2">
                   <Bot className="h-3 w-3 text-blue-400" />
-                  <span>Robot: {robots.find(r => r.id.toString() === selectedRobot)?.nom || 'Chargement...'}</span>
+                  <span>Robot: {robots.find(r => r.referance.toString() === selectedRobot)?.nom || 'Chargement...'}</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <Camera className="h-3 w-3 text-green-400" />
                   <span>Caméra: {selectedCamera === 'left' ? 'Gauche' : 'Droite'}</span>
                 </div>
-                {robots.find(r => r.id.toString() === selectedRobot)?.referance && (
+                {robots.find(r => r.referance.toString() === selectedRobot)?.referance && (
                   <div className="flex items-center gap-2 text-xs text-gray-300">
-                    <span>Ref: {robots.find(r => r.id.toString() === selectedRobot)?.referance}</span>
+                    <span>Ref: {robots.find(r => r.referance.toString() === selectedRobot)?.referance}</span>
                   </div>
                 )}
               </div>
