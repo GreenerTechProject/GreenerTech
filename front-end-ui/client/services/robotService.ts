@@ -8,6 +8,7 @@ interface Robot {
   id: number;
   nom: string;
   referance: string;
+  id_entreprise: number;
 }
 
 interface ApiError {
@@ -66,9 +67,9 @@ export const robotService = {
   },
 
   // Create new robot
-  createRobot: async (robotData: Omit<Robot, 'id'>): Promise<Robot> => {
+  createRobot: async (robotData: Omit<Robot, 'id' | 'id_entreprise'>): Promise<{status: string, message: string, robot: Robot}> => {
     try {
-      const response = await axios.post<Robot>(
+      const response = await axios.post<{status: string, message: string, robot: Robot}>(
         `${API_BASE_URL}/robot`,
         robotData,
         createAuthenticatedRequest()
@@ -104,12 +105,13 @@ export const robotService = {
   },
 
   // Delete robot
-  deleteRobot: async (robotId: number): Promise<void> => {
+  deleteRobot: async (robotId: number): Promise<{status: string, message: string}> => {
     try {
-      await axios.delete(
+      const response = await axios.delete<{status: string, message: string}>(
         `${API_BASE_URL}/robot/${robotId}`,
         createAuthenticatedRequest()
       );
+      return response.data;
     } catch (error: any) {
       const errorMessage = error.response?.data?.message || 
         "Erreur lors de la suppression du robot";

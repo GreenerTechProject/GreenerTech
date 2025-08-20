@@ -179,7 +179,7 @@ def create_technicien(current_user):
         email=email,
         name=name,
         role=role,
-        id_assigned=current_user.id,
+        id_assigned=None,  # Start with no supervisor assignment
         id_entreprise=company_id,
         directeur_valide=True,
         email_valide=False

@@ -15,6 +15,7 @@ export interface CompanyInfo {
   cie: string;
   status_juridique : string;
   email : string;
+  id_fiscale?: string;
 }
 
 export interface CompaniesResponse {
@@ -135,6 +136,34 @@ export const companyService = {
       const errorMessage =
         error.response?.data?.message ||
         "Erreur lors de la création de l'entreprise";
+
+      throw {
+        message: errorMessage,
+        status: error.response?.status || 500,
+      } as ApiError;
+    }
+  },
+
+  // Update an existing company
+  updateCompany: async (
+    companyData: CompanyInfo,
+  ): Promise<CreateCompanyResponse> => {
+    try {
+      console.log("Updating company data:", companyData);
+      const response = await axios.put<CreateCompanyResponse>(
+        `${API_BASE_URL}/entreprise`,
+        companyData,
+        createAuthenticatedRequest(),
+      );
+
+      console.log("Company update response:", response.data);
+      return response.data;
+    } catch (error: any) {
+      console.error("Erreur lors de la mise à jour de l'entreprise:", error);
+
+      const errorMessage =
+        error.response?.data?.message ||
+        "Erreur lors de la mise à jour de l'entreprise";
 
       throw {
         message: errorMessage,

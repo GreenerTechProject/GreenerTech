@@ -53,6 +53,8 @@ import TechnicianReportsPage from "./pages/TechnicianReportsPage";
 import TechnicianReportCreation from "./pages/TechnicianReportCreation";
 import TechSupNotificationsPage from "./pages/TechSupNotificationsPage";
 import AssignmentManagement from "./pages/AssignmentManagement";
+import RobotConfig from "./pages/RobotConfig";
+import CompanyUpdate from "./pages/CompanyUpdate";
 
 const queryClient = new QueryClient();
 
@@ -128,6 +130,26 @@ const App = () => (
               element={
                 <ProtectedRoute requiredRole="directeur">
                   <DirectorMapConfig />
+                </ProtectedRoute>
+              }
+            />
+
+            {/* Robot Configuration */}
+            <Route
+              path="/directeur/robot-config"
+              element={
+                <ProtectedRoute requiredRole="directeur">
+                  <RobotConfig />
+                </ProtectedRoute>
+              }
+            />
+
+            {/* Company Update */}
+            <Route
+              path="/directeur/company-update"
+              element={
+                <ProtectedRoute requiredRole="directeur">
+                  <CompanyUpdate />
                 </ProtectedRoute>
               }
             />
@@ -220,6 +242,26 @@ const App = () => (
               element={
                 <ProtectedRoute requiredRole="directeur">
                   <AssignmentManagement />
+                </ProtectedRoute>
+              }
+            />
+
+            {/* Robot Configuration */}
+            <Route
+              path="/directeur/robot-config"
+              element={
+                <ProtectedRoute requiredRole="directeur">
+                  <RobotConfig />
+                </ProtectedRoute>
+              }
+            />
+
+            {/* Company Update */}
+            <Route
+              path="/directeur/company-update"
+              element={
+                <ProtectedRoute requiredRole="directeur">
+                  <CompanyUpdate />
                 </ProtectedRoute>
               }
             />
