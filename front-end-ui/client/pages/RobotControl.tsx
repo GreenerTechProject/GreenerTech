@@ -767,7 +767,11 @@ export default function RobotControl() {
               autoPlay
               playsInline
               muted
-              className="w-full h-full bg-black object-contain"
+              className="w-full h-full bg-black object-contain transition-transform duration-200"
+              style={{
+                transform: `scale(${videoZoom}) translate(${videoPosition.x}px, ${videoPosition.y}px)`,
+                transformOrigin: 'center center'
+              }}
             />
 
             {/* Sensor Data Overlay - Top Left */}
