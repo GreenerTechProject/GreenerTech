@@ -1070,7 +1070,7 @@ COPY public.rapport (id, date, description, lien_pdf, id_serre, user_id) FROM st
 --
 
 COPY public.robots (id, nom, referance, id_entreprise) FROM stdin;
-1	Robot 1	abcabc46-58c1-4531-b88f-99d3288bfabc	1
+1	Robot 1	db3309ad-81f8-4890-8d55-15bb137a4e0b	1
 \.
 
 
