@@ -107,20 +107,29 @@ async def send_video(robot_ref, camera, idcamera, type=0):
     offer = await pc.createOffer()
     await pc.setLocalDescription(offer)
 
-    async with aiohttp.ClientSession() as session:
-        async with session.post(
-            f"http://{host}:8080/service/video_stream_handler?robot={robot_ref}&camera={camera}",
-            json={"offer": {"sdp": pc.localDescription.sdp, "type": pc.localDescription.type}},
-        ) as resp:
-            answer = await resp.json()
+    try:
+        print("Tentative de connexion au serveur vidéo...")
+        async with aiohttp.ClientSession() as session:
+            async with session.post(
+                f"http://{host}:8080/service/video_stream_handler?robot={robot_ref}&camera={camera}",
+                json={"offer": {"sdp": pc.localDescription.sdp, "type": pc.localDescription.type}},
+            ) as resp:
+                answer = await resp.json()
 
-    await pc.setRemoteDescription(
-        RTCSessionDescription(sdp=answer["sdp"], type=answer["type"])
-    )
+        await pc.setRemoteDescription(
+            RTCSessionDescription(sdp=answer["sdp"], type=answer["type"])
+        )
 
-    print("✅ WebRTC connection established with server")
+        print("✅ WebRTC connection established with server")
 
-    await asyncio.Future()
+        await asyncio.Future()
+    
+    except (websockets.exceptions.ConnectionClosedError, ConnectionRefusedError) as e:
+        print(f"❌ Connexion video échouée ou perdue : {e}. Nouvelle tentative dans 2 secondes...")
+        await asyncio.sleep(2)
+    except Exception as e:
+        print(f"❌ Erreur video inattendue : {e}. Nouvelle tentative dans 2 secondes...")
+        await asyncio.sleep(2)
 
 """
 async def send_video(robot_ref, camera, idcamera, type=0):
@@ -265,6 +274,7 @@ class SensorDataNode(Node):
     async def connect_ws(self):
         while self.ws is None:
             try:
+                print("Tentative de connexion au serveur sensors...")
                 self.ws = await websockets.connect(self.uri)
                 print("Sensor WebSocket connected")
             except Exception as e:
@@ -300,19 +310,31 @@ import random
 
 async def simulate_sensor_data(robot_ref):
     uri = "ws://"+host+":8080/service/sensor_data?robot="+robot_ref
-    async with websockets.connect(uri) as ws:
-        while True:
-            data = {
-                "temperature": round(random.uniform(20, 30000), 2),
-                "humidity": round(random.uniform(50, 80), 2),
-                "co2": round(random.uniform(300, 800), 2),
-                "luminosite": round(random.uniform(100, 1000), 2),
-                "x": round(random.uniform(-180.0, 180.0), 6),  # longitude
-                "y": round(random.uniform(-90.0, 90.0), 6)     # latitude
-            }
-            await ws.send(json.dumps(data))
-            #print(f"📤 Données envoyées : {data}")
-            await asyncio.sleep(2)
+    try:
+        print("Tentative de connexion au serveur sensors...")
+        async with websockets.connect(uri) as ws:
+            while True:
+                data = {
+                    "temperature": round(random.uniform(20, 30000), 2),
+                    "humidity": round(random.uniform(50, 80), 2),
+                    "co2": round(random.uniform(300, 800), 2),
+                    "luminosite": round(random.uniform(100, 1000), 2),
+                    "x": round(random.uniform(-180.0, 180.0), 6),  # longitude
+                    "y": round(random.uniform(-90.0, 90.0), 6)     # latitude
+                }
+                await ws.send(json.dumps(data))
+                #print(f"📤 Données envoyées : {data}")
+                await asyncio.sleep(2)
+
+
+    except (websockets.exceptions.ConnectionClosedError, ConnectionRefusedError) as e:
+        #arduino.write(("STOP" + "\n").encode())
+        print(f"❌ Connexion sensors échouée ou perdue : {e}. Nouvelle tentative dans 2 secondes...")
+        await asyncio.sleep(2)
+    except Exception as e:
+        #arduino.write(("STOP" + "\n").encode())
+        print(f"❌ Erreur sensors inattendue : {e}. Nouvelle tentative dans 2 secondes...")
+        await asyncio.sleep(2)
 
 
 
