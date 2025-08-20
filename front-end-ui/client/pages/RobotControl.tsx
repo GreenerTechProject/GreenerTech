@@ -22,7 +22,13 @@ import {
   Maximize,
   Minimize,
   Camera,
-  Bot
+  Bot,
+  ZoomIn,
+  ZoomOut,
+  Download,
+  Eye,
+  EyeOff,
+  Move
 } from 'lucide-react';
 import axios from 'axios';
 import { tokenManager } from "../services/authService";
@@ -64,6 +70,9 @@ export default function RobotControl() {
   const [selectedRobot, setSelectedRobot] = useState<string>('1');
   const [isFullScreen, setIsFullScreen] = useState<boolean>(false);
   const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
+  const [isAIDetectionEnabled, setIsAIDetectionEnabled] = useState<boolean>(false);
+  const [videoZoom, setVideoZoom] = useState<number>(1);
+  const [videoPosition, setVideoPosition] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
   
   // New state for robots
   const [robots, setRobots] = useState<Robot[]>([]);
@@ -257,6 +266,56 @@ export default function RobotControl() {
     }
   };
 
+  // Toggle AI detection
+  const toggleAIDetection = () => {
+    const newState = !isAIDetectionEnabled;
+    setIsAIDetectionEnabled(newState);
+    sendCommand(newState ? 'ENABLE_AI' : 'DISABLE_AI');
+  };
+
+  // Zoom controls
+  const zoomIn = () => {
+    setVideoZoom(prev => Math.min(prev + 0.25, 3));
+  };
+
+  const zoomOut = () => {
+    setVideoZoom(prev => Math.max(prev - 0.25, 0.5));
+  };
+
+  const resetZoom = () => {
+    setVideoZoom(1);
+    setVideoPosition({ x: 0, y: 0 });
+  };
+
+  // Capture image from video
+  const captureImage = () => {
+    if (videoRef.current) {
+      const video = videoRef.current;
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+
+      if (ctx) {
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        ctx.drawImage(video, 0, 0);
+
+        // Create download link
+        canvas.toBlob((blob) => {
+          if (blob) {
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `robot-${selectedRobot}-camera-${selectedCamera}-${new Date().toISOString().replace(/[:.]/g, '-')}.jpg`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+          }
+        }, 'image/jpeg', 0.9);
+      }
+    }
+  };
+
   // Refresh connections
   const refreshConnections = async () => {
     setIsRefreshing(true);
@@ -376,7 +435,7 @@ export default function RobotControl() {
               <div key={index} className="ml-4">
                 {typeof item === "object" ? 
                   renderQRValue(`Item ${index + 1}`, item, depth + 1) : 
-                  <div>• {item}</div>
+                  <div>�� {item}</div>
                 }
               </div>
             ))}
@@ -578,6 +637,49 @@ export default function RobotControl() {
             </CardContent>
           </Card>
 
+          {/* Video Controls */}
+          <Card className="text-sm">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm">Contrôles Vidéo</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              <div className="flex gap-1">
+                <Button
+                  onClick={zoomOut}
+                  className="flex-1 h-8 text-sm"
+                  variant="outline"
+                  disabled={videoZoom <= 0.5}
+                >
+                  <ZoomOut className="h-3 w-3" />
+                </Button>
+                <Button
+                  onClick={resetZoom}
+                  className="flex-1 h-8 text-sm"
+                  variant="outline"
+                >
+                  {Math.round(videoZoom * 100)}%
+                </Button>
+                <Button
+                  onClick={zoomIn}
+                  className="flex-1 h-8 text-sm"
+                  variant="outline"
+                  disabled={videoZoom >= 3}
+                >
+                  <ZoomIn className="h-3 w-3" />
+                </Button>
+              </div>
+
+              <Button
+                onClick={captureImage}
+                className="w-full h-8 text-sm"
+                variant="outline"
+              >
+                <Download className="h-3 w-3 mr-1" />
+                Capturer Image
+              </Button>
+            </CardContent>
+          </Card>
+
           {/* Control Actions */}
           <Card className="text-sm">
             <CardHeader className="pb-2">
@@ -611,6 +713,28 @@ export default function RobotControl() {
                   </>
                 )}
               </Button>
+
+              <Button
+                onClick={toggleAIDetection}
+                className={`w-full h-8 text-sm ${
+                  isAIDetectionEnabled
+                    ? 'bg-green-500 hover:bg-green-600 text-white'
+                    : 'bg-gray-200 hover:bg-gray-300 text-gray-800'
+                }`}
+                variant="outline"
+              >
+                {isAIDetectionEnabled ? (
+                  <>
+                    <Eye className="h-3 w-3 mr-1" />
+                    IA Activée
+                  </>
+                ) : (
+                  <>
+                    <EyeOff className="h-3 w-3 mr-1" />
+                    IA Désactivée
+                  </>
+                )}
+              </Button>
             </CardContent>
           </Card>
 
@@ -637,13 +761,17 @@ export default function RobotControl() {
 
         {/* Full Screen Video Area */}
         <div className="flex-1 relative">
-          <div className="absolute inset-0 bg-black">
+          <div className="absolute inset-0 bg-black overflow-hidden">
             <video
               ref={videoRef}
               autoPlay
               playsInline
               muted
-              className="w-full h-full bg-black object-contain"
+              className="w-full h-full bg-black object-contain transition-transform duration-200"
+              style={{
+                transform: `scale(${videoZoom}) translate(${videoPosition.x}px, ${videoPosition.y}px)`,
+                transformOrigin: 'center center'
+              }}
             />
 
             {/* Sensor Data Overlay - Top Left */}
