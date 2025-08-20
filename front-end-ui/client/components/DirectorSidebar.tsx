@@ -12,7 +12,9 @@ import {
   ChevronRight,
   Settings,
   Map,
-  Target
+  Target,
+  Bot,
+  Building2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -29,6 +31,13 @@ const navigationItems = [
     icon: LayoutDashboard,
     href: '/directeur',
     description: 'Vue d\'ensemble et statistiques'
+  },
+  {
+    id: 'assignments',
+    label: 'Gestion des Assignments',
+    icon: UserCheck,
+    href: '/directeur/assignments',
+    description: 'Assigner techniciens aux superviseurs et aux serres'
   },
   {
     id: 'technicians',
@@ -65,12 +74,26 @@ const navigationItems = [
     href: '/director/reports',
     description: 'Créer, organiser, éditer les rapports'
   },
- {
+  {
     id: 'map-config',
     label: 'Configuration Carte',
     icon: Map,
     href: '/directeur/map-config',
     description: 'Créer et gérer domaines et serres sur la carte'
+  },
+  {
+    id: 'robot-config',
+    label: 'Configuration Robots',
+    icon: Bot,
+    href: '/directeur/robot-config',
+    description: 'Créer et gérer les robots de l\'entreprise'
+  },
+  {
+    id: 'company-update',
+    label: 'Modifier Entreprise',
+    icon: Building2,
+    href: '/directeur/company-update',
+    description: 'Modifier les informations de l\'entreprise'
   }
 ];
 

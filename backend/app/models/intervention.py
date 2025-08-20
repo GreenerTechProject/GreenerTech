@@ -8,6 +8,7 @@ class StatutInterventionEnum(str, Enum):
     EN_ATTENTE = "en_attente"
     ENCOURS = "encours"
     TERMINE = "terminé"
+    REJETEE = "rejetee"
 
 class Intervention(db.Model):
     id = Column(Integer, primary_key=True)

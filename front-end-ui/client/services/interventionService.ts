@@ -17,7 +17,7 @@ const createAuthenticatedRequest = () => {
 export interface Intervention {
   id: number;
   description: string;
-  status: 'encours' | 'terminé' | 'en_attente';
+  status: 'encours' | 'terminé' | 'en_attente' | 'rejetee';
   id_user: number;
   id_serre: number;
   id_type_tache: number;

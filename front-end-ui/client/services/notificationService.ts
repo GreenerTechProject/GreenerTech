@@ -17,6 +17,7 @@ export interface NotificationCounts {
   byType: {
     intervention_creee: number;
     intervention_validee: number;
+    intervention_rejetee: number;
     compte_technicien: number;
     compte_valide: number;
   };
@@ -58,6 +59,7 @@ export const notificationService = {
         byType: {
           intervention_creee: notifications.filter(n => n.type_notification === 'intervention_creee').length,
           intervention_validee: notifications.filter(n => n.type_notification === 'intervention_validee').length,
+          intervention_rejetee: notifications.filter(n => n.type_notification === 'intervention_rejetee').length,
           compte_technicien: notifications.filter(n => n.type_notification === 'compte_technicien').length,
           compte_valide: notifications.filter(n => n.type_notification === 'compte_valide').length,
         }
@@ -73,6 +75,7 @@ export const notificationService = {
         byType: {
           intervention_creee: 0,
           intervention_validee: 0,
+          intervention_rejetee: 0,
           compte_technicien: 0,
           compte_valide: 0,
         }

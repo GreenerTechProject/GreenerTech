@@ -142,6 +142,8 @@ export default function InterventionRequestDetails() {
         return <Badge variant="secondary" className="bg-blue-100 text-blue-800">En cours</Badge>;
       case 'terminé':
         return <Badge variant="secondary" className="bg-green-100 text-green-800">Terminé</Badge>;
+      case 'rejetee':
+        return <Badge variant="secondary" className="bg-red-100 text-red-800">Rejetée</Badge>;
       default:
         return <Badge variant="secondary">{status}</Badge>;
     }
@@ -251,7 +253,7 @@ export default function InterventionRequestDetails() {
                 <FileText className="h-4 w-4" />
                 Type de tâche
               </div>
-              <p className="text-gray-900">{intervention.type_tache || `Type #${intervention.id_type_tache}`}</p>
+              <p className="text-gray-900">{intervention.type_nom || `Type #${intervention.id_type_tache}`}</p>
             </div>
           </div>
 

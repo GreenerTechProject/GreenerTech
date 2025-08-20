@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Bell, Wrench, ClipboardList, Clock, ChevronRight, X } from "lucide-react";
+import { Bell, Wrench, ClipboardList, Clock, ChevronRight, X, XCircle } from "lucide-react";
 import { notificationService, Notification } from "../services/notificationService";
 import { cn } from "@/lib/utils";
 
@@ -88,7 +88,9 @@ export default function NotificationDropdown({
   };
 
   const getNotificationIcon = (type: string) => {
-    if (type.includes('intervention')) {
+    if (type === 'intervention_rejetee') {
+      return <XCircle className="h-4 w-4 text-red-500" />;
+    } else if (type.includes('intervention')) {
       return <Wrench className="h-4 w-4 text-blue-500" />;
     }
     return <ClipboardList className="h-4 w-4 text-gray-500" />;
@@ -97,6 +99,7 @@ export default function NotificationDropdown({
   const getNotificationTitle = (type: string) => {
     if (type === 'intervention_creee') return "Demande d'intervention";
     if (type === 'intervention_validee') return "Intervention validée";
+    if (type === 'intervention_rejetee') return "Intervention rejetée";
     if (type === 'compte_technicien') return "Compte technicien";
     if (type === 'compte_valide') return "Compte validé";
     return "Notification";

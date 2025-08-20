@@ -55,6 +55,7 @@ import TechSupNotificationsPage from "./pages/TechSupNotificationsPage";
 import AssignmentManagement from "./pages/AssignmentManagement";
 import RobotConfig from "./pages/RobotConfig";
 import CompanyUpdate from "./pages/CompanyUpdate";
+import InterventionRequestDetails from "./pages/InterventionRequestDetails";
 
 const queryClient = new QueryClient();
 
@@ -375,6 +376,7 @@ const App = () => (
               <Route path="dashboard" element={<TechnicienSupDashboard />} />
               <Route path="alerts" element={<TechnicienSupAlerts />} />
               <Route path="interventions" element={<TechnicienSupInterventions />} />
+              <Route path="intervention-request/:id" element={<InterventionRequestDetails />} />
               <Route path="reports" element={<TechnicienSupReports />} />
               <Route path="missions" element={<MissionManagement />} />
               <Route path="notifications" element={<TechSupNotificationsPage />} />
