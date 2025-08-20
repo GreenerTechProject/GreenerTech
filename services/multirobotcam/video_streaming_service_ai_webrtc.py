@@ -71,8 +71,8 @@ class RelayStreamTrack(VideoStreamTrack):
     async def recv(self):
         data = stream_data[self.key]
         pts, time_base = await self.next_timestamp()
-        #frame_to_use = data["latest_frame"] if data["latest_frame"] is not None else self.fallback_frame
-        frame_to_use = detect_frame(data["latest_frame"]) if data["latest_frame"] is not None else self.fallback_frame
+        frame_to_use = data["latest_frame"] if data["latest_frame"] is not None else self.fallback_frame
+        #frame_to_use = detect_frame(data["latest_frame"]) if data["latest_frame"] is not None else self.fallback_frame
 
         if frame_to_use is None:
             raise Exception("No video stream and no fallback image found!")
