@@ -54,13 +54,15 @@ class CameraVideoTrack(VideoStreamTrack):
         global AI_ENABLED
         pts, time_base = await self.next_timestamp()
         ret, frame = self.cap.read()
-        frame = detect_frame(frame)  # only apply detection when enabled
         if not ret:
             self.cap.set(cv2.CAP_PROP_POS_FRAMES, 0)
             ret, frame = self.cap.read()
             if not ret:
                 raise RuntimeError("❌ Failed to read frame from video")
         #print("📹 Capturing frame")
+        
+        if AI_ENABLED:
+            frame = detect_frame(frame)  # only apply detection when enabled
 
         frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         av_frame = VideoFrame.from_ndarray(frame_rgb, format="rgb24")
