@@ -8,6 +8,7 @@ import json
 
 host = "greenertech.mywire.org"
 
+AI_ENABLED = False
 
 
 import os
