@@ -52,7 +52,7 @@ import RobotControl from "./pages/RobotControl";
 import TechnicianReportsPage from "./pages/TechnicianReportsPage";
 import TechnicianReportCreation from "./pages/TechnicianReportCreation";
 import TechSupNotificationsPage from "./pages/TechSupNotificationsPage";
-import InterventionRequestDetails from "./pages/InterventionRequestDetails";
+import AssignmentManagement from "./pages/AssignmentManagement";
 
 const queryClient = new QueryClient();
 
@@ -214,6 +214,16 @@ const App = () => (
               }
             />
 
+            {/* Director Assignment Management */}
+            <Route
+              path="/directeur/assignments"
+              element={
+                <ProtectedRoute requiredRole="directeur">
+                  <AssignmentManagement />
+                </ProtectedRoute>
+              }
+            />
+
 
             {/* Technician Routes */}
             <Route
@@ -326,7 +336,6 @@ const App = () => (
               <Route path="reports" element={<TechnicienSupReports />} />
               <Route path="missions" element={<MissionManagement />} />
               <Route path="notifications" element={<TechSupNotificationsPage />} />
-              <Route path="intervention-request/:id" element={<InterventionRequestDetails />} />
             </Route>
 
             <Route

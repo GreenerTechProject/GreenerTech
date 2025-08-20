@@ -102,11 +102,27 @@ export const assignmentService = {
   // Get all serre assignments from the director's company
   getCompanyAssignments: async (): Promise<Assignment[]> => {
     try {
-      const response = await axios.get<Assignment[]>(
+      const response = await axios.get(
         `${API_BASE_URL}/assignments/company`,
         createAuthenticatedRequest(),
       );
-      return response.data || [];
+      
+      // The backend returns a complex object, we need to extract the assignments array
+      const data = response.data;
+      console.log('Backend response for assignments:', data);
+      
+      if (data && data.assignments && Array.isArray(data.assignments)) {
+        // Transform the backend format to match our Assignment interface
+        return data.assignments.map((assignment: any) => ({
+          id_user: assignment.user_id,
+          id_serre: assignment.serre_id,
+          user_name: assignment.user_name,
+          serre_nom: assignment.serre_name
+        }));
+      }
+      
+      console.warn('No assignments found in response or invalid format:', data);
+      return [];
     } catch (error: any) {
       const errorMessage =
         error.response?.data?.message || "Erreur lors de la récupération des assignments";
