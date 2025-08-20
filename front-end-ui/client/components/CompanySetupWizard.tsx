@@ -201,6 +201,9 @@ export default function CompanySetupWizard({
     if (wasSkipped) {
       setSkippedSteps(prev => new Set([...prev, "technicianHierarchy"]));
     } else {
+      // Store the technician hierarchy assignments for later use when technicians are created
+      console.log("=== STORING TECHNICIAN HIERARCHY ASSIGNMENTS ===");
+      console.log("Technicians with planned assignments:", finalTechnicians);
       setTechnicians(finalTechnicians);
     }
     setCurrentStep("overview");
@@ -211,6 +214,18 @@ export default function CompanySetupWizard({
 
     try {
       setIsSubmitting(true);
+      
+      // Debug: Log what data we're about to send
+      console.log("=== FINAL SETUP DATA DEBUG ===");
+      console.log("Company info:", companyInfo);
+      console.log("Domains:", domains.length);
+      console.log("Technicians:", technicians);
+      console.log("Serre assignments:", serreAssignments);
+      
+      // Check if technicians have hierarchy assignments
+      const techniciansWithAssignments = technicians.filter(t => t.role === "technicien" && t.id_assigned);
+      console.log("Technicians with supervisor assignments:", techniciansWithAssignments);
+      
       const completedData: CompletedSetupData = {
         companyInfo,
         domains,

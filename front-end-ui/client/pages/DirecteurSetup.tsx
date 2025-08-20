@@ -51,6 +51,8 @@ interface Technician {
   fullName: string;
   email: string;
   role: "technicien_superieur" | "technicien";
+  assignedSerres: string[];
+  id_assigned?: number | null; // ID of supervisor this technician reports to (for regular technicians)
 }
 
 interface SerreAssignment {
@@ -85,7 +87,24 @@ export default function DirecteurSetup() {
     try {
       setIsSubmittingCompanyInfo(true);
 
-      console.log("Starting setup process with data:", setupData);
+      console.log("=== STARTING SETUP PROCESS ===");
+      console.log("setupData:", setupData);
+      console.log("setupData.technicians:", setupData.technicians);
+      
+      // Debug technician data structure
+      setupData.technicians.forEach((tech, idx) => {
+        console.log(`Technician ${idx}:`, {
+          id: tech.id,
+          fullName: tech.fullName,
+          email: tech.email,
+          role: tech.role,
+          assignedSerres: tech.assignedSerres,
+          id_assigned: tech.id_assigned,
+          hasSupervisor: !!tech.id_assigned,
+          assignedSerresType: typeof tech.assignedSerres,
+          assignedSerresIsArray: Array.isArray(tech.assignedSerres)
+        });
+      });
 
       // Step 1: Create the company
       console.log("Creating company:", setupData.companyInfo);
@@ -219,57 +238,121 @@ export default function DirecteurSetup() {
       }
 
       // Step 5: Create technicians
-      let createdTechnicians: { id: number; email: string; role: Technician["role"]; supervisorId?: string }[] = [];
+      let createdTechnicians: { id: number; email: string; role: Technician["role"]; assignedSerres: string[]; id_assigned?: number | null }[] = [];
+      let technicianIdMap = new Map<string, number>(); // Map temp ID to backend ID
+      
       if (setupData.technicians.length > 0) {
+        console.log("=== CREATING TECHNICIANS ===");
+        console.log("setupData.technicians:", setupData.technicians);
+        
         const technicianRequests = setupData.technicians.map((technician) => ({
           fullName: technician.fullName,
           email: technician.email,
           role: technician.role,
+          assignedSerres: technician.assignedSerres,
           companyId: parseInt(companyId.toString(), 10),
         }));
 
         console.log("Creating technicians:", technicianRequests);
         const responses = await technicianService.createTechnicians(technicianRequests);
-        createdTechnicians = responses.map((res, idx) => ({
-          id: res.id,
-          email: technicianRequests[idx].email,
-          role: technicianRequests[idx].role,
-        }));
+        console.log("Technician creation responses:", responses);
         
-        // Step 5b: Reset all technicians to have id_assigned = null initially
-        console.log("Resetting all technicians to have no supervisor initially...");
+        createdTechnicians = responses.map((res, idx) => {
+          const originalTech = setupData.technicians[idx];
+          
+          const tech = {
+            id: res.id,
+            email: technicianRequests[idx].email,
+            role: technicianRequests[idx].role,
+            assignedSerres: Array.isArray(originalTech.assignedSerres) ? originalTech.assignedSerres : [],
+            id_assigned: originalTech.id_assigned, // Keep the temporary ID for now
+          };
+          
+          // Map the temporary ID to the backend ID for hierarchy assignment
+          if (originalTech.id && res.id) {
+            technicianIdMap.set(originalTech.id, res.id);
+            console.log(`Mapped temp ID ${originalTech.id} to backend ID ${res.id}`);
+          }
+          
+          console.log(`Created technician ${idx}:`, tech);
+          console.log(`Original technician data:`, originalTech);
+          return tech;
+        });
+        
+        // Now update the id_assigned values with backend IDs
         for (const tech of createdTechnicians) {
-          try {
-            console.log(`Resetting ${tech.email} (${tech.role}) to have no supervisor...`);
-            const response = await fetch(`${window.location.protocol}//${window.location.hostname}:5000/api/user`, {
-              method: 'PUT',
-              headers: {
-                'Content-Type': 'application/json',
-                Authorization: `Bearer ${localStorage.getItem('auth_token') || ''}`,
-              },
-              body: JSON.stringify({ 
-                id: tech.id,
-                id_assigned: null 
-              }),
-            });
-            
-            if (!response.ok) {
-              const errorData = await response.json();
-              throw new Error(`HTTP ${response.status}: ${errorData.message || 'Unknown error'}`);
+          if (tech.id_assigned && typeof tech.id_assigned === 'string') {
+            const supervisorBackendId = technicianIdMap.get(tech.id_assigned);
+            if (supervisorBackendId) {
+              tech.id_assigned = supervisorBackendId;
+              console.log(`Updated ${tech.email} supervisor assignment from temp ID ${tech.id_assigned} to backend ID ${supervisorBackendId}`);
+            } else {
+              console.warn(`Could not find backend ID for supervisor temp ID ${tech.id_assigned} for ${tech.email}`);
+              tech.id_assigned = null; // Reset if mapping failed
             }
-            
-            const result = await response.json();
-            console.log(`Successfully reset ${tech.email} (${tech.role}) to have no supervisor:`, result);
-          } catch (e) {
-            console.warn("Failed to reset technician supervisor assignment", tech.email, e);
+          }
+        }
+        
+        console.log("Final createdTechnicians array:", createdTechnicians);
+        console.log("Technician ID mapping:", Object.fromEntries(technicianIdMap));
+        
+        // Step 5b: Only reset technicians that don't have supervisors assigned
+        console.log("=== RESETTING TECHNICIAN SUPERVISOR ASSIGNMENTS ===");
+        for (const tech of createdTechnicians) {
+          // Only reset if the technician doesn't have a supervisor assigned
+          if (!tech.id_assigned) {
+            try {
+              console.log(`Resetting ${tech.email} (${tech.role}) to have no supervisor initially...`);
+              const response = await fetch(`${window.location.protocol}//${window.location.hostname}:5000/api/user`, {
+                method: 'PUT',
+                headers: {
+                  'Content-Type': 'application/json',
+                  Authorization: `Bearer ${localStorage.getItem('auth_token') || ''}`,
+                },
+                body: JSON.stringify({ 
+                  id: tech.id,
+                  id_assigned: null 
+                }),
+              });
+              
+              if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(`HTTP ${response.status}: ${errorData.message || 'Unknown error'}`);
+              }
+              
+              const result = await response.json();
+              console.log(`Successfully reset ${tech.email} (${tech.role}) to have no supervisor:`, result);
+            } catch (e) {
+              console.warn("Failed to reset technician supervisor assignment", tech.email, e);
+            }
+          } else {
+            console.log(`Keeping ${tech.email} (${tech.role}) with existing supervisor assignment: ${tech.id_assigned}`);
           }
         }
       }
 
       // Step 6: Create autorisations_serre for each technician assigned to serres
-      // NOTE: This step is skipped since serres are not assigned during technician creation
-      // Serre assignments will be handled separately in the technician hierarchy step
-      console.log("Skipping serre autorisations - serres will be assigned later in technician hierarchy");
+      if (createdTechnicians.length > 0) {
+        for (const tech of createdTechnicians) {
+          // Check if assignedSerres exists and is an array
+          if (tech.assignedSerres && Array.isArray(tech.assignedSerres)) {
+            for (const assignedTempId of tech.assignedSerres) {
+              const targetSerreId = serreIdMap.get(assignedTempId) ?? parseInt(assignedTempId, 10);
+              if (!targetSerreId || Number.isNaN(targetSerreId)) continue;
+              try {
+                await serreService.createAutorisationSerre({
+                  id_user: tech.id,
+                  id_serre: targetSerreId,
+                });
+              } catch (e) {
+                console.warn("Failed to create autorisation_serre for", tech.email, assignedTempId, e);
+              }
+            }
+          } else {
+            console.log(`No assigned serres for ${tech.email} or assignedSerres is not an array:`, tech.assignedSerres);
+          }
+        }
+      }
 
       // Step 7: Create serre assignments to supervisors
       if (setupData.serreAssignments.length > 0) {
@@ -284,15 +367,12 @@ export default function DirecteurSetup() {
             
             if (supervisor) {
               try {
-                console.log(`Creating serre authorization for supervisor ${supervisor.email} (ID: ${supervisor.id}) for serre ID: ${backendSerreId}`);
-                const result = await serreService.createAutorisationSerre({
+                await serreService.createAutorisationSerre({
                   id_user: supervisor.id,
                   id_serre: backendSerreId,
                 });
-                console.log(`Successfully created serre authorization:`, result);
               } catch (e) {
-                console.error("Failed to create serre authorization for supervisor", supervisor.email, e);
-                throw e; // Re-throw to stop the setup process
+                console.warn("Failed to create serre authorization for supervisor", supervisor.email, e);
               }
             }
           }
@@ -300,14 +380,139 @@ export default function DirecteurSetup() {
       }
 
       // Step 8: Update technician hierarchy (supervisor assignments)
-      // NOTE: Technician hierarchy assignments are handled in the TechnicianHierarchy component
-      // and will be processed when the setup is completed through the wizard flow
-      console.log("Technician hierarchy assignments will be handled in the next step");
-
-      // Step 9: Log final technician hierarchy state
-      console.log("=== FINAL TECHNICIAN HIERARCHY STATE ===");
+      console.log("=== APPLYING TECHNICIAN HIERARCHY ASSIGNMENTS ===");
+      console.log("setupData.technicians:", setupData.technicians);
+      console.log("createdTechnicians:", createdTechnicians);
+      console.log("Technician ID mapping:", Object.fromEntries(technicianIdMap));
+      
+      // Debug: Show current state of all technicians
+      console.log("=== CURRENT TECHNICIAN STATE BEFORE HIERARCHY ASSIGNMENT ===");
       for (const tech of createdTechnicians) {
-        console.log(`${tech.email} (${tech.role}): created successfully`);
+        console.log(`${tech.email} (${tech.role}): id_assigned = ${tech.id_assigned}, hasSupervisor = ${!!tech.id_assigned}`);
+      }
+      
+      // Find all technicians that need supervisors
+      const techniciansNeedingSupervisors = createdTechnicians.filter(t => t.role === "technicien" && t.id_assigned);
+      console.log("Technicians needing supervisors:", techniciansNeedingSupervisors);
+      
+      if (techniciansNeedingSupervisors.length > 0) {
+        for (const tech of techniciansNeedingSupervisors) {
+          console.log(`Processing technician ${tech.email} with backend id_assigned: ${tech.id_assigned}`);
+          
+          // Find the supervisor in the created technicians by the backend ID
+          const supervisor = createdTechnicians.find(t => t.id === tech.id_assigned);
+          console.log(`Found supervisor in created technicians:`, supervisor);
+          
+          if (supervisor && supervisor.role === "technicien_superieur") {
+            try {
+              console.log(`Applying hierarchy: ${tech.email} (${tech.id}) → ${supervisor.email} (${supervisor.id})`);
+              
+              // Update the technician's supervisor assignment in the backend
+              const response = await fetch(`${window.location.protocol}//${window.location.hostname}:5000/api/user`, {
+                method: 'PUT',
+                headers: {
+                  'Content-Type': 'application/json',
+                  Authorization: `Bearer ${localStorage.getItem('auth_token') || ''}`,
+                },
+                body: JSON.stringify({ 
+                  id: tech.id,
+                  id_assigned: supervisor.id 
+                }),
+              });
+              
+              if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(`HTTP ${response.status}: ${errorData.message || 'Unknown error'}`);
+              }
+              
+              const result = await response.json();
+              console.log(`Successfully applied hierarchy for ${tech.email}:`, result);
+              
+              // Verify the assignment was applied correctly
+              try {
+                const verifyResponse = await fetch(`${window.location.protocol}//${window.location.hostname}:5000/api/user?id=${tech.id}`, {
+                  headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('auth_token') || ''}`,
+                  },
+                });
+                if (verifyResponse.ok) {
+                  const userData = await verifyResponse.json();
+                  console.log(`Verification - User ${tech.id} now has id_assigned:`, userData.id_assigned);
+                  
+                  // Double-check that the assignment is correct
+                  if (userData.id_assigned !== supervisor.id) {
+                    console.error(`Verification failed! User ${tech.id} has id_assigned: ${userData.id_assigned}, expected: ${supervisor.id}`);
+                    throw new Error(`Hierarchy assignment verification failed for ${tech.email}`);
+                  } else {
+                    console.log(`✅ Verification successful! User ${tech.id} correctly assigned to supervisor ${supervisor.id}`);
+                  }
+                }
+              } catch (verifyError) {
+                console.warn("Could not verify assignment:", verifyError);
+              }
+              
+            } catch (e) {
+              console.error(`Failed to apply hierarchy for ${tech.email}:`, e);
+              throw e; // Stop the setup process if hierarchy assignment fails
+            }
+          } else {
+            console.warn(`Supervisor not found or not a technicien_superieur:`, supervisor);
+          }
+        }
+      } else {
+        console.log("No technicians need supervisor assignments");
+      }
+
+      // Step 9: Final verification of technician hierarchy
+      console.log("=== FINAL VERIFICATION OF TECHNICIAN HIERARCHY ===");
+      for (const tech of createdTechnicians) {
+        try {
+          const verifyResponse = await fetch(`${window.location.protocol}//${window.location.hostname}:5000/api/user?id=${tech.id}`, {
+            headers: {
+              'Authorization': `Bearer ${localStorage.getItem('auth_token') || ''}`,
+            },
+          });
+          if (verifyResponse.ok) {
+            const userData = await verifyResponse.json();
+            console.log(`Final state - ${tech.email} (${tech.role}): id_assigned = ${userData.id_assigned}`);
+            
+            // Check if the assignment is correct
+            if (tech.id_assigned) {
+              // Find the supervisor by looking up the technician with the matching backend ID
+              const expectedSupervisor = createdTechnicians.find(t => t.id === tech.id_assigned);
+              if (expectedSupervisor && userData.id_assigned !== expectedSupervisor.id) {
+                console.error(`❌ Hierarchy mismatch for ${tech.email}! Expected: ${expectedSupervisor.id}, Got: ${userData.id_assigned}`);
+              } else if (expectedSupervisor) {
+                console.log(`✅ Hierarchy correct for ${tech.email}: assigned to ${expectedSupervisor.email} (${userData.id_assigned})`);
+              } else {
+                console.warn(`⚠️ Could not find expected supervisor for ${tech.email} with id_assigned: ${tech.id_assigned}`);
+              }
+            } else {
+              console.log(`ℹ️ ${tech.email} has no supervisor assignment (as expected)`);
+            }
+          }
+        } catch (verifyError) {
+          console.warn("Could not verify final state for", tech.email, verifyError);
+        }
+      }
+
+      // Summary of final hierarchy state
+      console.log("=== FINAL HIERARCHY SUMMARY ===");
+      const techniciansWithSupervisors = createdTechnicians.filter(t => t.role === "technicien" && t.id_assigned);
+      const techniciansWithoutSupervisors = createdTechnicians.filter(t => t.role === "technicien" && !t.id_assigned);
+      const supervisors = createdTechnicians.filter(t => t.role === "technicien_superieur");
+      
+      console.log(`Total technicians: ${createdTechnicians.filter(t => t.role === "technicien").length}`);
+      console.log(`Technicians with supervisors: ${techniciansWithSupervisors.length}`);
+      console.log(`Technicians without supervisors: ${techniciansWithoutSupervisors.length}`);
+      console.log(`Total supervisors: ${supervisors.length}`);
+      
+      if (techniciansWithSupervisors.length > 0) {
+        console.log("Technicians with supervisors:");
+        techniciansWithSupervisors.forEach(tech => {
+          const supervisor = createdTechnicians.find(t => t.id === tech.id_assigned);
+          console.log(`  ${tech.email} → ${supervisor?.email || 'Unknown'}`);
+        });
       }
 
       // Update user context with setup_completed = true

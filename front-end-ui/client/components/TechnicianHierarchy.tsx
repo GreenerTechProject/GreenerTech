@@ -278,9 +278,9 @@ export default function TechnicianHierarchy({
       });
       
       const newUpdatedTechnicians = updatedTechnicians.map(tech => 
-        tech.id.toString() === technicianId 
+          tech.id.toString() === technicianId 
           ? { ...tech, ...updatedTech }
-          : tech
+            : tech
       );
       
       console.log("New allTechnicians:", newAllTechnicians.map(t => ({ id: t.id, fullName: t.fullName, role: t.role, id_assigned: t.id_assigned, id_assigned_type: typeof t.id_assigned })));
@@ -332,15 +332,15 @@ export default function TechnicianHierarchy({
       
       // Create new arrays to ensure React detects the change
       const newAllTechnicians = allTechnicians.map(tech => 
-        tech.id.toString() === technicianId 
+          tech.id.toString() === technicianId 
           ? { ...tech, ...updatedTech }
-          : tech
+            : tech
       );
-      
+
       const newUpdatedTechnicians = updatedTechnicians.map(tech => 
-        tech.id.toString() === technicianId 
+          tech.id.toString() === technicianId 
           ? { ...tech, ...updatedTech }
-          : tech
+            : tech
       );
       
       console.log("New allTechnicians after API:", newAllTechnicians.map(t => ({ id: t.id, fullName: t.fullName, role: t.role, id_assigned: t.id_assigned, id_assigned_type: typeof t.id_assigned })));
@@ -582,14 +582,14 @@ export default function TechnicianHierarchy({
                   
                   if (unassignedTechs.length === 0) {
                     return (
-                      <p className="text-sm text-gray-500 text-center py-4">
-                        Tous les techniciens sont assignés
-                      </p>
+                  <p className="text-sm text-gray-500 text-center py-4">
+                    Tous les techniciens sont assignés
+                  </p>
                     );
                   }
                   
                   return (
-                    <div className="space-y-3">
+                  <div className="space-y-3">
                       {unassignedTechs.map((tech) => (
                         <div key={tech.id} className="border rounded-lg p-3">
                           <div className="flex items-center justify-between mb-2">
@@ -639,7 +639,7 @@ export default function TechnicianHierarchy({
                           </div>
                         </div>
                       ))}
-                    </div>
+                  </div>
                   );
                 })()}
               </CardContent>
@@ -787,23 +787,23 @@ export default function TechnicianHierarchy({
                     
                     if (unassigned.length > 0) {
                       return (
-                        <Card>
-                          <CardHeader className="pb-3">
-                            <CardTitle className="text-base flex items-center gap-2">
-                              <UserPlus className="h-4 w-4" />
-                              Techniciens non assignés
-                            </CardTitle>
-                          </CardHeader>
-                          <CardContent>
-                            <div className="space-y-1">
+                    <Card>
+                      <CardHeader className="pb-3">
+                        <CardTitle className="text-base flex items-center gap-2">
+                          <UserPlus className="h-4 w-4" />
+                          Techniciens non assignés
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="space-y-1">
                               {unassigned.map((tech) => (
-                                <div key={tech.id} className="flex items-center gap-2">
-                                  <span className="text-sm text-gray-500">{tech.fullName}</span>
-                                </div>
-                              ))}
+                            <div key={tech.id} className="flex items-center gap-2">
+                              <span className="text-sm text-gray-500">{tech.fullName}</span>
                             </div>
-                          </CardContent>
-                        </Card>
+                          ))}
+                        </div>
+                      </CardContent>
+                    </Card>
                       );
                     }
                     return null;
