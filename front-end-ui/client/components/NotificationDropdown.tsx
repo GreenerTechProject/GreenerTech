@@ -62,7 +62,15 @@ export default function NotificationDropdown({
             navigate("/technicien-sup/interventions");
           }
         } else {
-          navigate("/technician/missions");
+          // For technicians, go to intervention details when validated or rejected
+          const isDecision = notification.type_notification === 'intervention_validee' || notification.type_notification === 'intervention_rejetee';
+          if (isDecision && notification.id_intervention) {
+            navigate(`/technician/interventions/${notification.id_intervention}?notificationId=${notification.id}`);
+          } else if (notification.id_intervention) {
+            navigate(`/technician/interventions?highlight=${notification.id_intervention}`);
+          } else {
+            navigate("/technician/missions");
+          }
         }
       } else {
         if (role === "technicien_sup") {

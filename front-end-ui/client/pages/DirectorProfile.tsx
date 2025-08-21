@@ -21,7 +21,7 @@ import DirectorLayout from "@/components/DirectorLayout";
 import { companyService, CompanyInfo } from "../services/companyService";
 
 export default function DirectorProfile() {
-  const { user, logout } = useAuth();
+  const { user, logout, deleteUser } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -96,7 +96,7 @@ export default function DirectorProfile() {
 
       // Fetch enterprises created by the director
       if (user.role === 'directeur') {
-        fetchDirectorEnterprises(user.id);
+        fetchDirectorEnterprises(Number(user.id));
       }
     }
   }, [user]);
@@ -167,7 +167,7 @@ export default function DirectorProfile() {
     return (
       <DirectorLayout>
         <div className="flex items-center justify-center min-h-[400px]">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-greener-600"></div>
         </div>
       </DirectorLayout>
     );
@@ -181,7 +181,7 @@ export default function DirectorProfile() {
           <Button 
             variant="ghost" 
             onClick={() => navigate("/directeur")}
-            className="text-green-600 hover:text-green-800"
+            className="text-greener-600 hover:text-greener-700"
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
             Retour
@@ -190,15 +190,15 @@ export default function DirectorProfile() {
           
           <Card className="w-full max-w-md shadow-lg border-0">
             {/* Green Header with User Info */}
-            <div className="bg-green-600 rounded-t-lg p-6 relative">
+            <div className="bg-greener-600 rounded-t-lg p-6 relative">
               {/* Profile Picture Placeholder */}
               <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center mb-4 relative">
-                <div className="text-2xl font-bold text-green-600">
+                <div className="text-2xl font-bold text-greener-600">
                   {userInfo.firstName ? userInfo.firstName[0] : 'U'}
                   {userInfo.lastName ? userInfo.lastName[0] : ''}
                 </div>
                 {/* Online status dot */}
-                <div className="absolute bottom-0 right-0 w-4 h-4 bg-green-500 rounded-full border-2 border-white"></div>
+                <div className="absolute bottom-0 right-0 w-4 h-4 bg-greener-500 rounded-full border-2 border-white"></div>
               </div>
               
               {/* User Name and Role */}
@@ -217,8 +217,8 @@ export default function DirectorProfile() {
               {/* Company and Employees */}
               {userInfo.id_entreprise ? (
                 <div className="flex items-center space-x-3">
-                  <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
-                    <Building className="w-4 h-4 text-green-600" />
+                  <div className="w-8 h-8 bg-greener-100 rounded-full flex items-center justify-center">
+                    <Building className="w-4 h-4 text-greener-700" />
                   </div>
                   <div>
                     <div className="text-sm text-gray-600">Entreprise</div>
@@ -321,7 +321,7 @@ export default function DirectorProfile() {
                       <div className="text-sm text-gray-400">Chargement...</div>
                     ) : directorEnterprises.length > 0 ? (
                       directorEnterprises.map((enterprise, index) => (
-                        <div key={enterprise.id} className="mb-2 p-3 bg-gray-50 rounded-lg">
+                        <div key={index} className="mb-2 p-3 bg-gray-50 rounded-lg">
                           <div className="font-medium text-gray-900">{enterprise.nom}</div>
                           {enterprise.adresse && (
                             <div className="text-sm text-gray-600">{enterprise.adresse}</div>
@@ -346,7 +346,7 @@ export default function DirectorProfile() {
             <div className="p-6 pt-0 space-y-3">
               <Button 
                 onClick={handleEditProfile}
-                className="w-full bg-green-600 hover:bg-green-700 text-white"
+                className="w-full bg-greener-600 hover:bg-greener-700 text-white"
               >
                 <Edit className="w-4 h-4 mr-2" />
                 Modifier le profil

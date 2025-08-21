@@ -102,19 +102,16 @@ export default function NotificationsPage() {
 
     // Navigate based on notification type
     if (notification.type_notification.includes('intervention')) {
-      console.log('🔧 NotificationsPage - Intervention notification detected');
-      
-      // If there's an intervention ID, go to interventions page with highlighting
+      const isDecision = notification.type_notification === 'intervention_validee' || notification.type_notification === 'intervention_rejetee';
+      if (isDecision && notification.id_intervention) {
+        navigate(`/technician/interventions/${notification.id_intervention}?notificationId=${notification.id}`);
+        return;
+      }
       if (notification.id_intervention) {
-        console.log('🎯 NotificationsPage - Navigating to interventions page with highlight:', `/technician/interventions?highlight=${notification.id_intervention}`);
-        console.log('📋 NotificationsPage - Intervention details will be highlighted in the list');
         navigate(`/technician/interventions?highlight=${notification.id_intervention}`);
       } else {
-        console.log('⚠️ NotificationsPage - No intervention ID found, navigating to missions');
         navigate("/technician/missions");
       }
-    } else {
-      console.log('ℹ️ NotificationsPage - Non-intervention notification, staying on notifications page');
     }
   };
 
@@ -143,6 +140,7 @@ export default function NotificationsPage() {
   const getNotificationBadge = (type: string) => {
     if (type === 'intervention_creee') return "En attente";
     if (type === 'intervention_validee') return "Validée";
+    if (type === 'intervention_rejetee') return "Rejetée";
     if (type === 'compte_technicien') return "Compte";
     if (type === 'compte_valide') return "Validé";
     return "Info";
@@ -151,6 +149,7 @@ export default function NotificationsPage() {
   const getBadgeColor = (type: string) => {
     if (type === 'intervention_creee') return "bg-yellow-100 text-yellow-800";
     if (type === 'intervention_validee') return "bg-green-100 text-green-800";
+    if (type === 'intervention_rejetee') return "bg-red-100 text-red-800";
     if (type === 'compte_technicien') return "bg-blue-100 text-blue-800";
     if (type === 'compte_valide') return "bg-purple-100 text-purple-800";
     return "bg-gray-100 text-gray-800";

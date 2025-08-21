@@ -211,7 +211,17 @@ const TechHeader: React.FC<TechHeaderProps> = ({ role }) => {
           {/* Left: Hamburger / Navigation + Logo */}
           <div className="justify-self-start flex items-center gap-2">
             <TechnicianSidebar userRole={role} />
-            <img src="/GreenerTech-Logo.jpg" alt="GreenerTech" className="hidden sm:block h-8 w-auto object-contain" />
+            {/* Mobile: show newest logo; Desktop: keep current */}
+            <img 
+              src="/GreenerTech-logo3.jpg" 
+              alt="GreenerTech" 
+              className="h-14 w-auto object-contain cursor-pointer"
+              title="Accueil"
+              role="button"
+              tabIndex={0}
+              onClick={() => navigate(role === "technicien_sup" ? "/technicien-sup/home" : "/technician/dashboard")}
+              onKeyDown={(e) => e.key === 'Enter' && navigate(role === "technicien_sup" ? "/technicien-sup/home" : "/technician/dashboard")}
+            />
           </div>
 
           {/* Center: Home and Map icons */}
@@ -279,7 +289,7 @@ const TechHeader: React.FC<TechHeaderProps> = ({ role }) => {
             </div>
 
             {/* Notification Bell Icon - for intervention requests */}
-            <div className="relative group" style={{ zIndex: 999999 }}>
+            <div className="relative group">
               <div 
                 className="h-8 w-8 sm:h-9 sm:w-9 rounded-xl bg-greener-100 flex items-center justify-center shadow-sm cursor-pointer hover:bg-greener-200 transition-colors duration-200 active:scale-95 border border-greener-200 flex-shrink-0"
                 onClick={handleNotifications}

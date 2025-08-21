@@ -70,9 +70,14 @@ export default function DirectorHeader({ isSidebarOpen, onMenuClick }: DirectorH
               </Button>
             )}
             <img
-              src="/GreenerTech-Logo.jpg"
+              src="/GreenerTech-logo3.jpg"
               alt="GreenerTech"
-              className="hidden sm:block h-8 w-auto object-contain"
+              className="h-14 w-auto object-contain cursor-pointer"
+              title="Accueil"
+              role="button"
+              tabIndex={0}
+              onClick={() => navigate("/directeur")}
+              onKeyDown={(e) => e.key === 'Enter' && navigate("/directeur")}
             />
           </div>
 

@@ -458,7 +458,7 @@ export default function DirectorDashboard() {
       <DirectorLayout>
         <div className="flex items-center justify-center min-h-[400px]">
           <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto"></div>
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-greener-600 mx-auto"></div>
             <p className="mt-4 text-gray-600">Chargement du tableau de bord...</p>
           </div>
         </div>
@@ -483,7 +483,7 @@ export default function DirectorDashboard() {
               <Button onClick={handleRefresh} variant="outline" className="flex items-center space-x-2" disabled={refreshing}>
                 {refreshing ? (
                   <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-green-600"></div>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-greener-600"></div>
                     <span>Actualisation...</span>
                   </>
                 ) : (

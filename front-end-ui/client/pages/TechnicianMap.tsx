@@ -671,19 +671,19 @@ export default function TechnicianMap() {
   const getStatusColor = (status: string) => {
     switch (status) {
       case "optimal":
-        return "bg-green-100 text-green-800 border-green-300";
+        return "bg-greener-100 text-greener-800 border-greener-300";
       case "warning":
-        return "bg-yellow-100 text-yellow-800 border-yellow-300";
+        return "bg-orange-100 text-orange-800 border-orange-300";
       case "critical":
         return "bg-red-100 text-red-800 border-red-300";
       case "active":
-        return "bg-green-100 text-green-800 border-green-300";
+        return "bg-greener-100 text-greener-800 border-greener-300";
       case "maintenance":
-        return "bg-yellow-100 text-yellow-800 border-yellow-300";
+        return "bg-orange-100 text-orange-800 border-orange-300";
       case "planted":
         return "bg-blue-100 text-blue-800 border-blue-300";
       case "growing":
-        return "bg-green-100 text-green-800 border-green-300";
+        return "bg-greener-100 text-greener-800 border-greener-300";
       case "ready":
         return "bg-purple-100 text-purple-800 border-purple-300";
       case "harvested":
@@ -1278,7 +1278,7 @@ export default function TechnicianMap() {
                               <div className="grid grid-cols-2 gap-3 text-xs">
                                 <div className="space-y-1">
                                   <p className="text-gray-500">Rendement estimé:</p>
-                                  <p className="font-medium text-green-600">{guide.rendement} kg</p>
+                                  <p className="font-medium text-greener-600">{guide.rendement} kg</p>
                                 </div>
                                 <div className="space-y-1">
                                   <p className="text-gray-500">Nombre de plants:</p>
@@ -1378,7 +1378,7 @@ export default function TechnicianMap() {
                                       }}
                                       size="sm"
                                       variant="outline"
-                                      className="flex-1 border-green-600 text-green-600 hover:bg-green-50 hover:border-green-700 text-xs"
+                                      className="flex-1 border-greener-600 text-greener-600 hover:bg-greener-50 hover:border-greener-700 text-xs"
                                     >
                                       <svg className="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -1393,10 +1393,10 @@ export default function TechnicianMap() {
                                       }}
                                       size="sm"
                                       variant="outline"
-                                      className="flex-1 border-green-600 text-green-600 hover:bg-green-50 hover:border-green-700 text-xs"
+                                      className="flex-1 border-greener-600 text-greener-600 hover:bg-greener-50 hover:border-greener-700 text-xs"
                                     >
                                       <svg className="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                                       </svg>
                                       Télécharger
                                     </Button>
@@ -2093,14 +2093,14 @@ export default function TechnicianMap() {
         {/* Mobile Floating Action Button */}
         <Button
           onClick={() => setIsMobilePanelOpen(!isMobilePanelOpen)}
-          className="fixed bottom-6 left-6 w-16 h-16 rounded-full shadow-2xl bg-[#B4CC5F] hover:bg-[#B4CC5F]/90 text-white z-40 text-2xl font-bold transition-all duration-200 hover:scale-110"
+          className="fixed bottom-6 left-6 w-16 h-16 rounded-full shadow-2xl bg-[#B4CC5F] hover:bg-[#B4CC5F]/90 text-white z-30 lg:z-30 text-2xl font-bold transition-all duration-200 hover:scale-110"
         >
           {isMobilePanelOpen ? '×' : '≡'}
         </Button>
 
         {/* Alert Heatmap Status Indicator */}
         {showAlertHeatmap && (
-          <div className="fixed bottom-6 right-6 z-40">
+          <div className="fixed bottom-6 right-6 z-30 lg:z-30">
             <div className="bg-gradient-to-r from-red-500 to-red-600 text-white px-4 py-3 rounded-full shadow-2xl shadow-red-500/25 border-2 border-red-300 animate-pulse">
               <div className="flex items-center space-x-2">
                 <div className="w-2 h-2 bg-red-200 rounded-full animate-ping" />

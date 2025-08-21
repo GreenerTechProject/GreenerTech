@@ -302,9 +302,9 @@ export default function TechnicianDashboard() {
   
   // Additional real data calculations
   const alertsBySeverity = {
-    low: alerts.filter(a => (a.status_alert as number) <= 3).length,
-    medium: alerts.filter(a => (a.status_alert as number) > 3 && (a.status_alert as number) <= 6).length,
-    high: alerts.filter(a => (a.status_alert as number) > 6).length
+    low: alerts.filter(a => (a.status_alert as number) == 0).length,
+    medium: alerts.filter(a => (a.status_alert as number) ==1).length,
+    high: alerts.filter(a => (a.status_alert as number) == 2).length
   };
   
   const recentAlerts = alerts.filter(a => {
@@ -359,26 +359,26 @@ export default function TechnicianDashboard() {
                     </div>
                   </div>
                   
-                  <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-3 sm:p-4 rounded-2xl border border-blue-200 shadow-md hover:shadow-lg transition-all duration-300 hover:scale-105">
+                  <div className="bg-gradient-to-br from-greener-50 to-greener-100 p-3 sm:p-4 rounded-2xl border border-greener-200 shadow-md hover:shadow-lg transition-all duration-300 hover:scale-105">
                     <div className="flex items-center gap-2">
-                      <Activity className="h-5 w-5 text-blue-600" />
+                      <Activity className="h-5 w-5 text-greener-600" />
                       <div>
-                        <div className="text-xl sm:text-2xl font-bold text-blue-600">
+                        <div className="text-xl sm:text-2xl font-bold text-greener-600">
                           {loading ? "..." : interventions.length}
                         </div>
-                        <div className="text-xs sm:text-sm text-blue-600">Interventions</div>
+                        <div className="text-xs sm:text-sm text-greener-600">Interventions</div>
                       </div>
                     </div>
                   </div>
                   
-                  <div className="bg-gradient-to-br from-green-50 to-green-100 p-3 sm:p-4 rounded-2xl border border-green-200 shadow-md hover:shadow-lg transition-all duration-300 hover:scale-105">
+                  <div className="bg-gradient-to-br from-greener-50 to-greener-100 p-3 sm:p-4 rounded-2xl border border-greener-200 shadow-md hover:shadow-lg transition-all duration-300 hover:scale-105">
                     <div className="flex items-center gap-2">
-                      <AlertTriangle className="h-5 w-5 text-green-600" />
+                      <AlertTriangle className="h-5 w-5 text-greener-600" />
                       <div>
-                        <div className="text-xl sm:text-2xl font-bold text-green-600">
+                        <div className="text-xl sm:text-2xl font-bold text-greener-600">
                           {loading ? "..." : interventions.filter(i => i.status === 'terminé').length}
                         </div>
-                        <div className="text-xs sm:text-sm text-green-600">Terminées</div>
+                        <div className="text-xs sm:text-sm text-greener-600">Terminées</div>
                       </div>
                     </div>
                   </div>
@@ -456,8 +456,8 @@ export default function TechnicianDashboard() {
                       ) : alerts.slice(0, 3).map(alert => (
                         <div key={alert.id} className="flex items-center gap-2 p-2 bg-white rounded border">
                           <div className={`w-2 h-2 rounded-full ${
-                            alert.status_alert <= 3 ? 'bg-green-500' : 
-                            alert.status_alert <= 6 ? 'bg-yellow-500' : 'bg-red-500'
+                            alert.status_alert === 0 ? 'bg-greener-500' : 
+                            alert.status_alert === 1 ? 'bg-orange-500' : 'bg-red-500'
                           }`}></div>
                           <div className="flex-1 min-w-0">
                             <div className="text-sm font-medium truncate">{alert.maladie}</div>
@@ -473,7 +473,7 @@ export default function TechnicianDashboard() {
 
                   <div className="bg-gradient-to-br from-gray-50 to-gray-100 p-3 sm:p-4 rounded-2xl border border-gray-200 shadow-md hover:shadow-lg transition-all duration-300">
                     <h4 className="font-medium text-foreground mb-3 flex items-center gap-2">
-                      <Activity className="h-4 w-4 text-blue-500" />
+                      <Activity className="h-4 w-4 text-greener-500" />
                       <span className="text-sm sm:text-base">Notifications</span>
                     </h4>
                     <div className="space-y-2 max-h-28 sm:max-h-32 overflow-y-auto">
@@ -501,59 +501,55 @@ export default function TechnicianDashboard() {
 
             {/* Right Column: Quick Actions (1/3 width on large screens) */}
             <div className="lg:col-span-1">
-              <div className="bg-gradient-to-br from-white to-gray-50 rounded-3xl shadow-xl border border-gray-100 p-4 sm:p-6 hover:shadow-2xl transition-all duration-500 hover:scale-[1.01]">
+              <div className="bg-gradient-to-br from-white to-gray-50 rounded-3xl shadow-xl border border-gray-100 p-10 m-4 sm:p-6 hover:shadow-2xl transition-all duration-500 hover:scale-[1.01]">
               <h3 className="text-base sm:text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
-                  <PlusCircle className="h-5 w-5 text-emerald-500" />
+                  <PlusCircle className="h-5 w-5 text-greener-500" />
                   <span>Actions rapides</span>
               </h3>
                 <div className="grid grid-cols-1 gap-3">
                 <button 
                   onClick={() => navigate("/technician/map")}
-                    className="w-full px-4 py-3 text-sm font-semibold text-white rounded-xl transition-all flex items-center justify-center gap-2 shadow-md bg-blue-600 hover:bg-blue-700 hover:scale-[1.02] active:scale-[0.98]"
+                    className="w-full px-4 py-3 text-sm font-semibold text-white rounded-xl transition-all flex items-center justify-center gap-2 shadow-md bg-greener-600 hover:bg-greener-700 hover:scale-[1.02] active:scale-[0.98]"
                 >
                   <Map className="h-4 w-4" />
                   Voir la carte
                 </button>
                 <button 
                   onClick={openInterventionForm}
-                    className="w-full px-4 py-3 text-sm font-semibold text-white rounded-xl transition-all flex items-center justify-center gap-2 shadow-md bg-emerald-600 hover:bg-emerald-700 hover:scale-[1.02] active:scale-[0.98]"
+                    className="w-full px-4 py-3 text-sm font-semibold text-white rounded-xl transition-all flex items-center justify-center gap-2 shadow-md bg-orange-500 hover:bg-orange-600 hover:scale-[1.02] active:scale-[0.98]"
                 >
                   <PlusCircle className="h-4 w-4" />
                   Nouvelle intervention
                 </button>
                 <button 
                   onClick={() => navigate('/technician/missions')}
-                    className="w-full px-4 py-3 text-sm font-semibold text-white rounded-xl transition-all flex items-center justify-center gap-2 shadow-md bg-amber-500 hover:bg-amber-600 hover:scale-[1.02] active:scale-[0.98]"
+                    className="w-full px-4 py-3 text-sm font-semibold text-white rounded-xl transition-all flex items-center justify-center gap-2 shadow-md bg-greener-600 hover:bg-greener-700 hover:scale-[1.02] active:scale-[0.98]"
                 >
                   <ClipboardCheck className="h-4 w-4" />
                   Voir les missions
                 </button>
                 <button 
                   onClick={() => navigate('/technician/reports')}
-                    className="w-full px-4 py-3 text-sm font-semibold text-white rounded-xl transition-all flex items-center justify-center gap-2 shadow-md bg-indigo-600 hover:bg-indigo-700 hover:scale-[1.02] active:scale-[0.98]"
+                    className="w-full px-4 py-3 text-sm font-semibold text-white rounded-xl transition-all flex items-center justify-center gap-2 shadow-md bg-orange-500 hover:bg-orange-600 hover:scale-[1.02] active:scale-[0.98]"
                 >
                   <BarChart3 className="h-4 w-4" />
                   Rapports
                 </button>
               </div>
                 </div>
-              </div>
-            </div>
 
-
-
+                
           {/* NEW MISSION-BASED VISUALIZATIONS */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mb-6 sm:mb-8">
             {/* Mission Coverage Heatmap by Serre */}
             <div className="bg-gradient-to-br from-white to-gray-50 rounded-3xl shadow-xl border border-gray-100 p-4 sm:p-6 hover:shadow-2xl transition-all duration-500 hover:scale-[1.01]">
               <h3 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
-                <Target className="h-5 w-5 text-emerald-500" />
+                <Target className="h-5 w-5 text-greener-500" />
                 Couverture des missions par serre
               </h3>
               <div className="h-48 sm:h-64 mb-4">
                 {loading ? (
                   <div className="h-full flex items-center justify-center">
-                    <div className="animate-spin rounded-full h-6 w-6 sm:h-8 sm:w-8 border-b-2 border-emerald-500"></div>
+                    <div className="animate-spin rounded-full h-6 w-6 sm:h-8 sm:w-8 border-b-2 border-greener-500"></div>
                   </div>
                 ) : serres.length > 0 ? (
                   <Bar
@@ -562,8 +558,8 @@ export default function TechnicianDashboard() {
                       datasets: [{
                         label: 'Missions par serre',
                         data: serres.map(serre => getMissionCountForSerre(serre.id)),
-                        backgroundColor: 'rgba(34, 197, 94, 0.8)',
-                        borderColor: 'rgba(34, 197, 94, 1)',
+                        backgroundColor: 'rgba(46, 125, 50, 0.8)',
+                        borderColor: 'rgba(46, 125, 50, 1)',
                         borderWidth: 2,
                         borderRadius: 6,
                         borderSkipped: false,
@@ -611,110 +607,120 @@ export default function TechnicianDashboard() {
               </div>
               {/* Summary cards below chart */}
               <div className="grid grid-cols-2 gap-3 sm:gap-4">
-                <div className="text-center p-2 sm:p-3 bg-gradient-to-br from-emerald-50 to-emerald-100 rounded-xl border border-emerald-200 shadow-md hover:shadow-lg transition-all duration-300">
-                  <div className="text-base sm:text-lg font-bold text-emerald-600">
+                <div className="text-center p-2 sm:p-3 bg-gradient-to-br from-greener-50 to-greener-100 rounded-xl border border-greener-200 shadow-md hover:shadow-lg transition-all duration-300">
+                  <div className="text-base sm:text-lg font-bold text-greener-600">
                     {loading ? "..." : serres.length > 0 ? Math.max(...serres.map(s => getMissionCountForSerre(s.id))) : 0}
                   </div>
-                  <div className="text-xs text-emerald-600">Max missions</div>
+                  <div className="text-xs text-greener-600">Max missions</div>
                 </div>
-                <div className="text-center p-2 sm:p-3 bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl border border-blue-200 shadow-md hover:shadow-lg transition-all duration-300">
-                  <div className="text-base sm:text-lg font-bold text-blue-600">
+                <div className="text-center p-2 sm:p-3 bg-gradient-to-br from-orange-50 to-orange-100 rounded-xl border border-orange-200 shadow-md hover:shadow-lg transition-all duration-300">
+                  <div className="text-base sm:text-lg font-bold text-orange-600">
                     {loading ? "..." : serres.length > 0 ? Math.round(serres.reduce((acc, s) => acc + getMissionCountForSerre(s.id), 0) / serres.length) : 0}
                   </div>
-                  <div className="text-xs text-blue-600">Moyenne</div>
+                  <div className="text-xs text-orange-600">Moyenne</div>
                 </div>
               </div>
             </div>
 
-            {/* Bilan Data Collection Progress */}
+          
+              </div>
+
+            </div>
+
+
+
+          {/* NEW MISSION-BASED VISUALIZATIONS */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mb-6 sm:mb-8">
+            {/* Mission Coverage Heatmap by Serre */}
             <div className="bg-gradient-to-br from-white to-gray-50 rounded-3xl shadow-xl border border-gray-100 p-4 sm:p-6 hover:shadow-2xl transition-all duration-500 hover:scale-[1.01]">
-              <h3 className="text-base sm:text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
-                <BarChart3 className="h-5 w-5 text-blue-500" />
-                <span>Progression de collecte des bilans</span>
+              <h3 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
+                <Target className="h-5 w-5 text-greener-500" />
+                Couverture des missions par serre
               </h3>
               <div className="h-48 sm:h-64 mb-4">
                 {loading ? (
                   <div className="h-full flex items-center justify-center">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
-              </div>
-                ) : (
-                  <Doughnut
-                  data={{
-                      labels: ['Serres complètes', 'Serres en attente', 'Bilans collectés'],
+                    <div className="animate-spin rounded-full h-6 w-6 sm:h-8 sm:w-8 border-b-2 border-greener-500"></div>
+                  </div>
+                ) : serres.length > 0 ? (
+                  <Bar
+                    data={{
+                      labels: serres.map(serre => serre.nom),
                       datasets: [{
-                        data: [
-                          completedSerres,
-                          pendingSerres,
-                          totalBilansCollected
-                        ],
-                        backgroundColor: [
-                          'rgba(34, 197, 94, 0.8)',
-                          'rgba(249, 115, 22, 0.8)',
-                          'rgba(59, 130, 246, 0.8)'
-                        ],
-                        borderColor: [
-                          'rgba(34, 197, 94, 1)',
-                          'rgba(249, 115, 22, 1)',
-                          'rgba(59, 130, 246, 1)'
-                        ],
+                        label: 'Missions par serre',
+                        data: serres.map(serre => getMissionCountForSerre(serre.id)),
+                        backgroundColor: 'rgba(46, 125, 50, 0.8)',
+                        borderColor: 'rgba(46, 125, 50, 1)',
                         borderWidth: 2,
-                        hoverOffset: 6,
+                        borderRadius: 6,
+                        borderSkipped: false,
                       }]
-                  }}
-                  options={{
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                          position: 'bottom',
-                          labels: { 
-                            padding: 20, 
-                            usePointStyle: true,
-                            font: { size: 12 }
-                          }
-                        },
+                    }}
+                    options={{
+                      responsive: true,
+                      maintainAspectRatio: false,
+                      plugins: {
+                        legend: { display: false },
                         tooltip: {
                           callbacks: {
-                            label: function(context) {
-                              const total = context.dataset.data.reduce((a: number, b: number) => a + b, 0);
-                              const value = context.raw as number;
-                              const percentage = total > 0 ? Math.round((value / total) * 100) : 0;
-                              return `${context.label}: ${value} (${percentage}%)`;
+                            afterLabel: function(context) {
+                              const serreId = serres[context.dataIndex]?.id;
+                              if (serreId) {
+                                return `Dernière mission: ${getLastMissionDate(serreId)}`;
+                              }
+                              return '';
                             }
                           }
                         }
                       },
-                      cutout: '60%'
+                      scales: {
+                        y: { 
+                          beginAtZero: true,
+                          grid: { color: 'rgba(0, 0, 0, 0.1)' },
+                          ticks: { stepSize: 1 }
+                        },
+                        x: { 
+                          grid: { display: false },
+                          ticks: { 
+                            maxRotation: 45,
+                            minRotation: 0,
+                            font: { size: window.innerWidth < 640 ? 10 : 12 }
+                          }
+                        }
+                      }
                     }}
                   />
+                ) : (
+                  <div className="h-full flex items-center justify-center text-muted-foreground">
+                    Aucune serre trouvée
+                  </div>
                 )}
               </div>
-              {/* Progress bar and stats */}
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs sm:text-sm">Progression globale</span>
-                  <span className="text-xs sm:text-sm font-bold text-blue-600">
-                    {loading ? "..." : Math.round((totalBilansCollected / Math.max(1, totalExpectedBilans)) * 100)}%
-                  </span>
+              {/* Summary cards below chart */}
+              <div className="grid grid-cols-2 gap-3 sm:gap-4">
+                <div className="text-center p-2 sm:p-3 bg-gradient-to-br from-greener-50 to-greener-100 rounded-xl border border-greener-200 shadow-md hover:shadow-lg transition-all duration-300">
+                  <div className="text-base sm:text-lg font-bold text-greener-600">
+                    {loading ? "..." : serres.length > 0 ? Math.max(...serres.map(s => getMissionCountForSerre(s.id))) : 0}
+                  </div>
+                  <div className="text-xs text-greener-600">Max missions</div>
                 </div>
-                <div className="w-full bg-gray-200 rounded-full h-2">
-                  <div 
-                    className="bg-gradient-to-r from-blue-500 to-indigo-500 h-2 rounded-full transition-all duration-500"
-                    style={{width: `${Math.min(100, (totalBilansCollected / Math.max(1, totalExpectedBilans)) * 100)}%`}}
-                  ></div>
-                </div>
-                <div className="text-xs text-muted-foreground text-center">
-                  Objectif: {totalExpectedBilans} bilans ({serres.length} serres × 4 bilans/an)
+                <div className="text-center p-2 sm:p-3 bg-gradient-to-br from-orange-50 to-orange-100 rounded-xl border border-orange-200 shadow-md hover:shadow-lg transition-all duration-300">
+                  <div className="text-base sm:text-lg font-bold text-orange-600">
+                    {loading ? "..." : serres.length > 0 ? Math.round(serres.reduce((acc, s) => acc + getMissionCountForSerre(s.id), 0) / serres.length) : 0}
+                  </div>
+                  <div className="text-xs text-orange-600">Moyenne</div>
                 </div>
               </div>
             </div>
+
+          
           </div>
 
           {/* Mission Pattern Analysis - Full Width with Charts */}
           <div className="grid grid-cols-1 gap-4 sm:gap-6 mb-6 sm:mb-8">
             <div className="bg-gradient-to-br from-white to-gray-50 rounded-3xl shadow-xl border border-gray-100 p-4 sm:p-6 hover:shadow-2xl transition-all duration-500 hover:scale-[1.01]">
               <h3 className="text-base sm:text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
-                <Calendar className="h-5 w-5 text-purple-500" />
+                <Calendar className="h-5 w-5 text-greener-500" />
                 <span>Analyse des patterns de mission</span>
               </h3>
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
@@ -724,7 +730,7 @@ export default function TechnicianDashboard() {
                   <div className="h-40 sm:h-48">
                     {loading ? (
                       <div className="h-full flex items-center justify-center">
-                        <div className="animate-spin rounded-full h-5 w-5 sm:h-6 sm:w-6 border-b-2 border-purple-500"></div>
+                        <div className="animate-spin rounded-full h-5 w-5 sm:h-6 sm:w-6 border-b-2 border-greener-500"></div>
                       </div>
                     ) : (
                 <Doughnut
@@ -737,13 +743,13 @@ export default function TechnicianDashboard() {
                               missions.length - getDailyRepetitionCount() - getWeeklyRepetitionCount()
                             ],
                         backgroundColor: [
-                              'rgba(147, 51, 234, 0.8)',
-                              'rgba(99, 102, 241, 0.8)',
+                              'rgba(46, 125, 50, 0.8)',
+                              'rgba(255, 107, 53, 0.8)',
                               'rgba(156, 163, 175, 0.8)'
                         ],
                         borderColor: [
-                              'rgba(147, 51, 234, 1)',
-                              'rgba(99, 102, 241, 1)',
+                              'rgba(46, 125, 50, 1)',
+                              'rgba(255, 107, 53, 1)',
                               'rgba(156, 163, 175, 1)'
                         ],
                         borderWidth: 2,
@@ -776,7 +782,7 @@ export default function TechnicianDashboard() {
                   <div className="h-40 sm:h-48">
                     {loading ? (
                       <div className="h-full flex items-center justify-center">
-                        <div className="animate-spin rounded-full h-5 w-5 sm:h-6 sm:w-6 border-b-2 border-green-500"></div>
+                        <div className="animate-spin rounded-full h-5 w-5 sm:h-6 sm:w-6 border-b-2 border-greener-500"></div>
                       </div>
                     ) : (
                       <Line
@@ -786,12 +792,12 @@ export default function TechnicianDashboard() {
                             {
                               label: 'Missions planifiées',
                               data: getWeeklyMissionData(),
-                              borderColor: 'rgba(34, 197, 94, 1)',
-                              backgroundColor: 'rgba(34, 197, 94, 0.1)',
+                              borderColor: 'rgba(46, 125, 50, 1)',
+                              backgroundColor: 'rgba(46, 125, 50, 0.1)',
                               tension: 0.4,
                               fill: true,
                               borderWidth: 2,
-                              pointBackgroundColor: 'rgba(34, 197, 94, 1)',
+                              pointBackgroundColor: 'rgba(46, 125, 50, 1)',
                               pointBorderColor: '#fff',
                               pointBorderWidth: 2,
                               pointRadius: 4,
@@ -799,23 +805,23 @@ export default function TechnicianDashboard() {
                             {
                               label: 'Missions terminées',
                               data: getMissionStatusData().map(d => d.completed),
-                              borderColor: 'rgba(34, 197, 94, 1)',
-                              backgroundColor: 'rgba(34, 197, 94, 0.05)',
+                              borderColor: 'rgba(46, 125, 50, 1)',
+                              backgroundColor: 'rgba(46, 125, 50, 0.05)',
                               tension: 0.4,
                               fill: false,
                               borderWidth: 2,
-                              pointBackgroundColor: 'rgba(34, 197, 94, 1)',
+                              pointBackgroundColor: 'rgba(46, 125, 50, 1)',
                               borderDash: [5, 5],
                             },
                             {
                               label: 'Missions en cours',
                               data: getMissionStatusData().map(d => d.inProgress),
-                              borderColor: 'rgba(249, 115, 22, 1)',
-                              backgroundColor: 'rgba(249, 115, 22, 0.05)',
+                              borderColor: 'rgba(255, 107, 53, 1)',
+                              backgroundColor: 'rgba(255, 107, 53, 0.05)',
                               tension: 0.4,
                               fill: false,
                               borderWidth: 2,
-                              pointBackgroundColor: 'rgba(249, 115, 22, 1)',
+                              pointBackgroundColor: 'rgba(255, 107, 53, 1)',
                             }
                           ]
                         }}
@@ -863,21 +869,21 @@ export default function TechnicianDashboard() {
                 <div className="space-y-3">
                   <h5 className="font-medium text-foreground text-xs sm:text-sm">Statut des missions</h5>
                   <div className="space-y-2">
-                    <div className="flex items-center justify-between p-2 sm:p-3 bg-gradient-to-r from-green-50 to-green-100 rounded-xl border border-green-200 shadow-sm hover:shadow-md transition-all duration-300">
+                    <div className="flex items-center justify-between p-2 sm:p-3 bg-gradient-to-r from-greener-50 to-greener-100 rounded-xl border border-greener-200 shadow-sm hover:shadow-md transition-all duration-300">
                       <div className="flex items-center gap-2">
-                        <CheckCircle className="h-4 w-4 text-green-600" />
+                        <CheckCircle className="h-4 w-4 text-greener-600" />
                         <span className="text-xs sm:text-sm">Terminées</span>
                       </div>
-                      <span className="font-bold text-green-600 text-sm sm:text-base">
+                      <span className="font-bold text-greener-600 text-sm sm:text-base">
                         {loading ? "..." : missions.filter(m => m.executed).length}
                       </span>
                     </div>
-                    <div className="flex items-center justify-between p-2 sm:p-3 bg-gradient-to-r from-yellow-50 to-yellow-100 rounded-xl border border-yellow-200 shadow-sm hover:shadow-md transition-all duration-300">
+                    <div className="flex items-center justify-between p-2 sm:p-3 bg-gradient-to-r from-orange-50 to-orange-100 rounded-xl border border-orange-200 shadow-sm hover:shadow-md transition-all duration-300">
                       <div className="flex items-center gap-2">
-                        <Clock className="h-4 w-4 text-yellow-600" />
+                        <Clock className="h-4 w-4 text-orange-600" />
                         <span className="text-xs sm:text-sm">En cours</span>
                       </div>
-                      <span className="font-bold text-yellow-600 text-sm sm:text-base">
+                      <span className="font-bold text-orange-600 text-sm sm:text-base">
                         {loading ? "..." : missions.filter(m => !m.executed).length}
                       </span>
                     </div>
@@ -888,12 +894,12 @@ export default function TechnicianDashboard() {
                 <div className="space-y-3">
                   <h5 className="font-medium text-foreground text-sm">Métriques d'efficacité</h5>
                   <div className="space-y-2">
-                    <div className="flex items-center justify-between p-2 bg-blue-50 rounded-lg">
+                    <div className="flex items-center justify-between p-2 bg-greener-50 rounded-lg">
                       <div className="flex items-center gap-2">
-                        <TrendingUp className="h-4 w-4 text-blue-600" />
+                        <TrendingUp className="h-4 w-4 text-greener-600" />
                         <span className="text-sm">Taux de réussite</span>
                       </div>
-                      <span className="font-bold text-blue-600">
+                      <span className="font-bold text-greener-600">
                         {loading ? "..." : missions.length > 0 ? Math.round((missions.filter(m => m.executed).length / missions.length) * 100) : 0}%
                       </span>
                     </div>
@@ -903,8 +909,8 @@ export default function TechnicianDashboard() {
                 {/* Optimization Suggestion */}
                 <div className="space-y-3">
                   <h5 className="font-medium text-foreground text-sm">Optimisation suggérée</h5>
-                  <div className="p-2 bg-purple-50 rounded-lg">
-                    <div className="text-xs text-purple-700">
+                  <div className="p-2 bg-greener-50 rounded-lg">
+                    <div className="text-xs text-greener-700">
                       {loading ? "..." : getOptimizationSuggestion()}
                     </div>
                   </div>
@@ -917,7 +923,7 @@ export default function TechnicianDashboard() {
           <div className="grid grid-cols-1 gap-4 sm:gap-6 mb-6 sm:mb-8">
             <div className="bg-gradient-to-br from-white to-gray-50 rounded-3xl shadow-xl border border-gray-100 p-4 sm:p-6 hover:shadow-2xl transition-all duration-500 hover:scale-[1.01]">
               <h3 className="text-base sm:text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
-                <TrendingUp className="h-5 w-5 text-emerald-500" />
+                <TrendingUp className="h-5 w-5 text-greener-500" />
                 <span>Efficacité des missions</span>
               </h3>
               
@@ -928,30 +934,30 @@ export default function TechnicianDashboard() {
                   
                   {/* Efficiency Stats Grid */}
                   <div className="grid grid-cols-2 gap-3">
-                    <div className="bg-gradient-to-br from-emerald-50 to-emerald-100 p-3 rounded-2xl border border-emerald-200 shadow-md hover:shadow-lg transition-all duration-300">
+                    <div className="bg-gradient-to-br from-greener-50 to-greener-100 p-3 rounded-2xl border border-greener-200 shadow-md hover:shadow-lg transition-all duration-300">
                       <div className="text-center">
-                        <div className="text-2xl sm:text-3xl font-bold text-emerald-600">
+                        <div className="text-2xl sm:text-3xl font-bold text-greener-600">
                           {loading ? "..." : missions.length > 0 ? Math.round((missions.filter(m => m.executed).length / missions.length) * 100) : 0}%
                         </div>
-                        <div className="text-xs sm:text-sm text-emerald-600">Taux de réussite</div>
+                        <div className="text-xs sm:text-sm text-greener-600">Taux de réussite</div>
                       </div>
                     </div>
                     
-                    <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-3 rounded-2xl border border-blue-200 shadow-md hover:shadow-lg transition-all duration-300">
+                    <div className="bg-gradient-to-br from-orange-50 to-orange-100 p-3 rounded-2xl border border-orange-200 shadow-md hover:shadow-lg transition-all duration-300">
                       <div className="text-center">
-                        <div className="text-2xl sm:text-3xl font-bold text-blue-600">
+                        <div className="text-2xl sm:text-3xl font-bold text-orange-600">
                           {loading ? "..." : missions.length}
                         </div>
-                        <div className="text-xs sm:text-sm text-blue-600">Total missions</div>
+                        <div className="text-xs sm:text-sm text-orange-600">Total missions</div>
                       </div>
                     </div>
                     
-                    <div className="bg-gradient-to-br from-green-50 to-green-100 p-3 rounded-2xl border border-green-200 shadow-md hover:shadow-lg transition-all duration-300">
+                    <div className="bg-gradient-to-br from-greener-50 to-greener-100 p-3 rounded-2xl border border-greener-200 shadow-md hover:shadow-lg transition-all duration-300">
                       <div className="text-center">
-                        <div className="text-2xl sm:text-3xl font-bold text-green-600">
+                        <div className="text-2xl sm:text-3xl font-bold text-greener-600">
                           {loading ? "..." : missions.filter(m => m.executed).length}
                         </div>
-                        <div className="text-xs sm:text-sm text-green-600">Terminées</div>
+                        <div className="text-xs sm:text-sm text-greener-600">Terminées</div>
                       </div>
                     </div>
                     
@@ -971,19 +977,19 @@ export default function TechnicianDashboard() {
                     <div className="space-y-2">
                       <div className="flex items-center justify-between text-xs">
                         <span>Quotidiennes</span>
-                        <span className="font-semibold text-emerald-600">
+                        <span className="font-semibold text-greener-600">
                           {loading ? "..." : getDailyRepetitionCount()}
                         </span>
                       </div>
                       <div className="flex items-center justify-between text-xs">
                         <span>Hebdomadaires</span>
-                        <span className="font-semibold text-blue-600">
+                        <span className="font-semibold text-orange-600">
                           {loading ? "..." : getWeeklyRepetitionCount()}
                         </span>
                       </div>
                       <div className="flex items-center justify-between text-xs">
                         <span>Ponctuelles</span>
-                        <span className="font-semibold text-purple-600">
+                        <span className="font-semibold text-greener-600">
                           {loading ? "..." : missions.length - getDailyRepetitionCount() - getWeeklyRepetitionCount()}
                         </span>
                       </div>
@@ -997,7 +1003,7 @@ export default function TechnicianDashboard() {
                   <div className="h-48 sm:h-56">
                     {loading ? (
                       <div className="h-full flex items-center justify-center">
-                        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-emerald-500"></div>
+                        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-greener-500"></div>
                       </div>
                     ) : (
                       <Line
@@ -1007,12 +1013,12 @@ export default function TechnicianDashboard() {
                             {
                               label: 'Missions planifiées',
                               data: getWeeklyMissionData(),
-                              borderColor: 'rgba(34, 197, 94, 1)',
-                              backgroundColor: 'rgba(34, 197, 94, 0.1)',
+                              borderColor: 'rgba(46, 125, 50, 1)',
+                              backgroundColor: 'rgba(46, 125, 50, 0.1)',
                               tension: 0.4,
                               fill: true,
                               borderWidth: 2,
-                              pointBackgroundColor: 'rgba(34, 197, 94, 1)',
+                              pointBackgroundColor: 'rgba(46, 125, 50, 1)',
                               pointBorderColor: '#fff',
                               pointBorderWidth: 2,
                               pointRadius: 4,
@@ -1020,12 +1026,12 @@ export default function TechnicianDashboard() {
                             {
                               label: 'Missions terminées',
                               data: getMissionStatusData().map(d => d.completed),
-                              borderColor: 'rgba(59, 130, 246, 1)',
-                              backgroundColor: 'rgba(59, 130, 246, 0.05)',
+                              borderColor: 'rgba(255, 107, 53, 1)',
+                              backgroundColor: 'rgba(255, 107, 53, 0.05)',
                               tension: 0.4,
                               fill: false,
                               borderWidth: 2,
-                              pointBackgroundColor: 'rgba(59, 130, 246, 1)',
+                              pointBackgroundColor: 'rgba(255, 107, 53, 1)',
                               borderDash: [5, 5],
                             }
                           ]
@@ -1067,9 +1073,9 @@ export default function TechnicianDashboard() {
                   </div>
                   
                   {/* Efficiency Insights */}
-                  <div className="bg-gradient-to-br from-emerald-50 to-emerald-100 p-3 rounded-xl border border-emerald-200">
-                    <h5 className="font-medium text-emerald-800 text-sm mb-2">💡 Insight d'optimisation</h5>
-                    <div className="text-xs text-emerald-700">
+                  <div className="bg-gradient-to-br from-greener-50 to-greener-100 p-3 rounded-xl border border-greener-200">
+                    <h5 className="font-medium text-greener-800 text-sm mb-2">💡 Insight d'optimisation</h5>
+                    <div className="text-xs text-greener-700">
                       {loading ? "..." : getOptimizationSuggestion()}
                     </div>
                   </div>
@@ -1093,8 +1099,8 @@ export default function TechnicianDashboard() {
                         <div className="flex items-center justify-between mb-2">
                           <span className="text-xs font-medium text-gray-700 truncate">{serre.nom}</span>
                           <span className={`text-xs px-2 py-1 rounded-full ${
-                            efficiency >= 80 ? 'bg-green-100 text-green-700' :
-                            efficiency >= 60 ? 'bg-yellow-100 text-yellow-700' :
+                            efficiency >= 80 ? 'bg-greener-100 text-greener-700' :
+                            efficiency >= 60 ? 'bg-orange-100 text-orange-700' :
                             'bg-red-100 text-red-700'
                           }`}>
                             {efficiency}%
@@ -1115,7 +1121,7 @@ export default function TechnicianDashboard() {
           <div className="grid grid-cols-1 gap-4 sm:gap-6 mb-6 sm:mb-8">
             <div className="bg-gradient-to-br from-white to-gray-50 rounded-3xl shadow-xl border border-gray-100 p-4 sm:p-6 hover:shadow-2xl transition-all duration-500 hover:scale-[1.01]">
               <h3 className="text-base sm:text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
-                <Shield className="h-5 w-5 text-indigo-500" />
+                <Shield className="h-5 w-5 text-greener-500" />
                 <span>Performance des interventions et rapports</span>
               </h3>
               
@@ -1126,7 +1132,7 @@ export default function TechnicianDashboard() {
                   <div className="h-40 sm:h-48">
                     {loading ? (
                       <div className="h-full flex items-center justify-center">
-                        <div className="animate-spin rounded-full h-5 w-5 sm:h-6 sm:w-6 border-b-2 border-indigo-500"></div>
+                        <div className="animate-spin rounded-full h-5 w-5 sm:h-6 sm:w-6 border-b-2 border-greener-500"></div>
                       </div>
                     ) : (
                       <Doughnut
@@ -1139,13 +1145,13 @@ export default function TechnicianDashboard() {
                               interventions.filter(i => i.status !== 'terminé' && i.status !== 'encours').length
                             ],
                             backgroundColor: [
-                              'rgba(34, 197, 94, 0.8)',
-                              'rgba(59, 130, 246, 0.8)',
+                              'rgba(46, 125, 50, 0.8)',
+                              'rgba(255, 107, 53, 0.8)',
                               'rgba(156, 163, 175, 0.8)'
                             ],
                             borderColor: [
-                              'rgba(34, 197, 94, 1)',
-                              'rgba(59, 130, 246, 1)',
+                              'rgba(46, 125, 50, 1)',
+                              'rgba(255, 107, 53, 1)',
                               'rgba(156, 163, 175, 1)'
                             ],
                             borderWidth: 2,
@@ -1173,17 +1179,17 @@ export default function TechnicianDashboard() {
                   
                   {/* Intervention Stats */}
                   <div className="grid grid-cols-2 gap-3">
-                    <div className="text-center p-3 bg-indigo-50 rounded-lg">
-                      <div className="text-lg font-bold text-indigo-600">
+                    <div className="text-center p-3 bg-greener-50 rounded-lg">
+                      <div className="text-lg font-bold text-greener-600">
                         {loading ? "..." : interventions.length > 0 ? Math.round((interventions.filter(i => i.status === 'terminé').length / interventions.length) * 100) : 0}%
                       </div>
-                      <div className="text-xs text-indigo-600">Taux de réussite</div>
+                      <div className="text-xs text-greener-600">Taux de réussite</div>
                     </div>
-                    <div className="text-center p-3 bg-green-50 rounded-lg">
-                      <div className="text-lg font-bold text-green-600">
+                    <div className="text-center p-3 bg-greener-50 rounded-lg">
+                      <div className="text-lg font-bold text-greener-600">
                         {loading ? "..." : interventions.filter(i => i.status === 'terminé').length}
                       </div>
-                      <div className="text-xs text-green-600">Terminées</div>
+                      <div className="text-xs text-greener-600">Terminées</div>
                     </div>
                   </div>
                 </div>
@@ -1194,7 +1200,7 @@ export default function TechnicianDashboard() {
                   <div className="h-40 sm:h-48">
                     {loading ? (
                       <div className="h-full flex items-center justify-center">
-                        <div className="animate-spin rounded-full h-5 w-5 sm:h-6 sm:w-6 border-b-2 border-green-500"></div>
+                        <div className="animate-spin rounded-full h-5 w-5 sm:h-6 sm:w-6 border-b-2 border-greener-500"></div>
                       </div>
                     ) : (
                       <Bar
@@ -1249,21 +1255,21 @@ export default function TechnicianDashboard() {
                   
                   {/* Workload Summary */}
                   <div className="space-y-3">
-                    <div className="flex items-center justify-between p-2 sm:p-3 bg-gradient-to-r from-blue-50 to-blue-100 rounded-xl border border-blue-200 shadow-sm hover:shadow-md transition-all duration-300">
+                    <div className="flex items-center justify-between p-2 sm:p-3 bg-gradient-to-r from-greener-50 to-greener-100 rounded-xl border border-greener-200 shadow-sm hover:shadow-md transition-all duration-300">
                       <div className="flex items-center gap-2">
-                        <TargetIcon className="h-4 w-4 text-blue-600" />
+                        <TargetIcon className="h-4 w-4 text-greener-600" />
                         <span className="text-xs sm:text-sm">Charge de travail</span>
                       </div>
-                      <span className="font-bold text-blue-600 text-sm sm:text-base">
+                      <span className="font-bold text-greener-600 text-sm sm:text-base">
                         {loading ? "..." : interventions.filter(i => i.status === 'encours').length + alerts.filter(a => a.status === "non résolue").length}
                       </span>
                     </div>
-                    <div className="flex items-center justify-between p-2 sm:p-3 bg-gradient-to-r from-green-50 to-green-100 rounded-xl border border-green-200 shadow-sm hover:shadow-md transition-all duration-300">
+                    <div className="flex items-center justify-between p-2 sm:p-3 bg-gradient-to-r from-greener-50 to-greener-100 rounded-xl border border-greener-200 shadow-sm hover:shadow-md transition-all duration-300">
                       <div className="flex items-center gap-2">
-                        <CheckCircle className="h-4 w-4 text-green-600" />
+                        <CheckCircle className="h-4 w-4 text-greener-600" />
                         <span className="text-xs sm:text-sm">Tâches complétées</span>
                       </div>
-                      <span className="font-bold text-green-600 text-sm sm:text-base">
+                      <span className="font-bold text-greener-600 text-sm sm:text-base">
                         {loading ? "..." : interventions.filter(i => i.status === 'terminé').length}
                       </span>
                     </div>
@@ -1287,7 +1293,7 @@ export default function TechnicianDashboard() {
                       .slice(0, 4)
                       .map((item, index) => (
                         <div key={index} className="flex items-center gap-3 p-2 bg-gray-50 rounded border">
-                          <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                          <div className="w-2 h-2 bg-greener-500 rounded-full"></div>
                           <div className="flex-1 min-w-0">
                             <div className="text-sm font-medium truncate">
                               {'status' in item ? `Intervention ${item.status}` : 'Rapport créé'}
@@ -1309,7 +1315,7 @@ export default function TechnicianDashboard() {
 
           {/* Real-time Performance Indicators */}
           <div className="grid grid-cols-1 gap-4 sm:gap-6 mb-6 sm:mb-8">
-            <div className="bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-900 rounded-3xl p-4 sm:p-6 text-white overflow-hidden relative">
+            <div className="bg-gradient-to-br from-slate-900 via-greener-900 to-greener-900 rounded-3xl p-4 sm:p-6 text-white overflow-hidden relative">
               {/* Animated Background */}
               <div className="absolute inset-0 opacity-30" style={{
                 backgroundImage: `url("data:image/svg+xml,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grid" width="10" height="10" patternUnits="userSpaceOnUse"><path d="M 10 0 L 0 0 0 10" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="0.5"/></pattern></defs><rect width="100" height="100" fill="url(%23grid)"/></svg>')}`
@@ -1317,38 +1323,38 @@ export default function TechnicianDashboard() {
               
               <div className="relative z-10">
                 <h3 className="text-2xl font-bold mb-6 flex items-center gap-3">
-                  <div className="w-3 h-3 bg-green-400 rounded-full animate-pulse"></div>
+                  <div className="w-3 h-3 bg-greener-400 rounded-full animate-pulse"></div>
                   📊 Indicateurs de performance en temps réel
                 </h3>
                 
                 {/* Performance Metrics Grid */}
                 <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-4 sm:mb-6">
-                  <div className="bg-blue-900/50 p-3 sm:p-4 rounded-2xl border border-blue-500/30 text-center shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
-                    <div className="text-2xl sm:text-3xl font-bold text-blue-400 mb-2">
+                  <div className="bg-greener-900/50 p-3 sm:p-4 rounded-2xl border border-greener-500/30 text-center shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
+                    <div className="text-2xl sm:text-3xl font-bold text-greener-400 mb-2">
                       {loading ? "..." : Math.round((missions.filter(m => m.executed).length / Math.max(1, missions.length)) * 100)}%
                     </div>
-                    <div className="text-blue-200 text-xs sm:text-sm">Taux de réussite missions</div>
+                    <div className="text-greener-200 text-xs sm:text-sm">Taux de réussite missions</div>
                   </div>
                   
-                  <div className="bg-green-900/50 p-3 sm:p-4 rounded-2xl border border-green-500/30 text-center shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
-                    <div className="text-2xl sm:text-3xl font-bold text-green-400 mb-2">
+                  <div className="bg-greener-900/50 p-3 sm:p-4 rounded-2xl border border-greener-500/30 text-center shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
+                    <div className="text-2xl sm:text-3xl font-bold text-greener-400 mb-2">
                       {loading ? "..." : Math.round((interventions.filter(i => i.status === 'terminé').length / Math.max(1, interventions.length)) * 100)}%
                     </div>
-                    <div className="text-green-200 text-xs sm:text-sm">Taux de réussite interventions</div>
+                    <div className="text-greener-200 text-xs sm:text-sm">Taux de réussite interventions</div>
                   </div>
                   
-                  <div className="bg-purple-900/50 p-3 sm:p-4 rounded-2xl border border-purple-500/30 text-center shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
-                    <div className="text-2xl sm:text-3xl font-bold text-purple-400 mb-2">
+                  <div className="bg-greener-900/50 p-3 sm:p-4 rounded-2xl border border-greener-500/30 text-center shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
+                    <div className="text-2xl sm:text-3xl font-bold text-greener-400 mb-2">
                       {loading ? "..." : Math.round((alerts.filter(a => a.status === "résolue").length / Math.max(1, totalAlerts)) * 100)}%
                     </div>
-                    <div className="text-purple-200 text-xs sm:text-sm">Alertes résolues</div>
+                    <div className="text-greener-200 text-xs sm:text-sm">Alertes résolues</div>
                   </div>
                   
-                  <div className="bg-amber-900/50 p-3 sm:p-4 rounded-2xl border border-amber-500/30 text-center shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
-                    <div className="text-2xl sm:text-3xl font-bold text-amber-400 mb-2">
+                  <div className="bg-greener-900/50 p-3 sm:p-4 rounded-2xl border border-greener-500/30 text-center shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
+                    <div className="text-2xl sm:text-3xl font-bold text-greener-400 mb-2">
                       {loading ? "..." : Math.round((reports.length / Math.max(1, serres.length)) * 100)}%
                     </div>
-                    <div className="text-amber-200 text-xs sm:text-sm">Couverture rapports</div>
+                    <div className="text-greener-200 text-xs sm:text-sm">Couverture rapports</div>
                   </div>
                 </div>
 
@@ -1356,7 +1362,7 @@ export default function TechnicianDashboard() {
                 <div className="h-48 sm:h-64 mb-4 sm:mb-6">
                   {loading ? (
                     <div className="h-full flex items-center justify-center">
-                      <div className="animate-spin rounded-full h-6 w-6 sm:h-8 sm:w-8 border-b-2 border-blue-400"></div>
+                      <div className="animate-spin rounded-full h-6 w-6 sm:h-8 sm:w-8 border-b-2 border-greener-400"></div>
                     </div>
                   ) : (
                     <Line
@@ -1369,12 +1375,12 @@ export default function TechnicianDashboard() {
                               const totalMissions = getMissionStatusData()[index]?.total || 0;
                               return totalMissions > 0 ? Math.round((count / totalMissions) * 100) : 0;
                             }),
-                            borderColor: 'rgba(34, 197, 94, 1)',
-                            backgroundColor: 'rgba(34, 197, 94, 0.1)',
+                            borderColor: 'rgba(46, 125, 50, 1)',
+                            backgroundColor: 'rgba(46, 125, 50, 0.1)',
                             tension: 0.4,
                             fill: true,
                             borderWidth: 2,
-                            pointBackgroundColor: 'rgba(34, 197, 94, 1)',
+                            pointBackgroundColor: 'rgba(46, 125, 50, 1)',
                             pointBorderColor: '#fff',
                             pointBorderWidth: 2,
                             pointRadius: 4,
@@ -1440,25 +1446,25 @@ export default function TechnicianDashboard() {
 
                 {/* Mission Coverage Summary */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-4 mt-4 sm:mt-6">
-                  <div className="bg-blue-900/50 p-3 sm:p-4 rounded-2xl border border-blue-500/30 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
-                    <div className="text-xl sm:text-2xl font-bold text-blue-400">
+                  <div className="bg-greener-900/50 p-3 sm:p-4 rounded-2xl border border-greener-500/30 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
+                    <div className="text-xl sm:text-2xl font-bold text-greener-400">
                       {loading ? "..." : serres.length}
                     </div>
-                    <div className="text-blue-200 text-xs sm:text-sm">Serres couvertes</div>
+                    <div className="text-greener-200 text-xs sm:text-sm">Serres couvertes</div>
                   </div>
                   
-                  <div className="bg-green-900/50 p-3 sm:p-4 rounded-2xl border border-green-500/30 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
-                    <div className="text-xl sm:text-2xl font-bold text-green-400">
+                  <div className="bg-greener-900/50 p-3 sm:p-4 rounded-2xl border border-greener-500/30 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
+                    <div className="text-xl sm:text-2xl font-bold text-greener-400">
                       {loading ? "..." : missions.length}
                     </div>
-                    <div className="text-green-200 text-xs sm:text-sm">Total missions</div>
+                    <div className="text-greener-200 text-xs sm:text-sm">Total missions</div>
                   </div>
                   
-                  <div className="bg-purple-900/50 p-3 sm:p-4 rounded-2xl border border-purple-500/30 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
-                    <div className="text-xl sm:text-2xl font-bold text-purple-400">
+                  <div className="bg-greener-900/50 p-3 sm:p-4 rounded-2xl border border-greener-500/30 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
+                    <div className="text-xl sm:text-2xl font-bold text-greener-400">
                       {loading ? "..." : domains.length}
                     </div>
-                    <div className="text-purple-200 text-xs sm:text-sm">Domaines actifs</div>
+                    <div className="text-greener-200 text-xs sm:text-sm">Domaines actifs</div>
                   </div>
                 </div>
               </div>

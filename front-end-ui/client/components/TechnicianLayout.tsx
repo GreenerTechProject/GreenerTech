@@ -1,16 +1,31 @@
 import React from "react";
 import { Outlet } from "react-router-dom";
 import TechHeader from "./TechHeader";
+import { TechnicianSidebarProvider, useTechnicianSidebar } from "../contexts/TechnicianSidebarContext";
 
-export default function TechnicianLayout() {
+function LayoutInner() {
+  const { isOpen } = useTechnicianSidebar();
+  // Dynamic left padding on desktop to match sidebar width
+  const desktopPaddingClass = isOpen
+    ? "lg:pl-64 xl:pl-64 2xl:pl-80"
+    : "lg:pl-20 xl:pl-20 2xl:pl-20";
+
   return (
-    <div className="min-h-screen bg-gray-50 lg:pl-20 xl:pl-64 2xl:pl-80">
+    <div className={"min-h-screen bg-gray-50 " + desktopPaddingClass}>
       <TechHeader role="technicien" />
-      <main className="pt-14 sm:pt-16">
-        <div className="max-w-screen-2xl mx-auto px-3 sm:px-4 lg:px-6">
+      <main>
+        <div>
           <Outlet />
         </div>
       </main>
     </div>
+  );
+}
+
+export default function TechnicianLayout() {
+  return (
+    <TechnicianSidebarProvider>
+      <LayoutInner />
+    </TechnicianSidebarProvider>
   );
 }

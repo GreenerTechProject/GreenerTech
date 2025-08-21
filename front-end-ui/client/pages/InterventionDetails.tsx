@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -37,6 +37,7 @@ interface Intervention {
 
 export default function InterventionDetails() {
   const { id } = useParams<{ id: string }>();
+  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { user } = useAuth();
   const [intervention, setIntervention] = useState<Intervention | null>(null);
@@ -52,25 +53,25 @@ export default function InterventionDetails() {
   const loadInterventionDetails = async (interventionId: number) => {
     try {
       setLoading(true);
-      // Mock data for now - in real implementation, fetch from backend API
-      const mockIntervention: Intervention = {
-        id: interventionId,
-        type: "Préparation du Sol",
-        description: "Préparation complète du sol pour la nouvelle saison de plantation",
-        id_serre: 1,
-        serre_nom: "Serre A1",
-        domaine_nom: "Domaine Nord",
-        bilan_trimestre: "Bilan Q1 2024",
-        statut: "En cours",
-        actions: "Programmé",
-        date_creation: "2024-01-15",
-        date_modification: "2024-01-20",
-        technicien: "Jean Dupont",
-        priorite: "Élevée",
-        notes: "Sol nécessite un traitement spécial pour éliminer les résidus de la saison précédente"
+      const { InterventionService } = await import("../services/interventionService");
+      const data = await InterventionService.getIntervention(interventionId);
+      const normalized: Intervention = {
+        id: data.id,
+        type: data.type_nom || data.type_tache || "Intervention",
+        description: data.description,
+        id_serre: data.id_serre,
+        serre_nom: data.serre_nom || "",
+        domaine_nom: data.domaine_nom || "",
+        bilan_trimestre: "",
+        statut: data.status || (data.valid ? "Validée" : "En cours"),
+        actions: data.valid ? "Validée" : "",
+        date_creation: data.created_at || "",
+        date_modification: data.updated_at || "",
+        technicien: data.technician_name,
+        priorite: undefined,
+        notes: undefined,
       };
-      
-      setIntervention(mockIntervention);
+      setIntervention(normalized);
     } catch (err) {
       console.error("Error loading intervention details:", err);
       setError("Erreur lors du chargement des détails de l'intervention");
