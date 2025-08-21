@@ -137,7 +137,7 @@ export default function TechnicianSidebar({
       <div
         className={cn(
           "fixed left-0 top-0 z-50 h-[100dvh] bg-white border-r border-gray-200 shadow-lg transform transition-all duration-300 ease-in-out overflow-hidden",
-          "lg:translate-x-0 lg:sticky lg:top-0 lg:z-10 lg:h-[100dvh]",
+          "lg:translate-x-0 lg:fixed lg:top-0 lg:z-40 lg:h-[100dvh]",
           isOpen ? "translate-x-0" : "-translate-x-full",
           "w-80 lg:w-20 lg:min-w-20 lg:max-w-20 xl:w-64 xl:min-w-64 xl:max-w-64 2xl:w-80 2xl:min-w-80 2xl:max-w-80",
           "flex flex-col"

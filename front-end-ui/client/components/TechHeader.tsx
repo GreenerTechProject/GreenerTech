@@ -33,6 +33,7 @@ const TechHeader: React.FC<TechHeaderProps> = ({ role }) => {
     byType: {
       intervention_creee: 0,
       intervention_validee: 0,
+      intervention_rejetee: 0,
       compte_technicien: 0,
       compte_valide: 0,
     }
@@ -173,10 +174,10 @@ const TechHeader: React.FC<TechHeaderProps> = ({ role }) => {
   };
 
   const getNotificationIcon = (type: string) => {
-    if (type === 'intervention_creee') return <Wrench className="h-4 w-4 text-blue-600" />;
-    if (type === 'intervention_validee') return <CheckCircle className="h-4 w-4 text-green-600" />;
-    if (type === 'compte_technicien') return <Users className="h-4 w-4 text-purple-600" />;
-    if (type === 'compte_valide') return <CheckCircle className="h-4 w-4 text-green-600" />;
+    if (type === 'intervention_creee') return <Wrench className="h-4 w-4 text-greener-600" />;
+    if (type === 'intervention_validee') return <CheckCircle className="h-4 w-4 text-greener-600" />;
+    if (type === 'compte_technicien') return <Users className="h-4 w-4 text-greener-600" />;
+    if (type === 'compte_valide') return <CheckCircle className="h-4 w-4 text-greener-600" />;
     return <Bell className="h-4 w-4 text-gray-600" />;
   };
 
@@ -203,8 +204,8 @@ const TechHeader: React.FC<TechHeaderProps> = ({ role }) => {
   };
 
   return (
-    <header className="bg-white border-b sticky top-0 z-[999999]">
-      <div className="max-w-full px-3 sm:px-4 lg:px-6">
+    <header className="bg-white border-b shadow-sm sticky top-0 z-40">
+      <div className="max-w-screen-2xl mx-auto px-3 sm:px-4 lg:px-6">
         {/* Mobile-first responsive grid */}
         <div className="grid grid-cols-3 items-center py-2 sm:py-3 min-h-[44px] sm:min-h-[48px]">
           {/* Left: Hamburger / Navigation + Logo */}
@@ -216,7 +217,7 @@ const TechHeader: React.FC<TechHeaderProps> = ({ role }) => {
           {/* Center: Home and Map icons */}
           <div className="justify-self-center flex items-center gap-3 px-2">
             <div
-              className="h-9 w-9 rounded-xl bg-[#B4CC5F] flex items-center justify-center shadow-sm cursor-pointer hover:bg-[#9BB84F] transition-colors duration-200 active:scale-95 flex-shrink-0"
+              className="h-9 w-9 rounded-xl bg-greener-600 flex items-center justify-center shadow-sm cursor-pointer hover:bg-greener-700 transition-colors duration-200 active:scale-95 flex-shrink-0"
               onClick={() => navigate(role === "technicien_sup" ? "/technicien-sup/home" : "/technician/dashboard")}
               title="Accueil"
             >
@@ -227,7 +228,7 @@ const TechHeader: React.FC<TechHeaderProps> = ({ role }) => {
               onClick={() => navigate(role === "technicien_sup" ? "/technicien-sup" : "/technician/map")}
               title="Carte"
             >
-              <Map className="h-5 w-5 text-blue-700" />
+              <Map className="h-5 w-5 text-greener-700" />
             </div>
           </div>
 
@@ -267,7 +268,7 @@ const TechHeader: React.FC<TechHeaderProps> = ({ role }) => {
                       <span>{alertCounts.low} alerte(s) faible(s)</span>
                     </div>
                     <div className="border-t border-gray-600 pt-1 mt-1 flex items-center justify-center gap-2">
-                      <BarChart3 className="h-3 w-3 text-blue-400" />
+                      <BarChart3 className="h-3 w-3 text-greener-500" />
                       <span>Total: {alertCounts.total} alerte(s)</span>
                     </div>
                   </div>
@@ -280,14 +281,14 @@ const TechHeader: React.FC<TechHeaderProps> = ({ role }) => {
             {/* Notification Bell Icon - for intervention requests */}
             <div className="relative group" style={{ zIndex: 999999 }}>
               <div 
-                className="h-8 w-8 sm:h-9 sm:w-9 rounded-xl bg-blue-100 flex items-center justify-center shadow-sm cursor-pointer hover:bg-blue-200 transition-colors duration-200 active:scale-95 border border-blue-200 flex-shrink-0"
+                className="h-8 w-8 sm:h-9 sm:w-9 rounded-xl bg-greener-100 flex items-center justify-center shadow-sm cursor-pointer hover:bg-greener-200 transition-colors duration-200 active:scale-95 border border-greener-200 flex-shrink-0"
                 onClick={handleNotifications}
                 title="Demandes d'intervention"
               >
-                <Bell className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600" />
+                <Bell className="h-4 w-4 sm:h-5 sm:w-5 text-greener-700" />
                 {/* Notification Badge */}
                 {notificationCounts.non_vue > 0 && (
-                  <div className="absolute -top-1 -right-1 w-3 h-3 sm:w-4 sm:h-4 bg-blue-500 text-white text-xs rounded-full flex items-center justify-center">
+                  <div className="absolute -top-1 -right-1 w-3 h-3 sm:w-4 sm:h-4 bg-greener-600 text-white text-xs rounded-full flex items-center justify-center">
                     <span className="text-xs sm:text-xs">{notificationCounts.non_vue}</span>
                   </div>
                 )}
@@ -347,7 +348,7 @@ const TechHeader: React.FC<TechHeaderProps> = ({ role }) => {
                   <div className="p-3 border-t border-gray-100 bg-gray-50 rounded-b-lg">
                     <button
                       onClick={handleNotifications}
-                      className="w-full text-center text-sm text-blue-600 hover:text-blue-700 font-medium py-2 hover:bg-blue-50 rounded-md transition-colors"
+                      className="w-full text-center text-sm text-greener-600 hover:text-greener-700 font-medium py-2 hover:bg-greener-50 rounded-md transition-colors"
                     >
                       Voir toutes les notifications ({notifications.length > 0 ? notificationCounts.total : 0})
                     </button>
@@ -362,7 +363,7 @@ const TechHeader: React.FC<TechHeaderProps> = ({ role }) => {
                 <Button variant="ghost" className="px-1 sm:px-2 lg:px-3 h-8 sm:h-9">
                   <div className="flex items-center gap-1 sm:gap-2">
                     <Avatar className="h-6 w-6 sm:h-7 sm:w-7">
-                      <AvatarFallback className="bg-blue-100 text-blue-700 text-xs sm:text-sm">
+                      <AvatarFallback className="bg-greener-100 text-greener-700 text-xs sm:text-sm">
                         {initials}
                       </AvatarFallback>
                     </Avatar>

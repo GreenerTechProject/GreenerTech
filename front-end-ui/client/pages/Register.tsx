@@ -37,7 +37,7 @@ export default function Register() {
   if (authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#B4CC5F]"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-greener-600"></div>
       </div>
     );
   }
@@ -173,7 +173,7 @@ export default function Register() {
                     value={formData.email}
                     onChange={handleChange}
                     placeholder="votre.email@exemple.com"
-                    className="w-full h-10 pl-10 pr-4 border border-gray-300 rounded-lg text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#8FB344] focus:border-transparent shadow-sm"
+                    className="w-full h-10 pl-10 pr-4 border border-gray-300 rounded-lg text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-greener-600 focus:border-transparent shadow-sm"
                     required
                   />
                 </div>
@@ -189,7 +189,7 @@ export default function Register() {
                   value={formData.password}
                   onChange={handleChange}
                   placeholder="********"
-                  className="w-full h-10 px-4 border border-gray-300 rounded-lg text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#8FB344] focus:border-transparent shadow-sm"
+                  className="w-full h-10 px-4 border border-gray-300 rounded-lg text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-greener-600 focus:border-transparent shadow-sm"
                   required
                 />
               </div>
@@ -216,7 +216,7 @@ export default function Register() {
                     value={formData.lastName}
                     onChange={handleChange}
                     placeholder="Bennani"
-                    className="w-full h-10 pl-10 pr-4 border border-gray-300 rounded-lg text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#8FB344] focus:border-transparent shadow-sm"
+                    className="w-full h-10 pl-10 pr-4 border border-gray-300 rounded-lg text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-greener-600 focus:border-transparent shadow-sm"
                     required
                   />
                 </div>
@@ -241,7 +241,7 @@ export default function Register() {
                     value={formData.firstName}
                     onChange={handleChange}
                     placeholder="Rachid"
-                    className="w-full h-10 pl-10 pr-4 border border-gray-300 rounded-lg text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#8FB344] focus:border-transparent shadow-sm"
+                    className="w-full h-10 pl-10 pr-4 border border-gray-300 rounded-lg text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-greener-600 focus:border-transparent shadow-sm"
                     required
                   />
                 </div>
@@ -253,7 +253,7 @@ export default function Register() {
               {/* Back Button */}
               <Link
                 to="/role-selection"
-                className="flex items-center text-sm font-medium text-[#2E7D32] hover:text-[#276A2B] transition-colors"
+                className="flex items-center text-sm font-medium text-greener-600 hover:text-greener-700 transition-colors"
               >
                 <svg
                   width="18"
@@ -275,7 +275,7 @@ export default function Register() {
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full max-w-[384px] h-12 bg-[#2E7D32] text-white text-base font-medium rounded-lg hover:bg-[#276A2B] transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow px-8"
+                className="w-full max-w-[384px] h-12 bg-greener-600 text-white text-base font-medium rounded-lg hover:bg-greener-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow px-8"
               >
                 {isSubmitting ? "Inscription..." : "S'inscrire"}
               </button>
@@ -288,7 +288,7 @@ export default function Register() {
               Déjà membre ?{" "}
               <Link
                 to="/login"
-                className="text-[#2E7D32] hover:text-[#276A2B] transition-colors"
+                className="text-greener-600 hover:text-greener-700 transition-colors"
               >
                 Se connecter
               </Link>

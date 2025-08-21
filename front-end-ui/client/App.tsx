@@ -20,6 +20,7 @@ import TechnicienRegistration from "./pages/TechnicienRegistration";
 import DirecteurSetup from "./pages/DirecteurSetup";
 import TechnicianDashboard from "./pages/TechnicianDashboard";
 import TechnicianMap from "./pages/TechnicianMap";
+import TechnicianLayout from "./components/TechnicianLayout";
 import TechnicienSupDashboard from "./pages/TechnicienSupDashboard";
 import TechnicienSupAlerts from "./pages/TechnicienSupAlerts";
 import TechnicienSupInterventions from "./pages/TechnicienSupInterventions";
@@ -66,7 +67,7 @@ const RoleHomeRedirect = () => {
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#B4CC5F]"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-greener-600"></div>
       </div>
     );
   }
@@ -86,7 +87,7 @@ const RootRoute = () => {
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#B4CC5F]"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-greener-600"></div>
       </div>
     );
   }
@@ -300,118 +301,27 @@ const App = () => (
             />
 
 
-            {/* Technician Routes */}
+            {/* Technician Routes wrapped with TechnicianLayout to always render header */}
             <Route
               path="/technician"
               element={
                 <ProtectedRoute requiredRole="technicien">
-                  <TechnicianMap />
-                </ProtectedRoute>
-              }
-            />
-
-            <Route
-              path="/technician/map"
-              element={
-                <ProtectedRoute requiredRole="technicien">
-                  <Navigate to="/technician" replace />
-                </ProtectedRoute>
-              }
-            />
-
-           
-
-            <Route
-              path="/technician/dashboard"
-              element={
-                <ProtectedRoute requiredRole="technicien">
-                  <TechnicianDashboard />
-                </ProtectedRoute>
-              }
-            />
-
-            <Route
-              path="/technician/robot-control"
-              element={
-                <ProtectedRoute requiredRole="technicien">
-                  <RobotControl/>
-                </ProtectedRoute>
-              }
-            />
-
-            <Route
-              path="/technician/alerts"
-              element={
-                <ProtectedRoute requiredRole="technicien">
-                  <Alerts />
-                </ProtectedRoute>
-              }
-            />
-
-            <Route
-              path="/technician/interventions"
-              element={
-                <ProtectedRoute requiredRole="technicien">
-                  <Interventions />
-                </ProtectedRoute>
-              }
-            />
-
-            <Route
-              path="/technician/missions"
-              element={
-                <ProtectedRoute requiredRole="technicien">
-                  <MissionManagement />
-                </ProtectedRoute>
-              }
-            />
-
-            <Route
-              path="/technician/reports"
-              element={
-                <ProtectedRoute requiredRole="technicien">
-                  <TechnicianReportsPage />
-                </ProtectedRoute>
-              }
-            />
-
-            <Route
-              path="/technician/reports/create"
-              element={
-                <ProtectedRoute requiredRole="technicien">
-                  <TechnicianReportCreation />
-                </ProtectedRoute>
-              }
-            />
-
-            <Route
-              path="/technician/notifications"
-              element={
-                <ProtectedRoute requiredRole="technicien">
-                  <TechSupNotificationsPage />
-                </ProtectedRoute>
-              }
-            />
-
-            {/* Technicien Sup Routes with Persistent Header */}
-            <Route
-              path="/technicien-sup"
-              element={
-                <ProtectedRoute requiredRole="technicien_superieur">
-                  <TechnicienSupLayout />
+                  <TechnicianLayout />
                 </ProtectedRoute>
               }
             >
-              <Route index element={<TechnicienSupDashboard />} />
-              <Route path="map" element={<TechnicienSupDashboard />} />
-              <Route path="home" element={<Accueil />} />
-              <Route path="dashboard" element={<TechnicienSupDashboard />} />
-              <Route path="alerts" element={<TechnicienSupAlerts />} />
-              <Route path="interventions" element={<TechnicienSupInterventions />} />
-              <Route path="intervention-request/:id" element={<InterventionRequestDetails />} />
-              <Route path="reports" element={<TechnicienSupReports />} />
+              <Route index element={<TechnicianMap />} />
+              <Route path="map" element={<Navigate to="/technician" replace />} />
+              <Route path="dashboard" element={<TechnicianDashboard />} />
+              <Route path="robot-control" element={<RobotControl />} />
+              <Route path="alerts" element={<Alerts />} />
+              <Route path="interventions" element={<Interventions />} />
               <Route path="missions" element={<MissionManagement />} />
+              <Route path="reports" element={<TechnicianReportsPage />} />
+              <Route path="reports/create" element={<TechnicianReportCreation />} />
               <Route path="notifications" element={<TechSupNotificationsPage />} />
+              <Route path="profile" element={<Profile />} />
+              <Route path="profile/edit" element={<ProfileEdit />} />
             </Route>
 
             <Route
@@ -453,24 +363,6 @@ const App = () => (
             />
 
             {/* Profile Routes */}
-            <Route
-              path="/technicien/profile"
-              element={
-                <ProtectedRoute>
-                  <Profile />
-                </ProtectedRoute>
-              }
-            />
-
-            <Route
-              path="/technicien/profile/edit"
-              element={
-                <ProtectedRoute>
-                  <ProfileEdit />
-                </ProtectedRoute>
-              }
-            />
-
             <Route
               path="/technicien-sup/profile"
               element={

@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useAuth } from "../contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -14,7 +15,6 @@ import {
   Eye,
   EyeOff
 } from "lucide-react";
-import TechHeader from "@/components/TechHeader";
 
 interface ProfileFormData {
   firstName: string;
@@ -32,8 +32,14 @@ interface ProfileData extends User {
 }
 
 export default function ProfileEdit() {
+  console.log("ProfileEdit component rendered");
+  const { user } = useAuth();
+  console.log("Current user from auth context:", user);
+  console.log("Current user role from auth context:", user?.role);
+  console.log("User object keys:", user ? Object.keys(user) : "No user");
+  
   const navigate = useNavigate();
-  const [user, setUser] = useState<ProfileData | null>(null);
+  const [userData, setUserData] = useState<ProfileData | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -65,7 +71,7 @@ export default function ProfileEdit() {
         birthday: userData.birthday ? userData.birthday.split('T')[0] : "", // Format for date input
       };
       
-      setUser(profileData);
+      setUserData(profileData);
       
       // Split the full name into first and last name
       const nameParts = (profileData.name || "").trim().split(' ');
@@ -153,10 +159,14 @@ export default function ProfileEdit() {
       });
 
       // Navigate back to the appropriate profile page based on user role
+      console.log("Form submission successful, navigating back to profile");
+      console.log("User role in onSubmit:", user?.role);
       if (user?.role === "technicien_superieur") {
+        console.log("Navigating to /technicien-sup/profile");
         navigate("/technicien-sup/profile");
       } else {
-        navigate("/technicien/profile");
+        console.log("Navigating to /technician/profile");
+        navigate("/technician/profile");
       }
       
     } catch (error: any) {
@@ -172,11 +182,15 @@ export default function ProfileEdit() {
   };
 
   const handleCancel = () => {
+    console.log("handleCancel called");
+    console.log("User role in handleCancel:", user?.role);
     // Navigate back to the appropriate profile page based on user role
     if (user?.role === "technicien_superieur") {
+      console.log("Navigating to /technicien-sup/profile");
       navigate("/technicien-sup/profile");
     } else {
-      navigate("/technicien/profile");
+      console.log("Navigating to /technician/profile");
+      navigate("/technician/profile");
     }
   };
 
@@ -202,7 +216,7 @@ export default function ProfileEdit() {
               if (user?.role === "technicien_superieur") {
                 navigate("/technicien-sup/profile");
               } else {
-                navigate("/technicien/profile");
+                navigate("/technician/profile");
               }
             }} className="mt-4">
               Retour au profil
@@ -215,13 +229,7 @@ export default function ProfileEdit() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Show TechHeader for all technician users */}
-      {user?.role === "technicien" && (
-        <TechHeader role="technicien" />
-      )}
-      {user?.role === "technicien_superieur" && (
-        <TechHeader role="technicien_sup" />
-      )}
+      {/* Header removed: provided by TechnicianLayout */}
       
       <div className="container mx-auto px-4 py-8 max-w-4xl">
         {/* Back button */}
@@ -232,7 +240,7 @@ export default function ProfileEdit() {
             if (user?.role === "technicien_superieur") {
               navigate("/technicien-sup/profile");
             } else {
-              navigate("/technicien/profile");
+              navigate("/technician/profile");
             }
           }}
           className="mb-6 text-green-600 hover:text-green-800"

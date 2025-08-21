@@ -1,6 +1,5 @@
 import { useAuth } from "../contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
-import TechHeader from "../components/TechHeader";
 import { Map, AlertTriangle, BarChart3, TrendingUp, Activity, PlusCircle, ClipboardCheck, Target, Calendar, Clock, CheckCircle, AlertCircle, Users, Zap, Shield, Target as TargetIcon } from "lucide-react";
 import {
   Chart as ChartJS,
@@ -320,8 +319,7 @@ export default function TechnicianDashboard() {
     <div className="flex h-screen bg-background">
       {/* Main Content */}
       <div className="flex-1 flex flex-col">
-        {/* Header */}
-        <TechHeader role="technicien" />
+        {/* Header removed: provided by TechnicianLayout */}
 
         {/* Main Content */}
         <main className="flex-1 overflow-auto px-3 sm:px-4 md:px-6 lg:px-8 py-4 sm:py-6 lg:py-8">

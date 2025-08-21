@@ -24,7 +24,6 @@ import {
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import ReportService from "../services/reportService";
 import { serreService } from "../services/serreService";
-import TechHeader from "../components/TechHeader";
 
 interface Serre {
   id: number;
@@ -132,7 +131,7 @@ export default function TechnicianReportCreation() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <TechHeader role="technicien" />
+      {/* Header removed: provided by TechnicianLayout */}
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="mb-8">

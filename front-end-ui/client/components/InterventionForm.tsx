@@ -422,7 +422,7 @@ export default function InterventionForm({
                     value={formData.interventionDate}
                     onChange={(e) => updateFormData("interventionDate", e.target.value)}
                     className={cn(
-                      "w-full h-full rounded-lg border border-border bg-card px-3 text-foreground text-sm font-normal focus:border-[#B4CC5F] focus:ring-[#B4CC5F] focus:ring-2",
+                      "w-full h-full rounded-lg border border-border bg-card px-3 text-foreground text-sm font-normal focus:border-greener-600 focus:ring-greener-600 focus:ring-2",
                       errors.interventionDate && "border-red-500 focus:border-red-500 focus:ring-red-500"
                     )}
                     placeholder="mm/dd/yyyy"
@@ -445,7 +445,7 @@ export default function InterventionForm({
                     type="date"
                     value={formData.dateFin}
                     onChange={(e) => updateFormData("dateFin", e.target.value)}
-                    className="w-full h-full rounded-lg border border-border bg-card px-3 text-foreground text-sm font-normal focus:border-[#B4CC5F] focus:ring-[#B4CC5F] focus:ring-2"
+                    className="w-full h-full rounded-lg border border-border bg-card px-3 text-foreground text-sm font-normal focus:border-greener-600 focus:ring-greener-600 focus:ring-2"
                     placeholder="mm/dd/yyyy"
                   />
                   <Calendar className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -474,10 +474,10 @@ export default function InterventionForm({
                     onBlur={(e) => {
                       console.log("💰 Input blur event:", e.target.value);
                     }}
-                    className="h-10 sm:h-11 px-3 pl-10 rounded-lg border border-border bg-card hover:border-[#B4CC5F] focus:border-[#B4CC5F] focus:ring-[#B4CC5F] focus:ring-2 transition-colors text-foreground font-medium text-sm"
+                    className="h-10 sm:h-11 px-3 pl-10 rounded-lg border border-border bg-card hover:border-greener-600 focus:border-greener-600 focus:ring-greener-600 focus:ring-2 transition-colors text-foreground font-medium text-sm"
                     placeholder="0.00"
                   />
-                  <Tag className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-[#B4CC5F]" />
+                  <Tag className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-greener-600" />
                 </div>
                 {errors.estimatedCharges && (
                   <p className="text-xs text-red-500">{errors.estimatedCharges}</p>
@@ -498,7 +498,7 @@ export default function InterventionForm({
                   onChange={(e) => updateFormData("description", e.target.value)}
                   placeholder="Détails supplémentaires sur l'intervention..."
                   rows={3}
-                  className="w-full p-3 rounded-lg border border-border bg-card resize-none text-sm text-foreground focus:border-[#B4CC5F] focus:ring-[#B4CC5F] focus:ring-2"
+                  className="w-full p-3 rounded-lg border border-border bg-card resize-none text-sm text-foreground focus:border-greener-600 focus:ring-greener-600 focus:ring-2"
                 />
               </div>
             </div>
@@ -518,7 +518,7 @@ export default function InterventionForm({
                 type="button"
                 onClick={handleSubmit}
                 disabled={isSubmitting}
-                className="flex h-10 sm:h-11 px-4 sm:px-6 justify-center items-center gap-2 rounded-lg bg-[#B4CC5F] hover:bg-[#9BB84F] text-white shadow-md border-0 w-full sm:w-auto text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex h-10 sm:h-11 px-4 sm:px-6 justify-center items-center gap-2 rounded-lg bg-greener-600 hover:bg-greener-700 text-white shadow-md border-0 w-full sm:w-auto text-sm disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <Send className="h-4 w-4 text-white" />
                 <span className="text-white text-center font-medium">

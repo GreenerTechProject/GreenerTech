@@ -202,7 +202,7 @@ export default function NotificationsPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <TechHeader role="technicien" />
+      {/* Header removed: provided by TechnicianLayout */}
       
       <div className="max-w-4xl mx-auto px-4 py-6">
         {/* Header */}

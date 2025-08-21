@@ -43,7 +43,6 @@ import {
 } from "lucide-react";
 import TechnicianSidebar from "../components/TechnicianSidebar";
 import InterventionForm from "../components/InterventionForm";
-import TechHeader from "../components/TechHeader";
 import BilanCreation from "../components/BilanCreation";
 import BilanMapComponent from "../components/BilanMapComponent";
 import AlertHeatmapOverlay from "../components/AlertHeatmapOverlay";
@@ -752,7 +751,7 @@ export default function TechnicianMap() {
       showAlertHeatmap && "bg-gradient-to-br from-gray-50 via-red-50/30 to-red-50/50"
     )}>
       {/* Header */}
-      <TechHeader role="technicien" />
+      {/* Header removed: provided by TechnicianLayout */}
 
       <div className="flex flex-col lg:flex-row h-[calc(100vh-73px)] overflow-hidden">
 
@@ -904,13 +903,13 @@ export default function TechnicianMap() {
           <ScrollArea className="flex-1 h-full w-full" style={{ height: '100%', maxHeight: '100%' }}>
             <div className="p-6 space-y-6 min-h-full pb-8">
               {/* Create New Bilan Section - Always Visible */}
-              <Card className="border-dashed border-2 border-gray-200 hover:border-[#B4CC5F] transition-colors">
+              <Card className="border-dashed border-2 border-gray-200 hover:border-greener-600 transition-colors">
                   <CardContent className="p-4">
                   {!isCreatingBilan ? (
                       <Button
                       onClick={() => setIsCreatingBilan(true)}
                         variant="ghost"
-                      className="w-full h-16 border-0 text-gray-600 hover:text-[#B4CC5F] hover:bg-[#B4CC5F]/5"
+                      className="w-full h-16 border-0 text-gray-600 hover:text-greener-700 hover:bg-greener-100"
                       >
                         <div className="flex flex-col items-center space-y-2">
                           <Sprout className="h-6 w-6" />
@@ -925,8 +924,8 @@ export default function TechnicianMap() {
                     ) : (
                       <div className="space-y-3">
                         <div className="flex items-center space-x-2">
-                          <Sprout className="h-5 w-5 text-[#B4CC5F]" />
-                          <h4 className="font-medium text-[#B4CC5F]">
+                          <Sprout className="h-5 w-5 text-greener-700" />
+                          <h4 className="font-medium text-greener-700">
                             Nouveau bilan - {selectedSerre?.nom || 'Sélectionnez une serre'}
                           </h4>
                         </div>
@@ -949,11 +948,11 @@ export default function TechnicianMap() {
               {/* Bilan Creation Form */}
               {selectedSerre && isCreatingBilan && (
                 <Card className={cn(
-                  "border-2 border-[#B4CC5F] bg-[#B4CC5F]/5",
+                  "border-2 border-greener-600 bg-greener-100",
                   isMobile ? "h-full min-h-screen" : ""
                 )}>
                   <CardHeader className="pb-3">
-                    <CardTitle className="text-lg text-[#B4CC5F] flex items-center space-x-2">
+                    <CardTitle className="text-lg text-greener-700 flex items-center space-x-2">
                       <MapPin className="h-5 w-5" />
                       <span>Création de bilan</span>
                     </CardTitle>
@@ -980,7 +979,7 @@ export default function TechnicianMap() {
 
                 {isLoadingSerres ? (
                   <div className="text-center py-6 text-gray-500">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#B4CC5F] mx-auto mb-2"></div>
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-greener-600 mx-auto mb-2"></div>
                     <p>Chargement des serres...</p>
                   </div>
                 ) : serresError ? (

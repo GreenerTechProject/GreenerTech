@@ -26,7 +26,6 @@ import {
 import ReportService, { ApiReport } from "../services/reportService";
 import { serreService } from "../services/serreService";
 import { useNavigate } from "react-router-dom";
-import TechHeader from "../components/TechHeader";
 
 export default function TechnicianReportsPage() {
   const { user } = useAuth();
@@ -88,7 +87,7 @@ export default function TechnicianReportsPage() {
     const diffDays = Math.floor((now.getTime() - reportDate.getTime()) / (1000 * 60 * 60 * 24));
     
     if (diffDays <= 7) {
-      return { label: "Récent", color: "bg-[#B4CC5F]/20 text-[#9BB84F] border-[#B4CC5F]/30" };
+      return { label: "Récent", color: "bg-greener-100 text-greener-700 border-greener-200" };
     } else if (diffDays <= 30) {
       return { label: "Mois dernier", color: "bg-blue-100 text-blue-800 border-blue-300" };
     } else {
@@ -112,10 +111,9 @@ export default function TechnicianReportsPage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-white dark:bg-gray-900">
-        <TechHeader role="technicien" />
         <div className="flex items-center justify-center min-h-[calc(100vh-80px)]">
           <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto"></div>
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-greener-600 mx-auto"></div>
             <p className="mt-4 text-muted-foreground">Chargement des rapports...</p>
           </div>
         </div>
@@ -125,7 +123,7 @@ export default function TechnicianReportsPage() {
 
   return (
     <div className="min-h-screen bg-white dark:bg-gray-900">
-      <TechHeader role="technicien" />
+      {/* Header removed: provided by TechnicianLayout */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
 
         {/* Stats Cards */}
@@ -135,12 +133,12 @@ export default function TechnicianReportsPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-muted-foreground mb-1">Total Rapports</p>
-                  <p className="text-3xl font-bold text-[#B4CC5F]">
+                  <p className="text-3xl font-bold text-greener-700">
                     {reports.length}
                   </p>
                   <p className="text-xs text-muted-foreground mt-1">Tous les rapports</p>
                 </div>
-                <div className="h-12 w-12 rounded-xl bg-[#B4CC5F] flex items-center justify-center shadow-lg hover:shadow-xl transition-shadow duration-300">
+                <div className="h-12 w-12 rounded-xl bg-greener-600 flex items-center justify-center shadow-lg hover:shadow-xl transition-shadow duration-300">
                   <FileText className="h-7 w-7 text-white" />
                 </div>
               </div>
@@ -175,7 +173,7 @@ export default function TechnicianReportsPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-muted-foreground mb-1">Ce Mois</p>
-                  <p className="text-3xl font-bold text-[#B4CC5F]">
+                  <p className="text-3xl font-bold text-greener-700">
                     {reports.filter(r => {
                       if (!r.date) return false;
                       const reportDate = new Date(r.date);
@@ -185,7 +183,7 @@ export default function TechnicianReportsPage() {
                   </p>
                   <p className="text-xs text-muted-foreground mt-1">Rapports du mois</p>
                 </div>
-                <div className="h-12 w-12 rounded-xl bg-[#B4CC5F] flex items-center justify-center shadow-lg hover:shadow-xl transition-shadow duration-300">
+                <div className="h-12 w-12 rounded-xl bg-greener-600 flex items-center justify-center shadow-lg hover:shadow-xl transition-shadow duration-300">
                   <Calendar className="h-7 w-7 text-white" />
                 </div>
               </div>
@@ -197,7 +195,7 @@ export default function TechnicianReportsPage() {
         <Card className="mb-8 hover:shadow-md transition-shadow duration-300">
           <CardHeader className="pb-4">
             <CardTitle className="flex items-center space-x-2 text-lg">
-              <div className="h-8 w-8 rounded-lg bg-[#B4CC5F] flex items-center justify-center">
+              <div className="h-8 w-8 rounded-lg bg-greener-600 flex items-center justify-center">
                 <Filter className="h-5 w-5 text-white" />
               </div>
               <span>Filtres et Recherche</span>
@@ -215,7 +213,7 @@ export default function TechnicianReportsPage() {
                     placeholder="Description, serre, domaine..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                                          className="pl-10 border-border focus:border-[#B4CC5F] focus:ring-[#B4CC5F] transition-colors duration-200"
+                                          className="pl-10 border-border focus:border-greener-600 focus:ring-greener-600 transition-colors duration-200"
                   />
                 </div>
               </div>
@@ -223,7 +221,7 @@ export default function TechnicianReportsPage() {
               <div>
                 <Label htmlFor="serre-filter" className="text-sm font-medium text-foreground">Filtrer par Serre</Label>
                 <Select value={filterSerre} onValueChange={setFilterSerre}>
-                                      <SelectTrigger className="mt-1 border-border focus:border-[#B4CC5F] focus:ring-[#B4CC5F] transition-colors duration-200">
+                                      <SelectTrigger className="mt-1 border-border focus:border-greener-600 focus:ring-greener-600 transition-colors duration-200">
                     <SelectValue placeholder="Toutes les serres" />
                   </SelectTrigger>
                   <SelectContent>
@@ -241,7 +239,7 @@ export default function TechnicianReportsPage() {
                 <Button 
                   onClick={handleGenerateReport}
                   disabled={availableSerres.length === 0}
-                  className="w-full bg-[#B4CC5F] hover:bg-[#9BB84F] text-white font-medium disabled:bg-gray-400 disabled:cursor-not-allowed transition-all duration-200 hover:scale-105 active:scale-95 shadow-lg hover:shadow-xl"
+                  className="w-full bg-greener-600 hover:bg-greener-700 text-white font-medium disabled:bg-gray-400 disabled:cursor-not-allowed transition-all duration-200 hover:scale-105 active:scale-95 shadow-lg hover:shadow-xl"
                 >
                   <Plus className="h-4 w-4 mr-2" />
                   Générer un rapport
@@ -260,7 +258,7 @@ export default function TechnicianReportsPage() {
         <Card className="hover:shadow-md transition-shadow duration-300">
           <CardHeader className="pb-4">
             <CardTitle className="flex items-center space-x-2 text-lg">
-              <div className="h-8 w-8 rounded-lg bg-[#B4CC5F] flex items-center justify-center">
+              <div className="h-8 w-8 rounded-lg bg-greener-600 flex items-center justify-center">
                 <FileText className="h-5 w-5 text-white" />
               </div>
               <span>Rapports ({filteredReports.length})</span>
@@ -279,8 +277,8 @@ export default function TechnicianReportsPage() {
               </div>
             ) : filteredReports.length === 0 ? (
               <div className="text-center py-12 text-muted-foreground">
-                <div className="h-20 w-20 rounded-full bg-[#B4CC5F]/20 mx-auto mb-4 flex items-center justify-center">
-                  <FileText className="h-10 w-10 text-[#B4CC5F]" />
+                <div className="h-20 w-20 rounded-full bg-greener-100 mx-auto mb-4 flex items-center justify-center">
+                  <FileText className="h-10 w-10 text-greener-700" />
                 </div>
                 <h3 className="text-xl font-semibold mb-2 text-foreground">Aucun rapport trouvé</h3>
                 <p className="text-sm mb-4 text-muted-foreground max-w-md mx-auto">
@@ -294,7 +292,7 @@ export default function TechnicianReportsPage() {
                 {availableSerres && availableSerres.length > 0 && (
                   <Button 
                     onClick={handleGenerateReport}
-                    className="bg-[#B4CC5F] hover:bg-[#9BB84F] transition-all duration-200 hover:scale-105 active:scale-95 shadow-lg hover:shadow-xl"
+                    className="bg-greener-600 hover:bg-greener-700 transition-all duration-200 hover:scale-105 active:scale-95 shadow-lg hover:shadow-xl"
                   >
                     <Plus className="h-4 w-4 mr-2" />
                     Créer votre premier rapport
@@ -311,7 +309,7 @@ export default function TechnicianReportsPage() {
                       className="flex items-start space-x-4 p-6 border rounded-lg hover:bg-muted hover:shadow-md transition-all duration-300 hover:-translate-y-1 border-border"
                     >
                       <div className="flex-shrink-0">
-                        <div className="h-12 w-12 rounded-xl bg-[#B4CC5F] flex items-center justify-center shadow-lg hover:shadow-xl transition-shadow duration-300">
+                        <div className="h-12 w-12 rounded-xl bg-greener-600 flex items-center justify-center shadow-lg hover:shadow-xl transition-shadow duration-300">
                           <FileText className="h-7 w-7 text-white" />
                         </div>
                       </div>
@@ -365,7 +363,7 @@ export default function TechnicianReportsPage() {
                                 variant="outline"
                                 size="sm"
                                 onClick={() => handleDownloadReport(report)}
-                                className="h-8 border-[#B4CC5F] text-[#B4CC5F] hover:bg-[#B4CC5F] hover:text-white transition-all duration-200 hover:scale-105 active:scale-95"
+                                className="h-8 border-greener-600 text-greener-700 hover:bg-greener-600 hover:text-white transition-all duration-200 hover:scale-105 active:scale-95"
                               >
                                 <Download className="h-3 w-3 mr-1" />
                                 Télécharger
