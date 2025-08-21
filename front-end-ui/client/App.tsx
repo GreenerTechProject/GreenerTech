@@ -27,6 +27,7 @@ import TechnicienSupAlerts from "./pages/TechnicienSupAlerts";
 import TechnicienSupInterventions from "./pages/TechnicienSupInterventions";
 import TechnicienSupReports from "./pages/TechnicienSupReports";
 import TechnicienSupLayout from "./components/TechnicienSupLayout";
+import TechnicienSupAuthorizations from "./pages/TechnicienSupAuthorizations";
 import Accueil from "./pages/Accueil";
 import ReportsPage from "./pages/ReportsPage";
 import Alerts from "./pages/Alerts";
@@ -340,6 +341,7 @@ const App = () => (
               <Route path="alerts" element={<TechnicienSupAlerts />} />
               <Route path="interventions" element={<TechnicienSupInterventions />} />
               <Route path="reports" element={<TechnicienSupReports />} />
+              <Route path="authorizations" element={<TechnicienSupAuthorizations />} />
               <Route path="notifications" element={<TechSupNotificationsPage />} />
               <Route path="profile" element={<TechnicienSupProfile />} />
               <Route path="profile/edit" element={<ProfileEdit />} />

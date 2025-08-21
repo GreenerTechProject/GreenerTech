@@ -94,6 +94,13 @@ const navigationItems = [
     icon: Building2,
     href: '/directeur/company-update',
     description: 'Modifier les informations de l\'entreprise'
+  },
+  {
+    id: 'parameters',
+    label: 'Paramètres',
+    icon: Settings,
+    href: '/directeur/parameters',
+    description: 'Configuration carte, robots, assignations et entreprise'
   }
 ];
 
@@ -137,17 +144,15 @@ export default function DirectorSidebar({ isOpen, setIsOpen }: DirectorSidebarPr
         "2xl:w-80 2xl:min-w-80 2xl:max-w-80",
         "flex flex-col"
       )}>
-        {/* Header */}
+        {/* Header - text only, no logo */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200 flex-shrink-0">
           <div className="flex items-center space-x-3">
-            <img src="/GreenerTech-Logo.jpg" alt="GreenerTech" className="hidden lg:block h-8 w-auto" />
             <div className="lg:hidden xl:block">
               <h1 className="font-semibold text-gray-900">Directeur</h1>
               <p className="text-sm text-gray-500">Gestion complète</p>
             </div>
           </div>
           <div className="flex items-center space-x-2">
-            {/* Mobile expand button for small screens */}
             <Button
               variant="ghost"
               size="sm"
@@ -157,7 +162,6 @@ export default function DirectorSidebar({ isOpen, setIsOpen }: DirectorSidebarPr
             >
               {isOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
             </Button>
-           
           </div>
         </div>
 
@@ -227,13 +231,17 @@ export default function DirectorSidebar({ isOpen, setIsOpen }: DirectorSidebarPr
 
         {/* Footer */}
         <div className="p-4 border-t border-gray-200 bg-white flex-shrink-0">
-          <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
+          <button
+            onClick={() => handleNavigation('/directeur/parameters')}
+            className="w-full flex items-center space-x-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+            title="Paramètres"
+          >
             <Settings className="h-5 w-5 text-gray-500" />
             <div className="flex-1 min-w-0 lg:hidden xl:block">
               <div className="text-sm font-medium text-gray-900">Paramètres</div>
               <div className="text-xs text-gray-500">Configuration système</div>
             </div>
-          </div>
+          </button>
         </div>
       </div>
     </>

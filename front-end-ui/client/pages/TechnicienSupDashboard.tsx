@@ -4,6 +4,7 @@ import GoogleMapsWrapper from "../components/GoogleMapsWrapper";
 import { GoogleMap, Marker, InfoWindow, Polygon } from "@react-google-maps/api";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetClose } from "@/components/ui/sheet";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
@@ -220,6 +221,7 @@ export default function TechnicienSupDashboard(): JSX.Element {
   const { toast } = useToast();
   const [serres, setSerres] = useState<Serre[]>([]);
   const [selectedSerre, setSelectedSerre] = useState<Serre | null>(null);
+  const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const [isCreatingNew, setIsCreatingNew] = useState(false);
   const [newSerreName, setNewSerreName] = useState("");
   const [map, setMap] = useState<google.maps.Map | null>(null);
@@ -554,6 +556,7 @@ export default function TechnicienSupDashboard(): JSX.Element {
     if (map) {
       smoothZoomToLocation(map, serre.location, 16);
     }
+    setIsDetailsOpen(true);
   };
 
   const handleCreateNewSerre = () => {
@@ -741,21 +744,25 @@ export default function TechnicienSupDashboard(): JSX.Element {
   const loadAlertsAndHeatmap = useCallback(async (mapInstance: google.maps.Map) => {
     try {
       setIsMapLoading(true);
-      const { alerts } = await AlertService.getAllAlerts(1, 1000);
+      // Use alerts scoped to assigned serres
+      const alerts = await AlertService.getAlertsByAssignedSerres();
       // Build weighted points from alerts. We need coordinates: try alerte.x1/y1 (if represent lat/lng); fallback to related serre center by bilan
       const weights: google.maps.visualization.WeightedLocation[] = [];
       let low = 0, med = 0, high = 0;
       const createdMarkers: google.maps.Marker[] = [];
+      const filterSerreId = selectedSerre ? parseInt(selectedSerre.id, 10) : undefined;
       for (const a of alerts as any[]) {
         const lvl = getAlertLevelFromInt(a.status_alert);
         if (lvl === 'low') low++; else if (lvl === 'medium') med++; else high++;
         let lat = a.x1; // assuming y1 ~ lat
         let lng = a.y1; // assuming x1 ~ lng
+        let alertSerreId: number | undefined = a.id_serre ? parseInt(a.id_serre, 10) : undefined;
         if (typeof lat !== 'number' || typeof lng !== 'number') {
           // Try fetch bilan -> serre center
           try {
             const bilanResp = await axios.get(`${window.location.protocol}//${window.location.hostname}:5000/api/bilan/${a.id_bilan}`);
             const id_serre = bilanResp.data?.id_serre;
+            if (typeof id_serre === 'number') alertSerreId = id_serre;
             if (id_serre) {
               const serreResp = await axios.get(`${window.location.protocol}//${window.location.hostname}:5000/api/serre/${id_serre}`);
               lat = serreResp.data?.center?.lat;
@@ -766,6 +773,10 @@ export default function TechnicienSupDashboard(): JSX.Element {
               }
             }
           } catch {}
+        }
+        // If a serre is selected, only render alerts for that serre
+        if (filterSerreId != null && alertSerreId != null && alertSerreId !== filterSerreId) {
+          continue;
         }
         if (typeof lat === 'number' && typeof lng === 'number') {
           weights.push({ location: new google.maps.LatLng(lat, lng), weight: getWeightFromLevel(lvl) });
@@ -788,15 +799,13 @@ export default function TechnicienSupDashboard(): JSX.Element {
         }
       }
       setAlertsSummary({ low, medium: med, high });
-      // Create or update heatmap
-      if (weights.length > 0) {
-        if (heatmapRef.current) {
-          heatmapRef.current.setData(weights as any);
-        } else if ((google.maps.visualization as any)?.HeatmapLayer) {
-          const hm = new google.maps.visualization.HeatmapLayer({ data: weights as any, dissipating: true, radius: 35 });
-          hm.setMap(mapInstance);
-          heatmapRef.current = hm;
+      // Create or update heatmap (clear if none)
+      if ((google.maps.visualization as any)?.HeatmapLayer) {
+        if (!heatmapRef.current) {
+          heatmapRef.current = new google.maps.visualization.HeatmapLayer({ data: [], dissipating: true, radius: 35 });
         }
+        heatmapRef.current.setData(weights as any);
+        heatmapRef.current.setMap(showHeatmap ? mapInstance : null);
       }
       // Place markers and adjust viewport
       if (createdMarkers.length > 0) {
@@ -823,9 +832,42 @@ export default function TechnicienSupDashboard(): JSX.Element {
     } finally {
       setIsMapLoading(false);
     }
-  }, [showHeatmap]);
+  }, [showHeatmap, selectedSerre]);
 
   const [isMapLoading, setIsMapLoading] = useState(true);
+  const [selectedSerreGuides, setSelectedSerreGuides] = useState<any[]>([]);
+  const [selectedSerreBilans, setSelectedSerreBilans] = useState<any[]>([]);
+
+  // Load guide(s) and bilans for selected serre (read-only)
+  useEffect(() => {
+    if (!selectedSerre) {
+      setSelectedSerreGuides([]);
+      setSelectedSerreBilans([]);
+      return;
+    }
+    (async () => {
+      try {
+        const sid = parseInt(selectedSerre.id, 10);
+        const guides = await serreService.getGuidesBySerre(sid);
+        setSelectedSerreGuides(Array.isArray(guides) ? guides : []);
+      } catch (_) {
+        setSelectedSerreGuides([]);
+      }
+    })();
+    (async () => {
+      try {
+        const sid = parseInt(selectedSerre.id, 10);
+        const bilans = await serreService.getBilansBySerre(sid);
+        setSelectedSerreBilans(Array.isArray(bilans) ? bilans : []);
+      } catch (_) {
+        setSelectedSerreBilans([]);
+      }
+    })();
+    // Update heatmap to reflect selected serre filter
+    if (map) {
+      loadAlertsAndHeatmap(map);
+    }
+  }, [selectedSerre]);
   const [isInfoWindowOpen, setIsInfoWindowOpen] = useState(true);
 
   return (
@@ -1085,9 +1127,9 @@ export default function TechnicienSupDashboard(): JSX.Element {
                 </GoogleMap>
               </GoogleMapsWrapper>
 
-              {/* Map Overlay Info */}
+              {/* Map Overlay Info: Selected Serre Details (read-only) */}
               {selectedSerre && (
-                <div className="absolute top-4 right-4 bg-white rounded-lg shadow-lg p-4 max-w-xs">
+                <div className="absolute top-4 right-4 bg-white rounded-lg shadow-lg p-4 max-w-sm w-[360px]">
                   <div className="flex items-center space-x-2 mb-2">
                     <div
                       className={cn(
@@ -1103,12 +1145,40 @@ export default function TechnicienSupDashboard(): JSX.Element {
                       {selectedSerre.nom}
                     </h4>
                   </div>
-                  <p className="text-sm text-gray-600 mb-1">
-                    {selectedSerre.variety}
-                  </p>
-                  <p className="text-xs text-gray-500">
-                    {selectedSerre.surface} m² • {selectedSerre.bilansCount} billons
-                  </p>
+                  <div className="text-sm text-gray-700 mb-1">
+                    Variété: <span className="text-gray-900">{selectedSerre.variety || '—'}</span>
+                  </div>
+                  <div className="text-xs text-gray-500 mb-3">
+                    {selectedSerre.surface} m² • {selectedSerre.zones.length} zones
+                  </div>
+                  {/* Guides (culture) */}
+                  <div className="mt-2">
+                    <div className="text-sm font-semibold text-gray-900 mb-1">Guides de culture</div>
+                    {selectedSerreGuides.length === 0 ? (
+                      <div className="text-xs text-gray-500">Aucun guide associé</div>
+                    ) : (
+                      <ul className="text-xs text-gray-700 list-disc pl-4 space-y-1 max-h-28 overflow-auto">
+                        {selectedSerreGuides.map((g: any) => (
+                          <li key={g.id}>{g.nom} {g.variete ? `(Variété: ${g.variete})` : ''}</li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                  {/* Bilans (billons) */}
+                  <div className="mt-3">
+                    <div className="text-sm font-semibold text-gray-900 mb-1">Billons</div>
+                    {selectedSerreBilans.length === 0 ? (
+                      <div className="text-xs text-gray-500">Aucun billon</div>
+                    ) : (
+                      <ul className="text-xs text-gray-700 list-disc pl-4 space-y-1 max-h-28 overflow-auto">
+                        {selectedSerreBilans.map((b: any) => (
+                          <li key={b.id}>
+                            {b.nom || `Bilan #${b.id}`} {b.trimestre ? `• T${b.trimestre}` : ''} {b.annee ? `• ${b.annee}` : ''}
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
                   {selectedSerre.assignedTechnicians && selectedSerre.assignedTechnicians.length > 0 && (
                     <p className="text-xs text-blue-600 mt-1">
                       {selectedSerre.assignedTechnicians.length === 1 ? (
@@ -1124,7 +1194,7 @@ export default function TechnicienSupDashboard(): JSX.Element {
                     </p>
                   )}
 
-                  <div className="mt-3">
+                  <div className="mt-3 grid grid-cols-2 gap-2">
                     <Button 
                       size="sm" 
                       variant="outline" 
@@ -1132,6 +1202,13 @@ export default function TechnicienSupDashboard(): JSX.Element {
                       onClick={() => setIsAssignDialogOpen(true)}
                     >
                       Assigner un technicien
+                    </Button>
+                    <Button
+                      size="sm"
+                      className="w-full"
+                      onClick={() => setIsDetailsOpen(true)}
+                    >
+                      Voir détails
                     </Button>
                   </div>
                 </div>
@@ -1141,6 +1218,106 @@ export default function TechnicienSupDashboard(): JSX.Element {
           </ResizablePanel>
         </ResizablePanelGroup>
       </div>
+
+      {/* Details Sheet for selected serre */}
+      <Sheet open={isDetailsOpen} onOpenChange={setIsDetailsOpen}>
+        <SheetContent side="right" className="w-full sm:max-w-xl">
+          <SheetHeader>
+            <SheetTitle>Détails de la serre</SheetTitle>
+            <SheetDescription>
+              Informations détaillées et lecture seule
+            </SheetDescription>
+          </SheetHeader>
+          <div className="mt-4 space-y-6">
+            {/* Summary */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Résumé</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2 text-sm">
+                <div className="flex items-center justify-between">
+                  <span className="text-gray-600">Nom</span>
+                  <span className="font-medium">{selectedSerre?.nom}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-gray-600">Variété</span>
+                  <span className="font-medium">{selectedSerre?.variety || '—'}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-gray-600">Surface</span>
+                  <span className="font-medium">{selectedSerre?.surface ?? 0} m²</span>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Guides */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Guides de culture</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {selectedSerreGuides.length === 0 ? (
+                  <div className="text-sm text-gray-500">Aucun guide associé</div>
+                ) : (
+                  <div className="space-y-3">
+                    {selectedSerreGuides.map((g: any) => (
+                      <div key={g.id} className="border rounded-md p-3">
+                        <div className="font-medium text-gray-900">{g.nom || 'Guide'}</div>
+                        <div className="text-xs text-gray-600">Variété: {g.variete || '—'}</div>
+                        {g.rendement && (
+                          <div className="text-xs text-gray-600">Rendement: {g.rendement}</div>
+                        )}
+                        {(g.date_debut_saison || g.date_fin_saison) && (
+                          <div className="text-xs text-gray-600">
+                            Saison: {g.date_debut_saison || '—'} → {g.date_fin_saison || '—'}
+                          </div>
+                        )}
+                        {g.nombre_de_plants && (
+                          <div className="text-xs text-gray-600">Nombre de plants: {g.nombre_de_plants}</div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Billons */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Billons</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {selectedSerreBilans.length === 0 ? (
+                  <div className="text-sm text-gray-500">Aucun billon</div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    {selectedSerreBilans.map((b: any) => {
+                      const etat = b.etat || b.status || b.statut || '—';
+                      const createdBy = b.created_by_name || b.created_by || b.auteur || b.id_user || 'Inconnu';
+                      return (
+                        <div key={b.id} className="border rounded-md p-3 text-sm">
+                          <div className="font-medium text-gray-900 mb-1">{b.nom || `Bilan #${b.id}`}</div>
+                          <div className="text-xs text-gray-600 mb-1">
+                            Période: {b.trimestre ? `T${b.trimestre}` : '—'} {b.annee || ''}
+                          </div>
+                          <div className="text-xs text-gray-600 mb-1">État: {etat}</div>
+                          <div className="text-xs text-gray-600">Créé par: {createdBy}</div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+          <div className="p-4">
+            <SheetClose asChild>
+              <Button variant="outline" className="w-full">Fermer</Button>
+            </SheetClose>
+          </div>
+        </SheetContent>
+      </Sheet>
 
       {/* Mobile Layout - Full Screen Map */}
       <div className="lg:hidden h-full relative">

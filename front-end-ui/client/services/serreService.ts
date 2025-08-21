@@ -443,6 +443,27 @@ getAllSerres: async (): Promise<ExtendedSerre[]> => {
     }
   },
   
+  // Delete an autorisation by id
+  deleteAutorisationSerre: async (
+    autorisationId: number
+  ): Promise<void> => {
+    try {
+      await axios.delete(
+        `${API_BASE_URL}/autorisation_serre/${autorisationId}`,
+        createAuthenticatedRequest()
+      );
+    } catch (error: any) {
+      console.error("Erreur lors de la suppression d'autorisation serre:", error);
+      const errorMessage =
+        error.response?.data?.message ||
+        "Erreur lors de la suppression d'autorisation serre";
+      throw {
+        message: errorMessage,
+        status: error.response?.status || 500,
+      } as ApiError;
+    }
+  },
+  
   // Get bilans by serre
   getBilansBySerre: async (serreId: number): Promise<any[]> => {
     try {

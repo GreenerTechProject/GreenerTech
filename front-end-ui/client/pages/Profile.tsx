@@ -13,13 +13,14 @@ import {
   Mail, 
   Calendar,
   Building2,
-  Sprout
+  Sprout,
+  Trash2
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { companyService } from "../services/companyService";
 
 export default function Profile() {
-  const { user, logout } = useAuth();
+  const { user, logout, deleteUser } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [userInfo, setUserInfo] = useState<any>(null);
@@ -132,6 +133,24 @@ export default function Profile() {
       navigate("/technicien-sup/profile/edit");
     } else {
       navigate("/technician/profile/edit");
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    if (window.confirm("Êtes-vous sûr de vouloir supprimer votre compte ? Cette action est irréversible.")) {
+      try {
+        await deleteUser();
+        toast({
+          title: "Compte supprimé",
+          description: "Votre compte a été supprimé avec succès",
+        });
+      } catch (error) {
+        toast({
+          title: "Erreur",
+          description: "Erreur lors de la suppression du compte",
+          variant: "destructive",
+        });
+      }
     }
   };
 
@@ -269,6 +288,14 @@ export default function Profile() {
           >
             <Edit className="w-4 h-4 mr-2" />
             Modifier le profil
+          </Button>
+          <Button 
+            onClick={handleDeleteAccount}
+            variant="outline"
+            className="flex-1 border-red-300 text-red-700 hover:bg-red-50"
+          >
+            <Trash2 className="w-4 h-4 mr-2" />
+            Supprimer le compte
           </Button>
         </div>
       </Card>
