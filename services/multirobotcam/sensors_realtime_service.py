@@ -117,7 +117,7 @@ async def sensor_data_handler(request):
 
                                 timanow = datetime.now().strftime("%Y%m%d%H%M%S")
                                 image_filename = f"{qrdata['id']}_{timanow}.jpg"
-                                s3_key = f"images/{image_filename}"   # مكان التخزين داخل S3
+                                s3_key = f"images/{image_filename}"
 
                                 buffer = BytesIO()
                                 pil_img.save(buffer, format="JPEG", quality=95)
