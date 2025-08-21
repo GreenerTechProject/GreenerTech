@@ -16,6 +16,8 @@ export interface Bilan {
   surface?: number;
   center_lat?: number;
   center_lng?: number;
+  created_by?: number;
+  created_by_name?: string;
   position: BilanPoint[];
 }
 

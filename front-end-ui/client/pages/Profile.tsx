@@ -273,20 +273,20 @@ export default function Profile() {
         </CardContent>
 
         {/* Action Buttons */}
-        <div className="p-6 pt-0 space-y-3">
+        <div className="p-6 pt-0 flex flex-col space-y-3">
           <Button
             variant="outline"
             onClick={handleLogout}
             className="w-full border-gray-300 text-gray-700 hover:bg-gray-50"
           >
-            <ArrowLeft className="w-4 h-4 mr-2" />
+            <ArrowLeft className="h-4 w-4 mr-2" />
             Se déconnecter
           </Button>
           <Button
             onClick={handleEditProfile}
             className="w-full bg-green-600 hover:bg-green-700 text-white"
           >
-            <Edit className="w-4 h-4 mr-2" />
+            <Edit className="h-4 w-4 mr-2" />
             Modifier le profil
           </Button>
           <Button 
@@ -294,7 +294,7 @@ export default function Profile() {
             variant="outline"
             className="w-full border-red-300 text-red-700 hover:bg-red-50"
           >
-            <Trash2 className="w-4 h-4 mr-2" />
+            <Trash2 className="h-4 w-4 mr-2" />
             Supprimer le compte
           </Button>
         </div>

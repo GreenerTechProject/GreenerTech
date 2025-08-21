@@ -62,6 +62,7 @@ def create_bilan(current_user):
         center_lng=data.get('center', {}).get('lng') if data.get('center') else None,
         id_group_cor=id_group_cor,
         id_serre=serre.id,
+        created_by=current_user.id,  # Store who created the bilan
         #id_entreprise=entreprise.id
     )
     db.session.add(bilan)

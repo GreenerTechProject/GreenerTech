@@ -839,6 +839,18 @@ export default function TechnicienSupDashboard(): JSX.Element {
   const [selectedSerreGuides, setSelectedSerreGuides] = useState<any[]>([]);
   const [selectedSerreBilans, setSelectedSerreBilans] = useState<any[]>([]);
   const [selectedSerreBilanEtats, setSelectedSerreBilanEtats] = useState<Record<number, EtatBilan | undefined>>({});
+  const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
+    summary: true,
+    guides: true,
+    billons: true
+  });
+
+  const toggleSection = (section: string) => {
+    setExpandedSections(prev => ({
+      ...prev,
+      [section]: !prev[section]
+    }));
+  };
 
   // Load guide(s) and bilans for selected serre (read-only)
   useEffect(() => {
@@ -1214,107 +1226,228 @@ export default function TechnicienSupDashboard(): JSX.Element {
 
       {/* Details Sheet for selected serre */}
       <Sheet open={isDetailsOpen} onOpenChange={setIsDetailsOpen}>
-        <SheetContent side="right" className="w-full sm:max-w-xl">
-          <SheetHeader>
-            <SheetTitle>Détails de la serre</SheetTitle>
-            <SheetDescription>
+        <SheetContent 
+          side="right" 
+          className="w-full sm:w-[400px] md:w-[500px] lg:w-[600px] xl:w-[700px] max-h-screen"
+        >
+          <SheetHeader className="sticky top-0 bg-white z-10 pb-4 border-b">
+            <SheetTitle className="text-lg md:text-xl">Détails de la serre</SheetTitle>
+            <SheetDescription className="text-sm md:text-base">
               Informations détaillées et lecture seule
             </SheetDescription>
           </SheetHeader>
-          <div className="mt-4 space-y-6">
+          <div className="mt-4 space-y-6 overflow-y-auto max-h-[calc(100vh-140px)] pr-2">
             {/* Summary */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base">Résumé</CardTitle>
+            <Card className="shadow-sm border-gray-200">
+              <CardHeader className="pb-3 cursor-pointer hover:bg-gray-50 transition-colors rounded-t-lg" onClick={() => toggleSection('summary')}>
+                <CardTitle className="text-base md:text-lg flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 rounded-full bg-green-500"></div>
+                    Informations générales
+                  </div>
+                  <div className="text-gray-400 text-lg font-bold">
+                    {expandedSections.summary ? '−' : '+'}
+                  </div>
+                </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-2 text-sm">
-                <div className="flex items-center justify-between">
-                  <span className="text-gray-600">Nom</span>
-                  <span className="font-medium">{selectedSerre?.nom}</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-gray-600">Variété</span>
-                  <span className="font-medium">{selectedSerre?.variety || '—'}</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-gray-600">Surface</span>
-                  <span className="font-medium">{selectedSerre?.surface ?? 0} m²</span>
-                </div>
-              </CardContent>
+              {expandedSections.summary && (
+                <CardContent className="pt-0">
+                  <div className="grid grid-cols-1 gap-3 text-sm">
+                    <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200">
+                      <span className="text-gray-600 font-medium">Nom</span>
+                      <span className="font-semibold text-gray-900">{selectedSerre?.nom}</span>
+                    </div>
+                    <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200">
+                      <span className="text-gray-600 font-medium">Variété</span>
+                      <span className="font-semibold text-gray-900">{selectedSerre?.variety || '—'}</span>
+                    </div>
+                    <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200">
+                      <span className="text-gray-600 font-medium">Surface</span>
+                      <span className="font-semibold text-gray-900">{selectedSerre?.surface ?? 0} m²</span>
+                    </div>
+                    <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200">
+                      <span className="text-gray-600 font-medium">Zones</span>
+                      <span className="font-semibold text-gray-900">{selectedSerre?.zones?.length || 0}</span>
+                    </div>
+                  </div>
+                </CardContent>
+              )}
             </Card>
 
             {/* Guides */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base">Guides de culture</CardTitle>
+            <Card className="shadow-sm border-gray-200">
+              <CardHeader className="pb-3 cursor-pointer hover:bg-gray-50 transition-colors rounded-t-lg" onClick={() => toggleSection('guides')}>
+                <CardTitle className="text-base md:text-lg flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 rounded-full bg-blue-500"></div>
+                    Guides de culture ({selectedSerreGuides.length})
+                  </div>
+                  <div className="text-gray-400 text-lg font-bold">
+                    {expandedSections.guides ? '−' : '+'}
+                  </div>
+                </CardTitle>
               </CardHeader>
-              <CardContent>
+              {expandedSections.guides && (
+                <CardContent className="pt-0">
                 {selectedSerreGuides.length === 0 ? (
-                  <div className="text-sm text-gray-500">Aucun guide associé</div>
+                  <div className="text-center py-6 text-gray-500">
+                    <div className="text-4xl mb-2">🌱</div>
+                    <div className="text-sm">Aucun guide associé</div>
+                  </div>
                 ) : (
                   <div className="space-y-3">
                     {selectedSerreGuides.map((g: any) => (
-                      <div key={g.id} className="border rounded-md p-3">
-                        <div className="font-medium text-gray-900">{g.nom || 'Guide'}</div>
-                        <div className="text-xs text-gray-600">Variété: {g.variete || '—'}</div>
-                        {g.rendement && (
-                          <div className="text-xs text-gray-600">Rendement: {g.rendement}</div>
-                        )}
+                      <div key={g.id} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+                        <div className="flex items-start justify-between mb-2">
+                          <h4 className="font-semibold text-gray-900 text-sm md:text-base">{g.nom || 'Guide'}</h4>
+                          <Badge variant="outline" className="text-xs">{g.variete || '—'}</Badge>
+                        </div>
+                        <div className="grid grid-cols-1 gap-2 text-xs text-gray-600">
+                          {g.rendement && (
+                            <div className="flex items-center justify-between p-2 bg-gray-50 rounded-md">
+                              <span className="font-medium text-gray-700">Rendement:</span>
+                              <span className="font-semibold text-gray-900">
+                                {typeof g.rendement === 'number' ? g.rendement.toFixed(2) : g.rendement}
+                              </span>
+                            </div>
+                          )}
+                          {g.nombre_de_plants && (
+                            <div className="flex items-center justify-between p-2 bg-gray-50 rounded-md">
+                              <span className="font-medium text-gray-700">Plants:</span>
+                              <span className="font-semibold text-gray-900">{g.nombre_de_plants}</span>
+                            </div>
+                          )}
+                        </div>
                         {(g.date_debut_saison || g.date_fin_saison) && (
-                          <div className="text-xs text-gray-600">
-                            Saison: {g.date_debut_saison || '—'} → {g.date_fin_saison || '—'}
+                          <div className="mt-2 p-2 bg-blue-50 rounded-md">
+                            <div className="text-xs font-medium text-blue-800 mb-1">Période de culture</div>
+                            <div className="text-xs text-blue-700">
+                              {g.date_debut_saison || '—'} → {g.date_fin_saison || '—'}
+                            </div>
                           </div>
-                        )}
-                        {g.nombre_de_plants && (
-                          <div className="text-xs text-gray-600">Nombre de plants: {g.nombre_de_plants}</div>
                         )}
                       </div>
                     ))}
                   </div>
                 )}
-              </CardContent>
+                </CardContent>
+              )}
             </Card>
 
             {/* Billons */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base">Billons</CardTitle>
+            <Card className="shadow-sm border-gray-200">
+              <CardHeader className="pb-3 cursor-pointer hover:bg-gray-50 transition-colors rounded-t-lg" onClick={() => toggleSection('billons')}>
+                <CardTitle className="text-base md:text-lg flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 rounded-full bg-purple-500"></div>
+                    Billons ({selectedSerreBilans.length})
+                  </div>
+                  <div className="text-gray-400 text-lg font-bold">
+                    {expandedSections.billons ? '−' : '+'}
+                  </div>
+                </CardTitle>
               </CardHeader>
-              <CardContent>
+              {expandedSections.billons && (
+                <CardContent className="pt-0">
                 {selectedSerreBilans.length === 0 ? (
-                  <div className="text-sm text-gray-500">Aucun billon</div>
+                  <div className="text-center py-6 text-gray-500">
+                    <div className="text-4xl mb-2">📊</div>
+                    <div className="text-sm">Aucun billon</div>
+                  </div>
                 ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div className="space-y-3">
                     {selectedSerreBilans.map((b: any) => {
                       const etat = selectedSerreBilanEtats[b.id];
-                      const etatLabel = etat?.etat || etat?.status || etat?.statut || '—';
+                      const etatLabel = b.etat || b.status || b.statut || '—';
                       const createdBy = b.created_by_name || b.created_by || b.auteur || b.id_user || 'Inconnu';
                       return (
-                        <div key={b.id} className="border rounded-md p-3 text-sm">
-                          <div className="font-medium text-gray-900 mb-1">{b.nom || `Bilan #${b.id}`}</div>
-                          <div className="text-xs text-gray-600 mb-1">
-                            Période: {b.trimestre ? `T${b.trimestre}` : '—'} {b.annee || ''}
+                        <div key={b.id} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+                          <div className="flex items-start justify-between mb-3">
+                            <div>
+                              <h4 className="font-semibold text-gray-900 text-sm md:text-base mb-1">
+                                {b.nom || `Bilan #${b.id}`}
+                              </h4>
+                              <div className="flex items-center gap-2 text-xs text-gray-600">
+                                <Badge variant="outline" className="text-xs">
+                                  {b.trimestre ? `T${b.trimestre}` : '—'} {b.annee || ''}
+                                </Badge>
+                                <Badge variant="secondary" className="text-xs">
+                                  {etatLabel}
+                                </Badge>
+                              </div>
+                            </div>
                           </div>
-                          <div className="text-xs text-gray-600 mb-1">État: {etatLabel}</div>
+                          
                           {etat && (
-                            <div className="grid grid-cols-2 gap-2 text-xs text-gray-700 mb-1">
-                              {typeof etat.temperature === 'number' && <div>Temp: {etat.temperature}°C</div>}
-                              {typeof etat.humidite === 'number' && <div>Humidité: {etat.humidite}%</div>}
-                              {typeof etat.luminosite === 'number' && <div>Luminosité: {etat.luminosite}</div>}
-                              {typeof etat.co2 === 'number' && <div>CO₂: {etat.co2} ppm</div>}
-                              {typeof etat.rendement === 'number' && <div>Rendement: {etat.rendement}</div>}
+                            <div className="mb-3 p-3 bg-purple-50 rounded-md">
+                              <div className="text-xs font-medium text-purple-800 mb-2">Métriques environnementales</div>
+                              <div className="grid grid-cols-1 gap-2 text-xs">
+                                {typeof etat.temperature === 'number' && (
+                                  <div className="flex items-center justify-between p-2 bg-white rounded-md border border-gray-200">
+                                    <div className="flex items-center gap-2">
+                                      <span className="text-purple-600">🌡️</span>
+                                      <span className="font-medium text-gray-700">Température:</span>
+                                    </div>
+                                    <span className="font-semibold text-gray-900">{etat.temperature.toFixed(2)}°C</span>
+                                  </div>
+                                )}
+                                {typeof etat.humidite === 'number' && (
+                                  <div className="flex items-center justify-between p-2 bg-white rounded-md border border-gray-200">
+                                    <div className="flex items-center gap-2">
+                                      <span className="text-purple-600">💧</span>
+                                      <span className="font-medium text-gray-700">Humidité:</span>
+                                    </div>
+                                    <span className="font-semibold text-gray-900">{etat.humidite.toFixed(2)}%</span>
+                                  </div>
+                                )}
+                                {typeof etat.luminosite === 'number' && (
+                                  <div className="flex items-center justify-between p-2 bg-white rounded-md border border-gray-200">
+                                    <div className="flex items-center gap-2">
+                                      <span className="text-purple-600">☀️</span>
+                                      <span className="font-medium text-gray-700">Luminosité:</span>
+                                    </div>
+                                    <span className="font-semibold text-gray-900">{etat.luminosite.toFixed(2)}</span>
+                                  </div>
+                                )}
+                                {typeof etat.co2 === 'number' && (
+                                  <div className="flex items-center justify-between p-2 bg-white rounded-md border border-gray-200">
+                                    <div className="flex items-center gap-2">
+                                      <span className="text-purple-600">🌬️</span>
+                                      <span className="font-medium text-gray-700">CO₂:</span>
+                                    </div>
+                                    <span className="font-semibold text-gray-900">{etat.co2.toFixed(2)} ppm</span>
+                                  </div>
+                                )}
+                                {typeof etat.rendement === 'number' && (
+                                  <div className="flex items-center justify-between p-2 bg-white rounded-md border border-gray-200">
+                                    <div className="flex items-center gap-2">
+                                      <span className="text-purple-600">📈</span>
+                                      <span className="font-medium text-gray-700">Rendement:</span>
+                                    </div>
+                                    <span className="font-semibold text-gray-900">{etat.rendement.toFixed(2)}</span>
+                                  </div>
+                                )}
+                              </div>
                             </div>
                           )}
-                          <div className="text-xs text-gray-600">Créé par: {createdBy}</div>
+                          
+                          <div className="flex items-center justify-between text-xs text-gray-600">
+                            <span className="flex items-center gap-1">
+                              <span>👤</span>
+                              <span className="font-medium">Créé par:</span>
+                              <span>{createdBy}</span>
+                            </span>
+                          </div>
                         </div>
                       );
                     })}
                   </div>
                 )}
-              </CardContent>
+                </CardContent>
+              )}
             </Card>
           </div>
-          <div className="p-4">
+          <div className="sticky bottom-0 bg-white border-t p-4">
             <SheetClose asChild>
               <Button variant="outline" className="w-full">Fermer</Button>
             </SheetClose>

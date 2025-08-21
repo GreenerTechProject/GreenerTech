@@ -13,12 +13,20 @@ class Bilan(db.Model):
     center_lng = Column(Float, nullable=True)
     #id_entreprise = Column(Integer, ForeignKey("entreprises.id"), nullable=False)
     id_serre = Column(Integer, ForeignKey("serres.id"), nullable=False)
+    created_by = Column(Integer, ForeignKey("users.id"), nullable=True)  # Track who created the bilan
 
     group_coords = relationship(
         "GroupCor",
         primaryjoin="Bilan.id_group_cor == foreign(GroupCor.id_group_cor)",
         lazy="joined",
         viewonly=True
+    )
+
+    # Relationship to get creator information
+    creator = relationship(
+        "User",
+        foreign_keys=[created_by],
+        lazy="joined"
     )
 
     def to_dict(self):
@@ -33,5 +41,7 @@ class Bilan(db.Model):
             #"id_group_cor": self.id_group_cor,
             #"id_entreprise": self.id_entreprise,
             "id_serre": self.id_serre,
+            "created_by": self.created_by,
+            "created_by_name": self.creator.name if self.creator else None,
             "position": [g.to_dict() for g in self.group_coords] if self.group_coords else []
         }
