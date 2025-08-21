@@ -211,11 +211,21 @@ const TechHeader: React.FC<TechHeaderProps> = ({ role }) => {
           {/* Left: Hamburger / Navigation + Logo */}
           <div className="justify-self-start flex items-center gap-2">
             <TechnicianSidebar userRole={role} />
-            {/* Mobile: show newest logo; Desktop: keep current */}
+            {/* Mobile: leaf logo; Desktop: text logo */}
+            <img 
+              src="/GreenerTech-logo2.jpg" 
+              alt="GreenerTech"
+              className="h-8 w-auto object-contain cursor-pointer sm:hidden"
+              title="Accueil"
+              role="button"
+              tabIndex={0}
+              onClick={() => navigate(role === "technicien_sup" ? "/technicien-sup/home" : "/technician/dashboard")}
+              onKeyDown={(e) => e.key === 'Enter' && navigate(role === "technicien_sup" ? "/technicien-sup/home" : "/technician/dashboard")}
+            />
             <img 
               src="/GreenerTech-logo3.jpg" 
-              alt="GreenerTech" 
-              className="h-14 w-auto object-contain cursor-pointer"
+              alt="GreenerTech"
+              className="h-8 w-auto object-contain cursor-pointer hidden sm:block"
               title="Accueil"
               role="button"
               tabIndex={0}

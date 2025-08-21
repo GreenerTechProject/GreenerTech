@@ -54,8 +54,6 @@ import RobotControl from "./pages/RobotControl";
 import TechnicianReportsPage from "./pages/TechnicianReportsPage";
 import TechnicianReportCreation from "./pages/TechnicianReportCreation";
 import TechSupNotificationsPage from "./pages/TechSupNotificationsPage";
-import NotificationsPage from "./pages/NotificationsPage";
-import InterventionDetails from "./pages/InterventionDetails";
 import AssignmentManagement from "./pages/AssignmentManagement";
 import RobotConfig from "./pages/RobotConfig";
 import CompanyUpdate from "./pages/CompanyUpdate";
@@ -321,13 +319,12 @@ const App = () => (
               <Route path="missions" element={<MissionManagement />} />
               <Route path="reports" element={<TechnicianReportsPage />} />
               <Route path="reports/create" element={<TechnicianReportCreation />} />
-              <Route path="notifications" element={<NotificationsPage />} />
-              <Route path="interventions/:id" element={<InterventionDetails />} />
+              <Route path="notifications" element={<TechSupNotificationsPage />} />
               <Route path="profile" element={<Profile />} />
               <Route path="profile/edit" element={<ProfileEdit />} />
             </Route>
 
-            {/* Technicien Sup Routes (group with layout) */}
+            {/* Technicien Sup Routes wrapped with TechnicienSupLayout */}
             <Route
               path="/technicien-sup"
               element={
@@ -338,13 +335,22 @@ const App = () => (
             >
               <Route index element={<TechnicienSupDashboard />} />
               <Route path="map" element={<TechnicienSupDashboard />} />
-              <Route path="notifications" element={<TechSupNotificationsPage />} />
+              <Route path="alerts" element={<TechnicienSupAlerts />} />
+              <Route path="interventions" element={<TechnicienSupInterventions />} />
               <Route path="reports" element={<TechnicienSupReports />} />
-              <Route path="alerts" element={<Alerts />} />
-              <Route path="interventions" element={<Interventions />} />
+              <Route path="notifications" element={<TechSupNotificationsPage />} />
               <Route path="profile" element={<TechnicienSupProfile />} />
               <Route path="profile/edit" element={<ProfileEdit />} />
             </Route>
+
+            <Route
+              path="/technicien-sup-dashboard"
+              element={
+                <ProtectedRoute requiredRole="technicien_superieur">
+                  <Navigate to="/technicien-sup" replace />
+                </ProtectedRoute>
+              }
+            />
 
             {/* General Feature Routes */}
 

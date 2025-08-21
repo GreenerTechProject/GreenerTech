@@ -21,7 +21,7 @@ import {
   ArrowLeft
 } from "lucide-react";
 import { InterventionService, Intervention } from "../services/interventionService";
-import { notificationService } from "../services/notificationService";
+import { notificationService, Notification } from "../services/notificationService";
 import { useToast } from "../hooks/use-toast";
 
 export default function InterventionRequestDetails() {
@@ -37,6 +37,7 @@ export default function InterventionRequestDetails() {
   const [rejectReason, setRejectReason] = useState("");
   const [showRejectDialog, setShowRejectDialog] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [notificationMeta, setNotificationMeta] = useState<Notification | null>(null);
 
   const notificationId = searchParams.get('notificationId');
 
@@ -45,6 +46,18 @@ export default function InterventionRequestDetails() {
       fetchIntervention();
     }
   }, [id]);
+
+  useEffect(() => {
+    const nid = notificationId ? parseInt(notificationId) : undefined;
+    if (!nid) return;
+    (async () => {
+      try {
+        const list = await notificationService.getNotifications();
+        const match = list.find(n => n.id === nid);
+        if (match) setNotificationMeta(match);
+      } catch (_) {}
+    })();
+  }, [notificationId]);
 
   const fetchIntervention = async () => {
     try {
@@ -203,6 +216,13 @@ export default function InterventionRequestDetails() {
               <CardTitle className="text-xl">Intervention #{intervention.id}</CardTitle>
               <CardDescription>
                 Demande créée le {new Date(intervention.created_at || intervention.date_debut).toLocaleDateString('fr-FR')}
+                {notificationMeta && (
+                  <>
+                    {" • "}Notification reçue le {new Date(notificationMeta.date).toLocaleDateString('fr-FR', {
+                      day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'
+                    })}
+                  </>
+                )}
               </CardDescription>
             </div>
             {getStatusBadge(intervention.status)}

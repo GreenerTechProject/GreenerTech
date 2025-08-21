@@ -69,10 +69,21 @@ export default function DirectorHeader({ isSidebarOpen, onMenuClick }: DirectorH
                 )}
               </Button>
             )}
+            {/* Mobile: leaf logo; Desktop: text logo */}
+            <img
+              src="/GreenerTech-logo2.jpg"
+              alt="GreenerTech"
+              className="h-10 w-auto object-contain cursor-pointer sm:hidden"
+              title="Accueil"
+              role="button"
+              tabIndex={0}
+              onClick={() => navigate("/directeur")}
+              onKeyDown={(e) => e.key === 'Enter' && navigate("/directeur")}
+            />
             <img
               src="/GreenerTech-logo3.jpg"
               alt="GreenerTech"
-              className="h-14 w-auto object-contain cursor-pointer"
+              className="h-14 w-auto object-contain cursor-pointer hidden sm:block"
               title="Accueil"
               role="button"
               tabIndex={0}

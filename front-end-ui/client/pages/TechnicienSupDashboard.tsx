@@ -273,14 +273,6 @@ export default function TechnicienSupDashboard(): JSX.Element {
   };
   
 
-  // Mock technicians list
-  const mockTechnicians = [
-    { id: "tech1", name: "Jean Dupont", email: "jean.dupont@example.com" },
-    { id: "tech2", name: "Marie Martin", email: "marie.martin@example.com" },
-    { id: "tech3", name: "Paul Bernard", email: "paul.bernard@example.com" },
-    { id: "tech4", name: "Sophie Durand", email: "sophie.durand@example.com" },
-  ];
-
   // Initialize map when Google Maps script is loaded
   useEffect(() => {
     if (map) return;
@@ -357,8 +349,15 @@ export default function TechnicienSupDashboard(): JSX.Element {
             }
             // Ensure we have an array and normalize the data
             const normalizedList = Array.isArray(list) ? list : [];
-            console.log('[TechSup] Setting normalized technicians list:', normalizedList);
-            setCompanyTechnicians(normalizedList);
+            // Filter: only regular technicians assigned to the current supervisor
+            const supervisorId = user?.id;
+            const filteredList = normalizedList.filter((t: any) => {
+              const isRegularTechnician = t.role === 'technicien';
+              const isAssignedToSupervisor = t.id_assigned != null && String(t.id_assigned) === String(supervisorId);
+              return isRegularTechnician && isAssignedToSupervisor;
+            });
+            console.log('[TechSup] Setting filtered technicians list (assigned to current supervisor):', filteredList);
+            setCompanyTechnicians(filteredList);
           } catch (error) {
             console.error('[TechSup] Error fetching technicians:', error);
             setCompanyTechnicians([]);
@@ -732,7 +731,6 @@ export default function TechnicienSupDashboard(): JSX.Element {
         return "bg-gray-100 text-gray-800 border-gray-300";
     }
   };
-
   const getZoneIcon = (type: string) => {
     switch (type) {
       case "irrigation":
@@ -912,7 +910,7 @@ export default function TechnicienSupDashboard(): JSX.Element {
                         </div>
                         <div className="flex items-center justify-between text-xs text-gray-500">
                           <span>{serre.surface} m²</span>
-                          <span>Bilans: {serre.bilansCount ?? 0}</span>
+                          <span>Billons: {serre.bilansCount ?? 0}</span>
                         </div>
                         {serre.assignedTechnicians && serre.assignedTechnicians.length > 0 && (
                           <div className="mt-2 pt-2 border-t border-gray-100">
@@ -1084,7 +1082,7 @@ export default function TechnicienSupDashboard(): JSX.Element {
                     {selectedSerre.variety}
                   </p>
                   <p className="text-xs text-gray-500">
-                    {selectedSerre.surface} m² • {selectedSerre.zones.length} zones
+                    {selectedSerre.surface} m² • {selectedSerre.bilansCount} billons
                   </p>
                   {selectedSerre.assignedTechnicians && selectedSerre.assignedTechnicians.length > 0 && (
                     <p className="text-xs text-blue-600 mt-1">
@@ -1114,29 +1112,6 @@ export default function TechnicienSupDashboard(): JSX.Element {
                 </div>
               )}
 
-              {/* Alerts Overlay Panel on Map */}
-              <div className="absolute top-4 left-4 z-10 bg-white/95 backdrop-blur rounded-lg shadow p-3 sm:p-4 border">
-                <div className="flex items-center justify-between gap-3">
-                  <div className="flex items-center gap-2">
-                    <Bell className="h-4 w-4 text-red-500" />
-                    <span className="font-semibold text-sm">Alertes</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-xs">
-                    <span className="px-1.5 py-0.5 rounded bg-green-100 text-green-700">Faible: {alertsSummary.low}</span>
-                    <span className="px-1.5 py-0.5 rounded bg-yellow-100 text-yellow-700">Moyen: {alertsSummary.medium}</span>
-                    <span className="px-1.5 py-0.5 rounded bg-red-100 text-red-700">Élevé: {alertsSummary.high}</span>
-                  </div>
-                </div>
-                <div className="mt-2 flex items-center justify-between gap-3">
-                  <label className="text-xs text-gray-600">Heatmap</label>
-                  <input type="checkbox" checked={showHeatmap} onChange={(e) => {
-                    setShowHeatmap(e.target.checked);
-                    if (heatmapRef.current) {
-                      heatmapRef.current.setMap(e.target.checked ? map! : null);
-                    }
-                  }} />
-                </div>
-              </div>
             </div>
           </ResizablePanel>
         </ResizablePanelGroup>
@@ -1452,7 +1427,7 @@ export default function TechnicienSupDashboard(): JSX.Element {
                         </div>
                       </div>
                       <div className="flex items-center justify-between text-xs text-gray-500">
-                        <span>Bilans: {serre.bilansCount ?? 0}</span>
+                        <span>Billons: {serre.bilansCount ?? 0}</span>
                         {serre.supervisedBy && (
                           <span className="text-blue-600 truncate max-w-[120px]">
                             {serre.supervisedBy}
@@ -1533,7 +1508,7 @@ export default function TechnicienSupDashboard(): JSX.Element {
                   {selectedSerre.variety}
                 </p>
                 <p className="text-xs text-gray-500">
-                  {selectedSerre.surface} m² • {selectedSerre.zones.length} zones
+                  {selectedSerre.surface} m² • {selectedSerre.bilansCount} billons
                 </p>
                 {selectedSerre.supervisedBy && (
                   <p className="text-xs text-blue-600 mt-1">
@@ -1618,7 +1593,6 @@ export default function TechnicienSupDashboard(): JSX.Element {
         isOpen={isInterventionFormOpen}
         onClose={() => setIsInterventionFormOpen(false)}
         onSubmit={handleInterventionSubmit}
-        onSaveDraft={handleInterventionSaveDraft}
       />
     </div>
   );
