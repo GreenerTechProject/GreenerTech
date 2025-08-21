@@ -315,19 +315,23 @@ def generer_pdf_rapport(description, nom, id_serre, output_path, etat_bilan, ale
     HTML(string=html).write_pdf(output_path)
     
     
+    try:
+        s3_client = boto3.client('s3', region_name='us-east-1')
+        bucket_name = 'bucket-greenertech'
+        
+        pdf_bytes = BytesIO()
+        HTML(string=html).write_pdf(pdf_bytes)
+        pdf_bytes.seek(0)
 
-    s3_client = boto3.client('s3', region_name='us-east-1')
-    bucket_name = 'bucket-greenertech'
-    
-    pdf_bytes = BytesIO()
-    HTML(string=html).write_pdf(pdf_bytes)
-    pdf_bytes.seek(0)
+        nom_pdf_s3 = f"rapports/rapport_{uuid.uuid4().hex}.pdf"
 
-    nom_pdf_s3 = f"rapports/rapport_{uuid.uuid4().hex}.pdf"
+        s3_client.upload_fileobj(pdf_bytes, bucket_name, nom_pdf_s3, ExtraArgs={'ContentType': 'application/pdf'})
 
-    s3_client.upload_fileobj(pdf_bytes, bucket_name, nom_pdf_s3, ExtraArgs={'ContentType': 'application/pdf'})
-
-    url_pdf = f"https://{bucket_name}.s3.amazonaws.com/{nom_pdf_s3}"
+        url_pdf = f"https://{bucket_name}.s3.amazonaws.com/{nom_pdf_s3}"
+        
+    except Exception as e:
+        print(f"❌ Error: {e}")
+        return output_path
     return url_pdf
 
 
