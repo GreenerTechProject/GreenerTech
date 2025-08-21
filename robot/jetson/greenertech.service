@@ -1,0 +1,14 @@
+[Unit]
+Description=GreenerTech Jetson Camera
+After=network.target
+
+[Service]
+Type=simple
+User=jetson
+WorkingDirectory=/home/jetson/Desktop/GreenerTech/robot/jetson
+ExecStart=/usr/bin/python3 camera_stream_cam_usb_webrtc.py
+Restart=on-failure
+Environment=PYTHONUNBUFFERED=1
+
+[Install]
+WantedBy=multi-user.target
