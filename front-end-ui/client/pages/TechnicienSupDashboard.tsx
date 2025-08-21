@@ -58,6 +58,7 @@ import type { Technician as ApiTechnician } from "../services/technicianService"
 import { guideService } from "../services/guideService";
 import { domainService, Domain as BackendDomain } from "../services/domainService";
 import { AlertService } from "@/services/alertService";
+import { etatBilanService, EtatBilan } from "@/services/etatBilanService";
 import axios from "axios";
 
 interface Serre {
@@ -837,12 +838,14 @@ export default function TechnicienSupDashboard(): JSX.Element {
   const [isMapLoading, setIsMapLoading] = useState(true);
   const [selectedSerreGuides, setSelectedSerreGuides] = useState<any[]>([]);
   const [selectedSerreBilans, setSelectedSerreBilans] = useState<any[]>([]);
+  const [selectedSerreBilanEtats, setSelectedSerreBilanEtats] = useState<Record<number, EtatBilan | undefined>>({});
 
   // Load guide(s) and bilans for selected serre (read-only)
   useEffect(() => {
     if (!selectedSerre) {
       setSelectedSerreGuides([]);
       setSelectedSerreBilans([]);
+      setSelectedSerreBilanEtats({});
       return;
     }
     (async () => {
@@ -858,9 +861,31 @@ export default function TechnicienSupDashboard(): JSX.Element {
       try {
         const sid = parseInt(selectedSerre.id, 10);
         const bilans = await serreService.getBilansBySerre(sid);
-        setSelectedSerreBilans(Array.isArray(bilans) ? bilans : []);
+        const list = Array.isArray(bilans) ? bilans : [];
+        setSelectedSerreBilans(list);
+        // Fetch etat for each bilan and keep the latest by date
+        const etatsEntries = await Promise.all(
+          list.map(async (b: any) => {
+            try {
+              const etats = await etatBilanService.getEtatBilanByBilan(Number(b.id));
+              if (Array.isArray(etats) && etats.length > 0) {
+                const latest = etats
+                  .slice()
+                  .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())[0];
+                return [Number(b.id), latest] as [number, EtatBilan];
+              }
+            } catch (_) {}
+            return [Number(b.id), undefined] as [number, EtatBilan | undefined];
+          })
+        );
+        const etatsMap: Record<number, EtatBilan | undefined> = {};
+        for (const [bid, etat] of etatsEntries) {
+          etatsMap[bid] = etat;
+        }
+        setSelectedSerreBilanEtats(etatsMap);
       } catch (_) {
         setSelectedSerreBilans([]);
+        setSelectedSerreBilanEtats({});
       }
     })();
     // Update heatmap to reflect selected serre filter
@@ -1127,9 +1152,9 @@ export default function TechnicienSupDashboard(): JSX.Element {
                 </GoogleMap>
               </GoogleMapsWrapper>
 
-              {/* Map Overlay Info: Selected Serre Details (read-only) */}
+              {/* Map Overlay Info: keep concise, detailed info moved to right panel */}
               {selectedSerre && (
-                <div className="absolute top-4 right-4 bg-white rounded-lg shadow-lg p-4 max-w-sm w-[360px]">
+                <div className="absolute top-4 right-4 bg-white rounded-lg shadow-lg p-4 max-w-xs">
                   <div className="flex items-center space-x-2 mb-2">
                     <div
                       className={cn(
@@ -1145,40 +1170,8 @@ export default function TechnicienSupDashboard(): JSX.Element {
                       {selectedSerre.nom}
                     </h4>
                   </div>
-                  <div className="text-sm text-gray-700 mb-1">
-                    Variété: <span className="text-gray-900">{selectedSerre.variety || '—'}</span>
-                  </div>
-                  <div className="text-xs text-gray-500 mb-3">
-                    {selectedSerre.surface} m² • {selectedSerre.zones.length} zones
-                  </div>
-                  {/* Guides (culture) */}
-                  <div className="mt-2">
-                    <div className="text-sm font-semibold text-gray-900 mb-1">Guides de culture</div>
-                    {selectedSerreGuides.length === 0 ? (
-                      <div className="text-xs text-gray-500">Aucun guide associé</div>
-                    ) : (
-                      <ul className="text-xs text-gray-700 list-disc pl-4 space-y-1 max-h-28 overflow-auto">
-                        {selectedSerreGuides.map((g: any) => (
-                          <li key={g.id}>{g.nom} {g.variete ? `(Variété: ${g.variete})` : ''}</li>
-                        ))}
-                      </ul>
-                    )}
-                  </div>
-                  {/* Bilans (billons) */}
-                  <div className="mt-3">
-                    <div className="text-sm font-semibold text-gray-900 mb-1">Billons</div>
-                    {selectedSerreBilans.length === 0 ? (
-                      <div className="text-xs text-gray-500">Aucun billon</div>
-                    ) : (
-                      <ul className="text-xs text-gray-700 list-disc pl-4 space-y-1 max-h-28 overflow-auto">
-                        {selectedSerreBilans.map((b: any) => (
-                          <li key={b.id}>
-                            {b.nom || `Bilan #${b.id}`} {b.trimestre ? `• T${b.trimestre}` : ''} {b.annee ? `• ${b.annee}` : ''}
-                          </li>
-                        ))}
-                      </ul>
-                    )}
-                  </div>
+                  <p className="text-sm text-gray-600 mb-1">{selectedSerre.variety || '—'}</p>
+                  <p className="text-xs text-gray-500">{selectedSerre.surface} m² • {selectedSerre.zones.length} zones</p>
                   {selectedSerre.assignedTechnicians && selectedSerre.assignedTechnicians.length > 0 && (
                     <p className="text-xs text-blue-600 mt-1">
                       {selectedSerre.assignedTechnicians.length === 1 ? (
@@ -1194,18 +1187,18 @@ export default function TechnicienSupDashboard(): JSX.Element {
                     </p>
                   )}
 
-                  <div className="mt-3 grid grid-cols-2 gap-2">
+                  <div className="mt-3 flex gap-2">
                     <Button 
                       size="sm" 
                       variant="outline" 
-                      className="w-full"
+                      className="flex-1"
                       onClick={() => setIsAssignDialogOpen(true)}
                     >
                       Assigner un technicien
                     </Button>
                     <Button
                       size="sm"
-                      className="w-full"
+                      className="flex-1"
                       onClick={() => setIsDetailsOpen(true)}
                     >
                       Voir détails
@@ -1293,7 +1286,8 @@ export default function TechnicienSupDashboard(): JSX.Element {
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     {selectedSerreBilans.map((b: any) => {
-                      const etat = b.etat || b.status || b.statut || '—';
+                      const etat = selectedSerreBilanEtats[b.id];
+                      const etatLabel = etat?.etat || etat?.status || etat?.statut || '—';
                       const createdBy = b.created_by_name || b.created_by || b.auteur || b.id_user || 'Inconnu';
                       return (
                         <div key={b.id} className="border rounded-md p-3 text-sm">
@@ -1301,7 +1295,16 @@ export default function TechnicienSupDashboard(): JSX.Element {
                           <div className="text-xs text-gray-600 mb-1">
                             Période: {b.trimestre ? `T${b.trimestre}` : '—'} {b.annee || ''}
                           </div>
-                          <div className="text-xs text-gray-600 mb-1">État: {etat}</div>
+                          <div className="text-xs text-gray-600 mb-1">État: {etatLabel}</div>
+                          {etat && (
+                            <div className="grid grid-cols-2 gap-2 text-xs text-gray-700 mb-1">
+                              {typeof etat.temperature === 'number' && <div>Temp: {etat.temperature}°C</div>}
+                              {typeof etat.humidite === 'number' && <div>Humidité: {etat.humidite}%</div>}
+                              {typeof etat.luminosite === 'number' && <div>Luminosité: {etat.luminosite}</div>}
+                              {typeof etat.co2 === 'number' && <div>CO₂: {etat.co2} ppm</div>}
+                              {typeof etat.rendement === 'number' && <div>Rendement: {etat.rendement}</div>}
+                            </div>
+                          )}
                           <div className="text-xs text-gray-600">Créé par: {createdBy}</div>
                         </div>
                       );
