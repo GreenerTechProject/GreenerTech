@@ -22,6 +22,7 @@ import TechnicianDashboard from "./pages/TechnicianDashboard";
 import TechnicianMap from "./pages/TechnicianMap";
 import TechnicianLayout from "./components/TechnicianLayout";
 import TechnicienSupDashboard from "./pages/TechnicienSupDashboard";
+import TechnicienSupHome from "./pages/TechnicienSupHome";
 import TechnicienSupAlerts from "./pages/TechnicienSupAlerts";
 import TechnicienSupInterventions from "./pages/TechnicienSupInterventions";
 import TechnicienSupReports from "./pages/TechnicienSupReports";
@@ -76,7 +77,7 @@ const RoleHomeRedirect = () => {
     : user?.role === "technicien"
       ? "/technician"
       : user?.role === "technicien_superieur"
-        ? "/technicien-sup/map"
+        ? "/technicien-sup/home"
         : "/login";
   return <Navigate to={target} replace />;
 };
@@ -333,7 +334,8 @@ const App = () => (
                 </ProtectedRoute>
               }
             >
-              <Route index element={<TechnicienSupDashboard />} />
+              <Route index element={<TechnicienSupHome />} />
+              <Route path="home" element={<TechnicienSupHome />} />
               <Route path="map" element={<TechnicienSupDashboard />} />
               <Route path="alerts" element={<TechnicienSupAlerts />} />
               <Route path="interventions" element={<TechnicienSupInterventions />} />

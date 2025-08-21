@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useAuth } from "../contexts/AuthContext";
 import GoogleMapsWrapper from "../components/GoogleMapsWrapper";
-import { GoogleMap, Marker, InfoWindow } from "@react-google-maps/api";
+import { GoogleMap, Marker, InfoWindow, Polygon } from "@react-google-maps/api";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -375,7 +375,7 @@ export default function TechnicienSupDashboard(): JSX.Element {
     })();
   }, [user?.id]);
 
-  // When map is ready, draw polygons from assignedSerresRaw and populate UI list
+  // When map is ready, draw domain polygons and populate UI list for serres
   useEffect(() => {
     if (!map) return;
     // Draw domains first
@@ -402,15 +402,6 @@ export default function TechnicienSupDashboard(): JSX.Element {
     assignedSerresRaw.forEach((s: any) => {
       const points = (s.position || []).map((p: any) => ({ lat: p.lat, lng: p.lng }));
       if (points.length === 0) return;
-      const polygon = new google.maps.Polygon({
-        paths: points,
-        strokeColor: '#FF6B6B',
-        strokeOpacity: 1,
-        strokeWeight: 2,
-        fillColor: '#FF6B6B',
-        fillOpacity: 0.25,
-      });
-      polygon.setMap(map);
       const center = s.center && s.center.lat != null && s.center.lng != null ? s.center : points[0];
       uiSerres.push({
         id: String(s.id),
@@ -559,6 +550,7 @@ export default function TechnicienSupDashboard(): JSX.Element {
 
   const handleSelectSerre = (serre: Serre) => {
     setSelectedSerre(serre);
+    setIsInfoWindowOpen(true);
     if (map) {
       smoothZoomToLocation(map, serre.location, 16);
     }
@@ -834,6 +826,7 @@ export default function TechnicienSupDashboard(): JSX.Element {
   }, [showHeatmap]);
 
   const [isMapLoading, setIsMapLoading] = useState(true);
+  const [isInfoWindowOpen, setIsInfoWindowOpen] = useState(true);
 
   return (
     <div className="h-[calc(100vh-73px)] relative">
@@ -959,6 +952,38 @@ export default function TechnicienSupDashboard(): JSX.Element {
                     scaleControl: true,
                   }}
                 >
+                  {/* Render polygons for all assigned serres */}
+                  {assignedSerresRaw.map((serre) => {
+                    const polygonPath = (serre.position || []).map((p: any) => ({ lat: p.lat, lng: p.lng }));
+                    if (!polygonPath || polygonPath.length === 0) return null;
+                    return (
+                      <Polygon
+                        key={`poly-${serre.id}`}
+                        path={polygonPath as google.maps.LatLngLiteral[]}
+                        options={{
+                          strokeColor: '#FF6B6B',
+                          strokeOpacity: 1,
+                          strokeWeight: 2,
+                          fillColor: '#FF6B6B',
+                          fillOpacity: 0.25,
+                        }}
+                        onClick={() => setSelectedSerre({
+                          id: serre.id.toString(),
+                          nom: serre.nom,
+                          variety: serre.variete || 'Non spécifiée',
+                          surface: serre.surface || 0,
+                          location: (serre.center && serre.center.lat != null && serre.center.lng != null) ? serre.center : polygonPath[0],
+                          status: serre.statut || 'active',
+                          zones: [],
+                          lastUpdate: new Date(),
+                          supervisedBy: serre.superviseur,
+                          bilansCount: serre.nombre_billons || 0,
+                          assignedTechnicians: serre.techniciens_associes || [],
+                        })}
+                      />
+                    );
+                  })}
+
                   {/* Render markers for all assigned serres */}
                   {assignedSerresRaw.map((serre) => {
                     // Get the correct position from serre data
@@ -991,10 +1016,10 @@ export default function TechnicienSupDashboard(): JSX.Element {
                   })}
 
                   {/* Info Window for selected serre */}
-                  {selectedSerre && (
+                  {selectedSerre && isInfoWindowOpen && (
                     <InfoWindow
                       position={selectedSerre.location}
-                      onCloseClick={() => setSelectedSerre(null)}
+                      onCloseClick={() => setIsInfoWindowOpen(false)}
                     >
                       <div className="p-4 bg-white rounded-lg shadow-lg border border-gray-200 min-w-[280px]">
                         <div className="flex items-start justify-between mb-3">
@@ -1156,6 +1181,37 @@ export default function TechnicienSupDashboard(): JSX.Element {
                 scaleControl: true,
               }}
             >
+              {/* Render polygons for all assigned serres (mobile) */}
+              {assignedSerresRaw.map((serre) => {
+                const polygonPath = (serre.position || []).map((p: any) => ({ lat: p.lat, lng: p.lng }));
+                if (!polygonPath || polygonPath.length === 0) return null;
+                return (
+                  <Polygon
+                    key={`m-poly-${serre.id}`}
+                    path={polygonPath as google.maps.LatLngLiteral[]}
+                    options={{
+                      strokeColor: '#FF6B6B',
+                      strokeOpacity: 1,
+                      strokeWeight: 2,
+                      fillColor: '#FF6B6B',
+                      fillOpacity: 0.25,
+                    }}
+                    onClick={() => setSelectedSerre({
+                      id: serre.id.toString(),
+                      nom: serre.nom,
+                      variety: serre.variete || 'Non spécifiée',
+                      surface: serre.surface || 0,
+                      location: (serre.center && serre.center.lat != null && serre.center.lng != null) ? serre.center : polygonPath[0],
+                      status: serre.statut || 'active',
+                      zones: [],
+                      lastUpdate: new Date(),
+                      supervisedBy: serre.superviseur,
+                      bilansCount: serre.nombre_billons || 0,
+                      assignedTechnicians: serre.techniciens_associes || [],
+                    })}
+                  />
+                );
+              })}
               {/* Render markers for all assigned serres */}
               {assignedSerresRaw.map((serre) => {
                 // Get the correct position from serre data
@@ -1188,10 +1244,10 @@ export default function TechnicienSupDashboard(): JSX.Element {
               })}
 
               {/* Info Window for selected serre */}
-              {selectedSerre && (
+              {selectedSerre && isInfoWindowOpen && (
                 <InfoWindow
                   position={selectedSerre.location}
-                  onCloseClick={() => setSelectedSerre(null)}
+                  onCloseClick={() => setIsInfoWindowOpen(false)}
                 >
                   <div className="p-4 bg-white rounded-lg shadow-lg border border-gray-200 min-w-[280px]">
                     <div className="flex items-start justify-between mb-3">
