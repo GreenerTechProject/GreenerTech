@@ -10,7 +10,11 @@ import {
   Menu,
   X,
   ChevronRight,
-  Settings
+  Settings,
+  Map,
+  Target,
+  Bot,
+  Building2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -69,6 +73,27 @@ const navigationItems = [
     icon: FileText,
     href: '/director/reports',
     description: 'Créer, organiser, éditer les rapports'
+  },
+  {
+    id: 'map-config',
+    label: 'Configuration Carte',
+    icon: Map,
+    href: '/directeur/map-config',
+    description: 'Créer et gérer domaines et serres sur la carte'
+  },
+  {
+    id: 'robot-config',
+    label: 'Configuration Robots',
+    icon: Bot,
+    href: '/directeur/robot-config',
+    description: 'Créer et gérer les robots de l\'entreprise'
+  },
+  {
+    id: 'company-update',
+    label: 'Modifier Entreprise',
+    icon: Building2,
+    href: '/directeur/company-update',
+    description: 'Modifier les informations de l\'entreprise'
   }
 ];
 
@@ -115,9 +140,7 @@ export default function DirectorSidebar({ isOpen, setIsOpen }: DirectorSidebarPr
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200 flex-shrink-0">
           <div className="flex items-center space-x-3">
-            <div className="w-8 h-8 bg-greener rounded-lg flex items-center justify-center">
-              <LayoutDashboard className="h-5 w-5 text-white" />
-            </div>
+            <img src="/GreenerTech-Logo.jpg" alt="GreenerTech" className="hidden lg:block h-8 w-auto" />
             <div className="lg:hidden xl:block">
               <h1 className="font-semibold text-gray-900">Directeur</h1>
               <p className="text-sm text-gray-500">Gestion complète</p>
@@ -204,16 +227,13 @@ export default function DirectorSidebar({ isOpen, setIsOpen }: DirectorSidebarPr
 
         {/* Footer */}
         <div className="p-4 border-t border-gray-200 bg-white flex-shrink-0">
-          <button
-            onClick={() => handleNavigation('/directeur/parameters')}
-            className="w-full flex items-center space-x-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors duration-200"
-          >
+          <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
             <Settings className="h-5 w-5 text-gray-500" />
             <div className="flex-1 min-w-0 lg:hidden xl:block">
               <div className="text-sm font-medium text-gray-900">Paramètres</div>
               <div className="text-xs text-gray-500">Configuration système</div>
             </div>
-          </button>
+          </div>
         </div>
       </div>
     </>

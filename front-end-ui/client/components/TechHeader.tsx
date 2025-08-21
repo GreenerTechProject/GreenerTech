@@ -206,22 +206,23 @@ const TechHeader: React.FC<TechHeaderProps> = ({ role }) => {
     <header className="bg-white border-b sticky top-0 z-[999999]">
       <div className="max-w-full px-3 sm:px-4 lg:px-6">
         {/* Mobile-first responsive grid */}
-        <div className="flex items-center justify-between py-2 sm:py-3">
-          {/* Left: Hamburger / Navigation */}
-          <div className="flex-shrink-0">
+        <div className="grid grid-cols-3 items-center py-2 sm:py-3 min-h-[44px] sm:min-h-[48px]">
+          {/* Left: Hamburger / Navigation + Logo */}
+          <div className="justify-self-start flex items-center gap-2">
             <TechnicianSidebar userRole={role} />
+            <img src="/GreenerTech-Logo.jpg" alt="GreenerTech" className="hidden sm:block h-8 w-auto object-contain" />
           </div>
 
-          {/* Center: Home and Map icons (centered) */}
-          <div className="absolute left-1/2 transform -translate-x-1/2 flex items-center gap-3 px-2">
-            <div 
+          {/* Center: Home and Map icons */}
+          <div className="justify-self-center flex items-center gap-3 px-2">
+            <div
               className="h-9 w-9 rounded-xl bg-[#B4CC5F] flex items-center justify-center shadow-sm cursor-pointer hover:bg-[#9BB84F] transition-colors duration-200 active:scale-95 flex-shrink-0"
               onClick={() => navigate(role === "technicien_sup" ? "/technicien-sup/home" : "/technician/dashboard")}
               title="Accueil"
             >
               <Home className="h-5 w-5 text-white" />
             </div>
-            <div 
+            <div
               className="cursor-pointer hover:scale-110 transition-transform duration-200 active:scale-95 flex-shrink-0"
               onClick={() => navigate(role === "technicien_sup" ? "/technicien-sup" : "/technician/map")}
               title="Carte"
@@ -231,7 +232,7 @@ const TechHeader: React.FC<TechHeaderProps> = ({ role }) => {
           </div>
 
           {/* Right: Alerts, Notifications and User dropdown */}
-          <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
+          <div className="justify-self-end flex items-center gap-1 sm:gap-2 flex-shrink-0">
             {/* Alert Triangle Icon - for REAL alerts from assigned serres */}
             <div className="relative group">
               <div 

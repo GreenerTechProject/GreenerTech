@@ -52,8 +52,8 @@ export default function DirectorHeader({ isSidebarOpen, onMenuClick }: DirectorH
       <div className="max-w-full px-2 sm:px-3 md:px-4 lg:px-6">
         {/* Mobile-first responsive grid */}
         <div className="grid grid-cols-3 items-center py-2 sm:py-3 min-h-[44px] sm:min-h-[48px] md:min-h-[52px] lg:min-h-[56px]">
-          {/* Left: Sidebar toggle button */}
-          <div className="justify-self-start">
+          {/* Left: Sidebar toggle + Logo */}
+          <div className="justify-self-start flex items-center gap-2">
             {onMenuClick && (
               <Button
                 variant="ghost"
@@ -69,6 +69,11 @@ export default function DirectorHeader({ isSidebarOpen, onMenuClick }: DirectorH
                 )}
               </Button>
             )}
+            <img
+              src="/GreenerTech-Logo.jpg"
+              alt="GreenerTech"
+              className="hidden sm:block h-8 w-auto object-contain"
+            />
           </div>
 
           {/* Center: Navigation icons (responsive sizing) */}

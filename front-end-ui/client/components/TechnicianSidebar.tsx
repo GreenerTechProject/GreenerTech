@@ -110,16 +110,17 @@ export default function TechnicianSidebar({
 
   return (
     <>
-      {/* Menu Button - Now positioned for header integration */}
+      {/* Menu Button - match Director sidebar toggle */}
       <Button
         onClick={() => setIsOpen(!isOpen)}
         className={cn(
           "h-10 w-10 rounded-lg transition-all duration-300",
-          "bg-muted hover:bg-muted/80 text-foreground border border-border",
-          isOpen && "bg-muted/80",
+          "bg-white hover:bg-gray-100 text-gray-700 border border-gray-200 shadow-sm",
+          isOpen && "bg-gray-100",
           "lg:h-11 lg:w-11 xl:h-12 xl:w-12",
         )}
         size="sm"
+        title="Ouvrir le menu"
       >
         {isOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
       </Button>
@@ -127,105 +128,90 @@ export default function TechnicianSidebar({
       {/* Backdrop */}
       {isOpen && (
         <div
-          className="fixed inset-0 bg-black/20 backdrop-blur-sm z-40 transition-opacity duration-300 lg:hidden"
+          className="fixed inset-0 bg-black/50 z-40 lg:hidden"
           onClick={() => setIsOpen(false)}
         />
       )}
 
-      {/* Sidebar */}
+      {/* Sidebar (Director style) */}
       <div
         className={cn(
-          "fixed top-1/2 left-4 lg:left-8 xl:left-12 2xl:left-16 transform -translate-y-1/2 w-72 lg:w-80 xl:w-96 2xl:w-[28rem] bg-card shadow-2xl z-50 transition-all duration-300 ease-in-out",
-          "rounded-2xl border border-border/50 backdrop-blur-sm bg-card/95",
-          isOpen
-            ? "translate-x-0 opacity-100 scale-100"
-            : "-translate-x-full opacity-0 scale-95",
-          "max-h-[85vh] overflow-hidden",
-          "lg:max-w-sm xl:max-w-md 2xl:max-w-lg",
-          "pointer-events-auto",
-          "max-w-[calc(100vw-2rem)]",
-          "lg:max-w-none",
+          "fixed left-0 top-0 z-50 h-[100dvh] bg-white border-r border-gray-200 shadow-lg transform transition-all duration-300 ease-in-out overflow-hidden",
+          "lg:translate-x-0 lg:sticky lg:top-0 lg:z-10 lg:h-[100dvh]",
+          isOpen ? "translate-x-0" : "-translate-x-full",
+          "w-80 lg:w-20 lg:min-w-20 lg:max-w-20 xl:w-64 xl:min-w-64 xl:max-w-64 2xl:w-80 2xl:min-w-80 2xl:max-w-80",
+          "flex flex-col"
         )}
       >
-        {/* Sidebar Content */}
-        <div className="flex flex-col h-full">
-          {/* Header */}
-          <div className="p-6 border-b border-border">
-            <h2 className="text-lg font-semibold text-foreground">Navigation</h2>
-            <p className="text-sm text-muted-foreground mt-1">
-              {isSuperiorTechnician
-                ? "Technicien Supérieur"
-                : "Technicien"}
-            </p>
+        {/* Header */}
+        <div className="flex items-center justify-between p-6 border-b border-gray-200 flex-shrink-0">
+          <div className="flex items-center space-x-3">
+            <div className="w-8 h-8 bg-greener rounded-lg flex items-center justify-center">
+              <Home className="h-5 w-5 text-white" />
+            </div>
+            <div className="lg:hidden xl:block">
+              <h1 className="font-semibold text-gray-900">{isSuperiorTechnician ? "Technicien Supérieur" : "Technicien"}</h1>
+              <p className="text-sm text-gray-500">Navigation</p>
+            </div>
           </div>
-
-          {/* Navigation Items */}
-          <nav className="flex-1 px-4 py-6 overflow-y-auto">
-            <ul className="space-y-1">
-              {sidebarItems.map((item) => (
-                <li key={item.id}>
-                  <button
-                    onClick={() => handleItemClick(item)}
-                    className={cn(
-                      "flex items-center w-full px-4 py-3 text-left rounded-lg transition-all duration-200",
-                      "hover:bg-muted focus:outline-none focus:bg-muted focus:ring-2 focus:ring-greener-400/20",
-                      "group transform hover:scale-[1.02]",
-                      item.id === "interventions" && "bg-gradient-to-r from-blue-50 to-blue-100 hover:from-blue-100 hover:to-blue-200 border border-blue-200 shadow-sm"
-                    )}
-                  >
-                    <div className="flex items-center space-x-3">
-                      <div className={cn(
-                        "transition-colors duration-200",
-                        item.id === "interventions"
-                          ? "text-blue-600 group-hover:text-blue-700"
-                          : "text-muted-foreground group-hover:text-greener-500"
-                      )}>
-                        {item.icon}
-                      </div>
-                      <span className={cn(
-                        "font-medium text-sm transition-colors duration-200",
-                        item.id === "interventions"
-                          ? "text-blue-700 group-hover:text-blue-800 font-semibold"
-                          : "text-foreground group-hover:text-foreground"
-                      )}>
-                        {item.label}
-                        {item.id === "interventions" && (
-                          <span className="inline-block ml-2 px-2 py-0.5 text-xs bg-blue-500 text-white rounded-full animate-pulse">
-                            +
-                          </span>
-                        )}
-                      </span>
-                    </div>
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </nav>
-
-          {/* Logout Section */}
-          <div className="p-4 border-t border-border">
-            <button
-              onClick={handleLogout}
-              className={cn(
-                "flex items-center w-full px-4 py-3 text-left rounded-lg transition-all duration-200",
-                "hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-red-400/20",
-                "group",
-              )}
-            >
-              <div className="flex items-center space-x-3">
-                <div className="text-muted-foreground group-hover:text-red-500 transition-colors duration-200">
-                  <LogOut className="h-5 w-5" />
-                </div>
-                <span className="text-foreground font-medium text-sm group-hover:text-red-600 transition-colors duration-200">
-                  Se déconnecter
-                </span>
-              </div>
-            </button>
-          </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setIsOpen(!isOpen)}
+            className="lg:hidden"
+            title="Toggle sidebar"
+          >
+            {isOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+          </Button>
         </div>
 
-        {/* Decorative gradient border */}
-        <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-greener-100/20 via-transparent to-blue-100/20 pointer-events-none" />
+        {/* Navigation */}
+        <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
+          {sidebarItems.map((item) => (
+            <div key={item.id} className="relative group">
+              <button
+                onClick={() => handleItemClick(item)}
+                className={cn(
+                  "w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-left transition-all duration-200",
+                  "hover:bg-gray-50 hover:shadow-sm",
+                  "lg:justify-center lg:px-2 lg:py-3 lg:space-x-0",
+                  "xl:justify-start xl:px-4 xl:py-3 xl:space-x-3",
+                  item.id === (isSuperiorTechnician ? "alertes" : "carte")
+                    ? "bg-greener-50 text-greener-700 border border-greener-200 shadow-sm"
+                    : "text-gray-700 hover:text-gray-900"
+                )}
+                title={item.label}
+              >
+                <div className="h-5 w-5 flex-shrink-0 text-gray-500">
+                  {item.icon}
+                </div>
+                <div className="flex-1 min-w-0 lg:hidden xl:block">
+                  <div className="font-medium text-sm text-gray-900">{item.label}</div>
+                </div>
+              </button>
+
+              {/* Tooltip for collapsed */}
+              <div className="absolute z-50 px-3 py-2 bg-gray-900 text-white text-sm rounded-lg shadow-lg whitespace-nowrap lg:left-full lg:ml-2 lg:top-1/2 lg:transform lg:-translate-y-1/2 xl:hidden opacity-0 group-hover:opacity-100">
+                {item.label}
+                <div className="absolute left-0 top-1/2 transform -translate-y-1/2 -translate-x-1 w-2 h-2 bg-gray-900 rotate-45"></div>
+              </div>
+            </div>
+          ))}
+        </nav>
+
+        {/* Footer */}
+        <div className="p-4 border-t border-gray-200 bg-white flex-shrink-0">
+          <button
+            onClick={handleLogout}
+            className="w-full flex items-center space-x-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors duration-200"
+          >
+            <LogOut className="h-5 w-5 text-gray-500" />
+            <div className="flex-1 min-w-0 lg:hidden xl:block">
+              <div className="text-sm font-medium text-gray-900">Se déconnecter</div>
+              <div className="text-xs text-gray-500">Terminer la session</div>
+            </div>
+          </button>
+        </div>
       </div>
     </>
   );
