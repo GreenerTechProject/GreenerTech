@@ -37,8 +37,35 @@ class User(db.Model):
     entreprises_creees = relationship(
         "Entreprise",
         back_populates="createur",
-        foreign_keys="[Entreprise.id_user]"
+        foreign_keys="[Entreprise.id_user]",
+        cascade="all, delete",
+        passive_deletes=True
     )    
+
+    # Child rows that should be removed when a user is deleted
+    interventions = relationship(
+        "Intervention",
+        backref="user",
+        cascade="all, delete-orphan"
+    )
+
+    rapports = relationship(
+        "Rapport",
+        backref="user",
+        cascade="all, delete-orphan"
+    )
+
+    notifications = relationship(
+        "Notification",
+        backref="user",
+        cascade="all, delete-orphan"
+    )
+
+    autorisations_serre = relationship(
+        "Autorisation_serre",
+        backref="user",
+        cascade="all, delete-orphan"
+    )
 
     
 

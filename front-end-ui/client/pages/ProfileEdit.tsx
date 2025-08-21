@@ -216,8 +216,11 @@ export default function ProfileEdit() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Show TechHeader for all technician users */}
-      {(user?.role === "technicien" || user?.role === "technicien_superieur") && (
-        <TechHeader role={user?.role === "technicien_superieur" ? "technicien_sup" : "technicien"} />
+      {user?.role === "technicien" && (
+        <TechHeader role="technicien" />
+      )}
+      {user?.role === "technicien_superieur" && (
+        <TechHeader role="technicien_sup" />
       )}
       
       <div className="container mx-auto px-4 py-8 max-w-4xl">

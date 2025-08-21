@@ -302,11 +302,11 @@ export default function FinalOverview({
               </div>
               <div className="text-xs text-purple-600">Techniciens</div>
             </div>
-            <div className="p-3 bg-orange-50 rounded-lg text-center">
-              <div className="text-lg font-bold text-orange-600">
+            <div className="p-3 bg-green-50 rounded-lg text-center">
+              <div className="text-lg font-bold text-green-600">
                 {assignedSerres}
               </div>
-              <div className="text-xs text-orange-600">Serres assignées</div>
+              <div className="text-xs text-green-600">Serres assignées</div>
               {unassignedSerres > 0 && (
                 <div className="text-xs text-red-500">
                   {unassignedSerres} non assignées
@@ -439,7 +439,7 @@ export default function FinalOverview({
                   {/* Regular Technicians */}
                   <div>
                     <h4 className="font-medium text-gray-900 mb-3 flex items-center gap-2">
-                      <Users className="h-4 w-4 text-orange-600" />
+                      <Users className="h-4 w-4 text-green-600" />
                       Techniciens ({totalRegularTechnicians})
                     </h4>
                     <div className="space-y-2">
@@ -448,7 +448,7 @@ export default function FinalOverview({
                         .map((tech) => {
                           const supervisor = technicians.find(t => t.id === tech.supervisorId);
                           return (
-                            <div key={tech.id} className="flex items-center justify-between p-2 bg-orange-50 rounded">
+                            <div key={tech.id} className="flex items-center justify-between p-2 bg-green-50 rounded">
                               <div>
                                 <p className="font-medium text-sm">{tech.fullName}</p>
                                 <p className="text-xs text-gray-600">{tech.email}</p>

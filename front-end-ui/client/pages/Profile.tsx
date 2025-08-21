@@ -115,8 +115,11 @@ export default function Profile() {
   return (
     <div className="min-h-screen bg-white">
       {/* Show TechHeader for all technician users */}
-      {(userInfo.role === "technicien" || userInfo.role === "technicien_superieur") && (
-        <TechHeader role={userInfo.role === "technicien_superieur" ? "technicien_sup" : "technicien"} />
+      {userInfo.role === "technicien" && (
+        <TechHeader role="technicien" />
+      )}
+      {userInfo.role === "technicien_superieur" && (
+        <TechHeader role="technicien_sup" />
       )}
       
       <div className="flex items-center justify-center p-4">

@@ -5,7 +5,7 @@ import TechnicianSidebar from "./TechnicianSidebar";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Home, Map, ChevronDown, User, LogOut, Sun, Moon, Bell, AlertTriangle, AlertCircle, AlertOctagon, CheckCircle, BarChart3, Clock, Wrench, ClipboardList } from "lucide-react";
+import { Home, Map, ChevronDown, User, LogOut, Sun, Moon, Bell, AlertTriangle, AlertCircle, AlertOctagon, CheckCircle, BarChart3, Clock, Wrench, ClipboardList, Users } from "lucide-react";
 import { notificationService, NotificationCounts, Notification } from "../services/notificationService";
 import { AlertService } from "../services/alertService";
 
@@ -22,7 +22,7 @@ interface AlertCounts {
   low: number;       // status_alert = 0 (low)
 }
 
-export default function TechHeader({ role }: TechHeaderProps) {
+const TechHeader: React.FC<TechHeaderProps> = ({ role }) => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [isDarkMode, setIsDarkMode] = React.useState(false);
@@ -98,12 +98,12 @@ export default function TechHeader({ role }: TechHeaderProps) {
       // Get alerts from user's assigned serres
       const alerts = await AlertService.getAlertsByAssignedSerres();
       
-      // Count alerts by severity level
+      // Count alerts by status
       const counts: AlertCounts = {
         total: alerts.length,
-        high: alerts.filter(alert => alert.status_alert === 2).length,      // Very dangerous
-        medium: alerts.filter(alert => alert.status_alert === 1).length,    // Medium
-        low: alerts.filter(alert => alert.status_alert === 0).length        // Low
+        high: alerts.filter(a => a.status_alert === 2).length,
+        medium: alerts.filter(a => a.status_alert === 1).length,
+        low: alerts.filter(a => a.status_alert === 0).length
       };
       
       setAlertCounts(counts);
@@ -116,86 +116,72 @@ export default function TechHeader({ role }: TechHeaderProps) {
   };
 
   const handleProfile = () => {
-    if (role === "technicien_sup") {
-      navigate("/technicien-sup/profile");
-    } else {
-      navigate("/technicien/profile");
-    }
-  };
-
-  const handleAlerts = () => {
-    if (role === "technicien_sup") {
-      navigate("/technicien-sup/alerts");
-    } else {
-      navigate("/technician/alerts");
-    }
+    navigate(role === "technicien_sup" ? "/technicien-sup/profile" : "/technician/profile");
   };
 
   const handleNotifications = () => {
-    if (role === "technicien_sup") {
-      navigate("/technicien-sup/notifications");
-    } else {
-      navigate("/technician/notifications");
-    }
+    navigate(role === "technicien_sup" ? "/technicien-sup/notifications" : "/technician/notifications");
+  };
+
+  const handleAlerts = () => {
+    navigate(role === "technicien_sup" ? "/technicien-sup/alerts" : "/technician/alerts");
   };
 
   const handleNotificationClick = async (notification: Notification) => {
     try {
-      // Mark as read
+      // Mark notification as read
       await notificationService.markAsSeen(notification.id);
       
-      // Update local state
-      setNotifications(prev => prev.filter(n => n.id !== notification.id));
-      
-      // Update notification counts
-      setNotificationCounts(prev => ({
-        ...prev,
-        non_vue: Math.max(0, prev.non_vue - 1),
-        total: Math.max(0, prev.total - 1)
-      }));
+      // Refresh notifications
+      fetchNotifications();
+      fetchNotificationCounts();
       
       // Navigate based on notification type
-      if (notification.type_notification.includes('intervention')) {
-        if (role === "technicien_sup") {
-          navigate("/technicien-sup/missions");
-        } else {
-          navigate("/technician/missions");
-        }
-      } else {
-        if (role === "technicien_sup") {
-          navigate("/technicien-sup/notifications");
-        } else {
-          navigate("/technician/notifications");
-        }
+      switch (notification.type_notification) {
+        case 'intervention_creee':
+          navigate(role === "technicien_sup" ? "/technicien-sup/interventions" : "/technician/interventions");
+          break;
+        case 'intervention_validee':
+          navigate(role === "technicien_sup" ? "/technicien-sup/interventions" : "/technician/interventions");
+          break;
+        case 'compte_technicien':
+          navigate(role === "technicien_sup" ? "/technicien-sup/technicians" : "/technician/technicians");
+          break;
+        case 'compte_valide':
+          navigate(role === "technicien_sup" ? "/technicien-sup/technicians" : "/technician/technicians");
+          break;
+        default:
+          navigate(role === "technicien_sup" ? "/technicien-sup/notifications" : "/technician/notifications");
       }
     } catch (error) {
-      console.error('Error marking notification as read:', error);
+      console.error('Error handling notification click:', error);
     }
   };
 
   const handleLogout = async () => {
-    await logout();
+    try {
+      await logout();
+      navigate("/");
+    } catch (error) {
+      console.error("Error during logout:", error);
+    }
   };
 
   const toggleTheme = () => {
     setIsDarkMode(!isDarkMode);
-    // Apply theme to document
-    if (isDarkMode) {
-      document.documentElement.classList.remove('dark');
-    } else {
-      document.documentElement.classList.add('dark');
-    }
+    // You can add theme persistence logic here
   };
 
   const getNotificationIcon = (type: string) => {
-    if (type.includes('intervention')) {
-      return <Wrench className="h-4 w-4 text-blue-500" />;
-    }
-    return <ClipboardList className="h-4 w-4 text-gray-500" />;
+    if (type === 'intervention_creee') return <Wrench className="h-4 w-4 text-blue-600" />;
+    if (type === 'intervention_validee') return <CheckCircle className="h-4 w-4 text-green-600" />;
+    if (type === 'compte_technicien') return <Users className="h-4 w-4 text-purple-600" />;
+    if (type === 'compte_valide') return <CheckCircle className="h-4 w-4 text-green-600" />;
+    return <Bell className="h-4 w-4 text-gray-600" />;
   };
 
   const getNotificationTitle = (type: string) => {
-    if (type === 'intervention_creee') return "Demande d'intervention";
+    if (type === 'intervention_creee') return "Nouvelle intervention";
     if (type === 'intervention_validee') return "Intervention validée";
     if (type === 'compte_technicien') return "Compte technicien";
     if (type === 'compte_valide') return "Compte validé";
@@ -298,7 +284,7 @@ export default function TechHeader({ role }: TechHeaderProps) {
                 title="Demandes d'intervention"
               >
                 <Bell className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600" />
-                {/* Notification Badge - Real notification data */}
+                {/* Notification Badge */}
                 {notificationCounts.non_vue > 0 && (
                   <div className="absolute -top-1 -right-1 w-3 h-3 sm:w-4 sm:h-4 bg-blue-500 text-white text-xs rounded-full flex items-center justify-center">
                     <span className="text-xs sm:text-xs">{notificationCounts.non_vue}</span>
@@ -306,66 +292,47 @@ export default function TechHeader({ role }: TechHeaderProps) {
                 )}
               </div>
               
-              {/* Notification Dropdown - Shows on hover */}
-              <div 
-                className="absolute top-full right-0 mt-2 w-80 bg-white rounded-lg shadow-2xl border-2 border-gray-300 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none group-hover:pointer-events-auto backdrop-blur-sm bg-white/95" 
-                style={{ 
-                  zIndex: 999999,
-                  isolation: 'isolate',
-                  position: 'absolute',
-                  transform: 'translateZ(0)'
-                }}
-              >
-                {/* Header */}
-                <div className="flex items-center justify-between p-4 border-b border-gray-100">
-                  <div className="flex items-center gap-2">
-                    <Bell className="h-5 w-5 text-blue-600" />
-                    <h3 className="font-semibold text-gray-900">Notifications</h3>
-                    {notificationCounts.non_vue > 0 && (
-                      <span className="bg-blue-100 text-blue-800 text-xs font-medium px-2 py-1 rounded-full">
-                        {notificationCounts.non_vue}
-                      </span>
-                    )}
+              {/* Notifications Dropdown */}
+              <div className="absolute top-full right-0 mt-2 w-80 bg-white rounded-lg shadow-lg border border-gray-200 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none group-hover:pointer-events-auto z-50">
+                <div className="p-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="text-sm font-semibold text-gray-900">Notifications</h3>
+                    <span className="text-xs text-gray-500">{notificationCounts.non_vue} non lues</span>
                   </div>
-                </div>
-
-                {/* Notifications List */}
-                <div className="max-h-96 overflow-y-auto">
+                  
                   {notificationsLoading ? (
-                    <div className="p-4 text-center text-gray-500">
-                      <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mx-auto mb-2"></div>
-                      Chargement...
+                    <div className="text-center py-4">
+                      <div className="text-sm text-gray-500">Chargement...</div>
                     </div>
                   ) : notifications.length === 0 ? (
-                    <div className="p-6 text-center text-gray-500">
-                      <Bell className="h-8 w-8 text-gray-300 mx-auto mb-2" />
-                      <p className="text-sm">Aucune nouvelle notification</p>
+                    <div className="text-center py-4">
+                      <div className="text-sm text-gray-500">Aucune notification</div>
                     </div>
                   ) : (
-                    <div className="divide-y divide-gray-100">
-                                              {notifications.slice(0, 3).map((notification, index) => (
-                          <div 
-                            key={notification.id} 
-                            className="p-4 hover:bg-gray-50 cursor-pointer transition-colors"
-                            onClick={() => handleNotificationClick(notification)}
-                          >
-                                                      <div className="flex items-start gap-3">
-                              <div className="flex-shrink-0 mt-1">
-                                {getNotificationIcon(notification.type_notification)}
-                              </div>
+                    <div className="space-y-3 max-h-64 overflow-y-auto">
+                      {notifications.slice(0, 5).map((notification) => (
+                        <div 
+                          key={notification.id}
+                          onClick={() => handleNotificationClick(notification)}
+                          className="p-3 rounded-lg border border-gray-100 hover:bg-gray-50 cursor-pointer transition-colors"
+                        >
+                          <div className="flex items-start gap-3">
+                            <div className="flex-shrink-0 mt-1">
+                              {getNotificationIcon(notification.type_notification)}
+                            </div>
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center justify-between mb-1">
                                 <p className="text-sm font-medium text-gray-900">
                                   {getNotificationTitle(notification.type_notification)}
                                 </p>
                               </div>
-                                                              <p className="text-sm text-gray-600 line-clamp-2 mb-2">
-                                  {notification.description}
-                                </p>
-                                <div className="flex items-center gap-2 text-xs text-gray-500">
-                                  <Clock className="h-3 w-3" />
-                                  <span>{formatTimestamp(notification.date)}</span>
-                                </div>
+                              <p className="text-sm text-gray-600 line-clamp-2 mb-2">
+                                {notification.description}
+                              </p>
+                              <div className="flex items-center gap-2 text-xs text-gray-500">
+                                <Clock className="h-3 w-3" />
+                                <span>{formatTimestamp(notification.date)}</span>
+                              </div>
                             </div>
                           </div>
                         </div>
@@ -445,6 +412,8 @@ export default function TechHeader({ role }: TechHeaderProps) {
       </div>
     </header>
   );
-}
+};
+
+export default TechHeader;
 
 

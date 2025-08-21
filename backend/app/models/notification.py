@@ -11,7 +11,7 @@ class Notification(db.Model):
     status = Column(String(50), default='non_vue')  # non_vue, vue
     date = Column(DateTime, default=datetime.now(timezone(timedelta(hours=1))))
     
-    id_user = Column(Integer, ForeignKey('users.id'), nullable=False)
-    id_intervention = Column(Integer, ForeignKey('intervention.id'), nullable=True)
+    id_user = Column(Integer, ForeignKey('users.id', ondelete='CASCADE'), nullable=False)
+    id_intervention = Column(Integer, ForeignKey('intervention.id', ondelete='CASCADE'), nullable=True)
     
     type_notification = Column(String(50), nullable=False)  # Exemple: compte_technicien, intervention_creee, intervention_validee, compte_valide

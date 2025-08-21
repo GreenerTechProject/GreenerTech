@@ -10,11 +10,7 @@ import {
   Menu,
   X,
   ChevronRight,
-  Settings,
-  Map,
-  Target,
-  Bot,
-  Building2
+  Settings
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -73,27 +69,6 @@ const navigationItems = [
     icon: FileText,
     href: '/director/reports',
     description: 'Créer, organiser, éditer les rapports'
-  },
-  {
-    id: 'map-config',
-    label: 'Configuration Carte',
-    icon: Map,
-    href: '/directeur/map-config',
-    description: 'Créer et gérer domaines et serres sur la carte'
-  },
-  {
-    id: 'robot-config',
-    label: 'Configuration Robots',
-    icon: Bot,
-    href: '/directeur/robot-config',
-    description: 'Créer et gérer les robots de l\'entreprise'
-  },
-  {
-    id: 'company-update',
-    label: 'Modifier Entreprise',
-    icon: Building2,
-    href: '/directeur/company-update',
-    description: 'Modifier les informations de l\'entreprise'
   }
 ];
 
@@ -229,13 +204,16 @@ export default function DirectorSidebar({ isOpen, setIsOpen }: DirectorSidebarPr
 
         {/* Footer */}
         <div className="p-4 border-t border-gray-200 bg-white flex-shrink-0">
-          <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
+          <button
+            onClick={() => handleNavigation('/directeur/parameters')}
+            className="w-full flex items-center space-x-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors duration-200"
+          >
             <Settings className="h-5 w-5 text-gray-500" />
             <div className="flex-1 min-w-0 lg:hidden xl:block">
               <div className="text-sm font-medium text-gray-900">Paramètres</div>
               <div className="text-xs text-gray-500">Configuration système</div>
             </div>
-          </div>
+          </button>
         </div>
       </div>
     </>

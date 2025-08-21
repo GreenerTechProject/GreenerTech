@@ -13,10 +13,11 @@ import {
   Mail, 
   Calendar,
   Building,
-  Users
+  Users,
+  Trash2
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import DirectorHeader from "@/components/DirectorHeader";
+import DirectorLayout from "@/components/DirectorLayout";
 import { companyService, CompanyInfo } from "../services/companyService";
 
 export default function DirectorProfile() {
@@ -141,31 +142,51 @@ export default function DirectorProfile() {
     navigate("/directeur/profile/edit");
   };
 
-  if (!userInfo) {
+  const handleDeleteAccount = async () => {
+    if (window.confirm("Êtes-vous sûr de vouloir supprimer votre compte ? Cette action est irréversible.")) {
+      try {
+        // Call the deleteUser method from AuthContext
+        await deleteUser();
+        
+        // Show success message
+        toast({
+          title: "Compte supprimé",
+          description: "Votre compte a été supprimé avec succès",
+        });
+      } catch (error) {
+        toast({
+          title: "Erreur",
+          description: "Erreur lors de la suppression du compte",
+          variant: "destructive",
+        });
+      }
+    }
+  };
+
+    if (!userInfo) {
     return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600"></div>
-      </div>
+      <DirectorLayout>
+        <div className="flex items-center justify-center min-h-[400px]">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600"></div>
+        </div>
+      </DirectorLayout>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <DirectorHeader />
-      
-      <div className="flex-1 transition-all duration-300">
-        <div className="flex items-center justify-center p-4 pt-20">
-          {/* Back button */}
-          <div className="absolute top-20 left-4">
-            <Button 
-              variant="ghost" 
-              onClick={() => navigate("/directeur")}
-              className="text-green-600 hover:text-green-800"
-            >
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Retour
-            </Button>
-          </div>
+    <DirectorLayout>
+      <div className="flex items-center justify-center p-4">
+        {/* Back button */}
+        <div className="absolute top-20 left-4">
+          <Button 
+            variant="ghost" 
+            onClick={() => navigate("/directeur")}
+            className="text-green-600 hover:text-green-800"
+          >
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Retour
+          </Button>
+        </div>
           
           <Card className="w-full max-w-md shadow-lg border-0">
             {/* Green Header with User Info */}
@@ -339,10 +360,18 @@ export default function DirectorProfile() {
                 <LogOut className="w-4 h-4 mr-2" />
                 Déconnexion
               </Button>
+
+              <Button 
+                onClick={handleDeleteAccount}
+                variant="outline"
+                className="w-full border-red-300 text-red-700 hover:bg-red-50"
+              >
+                <Trash2 className="w-4 h-4 mr-2" />
+                Supprimer le compte
+              </Button>
             </div>
           </Card>
         </div>
-      </div>
-    </div>
-  );
-}
+      </DirectorLayout>
+    );
+  }

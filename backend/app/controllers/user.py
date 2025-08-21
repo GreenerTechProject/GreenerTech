@@ -70,9 +70,26 @@ def login():
 # === DELETE USER ===
 @token_required
 def delete_user(current_user):
-    db.session.delete(current_user)
-    db.session.commit()
-    return jsonify({"message": f"Utilisateur avec l'ID {current_user.id} supprimé avec succès"}), 200
+    try:
+        # If the current user is a director, delete the entreprise(s) they created,
+        # which will cascade delete domaines, serres, technicians, robots, etc.
+        if current_user.role == 'directeur':
+            entreprises = Entreprise.query.filter_by(id_user=current_user.id).all()
+            for ent in entreprises:
+                db.session.delete(ent)
+
+        # Also handle technicians supervised by this user (id_assigned)
+        from app.models.user import User as UserModel
+        supervised_techs = UserModel.query.filter_by(id_assigned=current_user.id).all()
+        for tech in supervised_techs:
+            db.session.delete(tech)
+
+        db.session.delete(current_user)
+        db.session.commit()
+        return jsonify({"message": f"Utilisateur avec l'ID {current_user.id} supprimé avec succès"}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": f"Erreur lors de la suppression: {str(e)}"}), 500
 
 # === UPDATE USER ===
 @token_required
@@ -810,6 +827,13 @@ def get_interventions_by_technicien(current_user, id):
             type_tache = Type_tache.query.get(intervention.id_type_tache)
             if type_tache:
                 intervention_data['type_nom'] = type_tache.nom
+            
+            # Get technician information
+            technician = User.query.get(intervention.id_user)
+            if technician:
+                intervention_data['technician_name'] = technician.name or f"Utilisateur #{technician.id}"
+            else:
+                intervention_data['technician_name'] = f"Utilisateur #{intervention.id_user}"
             
             intervention_list.append(intervention_data)
         

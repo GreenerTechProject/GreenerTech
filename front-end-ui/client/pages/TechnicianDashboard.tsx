@@ -1,7 +1,7 @@
 import { useAuth } from "../contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import TechHeader from "../components/TechHeader";
-import { Map, AlertTriangle, BarChart3, TrendingUp, Activity, PlusCircle, ClipboardCheck } from "lucide-react";
+import { Map, AlertTriangle, BarChart3, TrendingUp, Activity, PlusCircle, ClipboardCheck, Target, Calendar, Clock, CheckCircle, AlertCircle, Users, Zap, Shield, Target as TargetIcon } from "lucide-react";
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -17,11 +17,17 @@ import {
 } from 'chart.js';
 import { Bar, Doughnut, Line } from 'react-chartjs-2';
 import InterventionForm from "../components/InterventionForm";
-import AlertHeatmap from "../components/AlertHeatmap";
-import GoogleMapsWrapper from "../components/GoogleMapsWrapper";
 import { useState, useEffect } from "react";
 import { AlertService } from "../services/alertService";
 import { Alert } from "../types/alert";
+import { missionService } from "../services/missionService";
+import { serreService } from "../services/serreService";
+import { domainService } from "../services/domainService";
+import { bilanService } from "../services/bilanService";
+import { robotService } from "../services/robotService";
+import { InterventionService, Intervention } from "../services/interventionService";
+import { notificationService, Notification } from "../services/notificationService";
+import { ReportService, ApiReport } from "../services/reportService";
 
 // Register Chart.js components
 ChartJS.register(
@@ -37,12 +43,60 @@ ChartJS.register(
   Filler
 );
 
+// Define interfaces locally since they're not exported from services
+interface Mission {
+  id: number;
+  id_robot: number;
+  id_serre: number; // Keep as number to match mission service
+  date_debut: string | null;
+  date_fin: string | null;
+  rep_jr: number;
+  rep_sem: number;
+  jour: number | null;
+  heure: number | null;
+  minute: number | null;
+  executed: boolean;
+}
+
+interface Serre {
+  id: string; // Changed to string to match service
+  nom: string;
+  domainId: string; // Changed from id_domaine to match service
+  surface: number;
+  center_lat?: number;
+  center_lng?: number;
+}
+
+interface Domain {
+  id: string; // Changed to string to match service
+  name: string; // Changed from nom to match service
+  area: number; // Changed from surface to match service
+  center: { lat: number; lng: number };
+  path: { lat: number; lng: number }[];
+  companyId?: string;
+}
+
+interface Bilan {
+  id: number;
+  nom: string;
+  id_serre: number; // Keep as number to match mission service
+  surface?: number; // Make optional to match service interface
+}
+
 export default function TechnicianDashboard() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [isInterventionFormOpen, setIsInterventionFormOpen] = useState(false);
   const [alerts, setAlerts] = useState<Alert[]>([]);
   const [loading, setLoading] = useState(true);
+  const [missions, setMissions] = useState<Mission[]>([]);
+  const [serres, setSerres] = useState<Serre[]>([]);
+  const [domains, setDomains] = useState<Domain[]>([]);
+  const [bilans, setBilans] = useState<Bilan[]>([]);
+  const [robots, setRobots] = useState<{id: number, nom: string, referance: string}[]>([]);
+  const [interventions, setInterventions] = useState<Intervention[]>([]);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [reports, setReports] = useState<ApiReport[]>([]);
 
   const handleLogout = async () => {
     try {
@@ -58,7 +112,6 @@ export default function TechnicianDashboard() {
     setIsInterventionFormOpen(false);
   };
 
-
   const openInterventionForm = () => {
     setIsInterventionFormOpen(true);
   };
@@ -67,33 +120,192 @@ export default function TechnicianDashboard() {
     setIsInterventionFormOpen(false);
   };
 
-  // Fetch alerts for the summary
+  // Fetch all data for the dashboard
   useEffect(() => {
-    const fetchAlerts = async () => {
+    const fetchDashboardData = async () => {
       try {
         setLoading(true);
-        const response = await AlertService.getAllAlerts(1, 1000);
-        setAlerts(response.alerts || []);
+        
+        // Fetch all data in parallel
+        const [alertsData, missionsData, serresData, domainsData, bilansData, robotsData, interventionsData, notificationsData, reportsData] = await Promise.all([
+          AlertService.getAllAlerts(1, 1000),
+          missionService.getAllMissions(),
+          serreService.getAllSerres(),
+          domainService.getMyCompanyDomains(),
+          bilanService.getAllBilans(),
+          robotService.getAllRobots(),
+          InterventionService.getInterventionsByAssignedSerres(),
+          notificationService.getNotifications(),
+          ReportService.getReportsByAssignedSerres()
+        ]);
+
+        setAlerts(alertsData.alerts || []);
+        setMissions(missionsData);
+        setSerres(serresData);
+        setDomains(domainsData);
+        setBilans(bilansData);
+        setRobots(robotsData);
+        setInterventions(interventionsData);
+        setNotifications(notificationsData);
+        setReports(reportsData);
       } catch (error) {
-        console.error("Error fetching alerts:", error);
+        console.error("Error fetching dashboard data:", error);
         setAlerts([]);
+        setMissions([]);
+        setSerres([]);
+        setDomains([]);
+        setBilans([]);
+        setRobots([]);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchAlerts();
+    fetchDashboardData();
   }, []);
+
+  // Helper functions for mission data analysis
+  const getMissionCountForSerre = (serreId: string) => {
+    return missions.filter(m => m.id_serre === parseInt(serreId, 10)).length;
+  };
+
+  const getLastMissionDate = (serreId: string) => {
+    const serreMissions = missions.filter(m => m.id_serre === parseInt(serreId, 10));
+    if (serreMissions.length === 0) return "Aucune";
+    
+    const lastMission = serreMissions.sort((a, b) => {
+      if (!a.date_fin || !b.date_fin) return 0;
+      return new Date(b.date_fin).getTime() - new Date(a.date_fin).getTime();
+    })[0];
+    
+    if (!lastMission.date_fin) return "En cours";
+    return new Date(lastMission.date_fin).toLocaleDateString('fr-FR');
+  };
+
+  const getMissionsForDomain = (domainId: string) => {
+    const domainSerres = serres.filter(s => s.domainId === domainId);
+    return missions.filter(m => domainSerres.some(s => parseInt(s.id, 10) === m.id_serre));
+  };
+
+  const calculateCompletionRate = (domainMissions: Mission[]) => {
+    if (domainMissions.length === 0) return 0;
+    const completed = domainMissions.filter(m => m.executed).length;
+    return Math.round((completed / domainMissions.length) * 100);
+  };
+
+  const getDailyRepetitionCount = () => {
+    return missions.filter(m => m.rep_jr === 1).length;
+  };
+
+  const getWeeklyRepetitionCount = () => {
+    return missions.filter(m => m.rep_sem > 0).length;
+  };
+
+  const getOptimizationSuggestion = () => {
+    const dailyMissions = missions.filter(m => m.rep_jr === 1);
+    const weeklyMissions = missions.filter(m => m.rep_sem > 0);
+    
+    if (dailyMissions.length > weeklyMissions.length) {
+      return "Considérez des missions hebdomadaires pour réduire la charge de travail";
+    }
+    return "Pattern de mission optimal détecté";
+  };
+
+  // Helper function for robot health status
+  const getRobotHealthStatus = (robotId: number) => {
+    const robotMissions = missions.filter(m => m.id_robot === robotId);
+    const successRate = robotMissions.length > 0 ? 
+      (robotMissions.filter(m => m.executed).length / robotMissions.length) * 100 : 0;
+    
+    if (successRate >= 90) return 'excellent';
+    if (successRate >= 75) return 'bon';
+    return 'attention';
+  };
+
+  // Calculate real weekly mission data from backend
+  const getWeeklyMissionData = () => {
+    const days = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
+    
+    return days.map((day, index) => {
+      const dayIndex = index + 1; // 1-7 for Mon-Sun
+      const currentDate = new Date();
+      const startOfWeek = new Date(currentDate);
+      startOfWeek.setDate(currentDate.getDate() - currentDate.getDay() + 1); // Start from Monday
+      
+      const dayMissions = missions.filter(mission => {
+        if (!mission.date_debut) return false;
+        const missionDate = new Date(mission.date_debut);
+        
+        // Check if mission is from current week
+        const weekStart = new Date(startOfWeek);
+        const weekEnd = new Date(startOfWeek);
+        weekEnd.setDate(weekStart.getDate() + 6);
+        
+        if (missionDate >= weekStart && missionDate <= weekEnd) {
+          // getDay() returns 0-6 (Sun-Sat), so we need to convert to 1-7 (Mon-Sun)
+          const dayOfWeek = missionDate.getDay() === 0 ? 7 : missionDate.getDay();
+          return dayOfWeek === dayIndex;
+        }
+        return false;
+      });
+      
+      return dayMissions.length;
+    });
+  };
+
+  // Calculate mission status distribution for the timeline chart
+  const getMissionStatusData = () => {
+    const days = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
+    
+    return days.map((day, index) => {
+      const dayIndex = index + 1; // 1-7 for Mon-Sun
+      const currentDate = new Date();
+      const startOfWeek = new Date(currentDate);
+      startOfWeek.setDate(currentDate.getDate() - currentDate.getDay() + 1); // Start from Monday
+      
+      const dayMissions = missions.filter(mission => {
+        if (!mission.date_debut) return false;
+        const missionDate = new Date(mission.date_debut);
+        
+        // Check if mission is from current week
+        const weekStart = new Date(startOfWeek);
+        const weekEnd = new Date(startOfWeek);
+        weekEnd.setDate(weekStart.getDate() + 6);
+        
+        if (missionDate >= weekStart && missionDate <= weekEnd) {
+          // getDay() returns 0-6 (Sun-Sat), so we need to convert to 1-7 (Mon-Sun)
+          const dayOfWeek = missionDate.getDay() === 0 ? 7 : missionDate.getDay();
+          return dayOfWeek === dayIndex;
+        }
+        return false;
+      });
+      
+      // Count missions by status for this day
+      const completed = dayMissions.filter(m => m.executed).length;
+      const inProgress = dayMissions.filter(m => !m.executed).length;
+      
+      return { completed, inProgress, total: dayMissions.length };
+    });
+  };
 
   const totalAlerts = alerts.length;
   const unresolvedAlerts = alerts.filter(a => a.status === "non résolue").length;
-  const urgentAlerts = alerts.filter(a => a.status_alert > 5).length;
+  const urgentAlerts = alerts.filter(a => (a.status_alert as number) > 5).length;
+  
+  // Bilan collection progress calculations
+  const totalBilansCollected = bilans.length;
+  const totalExpectedBilans = serres.length * 4; // Assuming 4 bilans per serre per year
+  const completedSerres = serres.filter(serre => {
+    const serreBilans = bilans.filter(b => b.id_serre === parseInt(serre.id, 10));
+    return serreBilans.length >= 4;
+  }).length;
+  const pendingSerres = serres.length - completedSerres;
   
   // Additional real data calculations
   const alertsBySeverity = {
-    low: alerts.filter(a => a.status_alert <= 3).length,
-    medium: alerts.filter(a => a.status_alert > 3 && a.status_alert <= 6).length,
-    high: alerts.filter(a => a.status_alert > 6).length
+    low: alerts.filter(a => (a.status_alert as number) <= 3).length,
+    medium: alerts.filter(a => (a.status_alert as number) > 3 && (a.status_alert as number) <= 6).length,
+    high: alerts.filter(a => (a.status_alert as number) > 6).length
   };
   
   const recentAlerts = alerts.filter(a => {
@@ -104,63 +316,6 @@ export default function TechnicianDashboard() {
     return alertDate >= weekAgo;
   }).length;
 
-  // Charts data generators using real alert data
-  const generateMonthlyAlertData = () => {
-    const months = ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Jun'];
-    const currentYear = new Date().getFullYear();
-    
-    // Group alerts by month based on their date for the current year
-    const monthlyData = months.map((month, index) => {
-      const monthIndex = index + 1; // 1-6 for Jan-Jun
-      const monthAlerts = alerts.filter(alert => {
-        if (!alert.date) return false;
-        const alertDate = new Date(alert.date);
-        return alertDate.getFullYear() === currentYear && alertDate.getMonth() + 1 === monthIndex;
-      });
-      return monthAlerts.length;
-    });
-    
-    return monthlyData;
-  };
-
-  const generateStatusDistributionData = () => {
-    const resolved = alerts.filter(a => a.status === "résolue").length;
-    const inProgress = alerts.filter(a => a.status === "non résolue" && a.status_alert <= 5).length;
-    const urgent = alerts.filter(a => a.status === "non résolue" && a.status_alert > 5).length;
-    return [resolved, inProgress, urgent];
-  };
-
-  const generateInterventionTrendData = () => {
-    const days = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
-    
-    // Group alerts by day of the week for the current week
-    const dailyData = days.map((day, index) => {
-      const dayIndex = index + 1; // 1-7 for Mon-Sun
-      const currentDate = new Date();
-      const startOfWeek = new Date(currentDate);
-      startOfWeek.setDate(currentDate.getDate() - currentDate.getDay() + 1); // Start from Monday
-      
-      const dayAlerts = alerts.filter(alert => {
-        if (!alert.date) return false;
-        const alertDate = new Date(alert.date);
-        // Check if alert is from current week
-        const weekStart = new Date(startOfWeek);
-        const weekEnd = new Date(startOfWeek);
-        weekEnd.setDate(weekStart.getDate() + 6);
-        
-        if (alertDate >= weekStart && alertDate <= weekEnd) {
-          // getDay() returns 0-6 (Sun-Sat), so we need to convert to 1-7 (Mon-Sun)
-          const dayOfWeek = alertDate.getDay() === 0 ? 7 : alertDate.getDay();
-          return dayOfWeek === dayIndex;
-        }
-        return false;
-      });
-      return dayAlerts.length;
-    });
-    
-    return dailyData;
-  };
-
   return (
     <div className="flex h-screen bg-background">
       {/* Main Content */}
@@ -169,252 +324,433 @@ export default function TechnicianDashboard() {
         <TechHeader role="technicien" />
 
         {/* Main Content */}
-        <main className="flex-1 overflow-auto px-4 sm:px-6 lg:px-8 py-8">
+        <main className="flex-1 overflow-auto px-3 sm:px-4 md:px-6 lg:px-8 py-4 sm:py-6 lg:py-8">
+          {/* Responsive Layout: Mobile-first approach */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
+            {/* Left Column: Alert Statistics Dashboard (2/3 width on large screens) */}
+            <div className="lg:col-span-2">
+              <div className="bg-gradient-to-br from-white to-gray-50 rounded-3xl shadow-xl border border-gray-100 p-4 sm:p-6 hover:shadow-2xl transition-all duration-500 hover:scale-[1.01]">
+                <h3 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
+                  <AlertTriangle className="h-5 w-5 text-red-500" />
+                  Tableau de bord des alertes et interventions
+                </h3>
+                
+                {/* Alert Statistics Grid */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mb-4 sm:mb-6">
+                  <div className="bg-gradient-to-br from-red-50 to-red-100 p-3 sm:p-4 rounded-2xl border border-red-200 shadow-md hover:shadow-lg transition-all duration-300 hover:scale-105">
+                    <div className="flex items-center gap-2">
+                      <AlertTriangle className="h-5 w-5 text-red-600" />
+                      <div>
+                        <div className="text-2xl font-bold text-red-600">
+                          {loading ? "..." : totalAlerts}
+                        </div>
+                        <div className="text-sm text-red-600">Total alertes</div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="bg-gradient-to-br from-orange-50 to-orange-100 p-3 sm:p-4 rounded-2xl border border-orange-200 shadow-md hover:shadow-lg transition-all duration-300 hover:scale-105">
+                    <div className="flex items-center gap-2">
+                      <Clock className="h-5 w-5 text-orange-600" />
+                      <div>
+                        <div className="text-xl sm:text-2xl font-bold text-orange-600">
+                          {loading ? "..." : unresolvedAlerts}
+                        </div>
+                        <div className="text-xs sm:text-sm text-orange-600">Non résolues</div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-3 sm:p-4 rounded-2xl border border-blue-200 shadow-md hover:shadow-lg transition-all duration-300 hover:scale-105">
+                    <div className="flex items-center gap-2">
+                      <Activity className="h-5 w-5 text-blue-600" />
+                      <div>
+                        <div className="text-xl sm:text-2xl font-bold text-blue-600">
+                          {loading ? "..." : interventions.length}
+                        </div>
+                        <div className="text-xs sm:text-sm text-blue-600">Interventions</div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="bg-gradient-to-br from-green-50 to-green-100 p-3 sm:p-4 rounded-2xl border border-green-200 shadow-md hover:shadow-lg transition-all duration-300 hover:scale-105">
+                    <div className="flex items-center gap-2">
+                      <AlertTriangle className="h-5 w-5 text-green-600" />
+                      <div>
+                        <div className="text-xl sm:text-2xl font-bold text-green-600">
+                          {loading ? "..." : interventions.filter(i => i.status === 'terminé').length}
+                        </div>
+                        <div className="text-xs sm:text-sm text-green-600">Terminées</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
 
-          {/* Alert Heatmap Section */}
-          <div className="mb-8">
-            <div className="bg-card rounded-2xl shadow-lg border p-6">
-              <GoogleMapsWrapper>
-                <AlertHeatmap height="520px" />
-              </GoogleMapsWrapper>
+                {/* Alert Severity Chart */}
+                <div className="h-48 sm:h-64 mb-4 sm:mb-6">
+                  {loading ? (
+                    <div className="h-full flex items-center justify-center">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-500"></div>
+                    </div>
+                  ) : (
+                    <Bar
+                      data={{
+                        labels: ['Faible', 'Moyenne', 'Élevée'],
+                        datasets: [{
+                          label: 'Alertes par sévérité',
+                          data: [
+                            alertsBySeverity.low,
+                            alertsBySeverity.medium,
+                            alertsBySeverity.high
+                          ],
+                          backgroundColor: [
+                            'rgba(34, 197, 94, 0.8)',
+                            'rgba(249, 115, 22, 0.8)',
+                            'rgba(239, 68, 68, 0.8)'
+                          ],
+                          borderColor: [
+                            'rgba(34, 197, 94, 1)',
+                            'rgba(249, 115, 22, 1)',
+                            'rgba(239, 68, 68, 1)'
+                          ],
+                          borderWidth: 2,
+                          borderRadius: 6,
+                        }]
+                      }}
+                      options={{
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                          legend: { display: false },
+                          tooltip: {
+                            callbacks: {
+                              label: function(context) {
+                                const total = (context.dataset.data as number[]).reduce((a: number, b: number) => a + b, 0);
+                                const percentage = total > 0 ? Math.round((context.raw as number / total) * 100) : 0;
+                                return `${context.label}: ${context.raw} (${percentage}%)`;
+                              }
+                            }
+                          }
+                        },
+                        scales: {
+                          y: { 
+                            beginAtZero: true,
+                            grid: { color: 'rgba(0, 0, 0, 0.1)' },
+                            ticks: { stepSize: 1 }
+                          },
+                          x: { grid: { display: false } }
+                        }
+                      }}
+                    />
+                  )}
+                </div>
+
+                {/* Recent Alerts and Notifications */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4">
+                  <div className="bg-gradient-to-br from-gray-50 to-gray-100 p-3 sm:p-4 rounded-2xl border border-gray-200 shadow-md hover:shadow-lg transition-all duration-300">
+                    <h4 className="font-medium text-foreground mb-3 flex items-center gap-2">
+                      <AlertCircle className="h-4 w-4 text-red-500" />
+                      <span className="text-sm sm:text-base">Alertes récentes</span>
+                    </h4>
+                    <div className="space-y-2 max-h-28 sm:max-h-32 overflow-y-auto">
+                      {loading ? (
+                        <div className="text-sm text-muted-foreground">Chargement...</div>
+                      ) : alerts.slice(0, 3).map(alert => (
+                        <div key={alert.id} className="flex items-center gap-2 p-2 bg-white rounded border">
+                          <div className={`w-2 h-2 rounded-full ${
+                            alert.status_alert <= 3 ? 'bg-green-500' : 
+                            alert.status_alert <= 6 ? 'bg-yellow-500' : 'bg-red-500'
+                          }`}></div>
+                          <div className="flex-1 min-w-0">
+                            <div className="text-sm font-medium truncate">{alert.maladie}</div>
+                            <div className="text-xs text-muted-foreground">{alert.serre_nom}</div>
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            {alert.date ? new Date(alert.date).toLocaleDateString('fr-FR') : 'N/A'}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="bg-gradient-to-br from-gray-50 to-gray-100 p-3 sm:p-4 rounded-2xl border border-gray-200 shadow-md hover:shadow-lg transition-all duration-300">
+                    <h4 className="font-medium text-foreground mb-3 flex items-center gap-2">
+                      <Activity className="h-4 w-4 text-blue-500" />
+                      <span className="text-sm sm:text-base">Notifications</span>
+                    </h4>
+                    <div className="space-y-2 max-h-28 sm:max-h-32 overflow-y-auto">
+                      {loading ? (
+                        <div className="text-sm text-muted-foreground">Chargement...</div>
+                      ) : notifications.slice(0, 3).map(notification => (
+                        <div key={notification.id} className="flex items-center gap-2 p-2 bg-white rounded border">
+                          <div className={`w-2 h-2 rounded-full ${
+                            notification.status === 'non_vue' ? 'bg-blue-500' : 'bg-gray-400'
+                          }`}></div>
+                          <div className="flex-1 min-w-0">
+                            <div className="text-sm font-medium truncate">{notification.description}</div>
+                            <div className="text-xs text-muted-foreground">{notification.type_notification}</div>
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            {new Date(notification.date).toLocaleDateString('fr-FR')}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
-          </div>
 
-          {/* Stats and Actions Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-         
-            {/* Quick Actions */}
-            <div className="bg-card rounded-2xl shadow-lg border p-6">
-              <h3 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
-                <Map className="h-5 w-5 text-emerald-500" />
-                Actions rapides
+            {/* Right Column: Quick Actions (1/3 width on large screens) */}
+            <div className="lg:col-span-1">
+              <div className="bg-gradient-to-br from-white to-gray-50 rounded-3xl shadow-xl border border-gray-100 p-4 sm:p-6 hover:shadow-2xl transition-all duration-500 hover:scale-[1.01]">
+              <h3 className="text-base sm:text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
+                  <PlusCircle className="h-5 w-5 text-emerald-500" />
+                  <span>Actions rapides</span>
               </h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 gap-3">
                 <button 
                   onClick={() => navigate("/technician/map")}
-                  className="w-full px-4 py-3 text-sm font-semibold text-white rounded-xl transition-all flex items-center justify-center gap-2 shadow-md bg-blue-600 hover:bg-blue-700"
+                    className="w-full px-4 py-3 text-sm font-semibold text-white rounded-xl transition-all flex items-center justify-center gap-2 shadow-md bg-blue-600 hover:bg-blue-700 hover:scale-[1.02] active:scale-[0.98]"
                 >
                   <Map className="h-4 w-4" />
                   Voir la carte
                 </button>
                 <button 
                   onClick={openInterventionForm}
-                  className="w-full px-4 py-3 text-sm font-semibold text-white rounded-xl transition-all flex items-center justify-center gap-2 shadow-md bg-emerald-600 hover:bg-emerald-700"
+                    className="w-full px-4 py-3 text-sm font-semibold text-white rounded-xl transition-all flex items-center justify-center gap-2 shadow-md bg-emerald-600 hover:bg-emerald-700 hover:scale-[1.02] active:scale-[0.98]"
                 >
                   <PlusCircle className="h-4 w-4" />
                   Nouvelle intervention
                 </button>
                 <button 
                   onClick={() => navigate('/technician/missions')}
-                  className="w-full px-4 py-3 text-sm font-semibold text-white rounded-xl transition-all flex items-center justify-center gap-2 shadow-md bg-amber-500 hover:bg-amber-600"
+                    className="w-full px-4 py-3 text-sm font-semibold text-white rounded-xl transition-all flex items-center justify-center gap-2 shadow-md bg-amber-500 hover:bg-amber-600 hover:scale-[1.02] active:scale-[0.98]"
                 >
                   <ClipboardCheck className="h-4 w-4" />
                   Voir les missions
                 </button>
                 <button 
                   onClick={() => navigate('/technician/reports')}
-                  className="w-full px-4 py-3 text-sm font-semibold text-white rounded-xl transition-all flex items-center justify-center gap-2 shadow-md bg-indigo-600 hover:bg-indigo-700"
+                    className="w-full px-4 py-3 text-sm font-semibold text-white rounded-xl transition-all flex items-center justify-center gap-2 shadow-md bg-indigo-600 hover:bg-indigo-700 hover:scale-[1.02] active:scale-[0.98]"
                 >
                   <BarChart3 className="h-4 w-4" />
                   Rapports
                 </button>
               </div>
+                </div>
+              </div>
             </div>
 
-            {/* Stats */}
-            <div className="bg-card rounded-2xl shadow-lg border p-6">
+
+
+          {/* NEW MISSION-BASED VISUALIZATIONS */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mb-6 sm:mb-8">
+            {/* Mission Coverage Heatmap by Serre */}
+            <div className="bg-gradient-to-br from-white to-gray-50 rounded-3xl shadow-xl border border-gray-100 p-4 sm:p-6 hover:shadow-2xl transition-all duration-500 hover:scale-[1.01]">
               <h3 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
-                <BarChart3 className="h-5 w-5 text-blue-600" />
-                Statistiques
+                <Target className="h-5 w-5 text-emerald-500" />
+                Couverture des missions par serre
               </h3>
-              <div className="space-y-3">
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Interventions du jour</span>
-                  <span className="font-extrabold text-[#10b981] text-base">
-                    {loading ? "..." : alerts.filter(a => {
-                      if (!a.date) return false;
-                      const alertDate = new Date(a.date);
-                      const today = new Date();
-                      return alertDate.toDateString() === today.toDateString();
-                    }).length}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Missions en cours</span>
-                  <span className="font-extrabold text-blue-600 text-base">
-                    {loading ? "..." : alerts.filter(a => a.status === "non résolue").length}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Rapports à compléter</span>
-                  <span className="font-extrabold text-sky-600 text-base">
-                    {loading ? "..." : Math.max(0, alerts.length - alerts.filter(a => a.status === "résolue").length)}
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {/* Alert Summary */}
-            <div className="bg-card rounded-2xl shadow-lg border p-6">
-              <h3 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
-                <AlertTriangle className="h-5 w-5 text-red-600" />
-                Résumé des alertes
-              </h3>
-              <div className="space-y-3">
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Total alertes</span>
-                  <span className="font-extrabold text-red-600 text-base">
-                    {loading ? "..." : totalAlerts}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Non résolues</span>
-                  <span className="font-extrabold text-orange-600 text-base">
-                    {loading ? "..." : unresolvedAlerts}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Urgentes</span>
-                  <span className="font-extrabold text-red-600 text-base">
-                    {loading ? "..." : urgentAlerts}
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Graphs Section */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-            {/* Intervention Trend */}
-            <div className="bg-card p-6 rounded-2xl border shadow-lg">
-              <div className="flex items-center mb-4">
-                <TrendingUp className="h-5 w-5 text-purple-600 mr-2" />
-                <h4 className="text-sm font-medium text-foreground">Tendances d'intervention</h4>
-              </div>
-              <div className="h-56">
-                <Line
-                  data={{
-                    labels: ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'],
-                    datasets: [
-                      {
-                        label: 'Interventions',
-                        data: generateInterventionTrendData(),
-                        borderColor: 'rgba(147, 51, 234, 1)',
-                        backgroundColor: (ctx: any) => {
-                          const chart = ctx.chart;
-                          const { ctx: c, chartArea } = chart;
-                          if (!chartArea) return 'rgba(147, 51, 234, 0.15)';
-                          const gradient = c.createLinearGradient(0, chartArea.top, 0, chartArea.bottom);
-                          gradient.addColorStop(0, 'rgba(147, 51, 234, 0.35)');
-                          gradient.addColorStop(1, 'rgba(147, 51, 234, 0.05)');
-                          return gradient;
-                        },
-                        tension: 0.45,
-                        fill: true,
+              <div className="h-48 sm:h-64 mb-4">
+                {loading ? (
+                  <div className="h-full flex items-center justify-center">
+                    <div className="animate-spin rounded-full h-6 w-6 sm:h-8 sm:w-8 border-b-2 border-emerald-500"></div>
+                  </div>
+                ) : serres.length > 0 ? (
+                  <Bar
+                    data={{
+                      labels: serres.map(serre => serre.nom),
+                      datasets: [{
+                        label: 'Missions par serre',
+                        data: serres.map(serre => getMissionCountForSerre(serre.id)),
+                        backgroundColor: 'rgba(34, 197, 94, 0.8)',
+                        borderColor: 'rgba(34, 197, 94, 1)',
                         borderWidth: 2,
-                        pointBackgroundColor: 'rgba(147, 51, 234, 1)',
-                        pointBorderColor: '#fff',
-                        pointBorderWidth: 2,
-                        pointRadius: 4,
-                      },
-                    ],
-                  }}
-                  options={{
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                      legend: { display: false },
-                      tooltip: { enabled: true },
-                    },
-                    scales: {
-                      y: { beginAtZero: true, grid: { color: 'rgba(0, 0, 0, 0.1)' } },
-                      x: { grid: { display: false } },
-                    },
-                  }}
-                />
-              </div>
-            </div>
-
-            {/* Alerts by Month */}
-            <div className="bg-card p-6 rounded-2xl border shadow-lg">
-              <div className="flex items-center mb-4">
-                <BarChart3 className="h-5 w-5 text-blue-600 mr-2" />
-                <h4 className="text-sm font-medium text-foreground">Alertes par mois</h4>
-              </div>
-              <div className="h-56">
-                <Bar
-                  data={{
-                    labels: ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Jun'],
-                    datasets: [
-                      {
-                        label: 'Alertes',
-                        data: generateMonthlyAlertData(),
-                        backgroundColor: [
-                          'rgba(239, 68, 68, 0.85)',
-                          'rgba(249, 115, 22, 0.85)',
-                          'rgba(234, 179, 8, 0.85)',
-                          'rgba(34, 197, 94, 0.85)',
-                          'rgba(59, 130, 246, 0.85)',
-                          'rgba(99, 102, 241, 0.85)'
-                        ],
-                        borderColor: [
-                          'rgba(239, 68, 68, 1)',
-                          'rgba(249, 115, 22, 1)',
-                          'rgba(234, 179, 8, 1)',
-                          'rgba(34, 197, 94, 1)',
-                          'rgba(59, 130, 246, 1)',
-                          'rgba(99, 102, 241, 1)'
-                        ],
-                        borderWidth: 1,
                         borderRadius: 6,
+                        borderSkipped: false,
+                      }]
+                    }}
+                    options={{
+                      responsive: true,
+                      maintainAspectRatio: false,
+                      plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                          callbacks: {
+                            afterLabel: function(context) {
+                              const serreId = serres[context.dataIndex]?.id;
+                              if (serreId) {
+                                return `Dernière mission: ${getLastMissionDate(serreId)}`;
+                              }
+                              return '';
+                            }
+                          }
+                        }
                       },
-                    ],
-                  }}
-                  options={{
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                      legend: { display: false },
-                      tooltip: { enabled: true },
-                    },
-                    scales: {
-                      y: { beginAtZero: true, grid: { color: 'rgba(0, 0, 0, 0.1)' } },
-                      x: { grid: { display: false } },
-                    },
-                  }}
-                />
+                      scales: {
+                        y: { 
+                          beginAtZero: true,
+                          grid: { color: 'rgba(0, 0, 0, 0.1)' },
+                          ticks: { stepSize: 1 }
+                        },
+                        x: { 
+                          grid: { display: false },
+                          ticks: { 
+                            maxRotation: 45,
+                            minRotation: 0,
+                            font: { size: window.innerWidth < 640 ? 10 : 12 }
+                          }
+                        }
+                      }
+                    }}
+                  />
+                ) : (
+                  <div className="h-full flex items-center justify-center text-muted-foreground">
+                    Aucune serre trouvée
+                  </div>
+                )}
+              </div>
+              {/* Summary cards below chart */}
+              <div className="grid grid-cols-2 gap-3 sm:gap-4">
+                <div className="text-center p-2 sm:p-3 bg-gradient-to-br from-emerald-50 to-emerald-100 rounded-xl border border-emerald-200 shadow-md hover:shadow-lg transition-all duration-300">
+                  <div className="text-base sm:text-lg font-bold text-emerald-600">
+                    {loading ? "..." : serres.length > 0 ? Math.max(...serres.map(s => getMissionCountForSerre(s.id))) : 0}
+                  </div>
+                  <div className="text-xs text-emerald-600">Max missions</div>
+                </div>
+                <div className="text-center p-2 sm:p-3 bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl border border-blue-200 shadow-md hover:shadow-lg transition-all duration-300">
+                  <div className="text-base sm:text-lg font-bold text-blue-600">
+                    {loading ? "..." : serres.length > 0 ? Math.round(serres.reduce((acc, s) => acc + getMissionCountForSerre(s.id), 0) / serres.length) : 0}
+                  </div>
+                  <div className="text-xs text-blue-600">Moyenne</div>
+                </div>
               </div>
             </div>
-          </div>
 
-          {/* Donut Chart */}
-          <div className="grid grid-cols-1 gap-6 mb-8">
-            <div className="bg-card p-6 rounded-2xl border shadow-lg">
-              <div className="flex items-center mb-4">
-                <Activity className="h-5 w-5 text-green-600 mr-2" />
-                <h4 className="text-sm font-medium text-foreground">Distribution des statuts</h4>
+            {/* Bilan Data Collection Progress */}
+            <div className="bg-gradient-to-br from-white to-gray-50 rounded-3xl shadow-xl border border-gray-100 p-4 sm:p-6 hover:shadow-2xl transition-all duration-500 hover:scale-[1.01]">
+              <h3 className="text-base sm:text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
+                <BarChart3 className="h-5 w-5 text-blue-500" />
+                <span>Progression de collecte des bilans</span>
+              </h3>
+              <div className="h-48 sm:h-64 mb-4">
+                {loading ? (
+                  <div className="h-full flex items-center justify-center">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
               </div>
-              <div className="h-56 relative">
-                <Doughnut
+                ) : (
+                  <Doughnut
                   data={{
-                    labels: ['Résolues', 'En cours', 'Urgentes'],
-                    datasets: [
-                      {
-                        data: generateStatusDistributionData(),
+                      labels: ['Serres complètes', 'Serres en attente', 'Bilans collectés'],
+                      datasets: [{
+                        data: [
+                          completedSerres,
+                          pendingSerres,
+                          totalBilansCollected
+                        ],
                         backgroundColor: [
-                          'rgba(34, 197, 94, 0.85)',
-                          'rgba(59, 130, 246, 0.85)',
-                          'rgba(239, 68, 68, 0.85)',
+                          'rgba(34, 197, 94, 0.8)',
+                          'rgba(249, 115, 22, 0.8)',
+                          'rgba(59, 130, 246, 0.8)'
                         ],
                         borderColor: [
                           'rgba(34, 197, 94, 1)',
-                          'rgba(59, 130, 246, 1)',
-                          'rgba(239, 68, 68, 1)',
+                          'rgba(249, 115, 22, 1)',
+                          'rgba(59, 130, 246, 1)'
                         ],
                         borderWidth: 2,
                         hoverOffset: 6,
+                      }]
+                  }}
+                  options={{
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                          position: 'bottom',
+                          labels: { 
+                            padding: 20, 
+                            usePointStyle: true,
+                            font: { size: 12 }
+                          }
+                        },
+                        tooltip: {
+                          callbacks: {
+                            label: function(context) {
+                              const total = context.dataset.data.reduce((a: number, b: number) => a + b, 0);
+                              const value = context.raw as number;
+                              const percentage = total > 0 ? Math.round((value / total) * 100) : 0;
+                              return `${context.label}: ${value} (${percentage}%)`;
+                            }
+                          }
+                        }
                       },
-                    ],
+                      cutout: '60%'
+                    }}
+                  />
+                )}
+              </div>
+              {/* Progress bar and stats */}
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs sm:text-sm">Progression globale</span>
+                  <span className="text-xs sm:text-sm font-bold text-blue-600">
+                    {loading ? "..." : Math.round((totalBilansCollected / Math.max(1, totalExpectedBilans)) * 100)}%
+                  </span>
+                </div>
+                <div className="w-full bg-gray-200 rounded-full h-2">
+                  <div 
+                    className="bg-gradient-to-r from-blue-500 to-indigo-500 h-2 rounded-full transition-all duration-500"
+                    style={{width: `${Math.min(100, (totalBilansCollected / Math.max(1, totalExpectedBilans)) * 100)}%`}}
+                  ></div>
+                </div>
+                <div className="text-xs text-muted-foreground text-center">
+                  Objectif: {totalExpectedBilans} bilans ({serres.length} serres × 4 bilans/an)
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Mission Pattern Analysis - Full Width with Charts */}
+          <div className="grid grid-cols-1 gap-4 sm:gap-6 mb-6 sm:mb-8">
+            <div className="bg-gradient-to-br from-white to-gray-50 rounded-3xl shadow-xl border border-gray-100 p-4 sm:p-6 hover:shadow-2xl transition-all duration-500 hover:scale-[1.01]">
+              <h3 className="text-base sm:text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
+                <Calendar className="h-5 w-5 text-purple-500" />
+                <span>Analyse des patterns de mission</span>
+              </h3>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+                {/* Left side: Mission Repetition Patterns Chart */}
+                <div className="space-y-4">
+                  <h4 className="font-medium text-foreground">Patterns de répétition</h4>
+                  <div className="h-40 sm:h-48">
+                    {loading ? (
+                      <div className="h-full flex items-center justify-center">
+                        <div className="animate-spin rounded-full h-5 w-5 sm:h-6 sm:w-6 border-b-2 border-purple-500"></div>
+                      </div>
+                    ) : (
+                <Doughnut
+                  data={{
+                          labels: ['Missions quotidiennes', 'Missions hebdomadaires', 'Missions ponctuelles'],
+                          datasets: [{
+                            data: [
+                              getDailyRepetitionCount(),
+                              getWeeklyRepetitionCount(),
+                              missions.length - getDailyRepetitionCount() - getWeeklyRepetitionCount()
+                            ],
+                        backgroundColor: [
+                              'rgba(147, 51, 234, 0.8)',
+                              'rgba(99, 102, 241, 0.8)',
+                              'rgba(156, 163, 175, 0.8)'
+                        ],
+                        borderColor: [
+                              'rgba(147, 51, 234, 1)',
+                              'rgba(99, 102, 241, 1)',
+                              'rgba(156, 163, 175, 1)'
+                        ],
+                        borderWidth: 2,
+                            hoverOffset: 4,
+                          }]
                   }}
                   options={{
                     responsive: true,
@@ -422,39 +758,711 @@ export default function TechnicianDashboard() {
                     plugins: {
                       legend: {
                         position: 'bottom',
-                        labels: { padding: 20, usePointStyle: true },
-                      },
-                      tooltip: {
-                        callbacks: {
-                          label: function(context) {
-                            const total = (context.dataset.data as number[]).reduce((a: number, b: number) => a + b, 0);
-                            const value = context.raw as number;
-                            const pct = total ? Math.round((value / total) * 100) : 0;
-                            return `${context.label}: ${value} (${pct}%)`;
+                              labels: { 
+                                padding: 15, 
+                                usePointStyle: true,
+                                font: { size: 11 }
+                              }
+                            }
+                          },
+                          cutout: '50%'
+                        }}
+                      />
+                    )}
+                  </div>
+                </div>
+
+                {/* Right side: Mission Status and Timeline */}
+                <div className="space-y-4">
+                  <h4 className="font-medium text-foreground">Statut et tendances</h4>
+                  <div className="h-40 sm:h-48">
+                    {loading ? (
+                      <div className="h-full flex items-center justify-center">
+                        <div className="animate-spin rounded-full h-5 w-5 sm:h-6 sm:w-6 border-b-2 border-green-500"></div>
+                      </div>
+                    ) : (
+                      <Line
+                        data={{
+                          labels: ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'],
+                          datasets: [
+                            {
+                              label: 'Missions planifiées',
+                              data: getWeeklyMissionData(),
+                              borderColor: 'rgba(34, 197, 94, 1)',
+                              backgroundColor: 'rgba(34, 197, 94, 0.1)',
+                              tension: 0.4,
+                              fill: true,
+                              borderWidth: 2,
+                              pointBackgroundColor: 'rgba(34, 197, 94, 1)',
+                              pointBorderColor: '#fff',
+                              pointBorderWidth: 2,
+                              pointRadius: 4,
+                            },
+                            {
+                              label: 'Missions terminées',
+                              data: getMissionStatusData().map(d => d.completed),
+                              borderColor: 'rgba(34, 197, 94, 1)',
+                              backgroundColor: 'rgba(34, 197, 94, 0.05)',
+                              tension: 0.4,
+                              fill: false,
+                              borderWidth: 2,
+                              pointBackgroundColor: 'rgba(34, 197, 94, 1)',
+                              borderDash: [5, 5],
+                            },
+                            {
+                              label: 'Missions en cours',
+                              data: getMissionStatusData().map(d => d.inProgress),
+                              borderColor: 'rgba(249, 115, 22, 1)',
+                              backgroundColor: 'rgba(249, 115, 22, 0.05)',
+                              tension: 0.4,
+                              fill: false,
+                              borderWidth: 2,
+                              pointBackgroundColor: 'rgba(249, 115, 22, 1)',
+                            }
+                          ]
+                        }}
+                        options={{
+                          responsive: true,
+                          maintainAspectRatio: false,
+                          plugins: {
+                            legend: { 
+                              display: true,
+                              position: 'top',
+                              labels: { 
+                                usePointStyle: true,
+                                font: { size: 11 }
+                              }
+                            },
+                            tooltip: { 
+                              enabled: true,
+                              mode: 'index',
+                              intersect: false
+                            }
+                          },
+                          scales: {
+                            y: { 
+                              beginAtZero: true,
+                              grid: { color: 'rgba(0, 0, 0, 0.1)' },
+                              ticks: { stepSize: 1 }
+                            },
+                            x: { grid: { display: false } }
+                          },
+                          interaction: {
+                            mode: 'nearest',
+                            axis: 'x',
+                            intersect: false
                           }
-                        }
-                      }
-                    },
-                    cutout: '65%'
-                  }}
-                />
-                {(() => {
-                  const [resolved, inProgress, urgent] = generateStatusDistributionData();
-                  const total = Math.max(1, resolved + inProgress + urgent);
-                  const rp = Math.round((resolved / total) * 100);
-                  const ip = Math.round((inProgress / total) * 100);
-                  const up = Math.round((urgent / total) * 100);
-                  return (
-                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                      <div className="text-center leading-tight">
-                        <div className="text-xs text-muted-foreground">Résolues / En cours / Urgentes</div>
-                        <div className="text-sm font-bold">
-                          {rp}% <span className="text-muted-foreground">/</span> {ip}% <span className="text-muted-foreground">/</span> {up}%
+                        }}
+                      />
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Bottom section: Mission Status Distribution and Optimization */}
+              <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-4">
+                {/* Mission Status Distribution */}
+                <div className="space-y-3">
+                  <h5 className="font-medium text-foreground text-xs sm:text-sm">Statut des missions</h5>
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between p-2 sm:p-3 bg-gradient-to-r from-green-50 to-green-100 rounded-xl border border-green-200 shadow-sm hover:shadow-md transition-all duration-300">
+                      <div className="flex items-center gap-2">
+                        <CheckCircle className="h-4 w-4 text-green-600" />
+                        <span className="text-xs sm:text-sm">Terminées</span>
+                      </div>
+                      <span className="font-bold text-green-600 text-sm sm:text-base">
+                        {loading ? "..." : missions.filter(m => m.executed).length}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between p-2 sm:p-3 bg-gradient-to-r from-yellow-50 to-yellow-100 rounded-xl border border-yellow-200 shadow-sm hover:shadow-md transition-all duration-300">
+                      <div className="flex items-center gap-2">
+                        <Clock className="h-4 w-4 text-yellow-600" />
+                        <span className="text-xs sm:text-sm">En cours</span>
+                      </div>
+                      <span className="font-bold text-yellow-600 text-sm sm:text-base">
+                        {loading ? "..." : missions.filter(m => !m.executed).length}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Mission Efficiency Metrics */}
+                <div className="space-y-3">
+                  <h5 className="font-medium text-foreground text-sm">Métriques d'efficacité</h5>
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between p-2 bg-blue-50 rounded-lg">
+                      <div className="flex items-center gap-2">
+                        <TrendingUp className="h-4 w-4 text-blue-600" />
+                        <span className="text-sm">Taux de réussite</span>
+                      </div>
+                      <span className="font-bold text-blue-600">
+                        {loading ? "..." : missions.length > 0 ? Math.round((missions.filter(m => m.executed).length / missions.length) * 100) : 0}%
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Optimization Suggestion */}
+                <div className="space-y-3">
+                  <h5 className="font-medium text-foreground text-sm">Optimisation suggérée</h5>
+                  <div className="p-2 bg-purple-50 rounded-lg">
+                    <div className="text-xs text-purple-700">
+                      {loading ? "..." : getOptimizationSuggestion()}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Mission Efficiency Dashboard */}
+          <div className="grid grid-cols-1 gap-4 sm:gap-6 mb-6 sm:mb-8">
+            <div className="bg-gradient-to-br from-white to-gray-50 rounded-3xl shadow-xl border border-gray-100 p-4 sm:p-6 hover:shadow-2xl transition-all duration-500 hover:scale-[1.01]">
+              <h3 className="text-base sm:text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
+                <TrendingUp className="h-5 w-5 text-emerald-500" />
+                <span>Efficacité des missions</span>
+              </h3>
+              
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+                {/* Left: Mission Efficiency Metrics */}
+                <div className="space-y-4">
+                  <h4 className="font-medium text-foreground">Métriques d'efficacité</h4>
+                  
+                  {/* Efficiency Stats Grid */}
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="bg-gradient-to-br from-emerald-50 to-emerald-100 p-3 rounded-2xl border border-emerald-200 shadow-md hover:shadow-lg transition-all duration-300">
+                      <div className="text-center">
+                        <div className="text-2xl sm:text-3xl font-bold text-emerald-600">
+                          {loading ? "..." : missions.length > 0 ? Math.round((missions.filter(m => m.executed).length / missions.length) * 100) : 0}%
                         </div>
+                        <div className="text-xs sm:text-sm text-emerald-600">Taux de réussite</div>
                       </div>
                     </div>
-                  );
-                })()}
+                    
+                    <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-3 rounded-2xl border border-blue-200 shadow-md hover:shadow-lg transition-all duration-300">
+                      <div className="text-center">
+                        <div className="text-2xl sm:text-3xl font-bold text-blue-600">
+                          {loading ? "..." : missions.length}
+                        </div>
+                        <div className="text-xs sm:text-sm text-blue-600">Total missions</div>
+                      </div>
+                    </div>
+                    
+                    <div className="bg-gradient-to-br from-green-50 to-green-100 p-3 rounded-2xl border border-green-200 shadow-md hover:shadow-lg transition-all duration-300">
+                      <div className="text-center">
+                        <div className="text-2xl sm:text-3xl font-bold text-green-600">
+                          {loading ? "..." : missions.filter(m => m.executed).length}
+                        </div>
+                        <div className="text-xs sm:text-sm text-green-600">Terminées</div>
+                      </div>
+                    </div>
+                    
+                    <div className="bg-gradient-to-br from-orange-50 to-orange-100 p-3 rounded-2xl border border-orange-200 shadow-md hover:shadow-lg transition-all duration-300">
+                      <div className="text-center">
+                        <div className="text-2xl sm:text-3xl font-bold text-orange-600">
+                          {loading ? "..." : missions.filter(m => !m.executed).length}
+                        </div>
+                        <div className="text-xs sm:text-sm text-orange-600">En cours</div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* Mission Type Distribution */}
+                  <div className="bg-gray-50 p-3 rounded-xl">
+                    <h5 className="font-medium text-foreground text-sm mb-2">Types de missions</h5>
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between text-xs">
+                        <span>Quotidiennes</span>
+                        <span className="font-semibold text-emerald-600">
+                          {loading ? "..." : getDailyRepetitionCount()}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between text-xs">
+                        <span>Hebdomadaires</span>
+                        <span className="font-semibold text-blue-600">
+                          {loading ? "..." : getWeeklyRepetitionCount()}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between text-xs">
+                        <span>Ponctuelles</span>
+                        <span className="font-semibold text-purple-600">
+                          {loading ? "..." : missions.length - getDailyRepetitionCount() - getWeeklyRepetitionCount()}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Right: Mission Efficiency Chart */}
+                <div className="space-y-4">
+                  <h4 className="font-medium text-foreground">Tendances d'efficacité</h4>
+                  <div className="h-48 sm:h-56">
+                    {loading ? (
+                      <div className="h-full flex items-center justify-center">
+                        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-emerald-500"></div>
+                      </div>
+                    ) : (
+                      <Line
+                        data={{
+                          labels: ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'],
+                          datasets: [
+                            {
+                              label: 'Missions planifiées',
+                              data: getWeeklyMissionData(),
+                              borderColor: 'rgba(34, 197, 94, 1)',
+                              backgroundColor: 'rgba(34, 197, 94, 0.1)',
+                              tension: 0.4,
+                              fill: true,
+                              borderWidth: 2,
+                              pointBackgroundColor: 'rgba(34, 197, 94, 1)',
+                              pointBorderColor: '#fff',
+                              pointBorderWidth: 2,
+                              pointRadius: 4,
+                            },
+                            {
+                              label: 'Missions terminées',
+                              data: getMissionStatusData().map(d => d.completed),
+                              borderColor: 'rgba(59, 130, 246, 1)',
+                              backgroundColor: 'rgba(59, 130, 246, 0.05)',
+                              tension: 0.4,
+                              fill: false,
+                              borderWidth: 2,
+                              pointBackgroundColor: 'rgba(59, 130, 246, 1)',
+                              borderDash: [5, 5],
+                            }
+                          ]
+                        }}
+                        options={{
+                          responsive: true,
+                          maintainAspectRatio: false,
+                          plugins: {
+                            legend: { 
+                              display: true,
+                              position: 'top',
+                              labels: { 
+                                usePointStyle: true,
+                                font: { size: 11 }
+                              }
+                            },
+                            tooltip: { 
+                              enabled: true,
+                              mode: 'index',
+                              intersect: false
+                            }
+                          },
+                          scales: {
+                            y: { 
+                              beginAtZero: true,
+                              grid: { color: 'rgba(0, 0, 0, 0.1)' },
+                              ticks: { stepSize: 1 }
+                            },
+                            x: { grid: { display: false } }
+                          },
+                          interaction: {
+                            mode: 'nearest',
+                            axis: 'x',
+                            intersect: false
+                          }
+                        }}
+                      />
+                    )}
+                  </div>
+                  
+                  {/* Efficiency Insights */}
+                  <div className="bg-gradient-to-br from-emerald-50 to-emerald-100 p-3 rounded-xl border border-emerald-200">
+                    <h5 className="font-medium text-emerald-800 text-sm mb-2">💡 Insight d'optimisation</h5>
+                    <div className="text-xs text-emerald-700">
+                      {loading ? "..." : getOptimizationSuggestion()}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Bottom: Mission Performance by Serre */}
+              <div className="mt-6">
+                <h4 className="font-medium text-foreground mb-3 text-sm sm:text-base">Performance par serre</h4>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 max-h-40 overflow-y-auto">
+                  {loading ? (
+                    <div className="text-sm text-muted-foreground">Chargement...</div>
+                  ) : serres.slice(0, 6).map(serre => {
+                    const serreMissions = missions.filter(m => m.id_serre === parseInt(serre.id, 10));
+                    const completedMissions = serreMissions.filter(m => m.executed).length;
+                    const totalMissions = serreMissions.length;
+                    const efficiency = totalMissions > 0 ? Math.round((completedMissions / totalMissions) * 100) : 0;
+                    
+                    return (
+                      <div key={serre.id} className="bg-white p-3 rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-all duration-300">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-xs font-medium text-gray-700 truncate">{serre.nom}</span>
+                          <span className={`text-xs px-2 py-1 rounded-full ${
+                            efficiency >= 80 ? 'bg-green-100 text-green-700' :
+                            efficiency >= 60 ? 'bg-yellow-100 text-yellow-700' :
+                            'bg-red-100 text-red-700'
+                          }`}>
+                            {efficiency}%
+                          </span>
+                        </div>
+                        <div className="text-xs text-gray-500">
+                          {completedMissions}/{totalMissions} missions terminées
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Intervention Performance Dashboard */}
+          <div className="grid grid-cols-1 gap-4 sm:gap-6 mb-6 sm:mb-8">
+            <div className="bg-gradient-to-br from-white to-gray-50 rounded-3xl shadow-xl border border-gray-100 p-4 sm:p-6 hover:shadow-2xl transition-all duration-500 hover:scale-[1.01]">
+              <h3 className="text-base sm:text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
+                <Shield className="h-5 w-5 text-indigo-500" />
+                <span>Performance des interventions et rapports</span>
+              </h3>
+              
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+                {/* Left: Intervention Performance Chart */}
+                <div className="space-y-4">
+                  <h4 className="font-medium text-foreground">Performance des interventions</h4>
+                  <div className="h-40 sm:h-48">
+                    {loading ? (
+                      <div className="h-full flex items-center justify-center">
+                        <div className="animate-spin rounded-full h-5 w-5 sm:h-6 sm:w-6 border-b-2 border-indigo-500"></div>
+                      </div>
+                    ) : (
+                      <Doughnut
+                        data={{
+                          labels: ['Terminées', 'En cours', 'En attente'],
+                          datasets: [{
+                            data: [
+                              interventions.filter(i => i.status === 'terminé').length,
+                              interventions.filter(i => i.status === 'encours').length,
+                              interventions.filter(i => i.status !== 'terminé' && i.status !== 'encours').length
+                            ],
+                            backgroundColor: [
+                              'rgba(34, 197, 94, 0.8)',
+                              'rgba(59, 130, 246, 0.8)',
+                              'rgba(156, 163, 175, 0.8)'
+                            ],
+                            borderColor: [
+                              'rgba(34, 197, 94, 1)',
+                              'rgba(59, 130, 246, 1)',
+                              'rgba(156, 163, 175, 1)'
+                            ],
+                            borderWidth: 2,
+                            hoverOffset: 4,
+                          }]
+                        }}
+                        options={{
+                          responsive: true,
+                          maintainAspectRatio: false,
+                          plugins: {
+                            legend: {
+                              position: 'bottom',
+                              labels: { 
+                                padding: 15, 
+                                usePointStyle: true,
+                                font: { size: 11 }
+                              }
+                            }
+                          },
+                          cutout: '50%'
+                        }}
+                      />
+                    )}
+                  </div>
+                  
+                  {/* Intervention Stats */}
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="text-center p-3 bg-indigo-50 rounded-lg">
+                      <div className="text-lg font-bold text-indigo-600">
+                        {loading ? "..." : interventions.length > 0 ? Math.round((interventions.filter(i => i.status === 'terminé').length / interventions.length) * 100) : 0}%
+                      </div>
+                      <div className="text-xs text-indigo-600">Taux de réussite</div>
+                    </div>
+                    <div className="text-center p-3 bg-green-50 rounded-lg">
+                      <div className="text-lg font-bold text-green-600">
+                        {loading ? "..." : interventions.filter(i => i.status === 'terminé').length}
+                      </div>
+                      <div className="text-xs text-green-600">Terminées</div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Right: Reports and Workload */}
+                <div className="space-y-4">
+                  <h4 className="font-medium text-foreground">Rapports et charge de travail</h4>
+                  <div className="h-40 sm:h-48">
+                    {loading ? (
+                      <div className="h-full flex items-center justify-center">
+                        <div className="animate-spin rounded-full h-5 w-5 sm:h-6 sm:w-6 border-b-2 border-green-500"></div>
+                      </div>
+                    ) : (
+                      <Bar
+                        data={{
+                          labels: ['Rapports créés', 'Interventions actives', 'Alertes en cours'],
+                          datasets: [{
+                            label: 'Activité récente',
+                            data: [
+                              reports.length,
+                              interventions.filter(i => i.status === 'encours').length,
+                              alerts.filter(a => a.status === "non résolue").length
+                            ],
+                            backgroundColor: [
+                              'rgba(99, 102, 241, 0.8)',
+                              'rgba(59, 130, 246, 0.8)',
+                              'rgba(239, 68, 68, 0.8)'
+                            ],
+                            borderColor: [
+                              'rgba(99, 102, 241, 1)',
+                              'rgba(59, 130, 246, 1)',
+                              'rgba(239, 68, 68, 1)'
+                            ],
+                            borderWidth: 2,
+                            borderRadius: 6,
+                          }]
+                        }}
+                        options={{
+                          responsive: true,
+                          maintainAspectRatio: false,
+                          plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                              callbacks: {
+                                label: function(context) {
+                                  return `${context.label}: ${context.raw}`;
+                                }
+                              }
+                            }
+                          },
+                          scales: {
+                            y: { 
+                              beginAtZero: true,
+                              grid: { color: 'rgba(0, 0, 0, 0.1)' },
+                              ticks: { stepSize: 1 }
+                            },
+                            x: { grid: { display: false } }
+                          }
+                        }}
+                      />
+                    )}
+                  </div>
+                  
+                  {/* Workload Summary */}
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between p-2 sm:p-3 bg-gradient-to-r from-blue-50 to-blue-100 rounded-xl border border-blue-200 shadow-sm hover:shadow-md transition-all duration-300">
+                      <div className="flex items-center gap-2">
+                        <TargetIcon className="h-4 w-4 text-blue-600" />
+                        <span className="text-xs sm:text-sm">Charge de travail</span>
+                      </div>
+                      <span className="font-bold text-blue-600 text-sm sm:text-base">
+                        {loading ? "..." : interventions.filter(i => i.status === 'encours').length + alerts.filter(a => a.status === "non résolue").length}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between p-2 sm:p-3 bg-gradient-to-r from-green-50 to-green-100 rounded-xl border border-green-200 shadow-sm hover:shadow-md transition-all duration-300">
+                      <div className="flex items-center gap-2">
+                        <CheckCircle className="h-4 w-4 text-green-600" />
+                        <span className="text-xs sm:text-sm">Tâches complétées</span>
+                      </div>
+                      <span className="font-bold text-green-600 text-sm sm:text-base">
+                        {loading ? "..." : interventions.filter(i => i.status === 'terminé').length}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Bottom: Recent Activity Timeline */}
+              <div className="mt-6">
+                <h4 className="font-medium text-foreground mb-3 text-sm sm:text-base">Activité récente</h4>
+                <div className="space-y-2 max-h-32 sm:max-h-40 overflow-y-auto">
+                  {loading ? (
+                    <div className="text-sm text-muted-foreground">Chargement...</div>
+                  ) : (
+                    [...interventions.slice(0, 2), ...reports.slice(0, 2)]
+                      .sort((a, b) => {
+                        const dateA = new Date('date_debut' in a ? a.date_debut || '' : a.date || '');
+                        const dateB = new Date('date_debut' in b ? b.date_debut || '' : b.date || '');
+                        return dateB.getTime() - dateA.getTime();
+                      })
+                      .slice(0, 4)
+                      .map((item, index) => (
+                        <div key={index} className="flex items-center gap-3 p-2 bg-gray-50 rounded border">
+                          <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                          <div className="flex-1 min-w-0">
+                            <div className="text-sm font-medium truncate">
+                              {'status' in item ? `Intervention ${item.status}` : 'Rapport créé'}
+                            </div>
+                            <div className="text-xs text-muted-foreground">
+                              {'serre_nom' in item ? item.serre_nom : 'N/A'}
+                            </div>
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            {new Date('date_debut' in item ? item.date_debut || '' : item.date || '').toLocaleDateString('fr-FR')}
+                          </div>
+                        </div>
+                      ))
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Real-time Performance Indicators */}
+          <div className="grid grid-cols-1 gap-4 sm:gap-6 mb-6 sm:mb-8">
+            <div className="bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-900 rounded-3xl p-4 sm:p-6 text-white overflow-hidden relative">
+              {/* Animated Background */}
+              <div className="absolute inset-0 opacity-30" style={{
+                backgroundImage: `url("data:image/svg+xml,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grid" width="10" height="10" patternUnits="userSpaceOnUse"><path d="M 10 0 L 0 0 0 10" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="0.5"/></pattern></defs><rect width="100" height="100" fill="url(%23grid)"/></svg>')}`
+              }}></div>
+              
+              <div className="relative z-10">
+                <h3 className="text-2xl font-bold mb-6 flex items-center gap-3">
+                  <div className="w-3 h-3 bg-green-400 rounded-full animate-pulse"></div>
+                  📊 Indicateurs de performance en temps réel
+                </h3>
+                
+                {/* Performance Metrics Grid */}
+                <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-4 sm:mb-6">
+                  <div className="bg-blue-900/50 p-3 sm:p-4 rounded-2xl border border-blue-500/30 text-center shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
+                    <div className="text-2xl sm:text-3xl font-bold text-blue-400 mb-2">
+                      {loading ? "..." : Math.round((missions.filter(m => m.executed).length / Math.max(1, missions.length)) * 100)}%
+                    </div>
+                    <div className="text-blue-200 text-xs sm:text-sm">Taux de réussite missions</div>
+                  </div>
+                  
+                  <div className="bg-green-900/50 p-3 sm:p-4 rounded-2xl border border-green-500/30 text-center shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
+                    <div className="text-2xl sm:text-3xl font-bold text-green-400 mb-2">
+                      {loading ? "..." : Math.round((interventions.filter(i => i.status === 'terminé').length / Math.max(1, interventions.length)) * 100)}%
+                    </div>
+                    <div className="text-green-200 text-xs sm:text-sm">Taux de réussite interventions</div>
+                  </div>
+                  
+                  <div className="bg-purple-900/50 p-3 sm:p-4 rounded-2xl border border-purple-500/30 text-center shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
+                    <div className="text-2xl sm:text-3xl font-bold text-purple-400 mb-2">
+                      {loading ? "..." : Math.round((alerts.filter(a => a.status === "résolue").length / Math.max(1, totalAlerts)) * 100)}%
+                    </div>
+                    <div className="text-purple-200 text-xs sm:text-sm">Alertes résolues</div>
+                  </div>
+                  
+                  <div className="bg-amber-900/50 p-3 sm:p-4 rounded-2xl border border-amber-500/30 text-center shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
+                    <div className="text-2xl sm:text-3xl font-bold text-amber-400 mb-2">
+                      {loading ? "..." : Math.round((reports.length / Math.max(1, serres.length)) * 100)}%
+                    </div>
+                    <div className="text-amber-200 text-xs sm:text-sm">Couverture rapports</div>
+                  </div>
+                </div>
+
+                {/* Efficiency Trends Chart */}
+                <div className="h-48 sm:h-64 mb-4 sm:mb-6">
+                  {loading ? (
+                    <div className="h-full flex items-center justify-center">
+                      <div className="animate-spin rounded-full h-6 w-6 sm:h-8 sm:w-8 border-b-2 border-blue-400"></div>
+                    </div>
+                  ) : (
+                    <Line
+                      data={{
+                        labels: ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'],
+                        datasets: [
+                          {
+                            label: 'Efficacité missions',
+                            data: getWeeklyMissionData().map((count, index) => {
+                              const totalMissions = getMissionStatusData()[index]?.total || 0;
+                              return totalMissions > 0 ? Math.round((count / totalMissions) * 100) : 0;
+                            }),
+                            borderColor: 'rgba(34, 197, 94, 1)',
+                            backgroundColor: 'rgba(34, 197, 94, 0.1)',
+                            tension: 0.4,
+                            fill: true,
+                            borderWidth: 2,
+                            pointBackgroundColor: 'rgba(34, 197, 94, 1)',
+                            pointBorderColor: '#fff',
+                            pointBorderWidth: 2,
+                            pointRadius: 4,
+                          },
+                          {
+                            label: 'Interventions actives',
+                            data: getWeeklyMissionData().map(() => interventions.filter(i => i.status === 'encours').length),
+                            borderColor: 'rgba(59, 130, 246, 1)',
+                            backgroundColor: 'rgba(59, 130, 246, 0.05)',
+                            tension: 0.4,
+                            fill: false,
+                            borderWidth: 2,
+                            pointBackgroundColor: 'rgba(59, 130, 246, 1)',
+                            borderDash: [5, 5],
+                          }
+                        ]
+                      }}
+                      options={{
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                          legend: { 
+                            display: true,
+                            position: 'top',
+                            labels: { 
+                              usePointStyle: true,
+                              font: { size: 11 },
+                              color: 'rgba(255, 255, 255, 0.8)'
+                            }
+                          },
+                          tooltip: { 
+                            enabled: true,
+                            mode: 'index',
+                            intersect: false,
+                            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                            titleColor: 'rgba(255, 255, 255, 1)',
+                            bodyColor: 'rgba(255, 255, 255, 0.8)'
+                          }
+                        },
+                        scales: {
+                          y: { 
+                            beginAtZero: true,
+                            grid: { color: 'rgba(255, 255, 255, 0.1)' },
+                            ticks: { 
+                              stepSize: 20,
+                              color: 'rgba(255, 255, 255, 0.8)'
+                            }
+                          },
+                          x: { 
+                            grid: { color: 'rgba(255, 255, 255, 0.1)' },
+                            ticks: { color: 'rgba(255, 255, 255, 0.8)' }
+                          }
+                        },
+                        interaction: {
+                          mode: 'nearest',
+                          axis: 'x',
+                          intersect: false
+                        }
+                      }}
+                    />
+                  )}
+                </div>
+
+                {/* Mission Coverage Summary */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-4 mt-4 sm:mt-6">
+                  <div className="bg-blue-900/50 p-3 sm:p-4 rounded-2xl border border-blue-500/30 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
+                    <div className="text-xl sm:text-2xl font-bold text-blue-400">
+                      {loading ? "..." : serres.length}
+                    </div>
+                    <div className="text-blue-200 text-xs sm:text-sm">Serres couvertes</div>
+                  </div>
+                  
+                  <div className="bg-green-900/50 p-3 sm:p-4 rounded-2xl border border-green-500/30 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
+                    <div className="text-xl sm:text-2xl font-bold text-green-400">
+                      {loading ? "..." : missions.length}
+                    </div>
+                    <div className="text-green-200 text-xs sm:text-sm">Total missions</div>
+                  </div>
+                  
+                  <div className="bg-purple-900/50 p-3 sm:p-4 rounded-2xl border border-purple-500/30 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
+                    <div className="text-xl sm:text-2xl font-bold text-purple-400">
+                      {loading ? "..." : domains.length}
+                    </div>
+                    <div className="text-purple-200 text-xs sm:text-sm">Domaines actifs</div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>

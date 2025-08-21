@@ -23,7 +23,7 @@ class Domaine(db.Model):
         viewonly=True
     )
     
-    serres = relationship("Serre", back_populates="domaine")
+    serres = relationship("Serre", back_populates="domaine", cascade="all, delete-orphan")
 
     def to_dict(self):
         return {

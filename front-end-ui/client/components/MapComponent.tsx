@@ -31,8 +31,10 @@ interface MapComponentProps {
   existingShapes: DrawnShape[];
   drawingMode: "domain" | "serre" | null;
   selectedDomainId?: string;
+  selectedSerreId?: string; // Add selected serre ID prop
   className?: string;
   onShapeClick?: (shape: DrawnShape) => void; // New prop for shape clicks
+  onMapClick?: () => void; // Add map click handler prop
   hideZoomControls?: boolean;
   hideInfoPanel?: boolean;
   focusPath?: { lat: number; lng: number }[] | null;
@@ -65,8 +67,10 @@ export default function MapComponent({
   existingShapes,
   drawingMode,
   selectedDomainId,
+  selectedSerreId,
   className = "w-full h-full",
   onShapeClick,
+  onMapClick,
   hideZoomControls = false,
   hideInfoPanel = false,
   focusPath = null,
@@ -553,8 +557,9 @@ export default function MapComponent({
         mapTypeId="hybrid"
         onLoad={onLoad}
         onUnmount={onUnmount}
+        onClick={onMapClick} // Add map click handler
         options={{
-          zoomControl: true,
+          zoomControl: !hideZoomControls,
           streetViewControl: false,
           mapTypeControl: false,
           fullscreenControl: true,
@@ -574,6 +579,10 @@ export default function MapComponent({
           let strokeWeight = 2;
           let zIndex = 1;
           let hoverColor = "#FFD700"; // Gold hover color
+          
+          // Check if this shape is selected
+          const isSelectedDomain = shape.type === 'domain' && shape.id === selectedDomainId;
+          const isSelectedSerre = shape.type === 'serre' && shape.id === selectedSerreId;
           
           if (!fillColor) {
             switch (shape.type) {
@@ -600,6 +609,19 @@ export default function MapComponent({
                 fillColor = "#9E9E9E";
                 strokeColor = "#616161";
             }
+          }
+          
+          // Apply selection highlighting
+          if (isSelectedDomain) {
+            strokeColor = "#FFD700"; // Gold for selected domain
+            strokeWeight = 4;
+            fillOpacity = 0.6;
+            zIndex = 10;
+          } else if (isSelectedSerre) {
+            strokeColor = "#FFD700"; // Gold for selected serre
+            strokeWeight = 4;
+            fillOpacity = 0.7;
+            zIndex = 11;
           }
           
           return (

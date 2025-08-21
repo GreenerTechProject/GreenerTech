@@ -17,6 +17,7 @@ import {
   UnifiedRegistrationData,
   RegistrationResult,
 } from "../services/registrationService";
+import { userService } from "../services/userService";
 
 interface AuthContextType {
   user: User | null;
@@ -28,6 +29,7 @@ interface AuthContextType {
     userData: UnifiedRegistrationData,
   ) => Promise<RegistrationResult>;
   logout: () => Promise<void>;
+  deleteUser: () => Promise<void>;
   updateUser: (user: User) => void;
   error: string | null;
   clearError: () => void;
@@ -177,6 +179,29 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     authService.setUser(updatedUser);
   };
 
+  const deleteUser = async (): Promise<void> => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      
+      // Call the backend to delete the user account
+      await userService.deleteUser();
+      
+      // Clear local user data and logout
+      setUser(null);
+      await authService.logout();
+      
+      // Redirect to login page
+      window.location.href = "/login";
+    } catch (error) {
+      const apiError = error as ApiError;
+      setError(apiError.message);
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const clearError = (): void => {
     setError(null);
   };
@@ -189,6 +214,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     register,
     unifiedRegister,
     logout,
+    deleteUser,
     updateUser,
     error,
     clearError,

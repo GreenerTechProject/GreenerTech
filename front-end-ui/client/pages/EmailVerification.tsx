@@ -12,7 +12,7 @@ export default function EmailVerification() {
         {/* Greener Tech Logo */}
         <div className="bg-gradient-to-r from-[#D6E2CC] to-[#B4CC5F] px-6 py-8 text-center">
           <img
-            src="https://api.builder.io/api/v1/image/assets/TEMP/b0dd8ca02c2a41b50f73559714fd5efaaf50e9cf?width=760"
+            src="/GreenerTech-Logo.jpg"
             alt="Greener Tech Logo"
             className="w-48 h-auto mx-auto"
           />

@@ -17,8 +17,8 @@ class Intervention(db.Model):
     date_debut = Column(Date, default=date.today)
     date_fin = Column(Date, nullable=True)
     total_charges = Column(Float, default=0.0)
-    id_user = Column(Integer, ForeignKey('users.id'), nullable=False)
-    id_serre = Column(Integer, ForeignKey('serres.id'), nullable=False)
+    id_user = Column(Integer, ForeignKey('users.id', ondelete='CASCADE'), nullable=False)
+    id_serre = Column(Integer, ForeignKey('serres.id', ondelete='CASCADE'), nullable=False)
     id_type_tache = Column(Integer, ForeignKey('type_tache.id'), nullable=False)
     valid = Column(Boolean, default=False)  
     # is_assigned_techsup = Column(Boolean, default=False)  # Indique si une intervention est assignée à un technicien support

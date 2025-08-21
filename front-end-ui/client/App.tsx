@@ -34,6 +34,7 @@ import Profile from "./pages/Profile";
 import ProfileEdit from "./pages/ProfileEdit";
 import NotFound from "./pages/NotFound";
 import TechnicienSupProfile from "./pages/TechnicienSupProfile";
+import LandingPage from "./pages/LandingPage";
 
 // New Director Pages
 import NewDirectorDashboard from "./pages/NewDirectorDashboard";
@@ -56,6 +57,7 @@ import AssignmentManagement from "./pages/AssignmentManagement";
 import RobotConfig from "./pages/RobotConfig";
 import CompanyUpdate from "./pages/CompanyUpdate";
 import InterventionRequestDetails from "./pages/InterventionRequestDetails";
+import DirectorParameters from "./pages/DirectorParameters";
 
 const queryClient = new QueryClient();
 
@@ -76,6 +78,26 @@ const RoleHomeRedirect = () => {
         ? "/technicien-sup/map"
         : "/login";
   return <Navigate to={target} replace />;
+};
+
+const RootRoute = () => {
+  const { user, isLoading } = useAuth();
+  
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#B4CC5F]"></div>
+      </div>
+    );
+  }
+  
+  // If user is authenticated, redirect to their dashboard
+  if (user) {
+    return <RoleHomeRedirect />;
+  }
+  
+  // If user is not authenticated, show the landing page
+  return <LandingPage />;
 };
 
 const App = () => (
@@ -170,6 +192,16 @@ const App = () => (
               element={
                 <ProtectedRoute requiredRole="directeur">
                   <DirectorProfileEdit />
+                </ProtectedRoute>
+              }
+            />
+
+            {/* Director Parameters */}
+            <Route
+              path="/directeur/parameters"
+              element={
+                <ProtectedRoute requiredRole="directeur">
+                  <DirectorParameters />
                 </ProtectedRoute>
               }
             />
@@ -457,15 +489,14 @@ const App = () => (
               }
             />
 
-            {/* Redirect root based on role */}
+            {/* Root route: Landing page for unauthenticated users, dashboard for authenticated users */}
             <Route
               path="/"
-              element={
-                <ProtectedRoute>
-                  <RoleHomeRedirect />
-                </ProtectedRoute>
-              }
+              element={<RootRoute />}
             />
+            
+            {/* Landing page route */}
+            <Route path="/landing" element={<LandingPage />} />
 
             {/* Catch-all */}
             <Route path="*" element={<NotFound />} />

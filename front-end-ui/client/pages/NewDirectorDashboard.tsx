@@ -1,12 +1,11 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useAuth } from "../contexts/AuthContext";
-import { useSidebar } from "@/hooks/useSidebar";
+
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import DirectorSidebar from "../components/DirectorSidebar";
-import DirectorHeader from "@/components/DirectorHeader";
+import DirectorLayout from "../components/DirectorLayout";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
@@ -70,7 +69,6 @@ interface DashboardStats {
 
 export default function DirectorDashboard() {
   const { user, logout } = useAuth();
-  const { isOpen, setIsOpen, toggleSidebar } = useSidebar();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -457,33 +455,25 @@ export default function DirectorDashboard() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex">
-        <DirectorSidebar isOpen={isOpen} setIsOpen={setIsOpen} />
-        <div className="flex-1 flex items-center justify-center">
+      <DirectorLayout>
+        <div className="flex items-center justify-center min-h-[400px]">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto"></div>
             <p className="mt-4 text-gray-600">Chargement du tableau de bord...</p>
           </div>
         </div>
-      </div>
+      </DirectorLayout>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex">
-      <DirectorSidebar isOpen={isOpen} setIsOpen={setIsOpen} />
-      
-      <div className="flex-1 transition-all duration-300">
-        <DirectorHeader isSidebarOpen={isOpen} onMenuClick={() => setIsOpen(!isOpen)} />
-
-        {/* Dashboard Content */}
-        <main className="p-4 sm:p-6 lg:p-8 space-y-6">
-          {/* Header with Refresh Button */}
-          <div className="flex justify-between items-center">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">Tableau de bord</h1>
-              <p className="text-gray-600">Vue d'ensemble de votre entreprise</p>
-            </div>
+    <DirectorLayout>
+      {/* Header with Refresh Button */}
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Tableau de bord</h1>
+          <p className="text-gray-600">Vue d'ensemble de votre entreprise</p>
+        </div>
             <div className="flex items-center space-x-4">
               {error && (
                 <div className="px-4 py-2 bg-red-50 border border-red-200 rounded-lg">
@@ -817,8 +807,6 @@ export default function DirectorDashboard() {
           </div>
 
 
-        </main>
-      </div>
-    </div>
-  );
-}
+      </DirectorLayout>
+    );
+  }

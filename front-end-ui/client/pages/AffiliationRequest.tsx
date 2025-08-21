@@ -198,7 +198,7 @@ export default function AffiliationRequest() {
         {/* Greener Tech Logo */}
         <div className="mb-8 lg:mb-12 mt-4">
           <img
-            src="https://api.builder.io/api/v1/image/assets/TEMP/b0dd8ca02c2a41b50f73559714fd5efaaf50e9cf?width=760"
+            src="/GreenerTech-Logo.jpg"
             alt="Greener Tech Logo"
             className="w-[280px] sm:w-[320px] lg:w-[317px] h-auto"
           />

@@ -1,8 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { useSidebar } from '@/hooks/useSidebar';
-import DirectorSidebar from '../components/DirectorSidebar';
-import DirectorHeader from '@/components/DirectorHeader';
+import DirectorLayout from '../components/DirectorLayout';
 import { useToast } from '@/hooks/use-toast';
 import { AlertService } from '@/services/alertService';
 import { Alert as ApiAlert } from '@/types/alert';
@@ -16,7 +14,6 @@ import { cn } from '@/lib/utils';
 
 export default function DirectorAlertManagement() {
   const { user } = useAuth();
-  const { isOpen, setIsOpen } = useSidebar();
   const { toast } = useToast();
 
   const [alerts, setAlerts] = useState<ApiAlert[]>([]);
@@ -80,13 +77,8 @@ export default function DirectorAlertManagement() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex">
-      <DirectorSidebar isOpen={isOpen} setIsOpen={setIsOpen} />
-
-      <div className="flex-1 transition-all duration-300">
-        <DirectorHeader isSidebarOpen={isOpen} onMenuClick={() => setIsOpen(!isOpen)} />
-
-        <main className="p-4 sm:p-6 lg:p-8">
+    <DirectorLayout>
+      <main className="p-4 sm:p-6 lg:p-8">
           <div className="flex justify-between items-center mb-6">
             <h1 className="text-2xl font-bold text-gray-900">Gestion des Alertes</h1>
             <Button 
@@ -217,7 +209,6 @@ export default function DirectorAlertManagement() {
             </CardContent>
           </Card>
         </main>
-      </div>
-    </div>
+    </DirectorLayout>
   );
 }

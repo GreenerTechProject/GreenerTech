@@ -262,10 +262,10 @@ export default function Interventions() {
     const iconMap: { [key: string]: { icon: any; color: string } } = {
       "Préparation du Sol": { icon: Crop, color: "bg-green-500" },
       "Plantation": { icon: Sparkles, color: "bg-blue-500" },
-      "Palissage": { icon: Sparkles, color: "bg-orange-500" },
+      "Palissage": { icon: Sparkles, color: "bg-green-500" },
       "Ébourgeonnage": { icon: Sparkles, color: "bg-purple-500" },
       "Effeuillage": { icon: Crop, color: "bg-green-600" },
-      "Éclaircissage": { icon: Eye, color: "bg-orange-600" },
+      "Éclaircissage": { icon: Eye, color: "bg-green-600" },
       "Maintenance": { icon: Wrench, color: "bg-blue-600" },
       "Réparation": { icon: Hammer, color: "bg-red-500" },
       "Inspection": { icon: Eye, color: "bg-indigo-500" },
@@ -288,7 +288,7 @@ export default function Interventions() {
     if (status === "terminé") {
       return <Badge variant="outline" className="bg-green-100 text-green-700 border-green-300 text-xs">Terminé</Badge>;
     } else if (status === "encours") {
-      return <Badge className="bg-orange-500 text-white text-xs">En cours</Badge>;
+      return <Badge className="bg-[#B4CC5F] text-white text-xs">En cours</Badge>;
     }
     return <Badge variant="outline" className="bg-gray-100 text-gray-700 border-gray-300 text-xs">{status}</Badge>;
   };
@@ -344,12 +344,12 @@ export default function Interventions() {
               
               <div className="bg-white rounded-lg px-4 py-4 shadow-md border border-gray-200 hover:shadow-lg transition-shadow">
                 <div className="flex items-center gap-3">
-                  <div className="p-2 bg-orange-100 rounded-full">
-                    <Calendar className="h-6 w-6 text-orange-600" />
+                  <div className="p-2 bg-green-100 rounded-full">
+                    <Calendar className="h-6 w-6 text-green-600" />
                   </div>
                   <div>
                     <p className="text-sm text-gray-500 font-medium">En Cours</p>
-                    <p className="text-xl font-bold text-orange-600">
+                    <p className="text-xl font-bold text-green-600">
                       {interventions.filter(i => i.status === 'encours').length}
                     </p>
                   </div>
