@@ -154,6 +154,13 @@ export default function TechnicianMap() {
     etatBilans: EtatBilan[];
   }>({ serres: [], guides: [], bilans: [], etatBilans: [] });
 
+  // Mobile bottom panel expansion state
+  const [mobilePanelHeight, setMobilePanelHeight] = useState(70); // Default 70vh
+  const [isExpandingPanel, setIsExpandingPanel] = useState(false);
+  const [isDraggingPanel, setIsDraggingPanel] = useState(false);
+  const [dragStartY, setDragStartY] = useState(0);
+  const [dragStartHeight, setDragStartHeight] = useState(0);
+
   // Load serres assigned to the current technician
   useEffect(() => {
     const loadAssignedSerres = async () => {
@@ -591,7 +598,93 @@ export default function TechnicianMap() {
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [searchQuery]);
 
+  // Mobile panel expansion handlers
+  const handlePanelTouchStart = (e: React.TouchEvent) => {
+    setIsDraggingPanel(true);
+    setDragStartY(e.touches[0].clientY);
+    setDragStartHeight(mobilePanelHeight);
+  };
 
+  const handlePanelTouchMove = (e: React.TouchEvent) => {
+    if (!isDraggingPanel) return;
+    
+    const currentY = e.touches[0].clientY;
+    const deltaY = dragStartY - currentY; // Positive when dragging up (expanding)
+    const deltaHeight = (deltaY / window.innerHeight) * 100;
+    
+    let newHeight = Math.max(30, Math.min(90, dragStartHeight + deltaHeight));
+    setMobilePanelHeight(newHeight);
+  };
+
+  const handlePanelTouchEnd = () => {
+    setIsDraggingPanel(false);
+    
+    // Snap to preset heights
+    if (mobilePanelHeight < 45) {
+      setMobilePanelHeight(30); // Collapsed
+    } else if (mobilePanelHeight < 65) {
+      setMobilePanelHeight(50); // Medium
+    } else if (mobilePanelHeight < 80) {
+      setMobilePanelHeight(70); // Default
+    } else {
+      setMobilePanelHeight(90); // Expanded
+    }
+  };
+
+  const handlePanelMouseDown = (e: React.MouseEvent) => {
+    setIsDraggingPanel(true);
+    setDragStartY(e.clientY);
+    setDragStartHeight(mobilePanelHeight);
+    e.preventDefault();
+  };
+
+  const handlePanelMouseMove = (e: MouseEvent) => {
+    if (!isDraggingPanel) return;
+    
+    const deltaY = dragStartY - e.clientY; // Positive when dragging up (expanding)
+    const deltaHeight = (deltaY / window.innerHeight) * 100;
+    
+    let newHeight = Math.max(30, Math.min(90, dragStartHeight + deltaHeight));
+    setMobilePanelHeight(newHeight);
+  };
+
+  const handlePanelMouseUp = () => {
+    setIsDraggingPanel(false);
+    
+    // Snap to preset heights
+    if (mobilePanelHeight < 45) {
+      setMobilePanelHeight(30); // Collapsed
+    } else if (mobilePanelHeight < 65) {
+      setMobilePanelHeight(50); // Medium
+    } else if (mobilePanelHeight < 80) {
+      setMobilePanelHeight(70); // Default
+    } else {
+      setMobilePanelHeight(90); // Expanded
+    }
+  };
+
+  // Add and remove panel mouse event listeners
+  useEffect(() => {
+    if (isDraggingPanel) {
+      document.addEventListener('mousemove', handlePanelMouseMove);
+      document.addEventListener('mouseup', handlePanelMouseUp);
+    } else {
+      document.removeEventListener('mousemove', handlePanelMouseMove);
+      document.removeEventListener('mouseup', handlePanelMouseUp);
+    }
+
+    return () => {
+      document.removeEventListener('mousemove', handlePanelMouseMove);
+      document.removeEventListener('mouseup', handlePanelMouseUp);
+    };
+  }, [isDraggingPanel]);
+
+  // Quick panel height presets
+  const expandPanel = (height: number) => {
+    setMobilePanelHeight(height);
+    setIsExpandingPanel(true);
+    setTimeout(() => setIsExpandingPanel(false), 300);
+  };
 
   const smoothZoomToLocation = (
     map: any,
@@ -1655,15 +1748,73 @@ export default function TechnicianMap() {
           /* Mobile Bottom Panel - Only show when not creating bilan */
           <div
             className={cn(
-              "fixed bottom-0 left-0 right-0 bg-white border-t-2 border-gray-200 transition-transform duration-300 ease-in-out z-30 shadow-2xl",
-              isMobilePanelOpen ? "translate-y-0" : "translate-y-full"
+              "fixed bottom-0 left-0 right-0 bg-white border-t-2 border-gray-200 transition-all duration-300 ease-in-out z-30 shadow-2xl",
+              isMobilePanelOpen ? "translate-y-0" : "translate-y-full",
+              isDraggingPanel && "panel-dragging",
+              isExpandingPanel && "panel-expanding"
             )}
-            style={{ maxHeight: "70vh" }}
+            style={{ 
+              height: `${mobilePanelHeight}vh`,
+              maxHeight: "90vh",
+              minHeight: "30vh"
+            }}
           >
+            {/* Draggable Panel Handle */}
+            <div 
+              className={cn(
+                "flex justify-center py-3 cursor-ns-resize select-none touch-none transition-all duration-200 panel-handle",
+                isDraggingPanel && "bg-gray-50"
+              )}
+              onTouchStart={handlePanelTouchStart}
+              onTouchMove={handlePanelTouchMove}
+              onTouchEnd={handlePanelTouchEnd}
+              onMouseDown={handlePanelMouseDown}
+            >
+              <div className={cn(
+                "w-16 h-1.5 rounded-full transition-all duration-200",
+                isDraggingPanel 
+                  ? "bg-[#B4CC5F] h-2 w-20" 
+                  : "bg-gray-400 hover:bg-gray-500"
+              )}></div>
+            </div>
 
-            {/* Panel Handle */}
-            <div className="flex justify-center mb-6">
-              <div className="w-16 h-1.5 bg-gray-400 rounded-full"></div>
+            {/* Quick Height Controls */}
+            <div className="flex justify-center space-x-2 mb-4 px-4">
+              {[
+                { height: 30, label: '30%', icon: '−', desc: 'Compact' },
+                { height: 50, label: '50%', icon: '=', desc: 'Medium' },
+                { height: 70, label: '70%', icon: '+', desc: 'Large' },
+                { height: 90, label: '90%', icon: '⤢', desc: 'Full' }
+              ].map(({ height, label, icon, desc }) => (
+                <button
+                  key={height}
+                  onClick={() => expandPanel(height)}
+                  className={cn(
+                    "px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 border relative group",
+                    mobilePanelHeight === height
+                      ? "bg-[#B4CC5F] text-white border-[#B4CC5F] shadow-md"
+                      : "bg-gray-100 text-gray-600 border-gray-200 hover:bg-gray-200 hover:border-gray-300"
+                  )}
+                >
+                  <span className="hidden sm:inline">{label}</span>
+                  <span className="sm:hidden text-sm font-bold">{icon}</span>
+                  
+                  {/* Tooltip */}
+                  <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-black/80 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap">
+                    {desc}
+                    <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-black/80"></div>
+                  </div>
+                </button>
+              ))}
+            </div>
+
+            {/* Drag Instruction */}
+            <div className="text-center mb-3 px-4">
+              <p className="text-xs text-gray-500 flex items-center justify-center space-x-2">
+                <span className="w-2 h-2 bg-[#B4CC5F] rounded-full animate-pulse"></span>
+                <span>Glissez le panneau pour ajuster la taille</span>
+                <span className="w-2 h-2 bg-[#B4CC5F] rounded-full animate-pulse"></span>
+              </p>
             </div>
 
             {/* Mobile Tabs */}
@@ -1692,7 +1843,16 @@ export default function TechnicianMap() {
             </div>
 
             {/* Mobile Tab Content */}
-            <div className="space-y-4 max-h-[45vh] overflow-y-auto pb-4">
+            <div 
+              className={cn(
+                "space-y-4 overflow-y-auto pb-4 px-4 transition-all duration-300 ease-in-out",
+                isExpandingPanel && "animate-pulse"
+              )}
+              style={{ 
+                height: `calc(${mobilePanelHeight}vh - 120px)`,
+                maxHeight: `calc(${mobilePanelHeight}vh - 120px)`
+              }}
+            >
               {activeMobileTab === 'serres' && (
                 <div className="space-y-3">
                   {/* Quick Bilan Creation for Selected Serre */}
@@ -1722,6 +1882,40 @@ export default function TechnicianMap() {
                             <MapPin className="h-4 w-4 mr-2" />
                             Commencer le bilan
                           </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )}
+
+                  {/* Enhanced Serre Details when expanded */}
+                  {selectedSerre && mobilePanelHeight >= 70 && (
+                    <Card className="border-[#B4CC5F]/20 bg-[#B4CC5F]/5">
+                      <CardContent className="p-4">
+                        <div className="space-y-3">
+                          <h5 className="font-medium text-[#B4CC5F] flex items-center space-x-2">
+                            <MapPin className="h-4 w-4" />
+                            <span>Détails de la serre</span>
+                          </h5>
+                          <div className="grid grid-cols-2 gap-3 text-sm">
+                            <div>
+                              <p className="text-gray-500">Surface</p>
+                              <p className="font-medium">{selectedSerre.surface} m²</p>
+                            </div>
+                            <div>
+                              <p className="text-gray-500">Billons</p>
+                              <p className="font-medium">{selectedSerre.billonCount || 0}</p>
+                            </div>
+                            <div>
+                              <p className="text-gray-500">Variété</p>
+                              <p className="font-medium text-sm">{selectedSerre.cultureGuide?.variete || selectedSerre.variety || 'Non spécifiée'}</p>
+                            </div>
+                            <div>
+                              <p className="text-gray-500">Statut</p>
+                              <Badge variant="outline" className={cn("text-xs", getStatusColor(selectedSerre.status))}>
+                                {selectedSerre.status === "active" ? "Actif" : selectedSerre.status === "maintenance" ? "Maintenance" : "Inactif"}
+                              </Badge>
+                            </div>
+                          </div>
                         </div>
                       </CardContent>
                     </Card>
@@ -1852,6 +2046,44 @@ export default function TechnicianMap() {
                         <h5 className="text-sm font-medium text-gray-700 px-1">
                           Bilans existants ({bilans.length})
                         </h5>
+                        
+                        {/* Enhanced Bilan Stats when expanded */}
+                        {mobilePanelHeight >= 80 && bilans.length > 0 && (
+                          <Card className="border-blue-200 bg-blue-50/50">
+                            <CardContent className="p-3">
+                              <div className="space-y-2">
+                                <h6 className="text-xs font-medium text-blue-700 flex items-center space-x-2">
+                                  <BarChart3 className="h-3 w-3" />
+                                  <span>Statistiques des bilans</span>
+                                </h6>
+                                <div className="grid grid-cols-2 gap-2 text-xs">
+                                  <div>
+                                    <p className="text-blue-600">Total bilans</p>
+                                    <p className="font-medium">{bilans.length}</p>
+                                  </div>
+                                  <div>
+                                    <p className="text-blue-600">Surface totale</p>
+                                    <p className="font-medium">
+                                      {bilans.reduce((total, bilan) => total + (bilan.surface || 0), 0)} m²
+                                    </p>
+                                  </div>
+                                  <div>
+                                    <p className="text-blue-600">Points GPS</p>
+                                    <p className="font-medium">
+                                      {bilans.reduce((total, bilan) => total + (bilan.position?.length || 0), 0)}
+                                    </p>
+                                  </div>
+                                  <div>
+                                    <p className="text-blue-600">QR Codes</p>
+                                    <p className="font-medium">
+                                      {Object.keys(bilanQRCodes).length}/{bilans.length}
+                                    </p>
+                                  </div>
+                                </div>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        )}
                         {bilans.map((bilan) => (
                           <Card
                             key={bilan.id}
@@ -1890,7 +2122,7 @@ export default function TechnicianMap() {
                                     className="flex-1 bg-blue-600 hover:bg-blue-700 text-white text-xs"
                                   >
                                     <svg className="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V6a1 1 0 00-1-1H5a1 1 0 00-1 1v1a1 1 0 001 1zm12 0h2a1 1 0 001-1V6a1 1 0 00-1-1h-2a1 1 0 00-1 1v1a1 1 0 001 1z" />
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V6a1 1 0 00-1-1H5a1 1 0 00-1 1v1a1 1 0 001 1zm12 0h2a1 1 0 001-1V6a1 1 0 00-1-1h-2a1 1 0 00-1 1v1a1 1 0 001 1zM5 20h2a1 1 0 001-1v-1a1 1 0 00-1-1H5a1 1 0 00-1 1v1a1 1 0 001 1z" />
                                     </svg>
                                     {!bilanQRCodes[bilan.id] ? "Générer QR" : "QR Généré"}
                                   </Button>
@@ -2037,10 +2269,25 @@ export default function TechnicianMap() {
         {/* Mobile Floating Action Button */}
         <Button
           onClick={() => setIsMobilePanelOpen(!isMobilePanelOpen)}
-          className="fixed bottom-6 left-6 w-16 h-16 rounded-full shadow-2xl bg-[#B4CC5F] hover:bg-[#B4CC5F]/90 text-white z-30 lg:z-30 text-2xl font-bold transition-all duration-200 hover:scale-110"
+          className={cn(
+            "fixed bottom-6 left-6 w-16 h-16 rounded-full shadow-2xl bg-[#B4CC5F] hover:bg-[#B4CC5F]/90 text-white z-30 lg:z-30 text-2xl font-bold transition-all duration-200 hover:scale-110",
+            isDraggingPanel && "animate-pulse scale-110"
+          )}
         >
           {isMobilePanelOpen ? '×' : '≡'}
         </Button>
+
+        {/* Panel Height Indicator */}
+        {isMobilePanelOpen && (
+          <div className="fixed bottom-6 left-24 z-30">
+            <div className="bg-black/80 text-white px-3 py-2 rounded-lg text-sm font-medium shadow-lg">
+              <div className="flex items-center space-x-2">
+                <div className="w-2 h-2 bg-[#B4CC5F] rounded-full"></div>
+                <span>{mobilePanelHeight}%</span>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Alert Heatmap Status Indicator */}
         {showAlertHeatmap && (
@@ -2148,6 +2395,42 @@ export default function TechnicianMap() {
         onClose={() => setIsInterventionFormOpen(false)}
         onSubmit={handleInterventionSubmit}
       />
+
+      {/* CSS Animations for Panel Expansion */}
+      <style jsx>{`
+        @keyframes slideInFromBottom {
+          from {
+            opacity: 0;
+            transform: translateY(20px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+        
+        @keyframes panelExpand {
+          0% { transform: scaleY(1); }
+          50% { transform: scaleY(1.02); }
+          100% { transform: scaleY(1); }
+        }
+        
+        .panel-expanding {
+          animation: panelExpand 0.3s ease-in-out;
+        }
+        
+        .panel-dragging {
+          transition: none !important;
+        }
+        
+        .panel-handle:hover {
+          background-color: rgba(180, 204, 95, 0.1);
+        }
+        
+        .panel-handle:active {
+          background-color: rgba(180, 204, 95, 0.2);
+        }
+      `}</style>
     </div>
   );
 }
