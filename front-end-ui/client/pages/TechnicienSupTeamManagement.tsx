@@ -106,7 +106,6 @@ export default function TechnicienSupTeamManagement(): JSX.Element {
                 status,
               };
             } catch (error) {
-              console.error(`Error enhancing technician ${tech.id}:`, error);
               return {
                 ...tech,
                 assignedSerres: [],

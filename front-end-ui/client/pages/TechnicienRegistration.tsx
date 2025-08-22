@@ -88,7 +88,6 @@ export default function TechnicienRegistration() {
     const response = await axios.get(`${window.location.protocol}//${window.location.hostname}:5000/api/entreprises`)
     setCompanies(Array.isArray(response.data) ? response.data : []);
   } catch (error) {
-    console.error("Error fetching companies:", error);
     setCompanies([]);
   }
 };
@@ -97,7 +96,6 @@ export default function TechnicienRegistration() {
   // Step 1: Check email
   const onEmailSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    console.log("Form submitted");
     const formData = new FormData(e.currentTarget);
     const email = formData.get("email") as string;
 
@@ -241,7 +239,6 @@ export default function TechnicienRegistration() {
         setLocalError(result.error || result.message || "Une erreur est survenue");
       }
     } catch (error) {
-      console.log(error);
       setLocalError("Impossible de compléter l'inscription");
     } finally {
       setIsLoading(false);

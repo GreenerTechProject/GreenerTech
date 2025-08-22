@@ -29,48 +29,37 @@ export default function DirectorParameters() {
 
   return (
     <DirectorLayout>
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center gap-4 mb-8">
-        <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-xl bg-greener flex items-center justify-center">
-            <Settings className="w-6 h-6 text-white" />
-          </div>
-          <div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Paramètres</h1>
-            <p className="text-sm sm:text-base text-gray-600">
-              Configuration complète du système et gestion de votre compte
-            </p>
-          </div>
+      {/* Header - Simplified and responsive */}
+      <div className="mb-6 sm:mb-8">
+        <div className="text-center sm:text-left">
+          <h1 className="text-xl sm:text-2xl font-semibold text-gray-900 mb-2">Paramètres</h1>
+          <p className="text-sm text-gray-600 px-4 sm:px-0">
+            Configuration complète du système et gestion de votre compte
+          </p>
         </div>
       </div>
 
       {/* Configuration Sections */}
-      <div className="space-y-8">
+      <div className="space-y-6 sm:space-y-8 px-4 sm:px-0">
         {/* Map and Robot Configuration */}
         <div>
-          <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center gap-2">
-            <Target className="w-5 h-5 text-greener-600" />
+          <h2 className="text-lg sm:text-xl font-semibold text-gray-900 mb-4">
             Configuration Système
           </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
             {/* Map Configuration */}
-            <div className="rounded-xl border border-greener-200 bg-white hover:bg-greener-50/30 transition-all duration-200 shadow-sm hover:shadow-md">
-              <div className="p-5 sm:p-6">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="w-12 h-12 rounded-lg bg-greener-50 border border-greener-200 flex items-center justify-center">
-                    <Map className="w-6 h-6 text-greener-700" />
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-semibold text-gray-900">Configuration de la Carte</h3>
-                    <p className="text-sm text-gray-600">Domaines et serres</p>
-                  </div>
+            <div className="rounded-lg border border-greener-200 bg-white hover:bg-greener-50/30 transition-all duration-200 shadow-sm hover:shadow-md">
+              <div className="p-4 sm:p-5 lg:p-6">
+                <div className="mb-4">
+                  <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-2">Configuration de la Carte</h3>
+                  <p className="text-sm text-gray-600">Domaines et serres</p>
                 </div>
                 <p className="text-sm text-gray-600 mb-4">
                   Définissez les emplacements des serres, les zones et les paramètres d'affichage de la carte.
                 </p>
                 <Link
                   to="/directeur/map-config"
-                  className="inline-flex items-center justify-center px-4 h-10 rounded-lg bg-greener text-white text-sm font-medium hover:bg-greener-600 transition-colors w-full sm:w-auto"
+                  className="inline-flex items-center justify-center px-4 h-10 rounded-lg bg-greener text-white text-sm font-medium hover:bg-greener-600 transition-colors w-full"
                 >
                   Ouvrir la configuration
                 </Link>
@@ -78,23 +67,18 @@ export default function DirectorParameters() {
             </div>
 
             {/* Robot Configuration */}
-            <div className="rounded-xl border border-greener-200 bg-white hover:bg-greener-50/30 transition-all duration-200 shadow-sm hover:shadow-md">
-              <div className="p-5 sm:p-6">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="w-12 h-12 rounded-lg bg-greener-50 border border-greener-200 flex items-center justify-center">
-                    <Bot className="w-6 h-6 text-greener-700" />
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-semibold text-gray-900">Configuration des Robots</h3>
-                    <p className="text-sm text-gray-600">Gestion des robots</p>
-                  </div>
+            <div className="rounded-lg border border-greener-200 bg-white hover:bg-greener-50/30 transition-all duration-200 shadow-sm hover:shadow-md">
+              <div className="p-4 sm:p-5 lg:p-6">
+                <div className="mb-4">
+                  <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-2">Configuration des Robots</h3>
+                  <p className="text-sm text-gray-600">Gestion des robots</p>
                 </div>
                 <p className="text-sm text-gray-600 mb-4">
                   Gérez les paramètres des robots: connexion, zones autorisées, vitesses et comportements.
                 </p>
                 <Link
                   to="/directeur/robot-config"
-                  className="inline-flex items-center justify-center px-4 h-10 rounded-lg bg-greener text-white text-sm font-medium hover:bg-greener-600 transition-colors w-full sm:w-auto"
+                  className="inline-flex items-center justify-center px-4 h-10 rounded-lg bg-greener text-white text-sm font-medium hover:bg-greener-600 transition-colors w-full"
                 >
                   Gérer les robots
                 </Link>
@@ -103,86 +87,47 @@ export default function DirectorParameters() {
           </div>
         </div>
 
-        {/* Assignments and Authorizations */}
+        {/* Assignments and Authorizations - Combined into one section */}
         <div>
-          <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center gap-2">
-            <ShieldCheck className="w-5 h-5 text-greener-600" />
+          <h2 className="text-lg sm:text-xl font-semibold text-gray-900 mb-4">
             Gestion des Assignations et Autorisations
           </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
-            {/* Assignments Management */}
-            <div className="rounded-xl border border-greener-200 bg-white hover:bg-greener-50/30 transition-all duration-200 shadow-sm hover:shadow-md">
-              <div className="p-5 sm:p-6">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="w-12 h-12 rounded-lg bg-greener-50 border border-greener-200 flex items-center justify-center">
-                    <Users className="w-6 h-6 text-greener-700" />
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-semibold text-gray-900">Gestion des Assignations</h3>
-                    <p className="text-sm text-gray-600">Techniciens et superviseurs</p>
-                  </div>
-                </div>
-                <p className="text-sm text-gray-600 mb-4">
-                  Assignez techniciens aux superviseurs et aux serres. Gérez les relations hiérarchiques.
-                </p>
-                <Link
-                  to="/directeur/permissions-assignments"
-                  className="inline-flex items-center justify-center px-4 h-10 rounded-lg bg-greener text-white text-sm font-medium hover:bg-greener-600 transition-colors w-full sm:w-auto"
-                >
-                  Ouvrir la gestion
-                </Link>
+          <div className="rounded-lg border border-greener-200 bg-white hover:bg-greener-50/30 transition-all duration-200 shadow-sm hover:shadow-md">
+            <div className="p-4 sm:p-5 lg:p-6">
+              <div className="mb-4">
+                <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-2">Gestion Complète des Assignations</h3>
+                <p className="text-sm text-gray-600">Techniciens, superviseurs et serres</p>
               </div>
-            </div>
-
-            {/* Authorizations */}
-            <div className="rounded-xl border border-greener-200 bg-white hover:bg-greener-50/30 transition-all duration-200 shadow-sm hover:shadow-md">
-              <div className="p-5 sm:p-6">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="w-12 h-12 rounded-lg bg-greener-50 border border-greener-200 flex items-center justify-center">
-                    <ShieldCheck className="w-6 h-6 text-greener-700" />
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-semibold text-gray-900">Gestion des Autorisations</h3>
-                    <p className="text-sm text-gray-600">Permissions et accès</p>
-                  </div>
-                </div>
-                <p className="text-sm text-gray-600 mb-4">
-                  Configurez les permissions d'accès aux différentes fonctionnalités du système.
-                </p>
-                <Link
-                  to="/directeur/permissions-assignments"
-                  className="inline-flex items-center justify-center px-4 h-10 rounded-lg bg-greener text-white text-sm font-medium hover:bg-greener-600 transition-colors w-full sm:w-auto"
-                >
-                  Configurer les autorisations
-                </Link>
-              </div>
+              <p className="text-sm text-gray-600 mb-4">
+                Gérez les assignations des techniciens aux superviseurs et aux serres. Configurez les permissions d'accès et les relations hiérarchiques en un seul endroit.
+              </p>
+              <Link
+                to="/directeur/permissions-assignments"
+                className="inline-flex items-center justify-center px-4 h-10 rounded-lg bg-greener text-white text-sm font-medium hover:bg-greener-600 transition-colors w-full"
+              >
+                Ouvrir la gestion complète
+              </Link>
             </div>
           </div>
         </div>
 
         {/* Company Information */}
         <div>
-          <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center gap-2">
-            <Building2 className="w-5 h-5 text-greener-600" />
+          <h2 className="text-lg sm:text-xl font-semibold text-gray-900 mb-4">
             Informations de l'Entreprise
           </h2>
-          <div className="rounded-xl border border-greener-200 bg-white hover:bg-greener-50/30 transition-all duration-200 shadow-sm hover:shadow-md">
-            <div className="p-5 sm:p-6">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="w-12 h-12 rounded-lg bg-greener-50 border border-greener-200 flex items-center justify-center">
-                  <Building2 className="w-6 h-6 text-greener-700" />
-                </div>
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900">Informations d'Entreprise</h3>
-                  <p className="text-sm text-gray-600">Profil et détails</p>
-                </div>
+          <div className="rounded-lg border border-greener-200 bg-white hover:bg-greener-50/30 transition-all duration-200 shadow-sm hover:shadow-md">
+            <div className="p-4 sm:p-5 lg:p-6">
+              <div className="mb-4">
+                <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-2">Informations d'Entreprise</h3>
+                <p className="text-sm text-gray-600">Profil et détails</p>
               </div>
               <p className="text-sm text-gray-600 mb-4">
                 Mettez à jour le nom, l'adresse, les contacts et les préférences de votre entreprise.
               </p>
               <Link
                 to="/directeur/company-update"
-                className="inline-flex items-center justify-center px-4 h-10 rounded-lg bg-greener text-white text-sm font-medium hover:bg-greener-600 transition-colors w-full sm:w-auto"
+                className="inline-flex items-center justify-center px-4 h-10 rounded-lg bg-greener text-white text-sm font-medium hover:bg-greener-600 transition-colors w-full"
               >
                 Modifier les informations
               </Link>
@@ -190,77 +135,18 @@ export default function DirectorParameters() {
           </div>
         </div>
 
-        {/* Other System Settings */}
-        <div>
-          <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center gap-2">
-            <Settings className="w-5 h-5 text-greener-600" />
-            Autres Paramètres
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
-            {/* Notifications */}
-            <div className="rounded-xl border border-gray-200 bg-white hover:bg-gray-50 transition-all duration-200 shadow-sm hover:shadow-md">
-              <div className="p-5 sm:p-6">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="w-12 h-12 rounded-lg bg-gray-50 border border-gray-200 flex items-center justify-center">
-                    <AlertTriangle className="w-6 h-6 text-gray-700" />
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-semibold text-gray-900">Configuration des Notifications</h3>
-                    <p className="text-sm text-gray-600">Alertes et rapports</p>
-                  </div>
-                </div>
-                <p className="text-sm text-gray-600 mb-4">
-                  Configurez vos préférences de notifications pour les alertes et rapports.
-                </p>
-                <Button
-                  variant="outline"
-                  className="w-full sm:w-auto"
-                >
-                  Configurer
-                </Button>
-              </div>
-            </div>
-
-            {/* Reports */}
-            <div className="rounded-xl border border-gray-200 bg-white hover:bg-gray-50 transition-all duration-200 shadow-sm hover:shadow-md">
-              <div className="p-5 sm:p-6">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="w-12 h-12 rounded-lg bg-gray-50 border border-gray-200 flex items-center justify-center">
-                    <FileText className="w-6 h-6 text-gray-700" />
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-semibold text-gray-900">Configuration des Rapports</h3>
-                    <p className="text-sm text-gray-600">Templates et formats</p>
-                  </div>
-                </div>
-                <p className="text-sm text-gray-600 mb-4">
-                  Personnalisez les templates et formats de vos rapports.
-                </p>
-                <Button
-                  variant="outline"
-                  className="w-full sm:w-auto"
-                >
-                  Configurer
-                </Button>
-              </div>
-            </div>
-          </div>
-        </div>
-
         {/* Account Management */}
         <div>
-          <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center gap-2">
-            <User className="w-5 h-5 text-greener-600" />
+          <h2 className="text-lg sm:text-xl font-semibold text-gray-900 mb-4">
             Gestion du Compte
           </h2>
-          <div className="rounded-xl border border-gray-200 bg-white shadow-sm">
-            <div className="p-5 sm:p-6 space-y-4">
+          <div className="rounded-lg border border-gray-200 bg-white shadow-sm">
+            <div className="p-4 sm:p-5 lg:p-6 space-y-3 sm:space-y-4">
               <Link
                 to="/directeur/profile"
                 className="w-full inline-flex items-center justify-between px-4 h-12 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors"
               >
                 <span className="flex items-center gap-3 text-gray-800">
-                  <User className="w-5 h-5" />
                   <span className="font-medium">Profil</span>
                 </span>
                 <span className="text-sm text-gray-500">Modifier</span>
@@ -272,7 +158,6 @@ export default function DirectorParameters() {
                 className="w-full justify-between h-12"
               >
                 <span className="flex items-center gap-3 text-gray-800">
-                  <LogOut className="w-5 h-5" />
                   <span className="font-medium">Déconnexion</span>
                 </span>
               </Button>
@@ -283,7 +168,6 @@ export default function DirectorParameters() {
                 className="w-full justify-between h-12"
               >
                 <span className="flex items-center gap-3">
-                  <Trash2 className="w-5 h-5" />
                   <span className="font-medium">Supprimer le compte</span>
                 </span>
               </Button>

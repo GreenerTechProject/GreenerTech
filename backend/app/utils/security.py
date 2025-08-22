@@ -25,19 +25,31 @@ def token_required(f):
         token = None
         if 'Authorization' in request.headers:
             token = request.headers['Authorization'].split(" ")[1]
+            print(f"DEBUG: Token received: {token[:20]}...")  # Debug log
+        else:
+            print("DEBUG: No Authorization header found")  # Debug log
 
         if not token:
+            print("DEBUG: Token is missing")  # Debug log
             return jsonify({"message": "Token is missing!"}), 401
 
         try:
             data = jwt.decode(token, current_app.config['SECRET_KEY'], algorithms=["HS256"])
+            print(f"DEBUG: Token decoded successfully, user_id: {data['user_id']}")  # Debug log
             current_user = User.query.get(data['user_id'])
             if not current_user:
+                print(f"DEBUG: User not found for user_id: {data['user_id']}")  # Debug log
                 return jsonify({"message": "User not found"}), 401
+            print(f"DEBUG: User found: {current_user.email}, role: {current_user.role}")  # Debug log
         except jwt.ExpiredSignatureError:
+            print("DEBUG: Token expired")  # Debug log
             return jsonify({"message": "Token expired"}), 401
-        except jwt.InvalidTokenError:
+        except jwt.InvalidTokenError as e:
+            print(f"DEBUG: Invalid token error: {str(e)}")  # Debug log
             return jsonify({"message": "Invalid token"}), 401
+        except Exception as e:
+            print(f"DEBUG: Unexpected error in token validation: {str(e)}")  # Debug log
+            return jsonify({"message": "Token validation error"}), 401
 
         return f(current_user, *args, **kwargs)
     return decorated
@@ -72,8 +84,11 @@ def role_required(*allowed_roles):
     def decorator(f):
         @wraps(f)
         def decorated(current_user, *args, **kwargs):
+            print(f"DEBUG: Role check - User role: {current_user.role}, Allowed roles: {allowed_roles}")  # Debug log
             if current_user.role not in allowed_roles:
+                print(f"DEBUG: Role access denied - User role '{current_user.role}' not in allowed roles {allowed_roles}")  # Debug log
                 return jsonify({"message": "Accès refusé : rôle non autorisé"}), 403   
+            print(f"DEBUG: Role access granted for user {current_user.email}")  # Debug log
             return f(current_user, *args, **kwargs)
         return decorated
     return decorator

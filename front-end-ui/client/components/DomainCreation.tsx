@@ -157,7 +157,7 @@ export default function DomainCreation({
         path: domain.path,
         area: domain.area,
         center: domain.center,
-        color: "#B4CC5F",
+        color: "#2E7D32",
       });
 
       // Add serres for this domain
@@ -242,7 +242,7 @@ export default function DomainCreation({
                         path: [],
                         area: 10000,
                         center: { lat: 33.9716, lng: -6.8498 },
-                        color: "#B4CC5F"
+                        color: "#2E7D32"
                       };
                       console.log("Setting test shape:", testShape);
                       setPendingShape(testShape);
@@ -328,8 +328,7 @@ export default function DomainCreation({
                       key={domain.id}
                       className={`p-3 border rounded-lg cursor-pointer transition-colors ${
                         selectedDomainId === domain.id
-                          ? "border-[#B4CC5F] bg-green-50"
-                          : "border-gray-200 hover:border-gray-300"
+                          ? "border-greener-600 bg-green-50" : "border-gray-200 hover:border-gray-300"
                       }`}
                       onClick={() => handleDomainSelect(domain.id)}
                     >

@@ -285,8 +285,7 @@ export default function TechnicienSupDashboard(): JSX.Element {
       if (typeof google === 'undefined' || !google.maps) {
         return false;
       }
-      // eslint-disable-next-line no-console
-      console.debug('[TechSup] Google Maps script loaded');
+
       return true;
     };
 
@@ -294,7 +293,7 @@ export default function TechnicienSupDashboard(): JSX.Element {
       // Only check once after a delay, not continuously
       const timeoutId = window.setTimeout(() => {
         if (tryInit()) {
-          console.debug('[TechSup] Google Maps loaded after timeout');
+          // Google Maps loaded successfully
         }
       }, 1000); // Check once after 1 second instead of polling every 150ms
       return () => window.clearTimeout(timeoutId);
@@ -304,24 +303,21 @@ export default function TechnicienSupDashboard(): JSX.Element {
   // Fetch assigned serres as soon as user is known
   useEffect(() => {
     if (!user?.id) return;
-    console.log('[TechSup] Fetching assigned serres for user', user.id);
     (async () => {
       try {
         const userIdNum = typeof user.id === 'string' ? parseInt(user.id, 10) : (user.id as unknown as number);
         const list: any[] = await serreService.getSerresWithTechnicians();
-        console.log('[TechSup] Assigned serres count', list.length);
         setAssignedSerresRaw(list);
       } catch (e) {
-        console.error('[TechSup] Failed to fetch assigned serres', e);
+        // Failed to fetch assigned serres
       }
     })();
     (async () => {
       try {
         const domains = await domainService.getMyCompanyDomains();
-        console.log('[TechSup] Domains count', domains.length);
         setDomainsRaw(domains);
       } catch (e) {
-        console.error('[TechSup] Failed to fetch domains', e);
+        // Failed to fetch domains
       }
     })();
   }, [user?.id]);
@@ -330,26 +326,14 @@ export default function TechnicienSupDashboard(): JSX.Element {
   useEffect(() => {
     (async () => {
       try {
-        console.log('[TechSup] useEffect triggered for technicians fetch');
-        console.log('[TechSup] Current user:', user);
-        console.log('[TechSup] User ID:', user?.id);
-        console.log('[TechSup] User company ID:', user?.id_entreprise);
-        
         const companyId = user?.id_entreprise;
-        console.log('[TechSup] Company ID extracted:', companyId);
         
         if (companyId) {
-          console.log('[TechSup] Fetching technicians for company:', companyId);
           setIsLoadingTechnicians(true);
           try {
             const list = await technicianService.getTechniciansByCompany(companyId);
-            console.log('[TechSup] Technicians fetched successfully:', list);
-            console.log('[TechSup] Technicians count:', list.length);
-            console.log('[TechSup] Technicians type:', typeof list);
-            console.log('[TechSup] Technicians is array:', Array.isArray(list));
             if (list && list.length > 0) {
-              console.log('[TechSup] First technician sample:', list[0]);
-              console.log('[TechSup] First technician keys:', Object.keys(list[0]));
+              // Technicians fetched successfully
             }
             // Ensure we have an array and normalize the data
             const normalizedList = Array.isArray(list) ? list : [];
@@ -360,21 +344,18 @@ export default function TechnicienSupDashboard(): JSX.Element {
               const isAssignedToSupervisor = t.id_assigned != null && String(t.id_assigned) === String(supervisorId);
               return isRegularTechnician && isAssignedToSupervisor;
             });
-            console.log('[TechSup] Setting filtered technicians list (assigned to current supervisor):', filteredList);
             setCompanyTechnicians(filteredList);
           } catch (error) {
-            console.error('[TechSup] Error fetching technicians:', error);
             setCompanyTechnicians([]);
           } finally {
             setIsLoadingTechnicians(false);
           }
         } else {
-          console.log('[TechSup] No company ID found, cannot fetch technicians');
           setCompanyTechnicians([]);
           setIsLoadingTechnicians(false);
         }
       } catch (e) {
-        console.error('[TechSup] Failed to fetch technicians from same company', e);
+        // Failed to fetch technicians from same company
       }
     })();
   }, [user?.id]);
@@ -691,14 +672,11 @@ export default function TechnicienSupDashboard(): JSX.Element {
   };
 
   const handleInterventionSubmit = (data: any) => {
-    console.log("Intervention submitted:", data);
-    // TODO: Send to backend API
     // Here you would typically call an API to save the intervention
   };
 
   const handleInterventionSaveDraft = (data: any) => {
-    console.log("Intervention saved as draft:", data);
-    // TODO: Save draft to backend or local storage
+    // Save draft to backend or local storage
   };
 
   const getStatusColor = (status: string) => {
@@ -819,7 +797,6 @@ export default function TechnicienSupDashboard(): JSX.Element {
       }
     } catch (e) {
       // non-blocking if alerts fail
-      console.error('Failed to load alerts:', e);
     } finally {
       setIsMapLoading(false);
     }

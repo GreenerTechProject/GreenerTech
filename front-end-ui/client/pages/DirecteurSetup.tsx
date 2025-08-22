@@ -30,27 +30,7 @@ export default function DirecteurSetup() {
     try {
       setIsSubmittingCompanyInfo(true);
 
-      console.log("=== STARTING SETUP PROCESS ===");
-      console.log("setupData:", setupData);
-      console.log("setupData.technicians:", setupData.technicians);
-      
-      // Debug technician data structure
-      setupData.technicians.forEach((tech, idx) => {
-        console.log(`Technician ${idx}:`, {
-          id: tech.id,
-          fullName: tech.fullName,
-          email: tech.email,
-          role: tech.role,
-          assignedSerres: tech.assignedSerres,
-          id_assigned: tech.id_assigned,
-          hasSupervisor: !!tech.id_assigned,
-          assignedSerresType: typeof tech.assignedSerres,
-          assignedSerresIsArray: Array.isArray(tech.assignedSerres)
-        });
-      });
-
       // Step 1: Create the company
-      console.log("Creating company:", setupData.companyInfo);
       const companyResponse = await companyService.createCompany(
         setupData.companyInfo,
       );
@@ -59,8 +39,6 @@ export default function DirecteurSetup() {
       if (!companyId) {
         throw new Error("Failed to create company - no ID returned");
       }
-
-      console.log("Company created with ID:", companyId);
 
       // Immediately update the director's id_entreprise in the backend and context
       try {
@@ -74,7 +52,7 @@ export default function DirecteurSetup() {
         });
         updateUser({ ...(user as any), id_entreprise: parseInt(companyId.toString(), 10) });
       } catch (e) {
-        console.warn('Failed to set director company id on user', e);
+        // Failed to set director company id on user
       }
 
       // Step 2: Create domains
@@ -92,9 +70,7 @@ export default function DirecteurSetup() {
         companyId,
       }));
 
-      console.log("Creating domains:", domainRequests);
       const domainResponses = await domainService.createDomains(domainRequests);
-      console.log("Domains created:", domainResponses);
 
       // Step 3: Prepare guide data for after serre creation
       const guideDataMap = new Map<string, any>(); // Maps old guide id to guide data
@@ -120,8 +96,6 @@ export default function DirecteurSetup() {
           throw new Error(`Failed to get domain ID for domain: ${domain.name}`);
         }
 
-        console.log(`Creating serres for domain ${domain.name} with ID: ${backendDomainId}`);
-
         // Create serres for this domain
         for (const serre of domain.serres) {
           const serreRequest = {
@@ -139,7 +113,6 @@ export default function DirecteurSetup() {
             },
           };
 
-          console.log("Creating serre:", serreRequest);
           const createdSerre = await serreService.createSerre(serreRequest);
           allSerres.push(createdSerre);
           // record mapping from temp id to backend id
@@ -154,7 +127,6 @@ export default function DirecteurSetup() {
             const serreId = createdSerre.id || createdSerre.serreId;
 
             if (!serreId) {
-              console.warn("No serre ID returned, skipping guide creation");
               continue;
             }
 
@@ -174,7 +146,6 @@ export default function DirecteurSetup() {
               id_serre: serreId.toString(), // Link to the actual created serre
             };
 
-            console.log("Creating guide:", guideRequest);
             await guideService.createGuide(guideRequest);
           }
         }
@@ -185,9 +156,6 @@ export default function DirecteurSetup() {
       let technicianIdMap = new Map<string, number>(); // Map temp ID to backend ID
       
       if (setupData.technicians.length > 0) {
-        console.log("=== CREATING TECHNICIANS ===");
-        console.log("setupData.technicians:", setupData.technicians);
-        
         const technicianRequests = setupData.technicians.map((technician) => ({
           fullName: technician.fullName,
           email: technician.email,
@@ -196,9 +164,7 @@ export default function DirecteurSetup() {
           companyId: parseInt(companyId.toString(), 10),
         }));
 
-        console.log("Creating technicians:", technicianRequests);
         const responses = await technicianService.createTechnicians(technicianRequests);
-        console.log("Technician creation responses:", responses);
         
         createdTechnicians = responses.map((res, idx) => {
           const originalTech = setupData.technicians[idx];
@@ -214,11 +180,8 @@ export default function DirecteurSetup() {
           // Map the temporary ID to the backend ID for hierarchy assignment
           if (originalTech.id && res.id) {
             technicianIdMap.set(originalTech.id, res.id);
-            console.log(`Mapped temp ID ${originalTech.id} to backend ID ${res.id}`);
           }
           
-          console.log(`Created technician ${idx}:`, tech);
-          console.log(`Original technician data:`, originalTech);
           return tech;
         });
         
@@ -228,24 +191,17 @@ export default function DirecteurSetup() {
             const supervisorBackendId = technicianIdMap.get(tech.id_assigned);
             if (supervisorBackendId) {
               tech.id_assigned = supervisorBackendId.toString(); // Convert number to string
-              console.log(`Updated ${tech.email} supervisor assignment from temp ID ${tech.id_assigned} to backend ID ${supervisorBackendId}`);
             } else {
-              console.warn(`Could not find backend ID for supervisor temp ID ${tech.id_assigned} for ${tech.email}`);
               tech.id_assigned = null; // Reset if mapping failed
             }
           }
         }
         
-        console.log("Final createdTechnicians array:", createdTechnicians);
-        console.log("Technician ID mapping:", Object.fromEntries(technicianIdMap));
-        
         // Step 5b: Only reset technicians that don't have supervisors assigned
-        console.log("=== RESETTING TECHNICIAN SUPERVISOR ASSIGNMENTS ===");
         for (const tech of createdTechnicians) {
           // Only reset if the technician doesn't have a supervisor assigned
           if (!tech.id_assigned) {
             try {
-              console.log(`Resetting ${tech.email} (${tech.role}) to have no supervisor initially...`);
               const response = await fetch(`${window.location.protocol}//${window.location.hostname}:5000/api/user/${tech.id}`, {
                 method: 'PUT',
                 headers: {
@@ -261,14 +217,9 @@ export default function DirecteurSetup() {
                 const errorData = await response.json();
                 throw new Error(`HTTP ${response.status}: ${errorData.message || 'Unknown error'}`);
               }
-              
-              const result = await response.json();
-              console.log(`Successfully reset ${tech.email} (${tech.role}) to have no supervisor:`, result);
             } catch (e) {
-              console.warn("Failed to reset technician supervisor assignment", tech.email, e);
+              // Failed to reset technician supervisor assignment
             }
-          } else {
-            console.log(`Keeping ${tech.email} (${tech.role}) with existing supervisor assignment: ${tech.id_assigned}`);
           }
         }
       }
@@ -287,11 +238,9 @@ export default function DirecteurSetup() {
                   id_serre: targetSerreId,
                 });
               } catch (e) {
-                console.warn("Failed to create autorisation_serre for", tech.email, assignedTempId, e);
+                // Failed to create autorisation_serre
               }
             }
-          } else {
-            console.log(`No assigned serres for ${tech.email} or assignedSerres is not an array:`, tech.assignedSerres);
           }
         }
       }
@@ -314,7 +263,7 @@ export default function DirecteurSetup() {
                   id_serre: backendSerreId,
                 });
               } catch (e) {
-                console.warn("Failed to create serre authorization for supervisor", supervisor.email, e);
+                // Failed to create serre authorization for supervisor
               }
             }
           }
@@ -322,33 +271,16 @@ export default function DirecteurSetup() {
       }
 
       // Step 8: Update technician hierarchy (supervisor assignments)
-      console.log("=== APPLYING TECHNICIAN HIERARCHY ASSIGNMENTS ===");
-      console.log("setupData.technicians:", setupData.technicians);
-      console.log("createdTechnicians:", createdTechnicians);
-      console.log("Technician ID mapping:", Object.fromEntries(technicianIdMap));
-      
-      // Debug: Show current state of all technicians
-      console.log("=== CURRENT TECHNICIAN STATE BEFORE HIERARCHY ASSIGNMENT ===");
-      for (const tech of createdTechnicians) {
-        console.log(`${tech.email} (${tech.role}): id_assigned = ${tech.id_assigned}, hasSupervisor = ${!!tech.id_assigned}`);
-      }
-      
       // Find all technicians that need supervisors
       const techniciansNeedingSupervisors = createdTechnicians.filter(t => t.role === "technicien" && t.id_assigned);
-      console.log("Technicians needing supervisors:", techniciansNeedingSupervisors);
       
       if (techniciansNeedingSupervisors.length > 0) {
         for (const tech of techniciansNeedingSupervisors) {
-          console.log(`Processing technician ${tech.email} with backend id_assigned: ${tech.id_assigned}`);
-          
           // Find the supervisor in the created technicians by the backend ID
           const supervisor = createdTechnicians.find(t => t.id === parseInt(tech.id_assigned!, 10));
-          console.log(`Found supervisor in created technicians:`, supervisor);
           
           if (supervisor && supervisor.role === "technicien_superieur") {
             try {
-              console.log(`Applying hierarchy: ${tech.email} (${tech.id}) → ${supervisor.email} (${supervisor.id})`);
-              
               // Update the technician's supervisor assignment in the backend
               const response = await fetch(`${window.location.protocol}//${window.location.hostname}:5000/api/user/${tech.id}`, {
                 method: 'PUT',
@@ -366,9 +298,6 @@ export default function DirecteurSetup() {
                 throw new Error(`HTTP ${response.status}: ${errorData.message || 'Unknown error'}`);
               }
               
-              const result = await response.json();
-              console.log(`Successfully applied hierarchy for ${tech.email}:`, result);
-              
               // Verify the assignment was applied correctly
               try {
                 const verifyResponse = await fetch(`${window.location.protocol}//${window.location.hostname}:5000/api/user?id=${tech.id}`, {
@@ -378,82 +307,21 @@ export default function DirecteurSetup() {
                 });
                 if (verifyResponse.ok) {
                   const userData = await verifyResponse.json();
-                  console.log(`Verification - User ${tech.id} now has id_assigned:`, userData.id_assigned);
                   
                   // Double-check that the assignment is correct
                   if (userData.id_assigned !== supervisor.id) {
-                    console.error(`Verification failed! User ${tech.id} has id_assigned: ${userData.id_assigned}, expected: ${supervisor.id}`);
                     throw new Error(`Hierarchy assignment verification failed for ${tech.email}`);
-                  } else {
-                    console.log(`✅ Verification successful! User ${tech.id} correctly assigned to supervisor ${supervisor.id}`);
                   }
                 }
               } catch (verifyError) {
-                console.warn("Could not verify assignment:", verifyError);
+                // Could not verify assignment
               }
               
             } catch (e) {
-              console.error(`Failed to apply hierarchy for ${tech.email}:`, e);
               throw e; // Stop the setup process if hierarchy assignment fails
             }
-          } else {
-            console.warn(`Supervisor not found or not a technicien_superieur:`, supervisor);
           }
         }
-      } else {
-        console.log("No technicians need supervisor assignments");
-      }
-
-      // Step 9: Final verification of technician hierarchy
-      console.log("=== FINAL VERIFICATION OF TECHNICIAN HIERARCHY ===");
-      for (const tech of createdTechnicians) {
-        try {
-          const verifyResponse = await fetch(`${window.location.protocol}//${window.location.hostname}:5000/api/user?id=${tech.id}`, {
-            headers: {
-              'Authorization': `Bearer ${localStorage.getItem('auth_token') || ''}`,
-            },
-          });
-          if (verifyResponse.ok) {
-            const userData = await verifyResponse.json();
-            console.log(`Final state - ${tech.email} (${tech.role}): id_assigned = ${userData.id_assigned}`);
-            
-            // Check if the assignment is correct
-            if (tech.id_assigned) {
-              // Find the supervisor by looking up the technician with the matching backend ID
-              const expectedSupervisor = createdTechnicians.find(t => t.id === parseInt(tech.id_assigned!, 10));
-              if (expectedSupervisor && userData.id_assigned !== expectedSupervisor.id) {
-                console.error(`❌ Hierarchy mismatch for ${tech.email}! Expected: ${expectedSupervisor.id}, Got: ${userData.id_assigned}`);
-              } else if (expectedSupervisor) {
-                console.log(`✅ Hierarchy correct for ${tech.email}: assigned to ${expectedSupervisor.email} (${userData.id_assigned})`);
-              } else {
-                console.warn(`⚠️ Could not find expected supervisor for ${tech.email} with id_assigned: ${tech.id_assigned}`);
-              }
-            } else {
-              console.log(`ℹ️ ${tech.email} has no supervisor assignment (as expected)`);
-            }
-          }
-        } catch (verifyError) {
-          console.warn("Could not verify final state for", tech.email, verifyError);
-        }
-      }
-
-      // Summary of final hierarchy state
-      console.log("=== FINAL HIERARCHY SUMMARY ===");
-      const techniciansWithSupervisors = createdTechnicians.filter(t => t.role === "technicien" && t.id_assigned);
-      const techniciansWithoutSupervisors = createdTechnicians.filter(t => t.role === "technicien" && !t.id_assigned);
-      const supervisors = createdTechnicians.filter(t => t.role === "technicien_superieur");
-      
-      console.log(`Total technicians: ${createdTechnicians.filter(t => t.role === "technicien").length}`);
-      console.log(`Technicians with supervisors: ${techniciansWithSupervisors.length}`);
-      console.log(`Technicians without supervisors: ${techniciansWithoutSupervisors.length}`);
-      console.log(`Total supervisors: ${supervisors.length}`);
-      
-      if (techniciansWithSupervisors.length > 0) {
-        console.log("Technicians with supervisors:");
-        techniciansWithSupervisors.forEach(tech => {
-          const supervisor = createdTechnicians.find(t => t.id === parseInt(tech.id_assigned!, 10));
-          console.log(`  ${tech.email} → ${supervisor?.email || 'Unknown'}`);
-        });
       }
 
       // Update user context with setup_completed = true
@@ -478,7 +346,6 @@ export default function DirecteurSetup() {
       }, 2000);
 
     } catch (error) {
-      console.error("Erreur lors de la configuration:", error);
       toast({
         title: "Erreur",
         description:
@@ -497,7 +364,7 @@ export default function DirecteurSetup() {
     try {
       await logout();
     } catch (error) {
-      console.error("Logout error:", error);
+      // Logout error
     }
   };
 
@@ -574,7 +441,7 @@ export default function DirecteurSetup() {
               </p>
               <p>
                 <span className="font-medium">Statut:</span>
-                <span className="text-[#B4CC5F] font-medium"> Connecté</span>
+                <span className="text-greener-600 font-medium"> Connecté</span>
               </p>
             </div>
           </div>
@@ -587,7 +454,7 @@ export default function DirecteurSetup() {
             <div className="space-y-3">
               <div className="flex justify-between">
                 <span className="text-gray-600">Entreprises affiliées</span>
-                <span className="font-medium text-[#B4CC5F]">8</span>
+                <span className="font-medium text-greener-600">8</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-600">Demandes en attente</span>
@@ -595,7 +462,7 @@ export default function DirecteurSetup() {
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-600">Projets actifs</span>
-                <span className="font-medium text-[#B4CC5F]">15</span>
+                <span className="font-medium text-greener-600">15</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-600">Employés total</span>
@@ -636,7 +503,7 @@ export default function DirecteurSetup() {
           <div className="p-6">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               <div className="text-center">
-                <div className="text-2xl font-bold text-[#B4CC5F]">
+                <div className="text-2xl font-bold text-greener-600">
                   €124,580
                 </div>
                 <div className="text-sm text-gray-600">Revenus ce mois</div>
@@ -671,7 +538,7 @@ export default function DirecteurSetup() {
           <div className="p-6">
             <div className="space-y-4">
               <div className="flex items-center space-x-3">
-                <div className="w-2 h-2 bg-[#B4CC5F] rounded-full"></div>
+                <div className="w-2 h-2 bg-greener-600 rounded-full"></div>
                 <span className="text-sm text-gray-600">
                   Nouveau projet approuvé - Ferme automatisée Région Nord
                 </span>

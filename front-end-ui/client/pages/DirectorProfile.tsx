@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { 
-  ArrowLeft, 
   Edit, 
   LogOut, 
   MapPin, 
@@ -175,18 +174,8 @@ export default function DirectorProfile() {
 
   return (
     <DirectorLayout>
-      <div className="flex items-center justify-center p-4">
-        {/* Back button */}
-        <div className="absolute top-20 left-4">
-          <Button 
-            variant="ghost" 
-            onClick={() => navigate("/directeur")}
-            className="text-greener-600 hover:text-greener-700"
-          >
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Retour
-          </Button>
-        </div>
+      <div className="flex items-center justify-center p-4 pt-8">
+
           
           <Card className="w-full max-w-md shadow-lg border-0">
             {/* Green Header with User Info */}

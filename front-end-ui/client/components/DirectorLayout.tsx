@@ -20,7 +20,7 @@ export default function DirectorLayout({ children, title, subtitle }: DirectorLa
         <DirectorHeader isSidebarOpen={isOpen} onMenuClick={() => setIsOpen(!isOpen)} />
 
         {/* Page Content */}
-        <main className="p-4 sm:p-6 lg:p-8 space-y-6">
+        <main className="p-3 sm:p-4 md:p-6 lg:p-8 space-y-4 sm:space-y-6">
           {children}
         </main>
       </div>

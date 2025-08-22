@@ -180,7 +180,7 @@ export default function TechnicianMap() {
             const serreBilans = await bilanService.getBilansBySerre(parseInt(serre.id || serre.id_serre));
             billonCount = Array.isArray(serreBilans) ? serreBilans.length : 0;
           } catch (error) {
-            console.warn('Could not load billons for serre:', serre.id, error);
+            // Could not load billons for serre
           }
 
           // Get culture guide for this serre
@@ -195,7 +195,7 @@ export default function TechnicianMap() {
               };
             }
           } catch (error) {
-            console.warn('Could not load culture guide for serre:', serre.id, error);
+            // Could not load culture guide for serre
           }
 
           return {
@@ -223,7 +223,6 @@ export default function TechnicianMap() {
           setSelectedSerre(transformedSerres[0]);
         }
       } catch (error: any) {
-        console.error('Error loading assigned serres:', error);
         setSerresError(error.message || 'Erreur lors du chargement des serres assignées');
         setSerres([]);
       } finally {
@@ -257,16 +256,9 @@ export default function TechnicianMap() {
       if (Array.isArray(serreBilans)) {
         setBilans(serreBilans);
       } else {
-        console.warn('Expected array of bilans, got:', serreBilans);
         setBilans([]);
       }
     } catch (error: any) {
-      console.error('Error loading bilans:', error);
-      console.error('Error details:', {
-        message: error.message,
-        status: error.status,
-        response: error.response
-      });
       setBilans([]); // Set empty array on error
     } finally {
       setIsLoadingBilans(false);
@@ -299,7 +291,7 @@ export default function TechnicianMap() {
           const serreBilans = await bilanService.getBilansBySerre(parseInt(serre.id || serre.id_serre));
           billonCount = Array.isArray(serreBilans) ? serreBilans.length : 0;
         } catch (error) {
-          console.warn('Could not load billons for serre:', serre.id, error);
+          // Could not load billons for serre
         }
 
         // Get culture guide for this serre
@@ -314,7 +306,7 @@ export default function TechnicianMap() {
             };
           }
         } catch (error) {
-          console.warn('Could not load culture guide for serre:', serre.id, error);
+          // Could not load culture guide for serre
         }
 
         return {
@@ -344,7 +336,7 @@ export default function TechnicianMap() {
         }
       }
     } catch (error: any) {
-      console.error('Error refreshing serre data:', error);
+      // Error refreshing serre data
     }
   };
 
@@ -388,7 +380,6 @@ export default function TechnicianMap() {
       setGuides(filteredGuides);
       }
     } catch (error: any) {
-      console.error('Error loading guides:', error);
       setGuides([]);
     } finally {
       setIsLoadingGuides(false);
@@ -408,11 +399,9 @@ export default function TechnicianMap() {
       if (Array.isArray(etatBilanData)) {
       setEtatBilans(etatBilanData);
       } else {
-        console.warn('Expected array of etat bilans, got:', etatBilanData);
         setEtatBilans([]);
       }
     } catch (error: any) {
-      console.error('Error loading etat de bilan:', error);
       setEtatBilans([]);
     } finally {
       setIsLoadingEtatBilans(false);
@@ -428,8 +417,6 @@ export default function TechnicianMap() {
   // Handle QR code generation for specific bilan
   const handleGenerateQRCodeForBilan = async (bilan: Bilan) => {
     try {
-      console.log('Generating QR code for bilan:', bilan.nom);
-
       // Show loading state
       setBilanQRCodes(prev => ({
         ...prev,
@@ -457,9 +444,7 @@ export default function TechnicianMap() {
         setActiveMobileTab('bilan');
       }
 
-      console.log('QR code generated successfully');
     } catch (error) {
-      console.error('Error generating QR code:', error);
       // Remove loading state on error
       setBilanQRCodes(prev => {
         const newState = { ...prev };
@@ -505,7 +490,6 @@ export default function TechnicianMap() {
       }
     }, 300);
     
-    console.log('Checking etat bilan for bilan:', bilan.nom);
     // The etat bilan section will automatically show when the bilan is selected
   };
 
@@ -666,8 +650,6 @@ export default function TechnicianMap() {
   };
 
   const handleInterventionSubmit = (data: any) => {
-    
-    // TODO: Send to backend API
     // Here you would typically call an API to save the intervention
   };
 

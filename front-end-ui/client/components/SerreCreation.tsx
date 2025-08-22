@@ -325,7 +325,7 @@ export default function SerreCreation({
         path: activeDomain.path,
         area: activeDomain.area,
         center: activeDomain.center,
-        color: "#B4CC5F",
+        color: "#2E7D32",
       });
 
       activeDomain.serres.forEach((serre) => {
@@ -457,13 +457,13 @@ export default function SerreCreation({
                   {/* Validation feedback */}
                   <div className="text-sm text-gray-600">
                     {!serreForm.nom.trim() && (
-                      <p className="text-amber-600">⚠️ Veuillez entrer un nom pour la serre</p>
+                      <p className="text-amber-600">Veuillez entrer un nom pour la serre</p>
                     )}
                     {serreForm.nom.trim() && !serreForm.selectedGuideId && (
-                      <p className="text-amber-600">⚠️ Veuillez créer le guide de culture pour cette serre</p>
+                      <p className="text-amber-600">Veuillez créer le guide de culture pour cette serre</p>
                     )}
                     {serreForm.nom.trim() && serreForm.selectedGuideId && (
-                      <p className="text-green-600">✅ Prêt à dessiner la serre</p>
+                      <p className="text-green-600">Prêt à dessiner la serre</p>
                     )}
                   </div>
 

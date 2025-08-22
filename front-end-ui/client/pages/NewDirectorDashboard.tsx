@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useAuth } from "../contexts/AuthContext";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -70,6 +71,7 @@ interface DashboardStats {
 export default function DirectorDashboard() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [stats, setStats] = useState<StatCard[]>([]);
@@ -496,7 +498,7 @@ export default function DirectorDashboard() {
       {/* Header with Refresh Button */}
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Tableau de bord</h1>
+          {!isMobile && <h1 className="text-2xl font-bold text-gray-900">Tableau de bord</h1>}
           <p className="text-gray-600">Vue d'ensemble de votre entreprise</p>
         </div>
             <div className="flex items-center space-x-4">

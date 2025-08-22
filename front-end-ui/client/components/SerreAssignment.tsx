@@ -210,8 +210,8 @@ export default function SerreAssignment({
               <p className="text-sm text-gray-600 hidden sm:block">
                 Assignez les serres aux Techniciens Supérieurs uniquement
               </p>
-              <p className="text-xs text-blue-600 mt-1">
-                💡 Note: Seuls les Techniciens Supérieurs peuvent être assignés aux serres
+              <p className="text-sm text-gray-600 mb-4">
+                Note: Seuls les Techniciens Supérieurs peuvent être assignés aux serres
               </p>
             </div>
             <div className="flex items-center gap-2">
@@ -390,7 +390,7 @@ export default function SerreAssignment({
           {/* Skip Information */}
           <div className="mt-3 text-center lg:text-left">
             <p className="text-xs text-gray-500">
-              💡 Vous pouvez ignorer cette étape et configurer les assignations plus tard depuis le tableau de bord
+              Vous pouvez ignorer cette étape et configurer les assignations plus tard depuis le tableau de bord
             </p>
           </div>
         </div>

@@ -59,7 +59,6 @@ export default function TechnicienSupAlerts() {
       const response = await serreService.getSerresByUser();
       setAssignedSerres(response);
     } catch (error) {
-      console.error("Error loading assigned serres:", error);
       setAssignedSerres([]);
     }
   };
@@ -110,7 +109,6 @@ export default function TechnicienSupAlerts() {
       setAlerts(paginatedAlerts);
       setTotalAlerts(filteredAlerts.length);
     } catch (error) {
-      console.error("Error loading alerts:", error);
       setAlerts([]);
       setTotalAlerts(0);
     } finally {
@@ -123,7 +121,7 @@ export default function TechnicienSupAlerts() {
       const statsData = await AlertService.getAlertStats();
       setStats(statsData);
     } catch (error) {
-      console.error("Error loading stats:", error);
+      // Error loading stats
     }
   };
 
@@ -133,7 +131,7 @@ export default function TechnicienSupAlerts() {
       loadAlerts();
       loadStats();
     } catch (error) {
-      console.error("Error updating alert:", error);
+      // Error updating alert
     }
   };
 

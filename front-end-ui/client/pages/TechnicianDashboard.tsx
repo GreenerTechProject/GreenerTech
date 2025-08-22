@@ -101,12 +101,11 @@ export default function TechnicianDashboard() {
     try {
       await logout();
     } catch (error) {
-      console.error("Logout error:", error);
+      // Logout error
     }
   };
 
   const handleInterventionSubmit = (data: any) => {
-    console.log("Intervention submitted:", data);
     // Here you would typically send the data to your backend
     setIsInterventionFormOpen(false);
   };
@@ -148,7 +147,6 @@ export default function TechnicianDashboard() {
         setNotifications(notificationsData);
         setReports(reportsData);
       } catch (error) {
-        console.error("Error fetching dashboard data:", error);
         setAlerts([]);
         setMissions([]);
         setSerres([]);

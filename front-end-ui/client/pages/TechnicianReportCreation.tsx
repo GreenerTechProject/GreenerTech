@@ -56,7 +56,6 @@ export default function TechnicianReportCreation() {
       const serres = await serreService.getSerresByUser();
       setAvailableSerres(serres);
     } catch (error) {
-      console.error("Error fetching available serres:", error);
       setError("Erreur lors du chargement des serres disponibles");
     }
   };
@@ -92,7 +91,6 @@ export default function TechnicianReportCreation() {
       }, 2000);
       
     } catch (error: any) {
-      console.error("Error creating report:", error);
       setError(error.response?.data?.message || "Erreur lors de la création du rapport");
     } finally {
       setLoading(false);

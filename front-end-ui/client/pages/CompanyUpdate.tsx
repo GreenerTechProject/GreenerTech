@@ -7,6 +7,9 @@ import { Textarea } from '../components/ui/textarea';
 import { useToast } from '../hooks/use-toast';
 import { Building2, Save, Loader2 } from 'lucide-react';
 import { companyService, CompanyInfo } from '../services/companyService';
+import { useSidebar } from '../hooks/useSidebar';
+import DirectorSidebar from '../components/DirectorSidebar';
+import DirectorHeader from '../components/DirectorHeader';
 
 interface Company {
   id: number;
@@ -19,6 +22,7 @@ interface Company {
 }
 
 const CompanyUpdate: React.FC = () => {
+  const { isOpen, setIsOpen } = useSidebar();
   const [company, setCompany] = useState<Company | null>(null);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -134,10 +138,13 @@ const CompanyUpdate: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="container mx-auto p-6">
-        <div className="flex items-center justify-center py-12">
-          <Loader2 className="w-8 h-8 animate-spin mr-2" />
-          <span>Chargement des informations de l'entreprise...</span>
+      <div className="min-h-screen bg-gray-50 flex">
+        <DirectorSidebar isOpen={isOpen} setIsOpen={setIsOpen} />
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto"></div>
+            <p className="mt-4 text-gray-600">Chargement des informations de l'entreprise...</p>
+          </div>
         </div>
       </div>
     );
@@ -145,170 +152,189 @@ const CompanyUpdate: React.FC = () => {
 
   if (!company) {
     return (
-      <div className="container mx-auto p-6">
-        <Card>
-          <CardContent className="py-12">
-            <div className="text-center">
-              <Building2 className="w-16 h-16 mx-auto text-gray-400 mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">
-                Aucune entreprise trouvée
-              </h3>
-              <p className="text-gray-500">
-                Vous devez d'abord créer une entreprise pour pouvoir la modifier.
-              </p>
-            </div>
-          </CardContent>
-        </Card>
+      <div className="min-h-screen bg-gray-50 flex">
+        <DirectorSidebar isOpen={isOpen} setIsOpen={setIsOpen} />
+        <div className="flex-1">
+          <DirectorHeader isSidebarOpen={isOpen} onMenuClick={() => setIsOpen(!isOpen)} />
+          <main className="p-4 sm:p-6 lg:p-8">
+            <Card>
+              <CardContent className="py-12">
+                <div className="text-center">
+                  <Building2 className="w-16 h-16 mx-auto text-gray-400 mb-4" />
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">
+                    Aucune entreprise trouvée
+                  </h3>
+                  <p className="text-gray-500">
+                    Vous devez d'abord créer une entreprise pour pouvoir la modifier.
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          </main>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="container mx-auto p-6">
-      <div className="max-w-4xl mx-auto">
-        <div className="flex items-center mb-6">
-          <Building2 className="w-8 h-8 mr-3 text-blue-600" />
-          <h1 className="text-3xl font-bold">Modifier l'Entreprise</h1>
-        </div>
+    <div className="min-h-screen bg-gray-50 flex">
+      <DirectorSidebar isOpen={isOpen} setIsOpen={setIsOpen} />
+      
+      <div className="flex-1 transition-all duration-300">
+        <DirectorHeader isSidebarOpen={isOpen} onMenuClick={() => setIsOpen(!isOpen)} />
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Informations de l'Entreprise</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Nom de l'entreprise */}
-                <div className="md:col-span-2">
-                  <Label htmlFor="nom">Nom de l'entreprise *</Label>
-                  <Input
-                    id="nom"
-                    value={formData.nom}
-                    onChange={(e) => handleInputChange('nom', e.target.value)}
-                    placeholder="Nom de votre entreprise"
-                    required
-                  />
+        {/* Company Update Content */}
+        <main className="p-4 sm:p-6 lg:p-8 space-y-6">
+
+
+          <div className="max-w-4xl mx-auto">
+            <Card>
+              <CardHeader>
+                <CardTitle>Informations de l'Entreprise</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <form onSubmit={handleSubmit} className="space-y-6">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+                    {/* Nom de l'entreprise */}
+                    <div className="sm:col-span-2">
+                      <Label htmlFor="nom">Nom de l'entreprise *</Label>
+                      <Input
+                        id="nom"
+                        value={formData.nom}
+                        onChange={(e) => handleInputChange('nom', e.target.value)}
+                        placeholder="Nom de votre entreprise"
+                        required
+                        className="mt-1"
+                      />
+                    </div>
+
+                    {/* Statut juridique */}
+                    <div>
+                      <Label htmlFor="status_juridique">Statut juridique</Label>
+                      <Input
+                        id="status_juridique"
+                        value={formData.status_juridique}
+                        onChange={(e) => handleInputChange('status_juridique', e.target.value)}
+                        placeholder="SARL, SAS, etc."
+                        className="mt-1"
+                      />
+                    </div>
+
+                    {/* CIE */}
+                    <div>
+                      <Label htmlFor="cie">CIE</Label>
+                      <Input
+                        id="cie"
+                        value={formData.cie}
+                        onChange={(e) => handleInputChange('cie', e.target.value)}
+                        placeholder="Code CIE"
+                        className="mt-1"
+                      />
+                    </div>
+
+                    {/* ID Fiscale */}
+                    <div>
+                      <Label htmlFor="id_fiscale">Identifiant fiscal</Label>
+                      <Input
+                        id="id_fiscale"
+                        value={formData.id_fiscale}
+                        onChange={(e) => handleInputChange('id_fiscale', e.target.value)}
+                        placeholder="Numéro fiscal"
+                        className="mt-1"
+                      />
+                    </div>
+
+                    {/* Email */}
+                    <div>
+                      <Label htmlFor="email">Email de l'entreprise</Label>
+                      <Input
+                        id="email"
+                        type="email"
+                        value={formData.email}
+                        onChange={(e) => handleInputChange('email', e.target.value)}
+                        placeholder="contact@entreprise.com"
+                        className="mt-1"
+                      />
+                    </div>
+
+                    {/* Adresse */}
+                    <div className="sm:col-span-2">
+                      <Label htmlFor="adresse">Adresse</Label>
+                      <Textarea
+                        id="adresse"
+                        value={formData.adresse}
+                        onChange={(e) => handleInputChange('adresse', e.target.value)}
+                        placeholder="Adresse complète de l'entreprise"
+                        rows={3}
+                        className="mt-1"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col sm:flex-row justify-end space-y-3 sm:space-y-0 sm:space-x-3 pt-6 border-t">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => fetchCompany()}
+                      disabled={saving}
+                      className="w-full sm:w-auto"
+                    >
+                      Annuler
+                    </Button>
+                    <Button type="submit" disabled={saving} className="w-full sm:w-auto">
+                      {saving ? (
+                        <>
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          Sauvegarde...
+                        </>
+                      ) : (
+                        <>
+                          <Save className="w-4 h-4 mr-2" />
+                          Sauvegarder
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </form>
+              </CardContent>
+            </Card>
+
+            {/* Company Summary */}
+            <Card className="mt-6">
+              <CardHeader>
+                <CardTitle>Aperçu de l'Entreprise</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <span className="font-medium text-gray-500">Nom:</span>
+                    <span className="ml-2">{company.nom}</span>
+                  </div>
+                  <div>
+                    <span className="font-medium text-gray-500">Statut:</span>
+                    <span className="ml-2">{company.status_juridique || 'Non défini'}</span>
+                  </div>
+                  <div>
+                    <span className="font-medium text-gray-500">CIE:</span>
+                    <span className="ml-2">{company.cie || 'Non défini'}</span>
+                  </div>
+                  <div>
+                    <span className="font-medium text-gray-500">ID Fiscal:</span>
+                    <span className="ml-2">{company.id_fiscale || 'Non défini'}</span>
+                  </div>
+                  <div>
+                    <span className="font-medium text-gray-500">Email:</span>
+                    <span className="ml-2">{company.email || 'Non défini'}</span>
+                  </div>
+                  <div className="sm:col-span-2">
+                    <span className="font-medium text-gray-500">Adresse:</span>
+                    <span className="ml-2">{company.adresse || 'Non définie'}</span>
+                  </div>
                 </div>
-
-                {/* Statut juridique */}
-                <div>
-                  <Label htmlFor="status_juridique">Statut juridique</Label>
-                  <Input
-                    id="status_juridique"
-                    value={formData.status_juridique}
-                    onChange={(e) => handleInputChange('status_juridique', e.target.value)}
-                    placeholder="SARL, SAS, etc."
-                  />
-                </div>
-
-                {/* CIE */}
-                <div>
-                  <Label htmlFor="cie">CIE</Label>
-                  <Input
-                    id="cie"
-                    value={formData.cie}
-                    onChange={(e) => handleInputChange('cie', e.target.value)}
-                    placeholder="Code CIE"
-                  />
-                </div>
-
-                {/* ID Fiscale */}
-                <div>
-                  <Label htmlFor="id_fiscale">Identifiant fiscal</Label>
-                  <Input
-                    id="id_fiscale"
-                    value={formData.id_fiscale}
-                    onChange={(e) => handleInputChange('id_fiscale', e.target.value)}
-                    placeholder="Numéro fiscal"
-                  />
-                </div>
-
-                {/* Email */}
-                <div>
-                  <Label htmlFor="email">Email de l'entreprise</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    value={formData.email}
-                    onChange={(e) => handleInputChange('email', e.target.value)}
-                    placeholder="contact@entreprise.com"
-                  />
-                </div>
-
-                {/* Adresse */}
-                <div className="md:col-span-2">
-                  <Label htmlFor="adresse">Adresse</Label>
-                  <Textarea
-                    id="adresse"
-                    value={formData.adresse}
-                    onChange={(e) => handleInputChange('adresse', e.target.value)}
-                    placeholder="Adresse complète de l'entreprise"
-                    rows={3}
-                  />
-                </div>
-              </div>
-
-              <div className="flex justify-end space-x-3 pt-6 border-t">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => fetchCompany()}
-                  disabled={saving}
-                >
-                  Annuler
-                </Button>
-                <Button type="submit" disabled={saving}>
-                  {saving ? (
-                    <>
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      Sauvegarde...
-                    </>
-                  ) : (
-                    <>
-                      <Save className="w-4 h-4 mr-2" />
-                      Sauvegarder
-                    </>
-                  )}
-                </Button>
-              </div>
-            </form>
-          </CardContent>
-        </Card>
-
-        {/* Company Summary */}
-        <Card className="mt-6">
-          <CardHeader>
-            <CardTitle>Aperçu de l'Entreprise</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-              <div>
-                <span className="font-medium text-gray-500">Nom:</span>
-                <span className="ml-2">{company.nom}</span>
-              </div>
-              <div>
-                <span className="font-medium text-gray-500">Statut:</span>
-                <span className="ml-2">{company.status_juridique || 'Non défini'}</span>
-              </div>
-              <div>
-                <span className="font-medium text-gray-500">CIE:</span>
-                <span className="ml-2">{company.cie || 'Non défini'}</span>
-              </div>
-              <div>
-                <span className="font-medium text-gray-500">ID Fiscal:</span>
-                <span className="ml-2">{company.id_fiscale || 'Non défini'}</span>
-              </div>
-              <div>
-                <span className="font-medium text-gray-500">Email:</span>
-                <span className="ml-2">{company.email || 'Non défini'}</span>
-              </div>
-              <div className="md:col-span-2">
-                <span className="font-medium text-gray-500">Adresse:</span>
-                <span className="ml-2">{company.adresse || 'Non définie'}</span>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+              </CardContent>
+            </Card>
+          </div>
+        </main>
       </div>
     </div>
   );

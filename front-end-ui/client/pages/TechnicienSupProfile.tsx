@@ -39,7 +39,7 @@ export default function TechnicienSupProfile() {
               companyData = await companyService.getCompanyById(companyId);
             }
           } catch (error) {
-            console.warn("Could not fetch company data:", error);
+            // Could not fetch company data
           }
 
           // Format user data for display
@@ -58,7 +58,6 @@ export default function TechnicienSupProfile() {
           setUserInfo(formattedUser);
           setCompanyInfo(companyData);
         } catch (error) {
-          console.error("Error fetching user data:", error);
           toast({
             title: "Erreur",
             description: "Erreur lors du chargement des données",

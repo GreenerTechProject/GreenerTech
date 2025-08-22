@@ -203,6 +203,24 @@ export const assignmentService = {
       throw { message: errorMessage, status: error.response?.status || 500 } as ApiError;
     }
   },
+
+  // Remove a technician from a supervisor
+  removeTechnicianFromSupervisor: async (
+    technician_id: number
+  ): Promise<{ message: string; technician_id: number }> => {
+    try {
+      const response = await axios.put(
+        `${API_BASE_URL}/users/remove-assignment`,
+        { technician_id },
+        createAuthenticatedRequest()
+      );
+      return response.data;
+    } catch (error: any) {
+      const errorMessage =
+        error.response?.data?.message || "Erreur lors de la suppression de l'assignation superviseur";
+      throw { message: errorMessage, status: error.response?.status || 500 } as ApiError;
+    }
+  },
 };
 
 export default assignmentService;

@@ -80,7 +80,7 @@ export default function DirectorAlertManagement() {
     <DirectorLayout>
       <main className="p-4 sm:p-6 lg:p-8">
           <div className="flex justify-between items-center mb-6">
-            <h1 className="text-2xl font-bold text-gray-900">Gestion des Alertes</h1>
+            <h1 className="text-2xl font-bold text-gray-900 hidden sm:block">Gestion des Alertes</h1>
             <Button 
               onClick={() => {
                 setLoading(true);
@@ -88,7 +88,7 @@ export default function DirectorAlertManagement() {
               }}
               disabled={loading}
               variant="outline"
-              className="flex items-center gap-2"
+              className="flex items-center gap-2 hidden sm:flex"
             >
               <RefreshCw className="h-4 w-4" />
               Actualiser

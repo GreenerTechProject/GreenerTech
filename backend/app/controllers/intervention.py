@@ -77,8 +77,10 @@ def create_intervention(current_user):
 @token_required
 @role_required("directeur", "technicien_superieur")
 def validate_intervention(current_user,id):
+    print(f"DEBUG: validate_intervention called by user {current_user.email} (role: {current_user.role}) for intervention {id}")  # Debug log
     try:
         intervention = Intervention.query.get_or_404(id)
+        print(f"DEBUG: Intervention found: {intervention.description}")  # Debug log
         intervention.valid = True
         # # Notifier le technicien (créateur de l'intervention)
         # # envoyer_notification(
@@ -93,18 +95,23 @@ def validate_intervention(current_user,id):
             type_notification="intervention_validee"
         )
         db.session.commit()
+        print(f"DEBUG: Intervention {id} validated successfully")  # Debug log
         return jsonify({'message': 'Intervention validée'}), 200
     except Exception as e:
+        print(f"DEBUG: Error in validate_intervention: {str(e)}")  # Debug log
         return jsonify({'error': str(e)}), 400
 
 @token_required
 @role_required("directeur", "technicien_superieur")
 def reject_intervention(current_user, id):
+    print(f"DEBUG: reject_intervention called by user {current_user.email} (role: {current_user.role}) for intervention {id}")  # Debug log
     try:
         data = request.get_json()
         reason = data.get('reason', 'Aucune raison spécifiée')
+        print(f"DEBUG: Rejection reason: {reason}")  # Debug log
         
         intervention = Intervention.query.get_or_404(id)
+        print(f"DEBUG: Intervention found: {intervention.description}")  # Debug log
         
         # Update intervention status to rejected
         intervention.status = StatutInterventionEnum.REJETEE
@@ -119,8 +126,10 @@ def reject_intervention(current_user, id):
         )
         
         db.session.commit()
+        print(f"DEBUG: Intervention {id} rejected successfully")  # Debug log
         return jsonify({'message': 'Intervention rejetée'}), 200
     except Exception as e:
+        print(f"DEBUG: Error in reject_intervention: {str(e)}")  # Debug log
         db.session.rollback()
         return jsonify({'error': str(e)}), 400
     

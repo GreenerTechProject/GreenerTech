@@ -51,7 +51,6 @@ export default function TechnicienSupReports() {
       const data = await ReportService.getReportsByAssignedSerres();
       setReports(data);
     } catch (err) {
-      console.error("Error fetching reports:", err);
       setError("Erreur lors du chargement des rapports");
       setReports([]);
     } finally {
@@ -64,7 +63,6 @@ export default function TechnicienSupReports() {
       const serres = await serreService.getSerresByUser();
       setAvailableSerres(serres);
     } catch (error) {
-      console.error("Error fetching available serres:", error);
       setAvailableSerres([]);
     }
   };
@@ -79,7 +77,7 @@ export default function TechnicienSupReports() {
       try {
         await ReportService.downloadReport(rapport.lien_pdf, `rapport_${rapport.id}.pdf`);
       } catch (error) {
-        console.error("Error downloading report:", error);
+        // Error downloading report
       }
     }
   };

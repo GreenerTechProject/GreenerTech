@@ -60,12 +60,13 @@ export default function TechnicianSidebar({
         icon: <Map className="h-5 w-5" />,
         path: isSuperiorTechnician ? "/technicien-sup/map" : "/technician",
       },
-      {
+      // Only show missions for regular technicians, not for tech-sup
+      ...(isSuperiorTechnician ? [] : [{
         id: "missions",
         label: "Missions",
         icon: <Target className="h-5 w-5" />,
-        path: isSuperiorTechnician ? "/technicien-sup/missions" : "/technician/missions",
-      },
+        path: "/technician/missions",
+      }]),
       {
         id: "alertes",
         label: "Alertes",
@@ -128,8 +129,6 @@ export default function TechnicianSidebar({
 
   return (
     <>
-    
-
       {/* Backdrop */}
       {isOpen && (
         <div

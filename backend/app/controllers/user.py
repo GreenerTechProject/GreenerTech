@@ -814,7 +814,7 @@ def get_interventions_by_technicien(current_user, id):
         # Get interventions for this technician
         from app.models.intervention import Intervention
         from app.models.serre import Serre
-        from app.models.type_tache import Type_tache
+        from app.models.type_tache import TypeTache
         
         interventions = Intervention.query.filter_by(id_user=id).all()
         
@@ -839,7 +839,7 @@ def get_interventions_by_technicien(current_user, id):
                 intervention_data['domaine_nom'] = serre.domaine.nom if serre.domaine else "Domaine inconnu"
             
             # Get type_tache information
-            type_tache = Type_tache.query.get(intervention.id_type_tache)
+            type_tache = TypeTache.query.get(intervention.id_type_tache)
             if type_tache:
                 intervention_data['type_nom'] = type_tache.nom
             

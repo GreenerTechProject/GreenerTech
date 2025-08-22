@@ -37,7 +37,7 @@ const TechnicianAlerts: React.FC = () => {
       const alertsData = await alertsService.getAlerts();
       setAlerts(alertsData);
     } catch (error) {
-      console.error('Error fetching alerts:', error);
+      // Error fetching alerts
     } finally {
       setLoading(false);
     }

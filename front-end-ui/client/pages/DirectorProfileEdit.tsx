@@ -9,7 +9,6 @@ import { Separator } from "@/components/ui/separator";
 import { authService, type User } from "@/services/authService";
 import { toast } from "@/hooks/use-toast";
 import { 
-  ChevronLeft,
   Save,
   Eye,
   EyeOff
@@ -163,17 +162,10 @@ export default function DirectorProfileEdit() {
       <DirectorHeader />
       
       <div className="flex-1 transition-all duration-300">
-        <div className="max-w-2xl mx-auto p-6 pt-20">
+        <div className="max-w-2xl mx-auto p-6 pt-8">
           {/* Header */}
           <div className="flex items-center justify-between mb-6">
-            <Button
-              variant="ghost"
-              onClick={() => navigate("/directeur/profile")}
-              className="text-green-600 hover:text-green-800"
-            >
-              <ChevronLeft className="w-4 h-4 mr-2" />
-              Retour au profil
-            </Button>
+            
           </div>
 
           <Card>

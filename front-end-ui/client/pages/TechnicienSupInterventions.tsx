@@ -101,7 +101,6 @@ export default function TechnicienSupInterventions() {
   // Reset filtered results when interventions change (e.g., after refresh)
   useEffect(() => {
     if (interventions.length > 0) {
-      console.log("Interventions changed, resetting filtered results");
       setFilteredInterventions(interventions);
       setCurrentPage(1);
     }
@@ -145,7 +144,6 @@ export default function TechnicienSupInterventions() {
       ]);
       // loadInterventions will be called by useEffect when both are available
     } catch (error) {
-      console.error("Error loading data:", error);
       toast({
         title: "Erreur",
         description: "Impossible de charger les données",
@@ -163,7 +161,7 @@ export default function TechnicienSupInterventions() {
         setAssignedSerres(serres);
       }
     } catch (error) {
-      console.error("Error loading assigned serres:", error);
+      // Error loading assigned serres
     }
   };
 
@@ -176,7 +174,6 @@ export default function TechnicienSupInterventions() {
         if (supervisedTechnicians.length > 0) {
           // We found technicians with explicit supervisor relationship
           setTechnicians(supervisedTechnicians);
-          console.log(`Loaded ${supervisedTechnicians.length} directly supervised technicians`);
         } else {
           // Fallback: get all technicians in company and filter by supervisor relationship
           if (user?.id_entreprise) {
@@ -204,12 +201,10 @@ export default function TechnicienSupInterventions() {
             });
             
             setTechnicians(filteredTechnicians);
-            console.log(`Loaded ${filteredTechnicians.length} filtered technicians out of ${allTechs.length} total`);
           }
         }
       }
     } catch (error) {
-      console.error("Error loading technicians:", error);
       setTechnicians([]);
     }
   };
@@ -254,7 +249,6 @@ export default function TechnicienSupInterventions() {
         applySorting(sortBy, sortOrder);
       }
     } catch (error) {
-      console.error("Error loading interventions:", error);
       setInterventions([]);
       setFilteredInterventions([]);
     } finally {
@@ -281,75 +275,40 @@ export default function TechnicienSupInterventions() {
   };
 
   const applyFilters = useCallback((search: string, status: string, technicianId: string) => {
-    console.log(`=== APPLYING FILTERS DEBUG ===`);
-    console.log(`Current interventions state:`, interventions.slice(0, 3).map(i => ({ 
-      id: i.id, 
-      technician_name: i.technician_name, 
-      id_user: i.id_user 
-    })));
-    console.log(`Filtering by: search="${search}", status="${status}", technicianId="${technicianId}"`);
-    
     // Start with a fresh copy of all interventions
     let filtered = [...interventions];
-    console.log(`Starting with ${filtered.length} total interventions`);
 
     // Apply status filter first (most restrictive)
     if (status !== "all") {
-      const beforeStatus = filtered.length;
       filtered = filtered.filter(intervention => {
-        const matches = intervention.status === status;
-        console.log(`Status filter: intervention ${intervention.id} status "${intervention.status}" matches "${status}"? ${matches}`);
-        return matches;
+        return intervention.status === status;
       });
-      console.log(`Status filter: ${beforeStatus} -> ${filtered.length} interventions`);
     }
 
     // Apply technician filter (second most restrictive)
     if (technicianId !== "all") {
       const selectedTechnician = technicians.find(tech => String(tech.id) === technicianId);
-      console.log(`Selected technician for filter:`, selectedTechnician);
-      
+
       if (selectedTechnician) {
-        const beforeTechnician = filtered.length;
         filtered = filtered.filter(intervention => {
-          const matches = String(intervention.id_user) === String(selectedTechnician.id);
-          console.log(`Technician filter: intervention ${intervention.id} user ${intervention.id_user} matches technician ${selectedTechnician.id}? ${matches}`);
-          return matches;
+          return String(intervention.id_user) === String(selectedTechnician.id);
         });
-        console.log(`Technician filter: ${beforeTechnician} -> ${filtered.length} interventions`);
-      } else {
-        console.warn(`Technician with ID ${technicianId} not found in technicians list`);
       }
     }
 
     // Apply search filter last (least restrictive but most expensive)
     if (search.trim()) {
       const searchLower = search.toLowerCase();
-      const beforeSearch = filtered.length;
       filtered = filtered.filter(intervention => {
         const typeMatch = (intervention.type_nom || '').toLowerCase().includes(searchLower);
         const serreMatch = (intervention.serre_nom || '').toLowerCase().includes(searchLower);
         const domaineMatch = (intervention.domaine_nom || '').toLowerCase().includes(searchLower);
         const descriptionMatch = (intervention.description || '').toLowerCase().includes(searchLower);
         const technicianMatch = (intervention.technician_name || '').toLowerCase().includes(searchLower);
-        
-        const matches = typeMatch || serreMatch || domaineMatch || descriptionMatch || technicianMatch;
-        console.log(`Search filter: intervention ${intervention.id} matches "${search}"? ${matches}`, {
-          type: typeMatch, serre: serreMatch, domaine: domaineMatch, 
-          description: descriptionMatch, technician: technicianMatch
-        });
-        
-        return matches;
-      });
-      console.log(`Search filter: ${beforeSearch} -> ${filtered.length} interventions`);
-    }
 
-    console.log(`Final filtered results: ${filtered.length} interventions`);
-    console.log(`Sample filtered interventions:`, filtered.slice(0, 3).map(i => ({ 
-      id: i.id, 
-      technician_name: i.technician_name,
-      status: i.status
-    })));
+        return typeMatch || serreMatch || domaineMatch || descriptionMatch || technicianMatch;
+      });
+    }
     
     setFilteredInterventions(filtered);
     setCurrentPage(1);
@@ -781,7 +740,6 @@ export default function TechnicienSupInterventions() {
           variant="outline"
           className="bg-white border-gray-300 text-gray-700 hover:bg-gray-50 text-sm h-10 px-4"
           onClick={() => {
-            console.log("Refresh button clicked - reloading all data");
             setSearchTerm("");
             setStatusFilter("all");
             setTechnicianFilter("all");

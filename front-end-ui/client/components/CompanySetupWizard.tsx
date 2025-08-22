@@ -420,7 +420,7 @@ export default function CompanySetupWizard({
                         <div
                           className={`flex items-center justify-center w-10 h-10 rounded-full border-2 ${
                             status === "completed"
-                              ? "bg-[#B4CC5F] border-[#B4CC5F] text-white"
+                              ? "bg-greener-600 border-greener-600 text-white"
                               : status === "current"
                                 ? "bg-blue-500 border-blue-500 text-white"
                                 : status === "skipped"
@@ -443,7 +443,7 @@ export default function CompanySetupWizard({
                       {index < 6 && (
                         <div
                           className={`w-8 h-0.5 mx-2 ${
-                            status === "completed" ? "bg-[#B4CC5F]" : "bg-gray-300"
+                            status === "completed" ? "bg-greener-600" : "bg-gray-300"
                           }`}
                         />
                       )}
@@ -609,6 +609,36 @@ export default function CompanySetupWizard({
           </div>
         </div>
 
+        {/* Desktop Left Panel - Draggable and Resizable */}
+        <div className="hidden lg:block bg-white border-r border-gray-200 overflow-y-auto relative"
+             style={{ width: `${leftPanelWidth}px`, minWidth: '300px', maxWidth: '800px' }}>
+          <div className="p-4">
+            <div className="relative mb-4">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Input
+                placeholder="Rechercher dans les domaines..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+            <div className="space-y-2">
+              {domains.map((domain) => (
+                <div key={domain.id} className="p-3 border rounded-lg">
+                  <h4 className="font-medium text-sm">{domain.name}</h4>
+                  <p className="text-xs text-gray-600">Domaine</p>
+                </div>
+              ))}
+            </div>
+          </div>
+          
+          {/* Resize Handle */}
+          <div
+            className="absolute right-0 top-0 bottom-0 w-1 bg-gray-300 cursor-col-resize hover:bg-gray-400 transition-colors"
+            onMouseDown={handleMouseDown}
+          />
+        </div>
+
         {/* Main Content */}
         <div className="flex-1">
           <DomainCreation
@@ -659,6 +689,36 @@ export default function CompanySetupWizard({
               ))}
             </div>
           </div>
+        </div>
+
+        {/* Desktop Left Panel - Draggable and Resizable */}
+        <div className="hidden lg:block bg-white border-r border-gray-200 overflow-y-auto relative"
+             style={{ width: `${leftPanelWidth}px`, minWidth: '300px', maxWidth: '800px' }}>
+          <div className="p-4">
+            <div className="relative mb-4">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Input
+                placeholder="Rechercher dans les serres..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+            <div className="space-y-2">
+              {domains.flatMap(d => d.serres).map((serre) => (
+                <div key={serre.id} className="p-3 border rounded-lg">
+                  <h4 className="font-medium text-sm">{serre.nom}</h4>
+                  <p className="text-xs text-gray-600">Serre</p>
+                </div>
+              ))}
+            </div>
+          </div>
+          
+          {/* Resize Handle */}
+          <div
+            className="absolute right-0 top-0 bottom-0 w-1 bg-gray-300 cursor-col-resize hover:bg-gray-400 transition-colors"
+            onMouseDown={handleMouseDown}
+          />
         </div>
 
         {/* Main Content */}
@@ -712,6 +772,36 @@ export default function CompanySetupWizard({
               ))}
             </div>
           </div>
+        </div>
+
+        {/* Desktop Left Panel - Draggable and Resizable */}
+        <div className="hidden lg:block bg-white border-r border-gray-200 overflow-y-auto relative"
+             style={{ width: `${leftPanelWidth}px`, minWidth: '300px', maxWidth: '800px' }}>
+          <div className="p-4">
+            <div className="relative mb-4">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Input
+                placeholder="Rechercher dans les techniciens..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+            <div className="space-y-2">
+              {technicians.map((tech) => (
+                <div key={tech.id} className="p-3 border rounded-lg">
+                  <h4 className="font-medium text-sm">{tech.fullName}</h4>
+                  <p className="text-xs text-gray-600">{tech.role}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+          
+          {/* Resize Handle */}
+          <div
+            className="absolute right-0 top-0 bottom-0 w-1 bg-gray-300 cursor-col-resize hover:bg-gray-400 transition-colors"
+            onMouseDown={handleMouseDown}
+          />
         </div>
 
         {/* Main Content */}

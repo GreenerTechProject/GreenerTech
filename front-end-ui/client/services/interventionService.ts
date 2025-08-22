@@ -19,12 +19,20 @@ const handleAuthError = (error: any) => {
 // Create axios request config with Authorization header (aligned with domainService)
 const createAuthenticatedRequest = () => {
   const token = tokenManager.getToken();
-  return {
+  console.log(`DEBUG: createAuthenticatedRequest - Token available: ${token ? 'Yes' : 'No'}`); // Debug log
+  if (token) {
+    console.log(`DEBUG: createAuthenticatedRequest - Token starts with: ${token.substring(0, 20)}...`); // Debug log
+  }
+  
+  const config = {
     headers: {
       "Content-Type": "application/json",
       ...(token && { Authorization: `Bearer ${token}` }),
     },
   };
+  
+  console.log(`DEBUG: createAuthenticatedRequest - Final headers:`, config.headers); // Debug log
+  return config;
 };
 
 export interface Intervention {
@@ -99,9 +107,19 @@ export class InterventionService {
 
   static async validateIntervention(id: number): Promise<void> {
     try {
+      console.log(`DEBUG: Attempting to validate intervention ${id}`); // Debug log
+      const token = tokenManager.getToken();
+      console.log(`DEBUG: Token available: ${token ? 'Yes' : 'No'}`); // Debug log
+      if (token) {
+        console.log(`DEBUG: Token starts with: ${token.substring(0, 20)}...`); // Debug log
+      }
+      
       await axios.put(`${API_BASE_URL}/intervention/${id}/validate`, {}, createAuthenticatedRequest());
+      console.log(`DEBUG: Intervention ${id} validated successfully`); // Debug log
     } catch (error: any) {
       console.error("Error validating intervention:", error);
+      console.log(`DEBUG: Error response status: ${error.response?.status}`); // Debug log
+      console.log(`DEBUG: Error response data:`, error.response?.data); // Debug log
       handleAuthError(error);
       if (error.response?.status === 403) {
         throw new Error("Accès refusé. Vous n'avez pas les permissions nécessaires.");
@@ -113,9 +131,19 @@ export class InterventionService {
 
   static async rejectIntervention(id: number, reason?: string): Promise<void> {
     try {
+      console.log(`DEBUG: Attempting to reject intervention ${id} with reason: ${reason}`); // Debug log
+      const token = tokenManager.getToken();
+      console.log(`DEBUG: Token available: ${token ? 'Yes' : 'No'}`); // Debug log
+      if (token) {
+        console.log(`DEBUG: Token starts with: ${token.substring(0, 20)}...`); // Debug log
+      }
+      
       await axios.put(`${API_BASE_URL}/intervention/${id}/reject`, { reason }, createAuthenticatedRequest());
+      console.log(`DEBUG: Intervention ${id} rejected successfully`); // Debug log
     } catch (error: any) {
       console.error("Error rejecting intervention:", error);
+      console.log(`DEBUG: Error response status: ${error.response?.status}`); // Debug log
+      console.log(`DEBUG: Error response data:`, error.response?.data); // Debug log
       handleAuthError(error);
       if (error.response?.status === 403) {
         throw new Error("Accès refusé. Vous n'avez pas les permissions nécessaires.");
