@@ -961,7 +961,7 @@ export default function TechnicienSupDashboard(): JSX.Element {
       <div className="hidden lg:block h-full">
         <ResizablePanelGroup direction="horizontal">
           {/* Left Panel: Serres list */}
-          <ResizablePanel defaultSize={28} minSize={20} maxSize={45} className="bg-white shadow-lg">
+          <ResizablePanel defaultSize={25} minSize={20} maxSize={35} className="bg-white shadow-lg">
             <div className="h-full flex flex-col">
               <div className="p-4 border-b flex items-center justify-between">
                 <h3 className="text-base sm:text-lg font-semibold text-gray-900 flex items-center space-x-2">
@@ -1003,8 +1003,8 @@ export default function TechnicienSupDashboard(): JSX.Element {
             </div>
           </ResizablePanel>
           <ResizableHandle withHandle />
-          {/* Right Panel: Map */}
-          <ResizablePanel defaultSize={72} minSize={55} className="min-w-0">
+          {/* Middle Panel: Map */}
+          <ResizablePanel defaultSize={50} minSize={35} maxSize={70} className="min-w-0">
             <div className="h-full relative min-h-[500px] w-full flex-1" data-testid="map-section">
               <GoogleMapsWrapper>
                 <GoogleMap
@@ -1219,6 +1219,169 @@ export default function TechnicienSupDashboard(): JSX.Element {
                 </div>
               )}
 
+            </div>
+          </ResizablePanel>
+          <ResizableHandle withHandle />
+          {/* Right Panel: Serres Details */}
+          <ResizablePanel defaultSize={25} minSize={20} maxSize={45} className="bg-white shadow-lg">
+            <div className="h-full flex flex-col">
+              <div className="p-4 border-b flex items-center justify-between">
+                <h3 className="text-base sm:text-lg font-semibold text-gray-900 flex items-center space-x-2">
+                  <div className="w-3 h-3 rounded-full bg-blue-500"></div>
+                  <span>Détails de la serre</span>
+                </h3>
+              </div>
+              <ScrollArea className="flex-1">
+                {selectedSerre ? (
+                  <div className="p-4 space-y-4">
+                    {/* Summary */}
+                    <Card className="shadow-sm border-gray-200">
+                      <CardHeader className="pb-3 cursor-pointer hover:bg-gray-50 transition-colors rounded-t-lg" onClick={() => toggleSection('summary')}>
+                        <CardTitle className="text-base md:text-lg flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <div className="w-3 h-3 rounded-full bg-green-500"></div>
+                            Informations générales
+                          </div>
+                          <div className="text-gray-400 text-lg font-bold">
+                            {expandedSections.summary ? '−' : '+'}
+                          </div>
+                        </CardTitle>
+                      </CardHeader>
+                      {expandedSections.summary && (
+                        <CardContent className="pt-0">
+                          <div className="grid grid-cols-1 gap-3 text-sm">
+                            <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200">
+                              <span className="text-gray-600 font-medium">Nom</span>
+                              <span className="font-semibold text-gray-900">{selectedSerre.nom}</span>
+                            </div>
+                            <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200">
+                              <span className="text-gray-600 font-medium">Variété</span>
+                              <span className="font-semibold text-gray-900">{selectedSerre.variety || '—'}</span>
+                            </div>
+                            <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200">
+                              <span className="text-gray-600 font-medium">Surface</span>
+                              <span className="font-semibold text-gray-900">{selectedSerre.surface ?? 0} m²</span>
+                            </div>
+                            <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200">
+                              <span className="text-gray-600 font-medium">Zones</span>
+                              <span className="font-semibold text-gray-900">{selectedSerre.zones?.length || 0}</span>
+                            </div>
+                          </div>
+                        </CardContent>
+                      )}
+                    </Card>
+
+                    {/* Guides */}
+                    <Card className="shadow-sm border-gray-200">
+                      <CardHeader className="pb-3 cursor-pointer hover:bg-gray-50 transition-colors rounded-t-lg" onClick={() => toggleSection('guides')}>
+                        <CardTitle className="text-base md:text-lg flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <div className="w-3 h-3 rounded-full bg-blue-500"></div>
+                            Guides de culture ({selectedSerreGuides.length})
+                          </div>
+                          <div className="text-gray-400 text-lg font-bold">
+                            {expandedSections.guides ? '−' : '+'}
+                          </div>
+                        </CardTitle>
+                      </CardHeader>
+                      {expandedSections.guides && (
+                        <CardContent className="pt-0">
+                        {selectedSerreGuides.length === 0 ? (
+                          <div className="text-center py-6 text-gray-500">
+                            <div className="text-4xl mb-2">🌱</div>
+                            <div className="text-sm">Aucun guide associé</div>
+                          </div>
+                        ) : (
+                          <div className="space-y-3">
+                            {selectedSerreGuides.map((g: any) => (
+                              <div key={g.id} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+                                <h4 className="font-semibold text-gray-900 mb-2">{g.nom}</h4>
+                                <p className="text-sm text-gray-600 mb-3">{g.description}</p>
+                                <div className="flex items-center gap-2 text-xs text-gray-500">
+                                  <span>Type: {g.type}</span>
+                                  <span>•</span>
+                                  <span>Difficulté: {g.niveau_difficulte}</span>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                        </CardContent>
+                      )}
+                    </Card>
+
+                    {/* Billons */}
+                    <Card className="shadow-sm border-gray-200">
+                      <CardHeader className="pb-3 cursor-pointer hover:bg-gray-50 transition-colors rounded-t-lg" onClick={() => toggleSection('billons')}>
+                        <CardTitle className="text-base md:text-lg flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <div className="w-3 h-3 rounded-full bg-orange-500"></div>
+                            Billons ({selectedSerreBilans.length})
+                          </div>
+                          <div className="text-gray-400 text-lg font-bold">
+                            {expandedSections.billons ? '−' : '+'}
+                          </div>
+                        </CardTitle>
+                      </CardHeader>
+                      {expandedSections.billons && (
+                        <CardContent className="pt-0">
+                        {selectedSerreBilans.length === 0 ? (
+                          <div className="text-center py-6 text-gray-500">
+                            <div className="text-4xl mb-2">🌾</div>
+                            <div className="text-sm">Aucun billon associé</div>
+                          </div>
+                        ) : (
+                          <div className="space-y-3">
+                            {selectedSerreBilans.map((b: any) => {
+                              const etat = selectedSerreBilanEtats[b.id];
+                              return (
+                                <div key={b.id} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+                                  <div className="flex items-center justify-between mb-2">
+                                    <h4 className="font-semibold text-gray-900">{b.nom}</h4>
+                                    {etat && (
+                                      <Badge variant={etat.etat === 'bon' ? 'default' : etat.etat === 'moyen' ? 'secondary' : 'destructive'}>
+                                        {etat.etat === 'bon' ? 'Bon' : etat.etat === 'moyen' ? 'Moyen' : 'Mauvais'}
+                                      </Badge>
+                                    )}
+                                  </div>
+                                  <div className="space-y-2 text-sm">
+                                    <div className="flex items-center justify-between">
+                                      <span className="text-gray-600">Surface:</span>
+                                      <span className="font-medium">{b.surface} m²</span>
+                                    </div>
+                                    <div className="flex items-center justify-between">
+                                      <span className="text-gray-600">Type:</span>
+                                      <span className="font-medium">{b.type}</span>
+                                    </div>
+                                    {etat && (
+                                      <>
+                                        <div className="flex items-center justify-between">
+                                          <span className="text-gray-600">État:</span>
+                                          <span className="font-medium">{etat.etat === 'bon' ? 'Bon' : etat.etat === 'moyen' ? 'Moyen' : 'Mauvais'}</span>
+                                        </div>
+                                        <div className="flex items-center justify-between">
+                                          <span className="text-gray-600">Date d'évaluation:</span>
+                                          <span className="font-medium">{new Date(etat.date_evaluation).toLocaleDateString('fr-FR')}</span>
+                                        </div>
+                                      </>
+                                    )}
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
+                        </CardContent>
+                      )}
+                    </Card>
+                  </div>
+                ) : (
+                  <div className="p-4 text-center text-gray-500">
+                    <div className="text-4xl mb-2">🗺️</div>
+                    <div className="text-sm">Sélectionnez une serre sur la carte pour voir ses détails</div>
+                  </div>
+                )}
+              </ScrollArea>
             </div>
           </ResizablePanel>
         </ResizablePanelGroup>

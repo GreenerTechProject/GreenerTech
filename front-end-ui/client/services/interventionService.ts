@@ -3,6 +3,19 @@ import { tokenManager } from "./authService";
 
 const API_BASE_URL = `${window.location.protocol}//${window.location.hostname}:5000/api`;
 
+// Handle authentication errors globally
+const handleAuthError = (error: any) => {
+  if (error.response?.status === 401) {
+    // Clear token and redirect to login
+    tokenManager.removeToken();
+    tokenManager.removeRefreshToken();
+    localStorage.removeItem('user_data');
+    window.location.href = '/login';
+    throw new Error("Session expirée. Veuillez vous reconnecter.");
+  }
+  throw error;
+};
+
 // Create axios request config with Authorization header (aligned with domainService)
 const createAuthenticatedRequest = () => {
   const token = tokenManager.getToken();
@@ -87,18 +100,28 @@ export class InterventionService {
   static async validateIntervention(id: number): Promise<void> {
     try {
       await axios.put(`${API_BASE_URL}/intervention/${id}/validate`, {}, createAuthenticatedRequest());
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error validating intervention:", error);
-      throw error;
+      handleAuthError(error);
+      if (error.response?.status === 403) {
+        throw new Error("Accès refusé. Vous n'avez pas les permissions nécessaires.");
+      } else {
+        throw new Error("Erreur lors de la validation de l'intervention. Veuillez réessayer.");
+      }
     }
   }
 
   static async rejectIntervention(id: number, reason?: string): Promise<void> {
     try {
       await axios.put(`${API_BASE_URL}/intervention/${id}/reject`, { reason }, createAuthenticatedRequest());
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error rejecting intervention:", error);
-      throw error;
+      handleAuthError(error);
+      if (error.response?.status === 403) {
+        throw new Error("Accès refusé. Vous n'avez pas les permissions nécessaires.");
+      } else {
+        throw new Error("Erreur lors du rejet de l'intervention. Veuillez réessayer.");
+      }
     }
   }
 
