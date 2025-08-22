@@ -310,7 +310,6 @@ export default function DirectorDashboard() {
 
       // Build monthly alerts distribution (Low, Medium, High)
       try {
-        console.log('[NewDirectorDashboard] Alerts data:', alerts);
         const now = new Date();
         const monthKeys: string[] = [];
         const monthLabels: string[] = [];
@@ -320,36 +319,62 @@ export default function DirectorDashboard() {
           monthKeys.push(key);
           monthLabels.push(d.toLocaleString("fr-FR", { month: "short", year: "2-digit" }));
         }
+        
         const L: Record<string, number> = {};
         const M: Record<string, number> = {};
         const H: Record<string, number> = {};
-        (alerts as any[]).forEach((a: any) => {
-          const when = a?.date;
-          if (!when) {
-            console.log('[NewDirectorDashboard] Alert without date:', a);
-            return;
-          }
-          
-          let dateObj: Date;
-          try {
-            dateObj = new Date(when);
-            if (isNaN(dateObj.getTime())) {
-              console.log('[NewDirectorDashboard] Invalid date format:', when);
+        
+        // Initialize all months with 0
+        monthKeys.forEach(key => {
+          L[key] = 0;
+          M[key] = 0;
+          H[key] = 0;
+        });
+        
+        if (Array.isArray(alerts) && alerts.length > 0) {
+          alerts.forEach((a: any) => {
+            // Try different possible date fields
+            const when = a?.date || a?.created_at || a?.date_creation || a?.timestamp || a?.date_alerte;
+            if (!when) {
               return;
             }
-          } catch (error) {
-            console.log('[NewDirectorDashboard] Date parsing error:', error, 'for date:', when);
-            return;
-          }
-          
-          const key = dateObj.toISOString().slice(0, 7);
-          const sev = Number(a?.status_alert) || 0;
-          console.log('[NewDirectorDashboard] Processing alert:', { when, key, sev, alert: a });
-          if (sev === 2) H[key] = (H[key] || 0) + 1;
-          else if (sev === 1) M[key] = (M[key] || 0) + 1;
-          else if (sev === 0) L[key] = (L[key] || 0) + 1;
-        });
-        console.log('[NewDirectorDashboard] Monthly counts:', { L, M, H });
+            
+            let dateObj: Date;
+            try {
+              dateObj = new Date(when);
+              if (isNaN(dateObj.getTime())) {
+                return;
+              }
+            } catch (error) {
+              return;
+            }
+            
+            const key = dateObj.toISOString().slice(0, 7);
+            const sev = Number(a?.status_alert) || 0;
+            
+            if (monthKeys.includes(key)) {
+              // Handle different possible severity values - now using type field as primary
+              const alertType = a?.type || '';
+              if (sev === 2 || String(sev) === '2' || alertType.includes('critique') || alertType.includes('Critique') || alertType.includes('élevée') || alertType.includes('Élevée')) {
+                H[key] = (H[key] || 0) + 1;
+              } else if (sev === 1 || String(sev) === '1' || alertType.includes('moyenne') || alertType.includes('Moyenne') || alertType.includes('modérée') || alertType.includes('Modérée')) {
+                M[key] = (M[key] || 0) + 1;
+              } else if (sev === 0 || String(sev) === '0' || alertType.includes('faible') || alertType.includes('Faible') || alertType.includes('légère') || alertType.includes('Légère')) {
+                L[key] = (L[key] || 0) + 1;
+              } else {
+                // Default classification based on alert type keywords
+                if (alertType.includes('Température') || alertType.includes('température') || alertType.includes('Humidité') || alertType.includes('humidité')) {
+                  M[key] = (M[key] || 0) + 1;
+                } else if (alertType.includes('Mildiou') || alertType.includes('mildiou') || alertType.includes('Maladie') || alertType.includes('maladie')) {
+                  H[key] = (H[key] || 0) + 1;
+                } else {
+                  L[key] = (L[key] || 0) + 1;
+                }
+              }
+            }
+          });
+        }
+        
         setAlertsMonthly({
           labels: monthLabels,
           low: monthKeys.map((k) => L[k] || 0),
@@ -691,15 +716,6 @@ export default function DirectorDashboard() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                {/* Debug section - temporary */}
-                <div className="mb-4 p-3 bg-gray-100 rounded text-xs">
-                  <strong>Debug Info:</strong><br/>
-                  Alerts count: {alertsMonthly.labels.length > 0 ? 'Data loaded' : 'No data'}<br/>
-                  Labels: {alertsMonthly.labels.join(', ')}<br/>
-                  Low: {alertsMonthly.low.join(', ')}<br/>
-                  Medium: {alertsMonthly.medium.join(', ')}<br/>
-                  High: {alertsMonthly.high.join(', ')}
-                </div>
                 
                 <div className="w-full h-96 min-h-[24rem]">
                   {alertsMonthly.labels.length > 0 ? (
@@ -738,14 +754,37 @@ export default function DirectorDashboard() {
                         maintainAspectRatio: false,
                         responsive: true,
                         plugins: {
-                          legend: { position: "top" },
+                          legend: { 
+                            position: "top",
+                            labels: {
+                              usePointStyle: true,
+                              padding: 20
+                            }
+                          },
                           title: { display: false, text: "" },
                         },
                         interaction: { mode: "index", intersect: false },
                         scales: {
-                          x: { stacked: true },
-                          y: { stacked: true, title: { display: true, text: "Nombre d'alertes" } },
+                          x: { 
+                            stacked: true,
+                            grid: {
+                              display: true
+                            }
+                          },
+                          y: { 
+                            stacked: true, 
+                            title: { display: true, text: "Nombre d'alertes" },
+                            beginAtZero: true,
+                            ticks: {
+                              stepSize: 1
+                            }
+                          },
                         },
+                        elements: {
+                          bar: {
+                            borderRadius: 4
+                          }
+                        }
                       }}
                     />
                   ) : (

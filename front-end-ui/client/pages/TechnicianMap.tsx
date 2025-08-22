@@ -419,55 +419,6 @@ export default function TechnicianMap() {
     loadEtatBilanForBilan(bilan.id);
   };
 
-  // Handle QR code generation for bilans
-  const handleGenerateQRCode = () => {
-    if (selectedSerre && bilans.length > 0) {
-      // TODO: Implement QR code generation logic
-      console.log('Generating QR code for serre:', selectedSerre.nom);
-      // This could open a modal or navigate to a QR generation page
-      alert(`Génération du QR Code pour ${selectedSerre.nom} - Fonctionnalité à implémenter`);
-    }
-  };
-
-  // Handle checking etat bilan with transition
-  const handleCheckEtatBilan = () => {
-    if (selectedSerre && bilans.length > 0) {
-      // Set active mobile tab to 'etat' for mobile users
-      if (window.innerWidth <= 768) {
-        setActiveMobileTab('etat');
-        // Add a smooth transition effect with delay for better UX
-        setTimeout(() => {
-          // Scroll to the etat section smoothly
-          const etatSection = document.querySelector('[data-tab="etat"]');
-          if (etatSection) {
-            etatSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-          }
-        }, 150);
-      }
-      
-      // For desktop, ensure we have a selected bilan to show etat
-      if (!selectedBilan && bilans.length > 0) {
-        // Auto-select the first bilan if none is selected
-        handleBilanSelect(bilans[0]);
-        
-        // Add a smooth visual highlight effect to the etat section
-        setTimeout(() => {
-          const etatSection = document.querySelector('[data-section="etat-bilan"]');
-          if (etatSection) {
-            etatSection.classList.add('ring-2', 'ring-green-500', 'ring-opacity-50', 'scale-105', 'transition-all', 'duration-500', 'ease-in-out');
-            etatSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            setTimeout(() => {
-              etatSection.classList.remove('ring-2', 'ring-green-500', 'ring-opacity-50', 'scale-105');
-            }, 2000);
-          }
-        }, 200);
-      }
-      
-      console.log('Checking etat bilan for serre:', selectedSerre.nom);
-      // The etat bilan section will automatically show when a bilan is selected
-    }
-  };
-
   // Handle QR code generation for specific bilan
   const handleGenerateQRCodeForBilan = async (bilan: Bilan) => {
     try {
@@ -685,7 +636,7 @@ export default function TechnicianMap() {
       case "growing":
         return "bg-greener-100 text-greener-800 border-greener-300";
       case "ready":
-        return "bg-green-100 text-green-800 border-green-300";
+        return "bg-purple-100 text-purple-800 border-purple-300";
       case "harvested":
         return "bg-orange-100 text-orange-800 border-orange-300";
       default:
@@ -907,7 +858,11 @@ export default function TechnicianMap() {
                   <CardContent className="p-4">
                   {!isCreatingBilan ? (
                       <Button
-                      onClick={() => setIsCreatingBilan(true)}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setIsCreatingBilan(true);
+                      }}
                         variant="ghost"
                       className="w-full h-16 border-0 text-gray-600 hover:text-greener-700 hover:bg-greener-100"
                       >
@@ -1049,7 +1004,11 @@ export default function TechnicianMap() {
                           <div className="mt-3 pt-3 border-t border-gray-200">
                             <div className="flex space-x-2">
                               <Button
-                                onClick={() => setIsCreatingBilan(true)}
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  setIsCreatingBilan(true);
+                                }}
                                 size="sm"
                                 className="flex-1 bg-[#B4CC5F] hover:bg-[#B4CC5F]/90 text-white"
                               >
@@ -1751,7 +1710,9 @@ export default function TechnicianMap() {
                             Commencez le suivi GPS et collectez les points du bilan
                           </p>
                           <Button
-                            onClick={() => {
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
                               setIsCreatingBilan(true);
                               setIsMobilePanelOpen(false);
                             }}
@@ -1849,7 +1810,9 @@ export default function TechnicianMap() {
                           Créez votre premier bilan en utilisant le GPS
                         </p>
                         <Button
-                          onClick={() => {
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
                             setIsCreatingBilan(true);
                             setIsMobilePanelOpen(false);
                           }}
@@ -1867,7 +1830,9 @@ export default function TechnicianMap() {
                       <Card className="border-2 border-dashed border-[#B4CC5F] bg-[#B4CC5F]/5">
                         <CardContent className="p-3">
                           <Button
-                            onClick={() => {
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
                               setIsCreatingBilan(true);
                               setIsMobilePanelOpen(false);
                             }}
@@ -1880,28 +1845,7 @@ export default function TechnicianMap() {
                         </CardContent>
                       </Card>
 
-                      {/* Action Buttons for Bilans */}
-                      <div className="space-y-2">
-                        <Button
-                          onClick={() => handleGenerateQRCode()}
-                          size="sm"
-                          className="w-full bg-blue-600 hover:bg-blue-700 text-white"
-                        >
-                          <svg className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V6a1 1 0 00-1-1H5a1 1 0 00-1 1v1a1 1 0 001 1zm12 0h2a1 1 0 001-1V6a1 1 0 00-1-1h-2a1 1 0 00-1 1v1a1 1 0 001 1zM5 20h2a1 1 0 001-1v-1a1 1 0 00-1-1H5a1 1 0 00-1 1v1a1 1 0 001 1z" />
-                          </svg>
 
-                        </Button>
-                        <Button
-                          onClick={() => handleCheckEtatBilan()}
-                          size="sm"
-                          variant="outline"
-                          className="w-full border-green-600 text-green-600 hover:bg-green-50 hover:border-green-700"
-                        >
-                          <BarChart3 className="h-4 w-4 mr-2" />
-
-                        </Button>
-                      </div>
 
                       {/* Existing Bilans */}
                       <div className="space-y-2">
@@ -2127,7 +2071,9 @@ export default function TechnicianMap() {
                 </p>
                 <div className="flex space-x-2">
                   <Button
-                    onClick={() => {
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
                       setIsCreatingBilan(true);
                       setIsMobilePanelOpen(false);
                     }}

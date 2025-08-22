@@ -12,14 +12,13 @@ import {
   Mail, 
   Calendar,
   Building2,
-  Trash2,
-  LogOut
+  Trash2
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { companyService } from "../services/companyService";
 
 export default function TechnicienSupProfile() {
-  const { user, deleteUser, logout } = useAuth();
+  const { user, deleteUser } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [userInfo, setUserInfo] = useState<any>(null);
@@ -133,19 +132,6 @@ export default function TechnicienSupProfile() {
           variant: "destructive",
         });
       }
-    }
-  };
-
-  const handleLogout = async () => {
-    try {
-      await logout();
-      // The logout function in AuthContext will handle the redirect
-    } catch (error) {
-      toast({
-        title: "Erreur",
-        description: "Erreur lors de la déconnexion",
-        variant: "destructive",
-      });
     }
   };
 
@@ -276,15 +262,6 @@ export default function TechnicienSupProfile() {
             >
               <Trash2 className="h-4 w-4 mr-2" />
               Supprimer le compte
-            </Button>
-
-            <Button 
-              onClick={handleLogout}
-              variant="outline"
-              className="w-full border-gray-300 text-gray-700 hover:bg-gray-50"
-            >
-              <LogOut className="h-4 w-4 mr-2" />
-              Déconnexion
             </Button>
           </div>
         </Card>
