@@ -131,12 +131,18 @@ export default function TechnicianMap() {
   const [etatBilans, setEtatBilans] = useState<EtatBilan[]>([]);
   const [isLoadingGuides, setIsLoadingGuides] = useState(false);
   const [isLoadingEtatBilans, setIsLoadingEtatBilans] = useState(false);
-  const [bilanQRCodes, setBilanQRCodes] = useState<{ [bilanId: number]: Blob }>({});
+  const [bilanQRCodes, setBilanQRCodes] = useState<{ [bilanId: number]: Blob | 'loading' }>({});
 
   // Mobile responsive state
   const [isMobilePanelOpen, setIsMobilePanelOpen] = useState(false);
   const [activeMobileTab, setActiveMobileTab] = useState<'serres' | 'bilan' | 'details' | 'guides' | 'etat' | 'alerts'>('serres');
   
+  // Mobile panel resizing state
+  const [mobilePanelHeight, setMobilePanelHeight] = useState(70); // Default 70vh
+  const [isMobilePanelResizing, setIsMobilePanelResizing] = useState(false);
+  const [mobilePanelStartY, setMobilePanelStartY] = useState(0);
+  const [mobilePanelStartHeight, setMobilePanelStartHeight] = useState(0);
+
   // Alert heatmap state
   const [showAlertHeatmap, setShowAlertHeatmap] = useState(true);
 
@@ -153,13 +159,6 @@ export default function TechnicianMap() {
     bilans: Bilan[];
     etatBilans: EtatBilan[];
   }>({ serres: [], guides: [], bilans: [], etatBilans: [] });
-
-  // Mobile bottom panel expansion state
-  const [mobilePanelHeight, setMobilePanelHeight] = useState(70); // Default 70vh
-  const [isExpandingPanel, setIsExpandingPanel] = useState(false);
-  const [isDraggingPanel, setIsDraggingPanel] = useState(false);
-  const [dragStartY, setDragStartY] = useState(0);
-  const [dragStartHeight, setDragStartHeight] = useState(0);
 
   // Load serres assigned to the current technician
   useEffect(() => {
@@ -430,19 +429,43 @@ export default function TechnicianMap() {
   const handleGenerateQRCodeForBilan = async (bilan: Bilan) => {
     try {
       console.log('Generating QR code for bilan:', bilan.nom);
-      
+
+      // Show loading state
+      setBilanQRCodes(prev => ({
+        ...prev,
+        [bilan.id]: 'loading' as any
+      }));
+
       // Generate QR code using the bilan service
       const qrCodeBlob = await bilanService.generateBilanQRCode(bilan.id);
-      
+
       // Store the QR code in state
       setBilanQRCodes(prev => ({
         ...prev,
         [bilan.id]: qrCodeBlob
       }));
-      
+
+      // Auto-expand mobile panel to show QR code if on mobile
+      if (isMobile) {
+        setIsMobilePanelOpen(true);
+        // Auto-adjust panel height to accommodate QR code display
+        const currentHeight = mobilePanelHeight;
+        if (currentHeight < 60) {
+          setMobilePanelHeight(75); // Set to 75% for better QR code visibility
+        }
+        // Switch to bilan tab to show the QR code
+        setActiveMobileTab('bilan');
+      }
+
       console.log('QR code generated successfully');
     } catch (error) {
       console.error('Error generating QR code:', error);
+      // Remove loading state on error
+      setBilanQRCodes(prev => {
+        const newState = { ...prev };
+        delete newState[bilan.id];
+        return newState;
+      });
       alert(`Erreur lors de la génération du QR Code: ${error instanceof Error ? error.message : 'Erreur inconnue'}`);
     }
   };
@@ -598,93 +621,7 @@ export default function TechnicianMap() {
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [searchQuery]);
 
-  // Mobile panel expansion handlers
-  const handlePanelTouchStart = (e: React.TouchEvent) => {
-    setIsDraggingPanel(true);
-    setDragStartY(e.touches[0].clientY);
-    setDragStartHeight(mobilePanelHeight);
-  };
 
-  const handlePanelTouchMove = (e: React.TouchEvent) => {
-    if (!isDraggingPanel) return;
-    
-    const currentY = e.touches[0].clientY;
-    const deltaY = dragStartY - currentY; // Positive when dragging up (expanding)
-    const deltaHeight = (deltaY / window.innerHeight) * 100;
-    
-    let newHeight = Math.max(30, Math.min(90, dragStartHeight + deltaHeight));
-    setMobilePanelHeight(newHeight);
-  };
-
-  const handlePanelTouchEnd = () => {
-    setIsDraggingPanel(false);
-    
-    // Snap to preset heights
-    if (mobilePanelHeight < 45) {
-      setMobilePanelHeight(30); // Collapsed
-    } else if (mobilePanelHeight < 65) {
-      setMobilePanelHeight(50); // Medium
-    } else if (mobilePanelHeight < 80) {
-      setMobilePanelHeight(70); // Default
-    } else {
-      setMobilePanelHeight(90); // Expanded
-    }
-  };
-
-  const handlePanelMouseDown = (e: React.MouseEvent) => {
-    setIsDraggingPanel(true);
-    setDragStartY(e.clientY);
-    setDragStartHeight(mobilePanelHeight);
-    e.preventDefault();
-  };
-
-  const handlePanelMouseMove = (e: MouseEvent) => {
-    if (!isDraggingPanel) return;
-    
-    const deltaY = dragStartY - e.clientY; // Positive when dragging up (expanding)
-    const deltaHeight = (deltaY / window.innerHeight) * 100;
-    
-    let newHeight = Math.max(30, Math.min(90, dragStartHeight + deltaHeight));
-    setMobilePanelHeight(newHeight);
-  };
-
-  const handlePanelMouseUp = () => {
-    setIsDraggingPanel(false);
-    
-    // Snap to preset heights
-    if (mobilePanelHeight < 45) {
-      setMobilePanelHeight(30); // Collapsed
-    } else if (mobilePanelHeight < 65) {
-      setMobilePanelHeight(50); // Medium
-    } else if (mobilePanelHeight < 80) {
-      setMobilePanelHeight(70); // Default
-    } else {
-      setMobilePanelHeight(90); // Expanded
-    }
-  };
-
-  // Add and remove panel mouse event listeners
-  useEffect(() => {
-    if (isDraggingPanel) {
-      document.addEventListener('mousemove', handlePanelMouseMove);
-      document.addEventListener('mouseup', handlePanelMouseUp);
-    } else {
-      document.removeEventListener('mousemove', handlePanelMouseMove);
-      document.removeEventListener('mouseup', handlePanelMouseUp);
-    }
-
-    return () => {
-      document.removeEventListener('mousemove', handlePanelMouseMove);
-      document.removeEventListener('mouseup', handlePanelMouseUp);
-    };
-  }, [isDraggingPanel]);
-
-  // Quick panel height presets
-  const expandPanel = (height: number) => {
-    setMobilePanelHeight(height);
-    setIsExpandingPanel(true);
-    setTimeout(() => setIsExpandingPanel(false), 300);
-  };
 
   const smoothZoomToLocation = (
     map: any,
@@ -767,7 +704,7 @@ export default function TechnicianMap() {
   // Handle viewing QR code for specific bilan
   const handleViewQRCodeForBilan = (bilan: Bilan) => {
     const qrCodeBlob = bilanQRCodes[bilan.id];
-    if (qrCodeBlob) {
+    if (qrCodeBlob && qrCodeBlob !== 'loading') {
       const url = URL.createObjectURL(qrCodeBlob);
       window.open(url, '_blank');
       URL.revokeObjectURL(url);
@@ -777,7 +714,7 @@ export default function TechnicianMap() {
   // Handle downloading QR code for specific bilan
   const handleDownloadQRCodeForBilan = (bilan: Bilan) => {
     const qrCodeBlob = bilanQRCodes[bilan.id];
-    if (qrCodeBlob) {
+    if (qrCodeBlob && qrCodeBlob !== 'loading') {
       const url = URL.createObjectURL(qrCodeBlob);
       const a = document.createElement('a');
       a.href = url;
@@ -788,6 +725,154 @@ export default function TechnicianMap() {
       URL.revokeObjectURL(url);
     }
   };
+
+  // Handle QR code view and download for mobile
+  const handleViewQRCode = (bilanId: number) => {
+    const qrCode = bilanQRCodes[bilanId];
+    if (qrCode && qrCode !== 'loading') {
+      if (isMobile) {
+        // On mobile, expand the panel and switch to bilan tab for better viewing
+        setIsMobilePanelOpen(true);
+        if (mobilePanelHeight < 85) {
+          setMobilePanelHeight(90); // Expand panel for QR viewing
+        }
+        setActiveMobileTab('bilan');
+      } else {
+        // Desktop behavior - open in new tab
+        const url = URL.createObjectURL(qrCode);
+        window.open(url, '_blank');
+        URL.revokeObjectURL(url);
+      }
+    }
+  };
+
+  const handleDownloadQRCode = (bilanId: number, bilanNom: string) => {
+    const qrCode = bilanQRCodes[bilanId];
+    if (qrCode && qrCode !== 'loading') {
+      const url = URL.createObjectURL(qrCode);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `QR_${bilanNom}_${bilanId}.png`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    }
+  };
+
+  // Enhanced Mobile panel resizing handlers - allows stretching as much as needed
+  const handleMobilePanelMouseDown = (e: React.TouchEvent | React.MouseEvent) => {
+    setIsMobilePanelResizing(true);
+    const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
+    setMobilePanelStartY(clientY);
+    setMobilePanelStartHeight(mobilePanelHeight);
+    
+    // Add visual feedback
+    document.body.style.cursor = 'ns-resize';
+    document.body.style.userSelect = 'none';
+  };
+
+  const handleMobilePanelMouseMove = (e: TouchEvent | MouseEvent) => {
+    if (!isMobilePanelResizing) return;
+    
+    const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
+    const deltaY = mobilePanelStartY - clientY;
+    
+    // Allow stretching from 15% to 98% of screen height for maximum flexibility
+    const newHeight = Math.max(15, Math.min(98, mobilePanelStartHeight + (deltaY / window.innerHeight) * 100));
+    setMobilePanelHeight(newHeight);
+  };
+
+  const handleMobilePanelMouseUp = () => {
+    setIsMobilePanelResizing(false);
+    
+    // Remove visual feedback
+    document.body.style.cursor = '';
+    document.body.style.userSelect = '';
+    
+    // Snap to common heights for better UX but allow custom heights
+    const currentHeight = mobilePanelHeight;
+    if (currentHeight < 25) {
+      setMobilePanelHeight(20); // Very compact view
+    } else if (currentHeight < 45) {
+      setMobilePanelHeight(40); // Compact view
+    } else if (currentHeight < 65) {
+      setMobilePanelHeight(60); // Medium view
+    } else if (currentHeight < 85) {
+      setMobilePanelHeight(80); // Large view
+    } else {
+      setMobilePanelHeight(95); // Almost full view
+    }
+  };
+
+  // Add touch and mouse event listeners for mobile panel resizing
+  useEffect(() => {
+    if (isMobilePanelResizing) {
+      document.addEventListener('mousemove', handleMobilePanelMouseMove);
+      document.addEventListener('mouseup', handleMobilePanelMouseUp);
+      document.addEventListener('touchmove', handleMobilePanelMouseMove);
+      document.addEventListener('touchend', handleMobilePanelMouseUp);
+    } else {
+      document.removeEventListener('mousemove', handleMobilePanelMouseMove);
+      document.removeEventListener('mouseup', handleMobilePanelMouseUp);
+      document.removeEventListener('touchmove', handleMobilePanelMouseMove);
+      document.removeEventListener('touchend', handleMobilePanelMouseUp);
+    }
+
+    return () => {
+      document.removeEventListener('mousemove', handleMobilePanelMouseMove);
+      document.removeEventListener('mouseup', handleMobilePanelMouseUp);
+      document.removeEventListener('touchmove', handleMobilePanelMouseMove);
+      document.removeEventListener('touchend', handleMobilePanelMouseUp);
+    };
+  }, [isMobilePanelResizing]);
+
+  // Smart panel height adjustment for content viewing
+  const adjustPanelForContent = (contentType: 'qr' | 'default') => {
+    if (isMobile) {
+      if (contentType === 'qr') {
+        if (mobilePanelHeight < 80) {
+          setMobilePanelHeight(85); // Optimal height for QR code viewing
+        }
+      }
+    }
+  };
+
+  // Add keyboard shortcuts for mobile panel resizing
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (!isMobile) return;
+      
+      if (e.key === 'ArrowUp' && (e.ctrlKey || e.metaKey)) {
+        e.preventDefault();
+        setMobilePanelHeight(prev => Math.min(98, prev + 5));
+      } else if (e.key === 'ArrowDown' && (e.ctrlKey || e.metaKey)) {
+        e.preventDefault();
+        setMobilePanelHeight(prev => Math.max(15, prev - 5));
+      } else if (e.key === '0' && (e.ctrlKey || e.metaKey)) {
+        e.preventDefault();
+        setMobilePanelHeight(70); // Reset to default
+      } else if (e.key === '1' && (e.ctrlKey || e.metaKey)) {
+        e.preventDefault();
+        setMobilePanelHeight(20); // Very compact
+      } else if (e.key === '2' && (e.ctrlKey || e.metaKey)) {
+        e.preventDefault();
+        setMobilePanelHeight(40); // Compact
+      } else if (e.key === '3' && (e.ctrlKey || e.metaKey)) {
+        e.preventDefault();
+        setMobilePanelHeight(60); // Medium
+      } else if (e.key === '4' && (e.ctrlKey || e.metaKey)) {
+        e.preventDefault();
+        setMobilePanelHeight(80); // Large
+      } else if (e.key === '5' && (e.ctrlKey || e.metaKey)) {
+        e.preventDefault();
+        setMobilePanelHeight(95); // Almost full
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [isMobile]);
 
   return (
     <div className={cn(
@@ -1414,7 +1499,7 @@ export default function TechnicianMap() {
                                       handleGenerateQRCodeForBilan(bilan);
                                     }}
                                     size="sm"
-                                    className="flex-1 bg-blue-600 hover:bg-blue-700 text-white text-xs"
+                                    className="flex-1 bg-blue-600 hover:bg-blue-700 text-white text-xs transition-all duration-300 ease-in-out hover:scale-105"
                                   >
                                     <svg className="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V6a1 1 0 00-1-1H5a1 1 0 00-1 1v1a1 1 0 001 1zm12 0h2a1 1 0 001-1V6a1 1 0 00-1-1h-2a1 1 0 00-1 1v1a1 1 0 001 1zM5 20h2a1 1 0 001-1v-1a1 1 0 00-1-1H5a1 1 0 00-1 1v1a1 1 0 001 1z" />
@@ -1422,7 +1507,7 @@ export default function TechnicianMap() {
                                     Générer QR
                                   </Button>
                                 ) : (
-                                  <div className="flex gap-1 flex-1">
+                                  <div className="flex gap-1 flex-1 animate-in slide-in-from-bottom-2 duration-300">
                                     <Button
                                       onClick={(e) => {
                                         e.stopPropagation();
@@ -1430,7 +1515,7 @@ export default function TechnicianMap() {
                                       }}
                                       size="sm"
                                       variant="outline"
-                                      className="flex-1 border-greener-600 text-greener-600 hover:bg-greener-50 hover:border-greener-700 text-xs"
+                                      className="flex-1 border-greener-600 text-greener-600 hover:bg-greener-50 hover:border-greener-700 text-xs transition-all duration-200 hover:scale-105 hover:shadow-md"
                                     >
                                       <svg className="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -1445,10 +1530,10 @@ export default function TechnicianMap() {
                                       }}
                                       size="sm"
                                       variant="outline"
-                                      className="flex-1 border-greener-600 text-greener-600 hover:bg-greener-50 hover:border-greener-700 text-xs"
+                                      className="flex-1 border-greener-600 text-greener-600 hover:bg-greener-50 hover:border-greener-700 text-xs transition-all duration-200 hover:scale-105 hover:shadow-md"
                                     >
                                       <svg className="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3h10a3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                                       </svg>
                                       Télécharger
                                     </Button>
@@ -1461,12 +1546,49 @@ export default function TechnicianMap() {
                                   }}
                                   size="sm"
                                   variant="outline"
-                                  className="flex-1 border-green-600 text-green-600 hover:bg-green-50 hover:border-green-700 hover:scale-105 transition-all duration-200 ease-in-out text-xs shadow-sm hover:shadow-md"
+                                  className="flex-1 border-green-600 text-green-600 hover:bg-green-50 hover:border-green-700 text-xs transition-all duration-200 hover:scale-105 hover:shadow-md"
                                 >
                                   <BarChart3 className="h-3 w-3 mr-1" />
                                   État
                                 </Button>
                               </div>
+
+                              {/* Enhanced QR Code Display for Desktop */}
+                              {bilanQRCodes[bilan.id] && (
+                                <div className="pt-3 border-t border-gray-100">
+                                  <div className="text-center space-y-3">
+                                    <div className="flex items-center justify-center space-x-2">
+                                      <svg className="h-4 w-4 text-greener-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                      </svg>
+                                      <p className="text-sm font-medium text-greener-700">QR Code généré avec succès</p>
+                                    </div>
+                                    <div className="flex justify-center">
+                                      <div className="relative">
+                                        <img
+                                          src={bilanQRCodes[bilan.id] instanceof Blob ? URL.createObjectURL(bilanQRCodes[bilan.id] as Blob) : ''}
+                                          alt={`QR Code pour ${bilan.nom}`}
+                                          className="w-32 h-32 border-2 border-greener-200 rounded-lg shadow-md"
+                                        />
+                                        {/* Success indicator overlay */}
+                                        <div className="absolute -top-1 -right-1 w-7 h-7 bg-greener-500 rounded-full flex items-center justify-center">
+                                          <svg className="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                          </svg>
+                                        </div>
+                                      </div>
+                                    </div>
+                                    <div className="space-y-1">
+                                      <p className="text-sm text-gray-600">
+                                        Scannez ce QR code pour accéder aux informations du bilan
+                                      </p>
+                                      <p className="text-xs text-gray-500">
+                                        Bilan: {bilan.nom} • {bilan.surface || 'Surface non calculée'} m²
+                                      </p>
+                                    </div>
+                                  </div>
+                                </div>
+                              )}
                             </div>
                           </CardContent>
                         </Card>
@@ -1748,73 +1870,58 @@ export default function TechnicianMap() {
           /* Mobile Bottom Panel - Only show when not creating bilan */
           <div
             className={cn(
-              "fixed bottom-0 left-0 right-0 bg-white border-t-2 border-gray-200 transition-all duration-300 ease-in-out z-30 shadow-2xl",
+              "fixed bottom-0 left-0 right-0 bg-white border-t-2 border-gray-200 transition-transform duration-300 ease-in-out z-30 shadow-2xl",
               isMobilePanelOpen ? "translate-y-0" : "translate-y-full",
-              isDraggingPanel && "panel-dragging",
-              isExpandingPanel && "panel-expanding"
+              isMobilePanelResizing && "transition-none" // Disable transition during resize for smooth dragging
             )}
             style={{ 
               height: `${mobilePanelHeight}vh`,
-              maxHeight: "90vh",
-              minHeight: "30vh"
+              maxHeight: "98vh",
+              minHeight: "15vh" // Allow very compact view for maximum flexibility
             }}
           >
-            {/* Draggable Panel Handle */}
+            {/* Enhanced Resizable Panel Handle */}
             <div 
               className={cn(
-                "flex justify-center py-3 cursor-ns-resize select-none touch-none transition-all duration-200 panel-handle",
-                isDraggingPanel && "bg-gray-50"
+                "flex justify-center mb-2 cursor-ns-resize touch-none transition-all duration-200",
+                isMobilePanelResizing && "scale-110"
               )}
-              onTouchStart={handlePanelTouchStart}
-              onTouchMove={handlePanelTouchMove}
-              onTouchEnd={handlePanelTouchEnd}
-              onMouseDown={handlePanelMouseDown}
+              onTouchStart={handleMobilePanelMouseDown}
+              onMouseDown={handleMobilePanelMouseDown}
             >
               <div className={cn(
-                "w-16 h-1.5 rounded-full transition-all duration-200",
-                isDraggingPanel 
-                  ? "bg-[#B4CC5F] h-2 w-20" 
+                "w-20 h-2 rounded-full shadow-sm transition-all duration-200",
+                isMobilePanelResizing 
+                  ? "bg-blue-500 shadow-lg shadow-blue-500/50" 
                   : "bg-gray-400 hover:bg-gray-500"
               )}></div>
             </div>
 
-            {/* Quick Height Controls */}
-            <div className="flex justify-center space-x-2 mb-4 px-4">
-              {[
-                { height: 30, label: '30%', icon: '−', desc: 'Compact' },
-                { height: 50, label: '50%', icon: '=', desc: 'Medium' },
-                { height: 70, label: '70%', icon: '+', desc: 'Large' },
-                { height: 90, label: '90%', icon: '⤢', desc: 'Full' }
-              ].map(({ height, label, icon, desc }) => (
-                <button
-                  key={height}
-                  onClick={() => expandPanel(height)}
-                  className={cn(
-                    "px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 border relative group",
-                    mobilePanelHeight === height
-                      ? "bg-[#B4CC5F] text-white border-[#B4CC5F] shadow-md"
-                      : "bg-gray-100 text-gray-600 border-gray-200 hover:bg-gray-200 hover:border-gray-300"
-                  )}
-                >
-                  <span className="hidden sm:inline">{label}</span>
-                  <span className="sm:hidden text-sm font-bold">{icon}</span>
-                  
-                  {/* Tooltip */}
-                  <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-black/80 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap">
-                    {desc}
-                    <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-black/80"></div>
-                  </div>
-                </button>
-              ))}
-            </div>
-
-            {/* Drag Instruction */}
-            <div className="text-center mb-3 px-4">
-              <p className="text-xs text-gray-500 flex items-center justify-center space-x-2">
-                <span className="w-2 h-2 bg-[#B4CC5F] rounded-full animate-pulse"></span>
-                <span>Glissez le panneau pour ajuster la taille</span>
-                <span className="w-2 h-2 bg-[#B4CC5F] rounded-full animate-pulse"></span>
-              </p>
+            {/* Panel Height Indicator with Better UX */}
+            <div className="text-center mb-3">
+              <div className={cn(
+                "inline-flex items-center space-x-2 px-3 py-1 rounded-full transition-all duration-200",
+                isMobilePanelResizing
+                  ? "bg-blue-100 text-blue-700 border border-blue-200"
+                  : "bg-gray-100 text-gray-600"
+              )}>
+                <span className="text-xs font-medium">
+                  {Math.round(mobilePanelHeight)}% de l'écran
+                </span>
+                <div className={cn(
+                  "w-2 h-2 rounded-full transition-colors",
+                  isMobilePanelResizing ? "bg-blue-400" : "bg-gray-400"
+                )}></div>
+              </div>
+              {/* QR Code Viewing Hint */}
+              {activeMobileTab === 'bilan' && Object.values(bilanQRCodes).some(qr => qr && qr !== 'loading') && (
+                <div className="mt-2 text-xs text-greener-600 bg-greener-50 px-2 py-1 rounded-md border border-greener-200">
+                  <svg className="h-3 w-3 inline mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+                  </svg>
+                  Glissez pour étendre le panneau et mieux voir le QR code
+                </div>
+              )}
             </div>
 
             {/* Mobile Tabs */}
@@ -1843,16 +1950,7 @@ export default function TechnicianMap() {
             </div>
 
             {/* Mobile Tab Content */}
-            <div 
-              className={cn(
-                "space-y-4 overflow-y-auto pb-4 px-4 transition-all duration-300 ease-in-out",
-                isExpandingPanel && "animate-pulse"
-              )}
-              style={{ 
-                height: `calc(${mobilePanelHeight}vh - 120px)`,
-                maxHeight: `calc(${mobilePanelHeight}vh - 120px)`
-              }}
-            >
+            <div className="space-y-4 max-h-[45vh] overflow-y-auto pb-4">
               {activeMobileTab === 'serres' && (
                 <div className="space-y-3">
                   {/* Quick Bilan Creation for Selected Serre */}
@@ -1882,40 +1980,6 @@ export default function TechnicianMap() {
                             <MapPin className="h-4 w-4 mr-2" />
                             Commencer le bilan
                           </Button>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  )}
-
-                  {/* Enhanced Serre Details when expanded */}
-                  {selectedSerre && mobilePanelHeight >= 70 && (
-                    <Card className="border-[#B4CC5F]/20 bg-[#B4CC5F]/5">
-                      <CardContent className="p-4">
-                        <div className="space-y-3">
-                          <h5 className="font-medium text-[#B4CC5F] flex items-center space-x-2">
-                            <MapPin className="h-4 w-4" />
-                            <span>Détails de la serre</span>
-                          </h5>
-                          <div className="grid grid-cols-2 gap-3 text-sm">
-                            <div>
-                              <p className="text-gray-500">Surface</p>
-                              <p className="font-medium">{selectedSerre.surface} m²</p>
-                            </div>
-                            <div>
-                              <p className="text-gray-500">Billons</p>
-                              <p className="font-medium">{selectedSerre.billonCount || 0}</p>
-                            </div>
-                            <div>
-                              <p className="text-gray-500">Variété</p>
-                              <p className="font-medium text-sm">{selectedSerre.cultureGuide?.variete || selectedSerre.variety || 'Non spécifiée'}</p>
-                            </div>
-                            <div>
-                              <p className="text-gray-500">Statut</p>
-                              <Badge variant="outline" className={cn("text-xs", getStatusColor(selectedSerre.status))}>
-                                {selectedSerre.status === "active" ? "Actif" : selectedSerre.status === "maintenance" ? "Maintenance" : "Inactif"}
-                              </Badge>
-                            </div>
-                          </div>
                         </div>
                       </CardContent>
                     </Card>
@@ -2039,51 +2103,11 @@ export default function TechnicianMap() {
                         </CardContent>
                       </Card>
 
-
-
                       {/* Existing Bilans */}
                       <div className="space-y-2">
                         <h5 className="text-sm font-medium text-gray-700 px-1">
                           Bilans existants ({bilans.length})
                         </h5>
-                        
-                        {/* Enhanced Bilan Stats when expanded */}
-                        {mobilePanelHeight >= 80 && bilans.length > 0 && (
-                          <Card className="border-blue-200 bg-blue-50/50">
-                            <CardContent className="p-3">
-                              <div className="space-y-2">
-                                <h6 className="text-xs font-medium text-blue-700 flex items-center space-x-2">
-                                  <BarChart3 className="h-3 w-3" />
-                                  <span>Statistiques des bilans</span>
-                                </h6>
-                                <div className="grid grid-cols-2 gap-2 text-xs">
-                                  <div>
-                                    <p className="text-blue-600">Total bilans</p>
-                                    <p className="font-medium">{bilans.length}</p>
-                                  </div>
-                                  <div>
-                                    <p className="text-blue-600">Surface totale</p>
-                                    <p className="font-medium">
-                                      {bilans.reduce((total, bilan) => total + (bilan.surface || 0), 0)} m²
-                                    </p>
-                                  </div>
-                                  <div>
-                                    <p className="text-blue-600">Points GPS</p>
-                                    <p className="font-medium">
-                                      {bilans.reduce((total, bilan) => total + (bilan.position?.length || 0), 0)}
-                                    </p>
-                                  </div>
-                                  <div>
-                                    <p className="text-blue-600">QR Codes</p>
-                                    <p className="font-medium">
-                                      {Object.keys(bilanQRCodes).length}/{bilans.length}
-                                    </p>
-                                  </div>
-                                </div>
-                              </div>
-                            </CardContent>
-                          </Card>
-                        )}
                         {bilans.map((bilan) => (
                           <Card
                             key={bilan.id}
@@ -2111,21 +2135,62 @@ export default function TechnicianMap() {
                                   </div>
                                 </div>
                                 
-                                {/* Action Buttons */}
+                                {/* Action Buttons - Enhanced QR Code Handling */}
                                 <div className="flex space-x-2 pt-2 border-t border-gray-100">
-                                  <Button
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      handleGenerateQRCodeForBilan(bilan);
-                                    }}
-                                    size="sm"
-                                    className="flex-1 bg-blue-600 hover:bg-blue-700 text-white text-xs"
-                                  >
-                                    <svg className="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V6a1 1 0 00-1-1H5a1 1 0 00-1 1v1a1 1 0 001 1zm12 0h2a1 1 0 001-1V6a1 1 0 00-1-1h-2a1 1 0 00-1 1v1a1 1 0 001 1zM5 20h2a1 1 0 001-1v-1a1 1 0 00-1-1H5a1 1 0 00-1 1v1a1 1 0 001 1z" />
-                                    </svg>
-                                    {!bilanQRCodes[bilan.id] ? "Générer QR" : "QR Généré"}
-                                  </Button>
+                                  {!bilanQRCodes[bilan.id] ? (
+                                    <Button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleGenerateQRCodeForBilan(bilan);
+                                      }}
+                                      size="sm"
+                                      className="flex-1 bg-blue-600 hover:bg-blue-700 text-white text-xs transition-all duration-300 ease-in-out hover:scale-105"
+                                    >
+                                      <svg className="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V6a1 1 0 00-1-1H5a1 1 0 00-1 1v1a1 1 0 001 1zm12 0h2a1 1 0 001-1V6a1 1 0 00-1-1h-2a1 1 0 00-1 1v1a1 1 0 001 1zM5 20h2a1 1 0 001-1v-1a1 1 0 00-1-1H5a1 1 0 00-1 1v1a1 1 0 001 1z" />
+                                      </svg>
+                                      Générer QR
+                                    </Button>
+                                  ) : bilanQRCodes[bilan.id] === 'loading' ? (
+                                    <div className="flex-1 flex items-center justify-center py-2">
+                                      <div className="flex items-center space-x-2">
+                                        <div className="animate-spin rounded-full h-4 w-4 border-2 border-blue-600 border-t-transparent"></div>
+                                        <span className="text-xs text-blue-600 font-medium">Génération...</span>
+                                      </div>
+                                    </div>
+                                  ) : (
+                                    <div className="flex gap-1 flex-1 animate-in slide-in-from-bottom-2 duration-300">
+                                      <Button
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          handleViewQRCode(bilan.id);
+                                        }}
+                                        size="sm"
+                                        variant="outline"
+                                        className="flex-1 border-greener-600 text-greener-600 hover:bg-greener-50 hover:border-greener-700 text-xs transition-all duration-200 hover:scale-105 hover:shadow-md"
+                                      >
+                                        <svg className="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                        </svg>
+                                        Voir
+                                      </Button>
+                                      <Button
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          handleDownloadQRCode(bilan.id, bilan.nom);
+                                        }}
+                                        size="sm"
+                                        variant="outline"
+                                        className="flex-1 border-greener-600 text-greener-600 hover:bg-greener-50 hover:border-greener-700 text-xs transition-all duration-200 hover:scale-105 hover:shadow-md"
+                                      >
+                                        <svg className="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                                        </svg>
+                                        Télécharger
+                                      </Button>
+                                    </div>
+                                  )}
                                   <Button
                                     onClick={(e) => {
                                       e.stopPropagation();
@@ -2133,12 +2198,79 @@ export default function TechnicianMap() {
                                     }}
                                     size="sm"
                                     variant="outline"
-                                    className="flex-1 border-green-600 text-green-600 hover:bg-green-50 hover:border-green-700 text-xs"
+                                    className="flex-1 border-green-600 text-green-600 hover:bg-green-50 hover:border-green-700 text-xs transition-all duration-200 hover:scale-105 hover:shadow-md"
                                   >
                                     <BarChart3 className="h-3 w-3 mr-1" />
                                     État
                                   </Button>
                                 </div>
+
+                                {/* Enhanced QR Code Display for Mobile */}
+                                {bilanQRCodes[bilan.id] && bilanQRCodes[bilan.id] !== 'loading' && (
+                                  <div className="pt-3 border-t border-gray-100 animate-in slide-in-from-bottom-2 duration-500">
+                                    <div className="text-center space-y-3">
+                                      <div className="flex items-center justify-center space-x-2">
+                                        <svg className="h-4 w-4 text-greener-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                        </svg>
+                                        <p className="text-xs font-medium text-greener-700">QR Code généré avec succès</p>
+                                      </div>
+                                      <div className="flex justify-center">
+                                        <div className="relative animate-in zoom-in-95 duration-500">
+                                          <img
+                                            src={bilanQRCodes[bilan.id] instanceof Blob ? URL.createObjectURL(bilanQRCodes[bilan.id] as Blob) : ''}
+                                            alt={`QR Code pour ${bilan.nom}`}
+                                            className="w-32 h-32 border-2 border-greener-200 rounded-lg shadow-md transition-all duration-300 hover:scale-105 hover:shadow-lg"
+                                          />
+                                          {/* Success indicator overlay */}
+                                          <div className="absolute -top-1 -right-1 w-6 h-6 bg-greener-500 rounded-full flex items-center justify-center animate-in zoom-in-95 duration-700 delay-300">
+                                            <svg className="h-4 w-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                            </svg>
+                                          </div>
+                                        </div>
+                                      </div>
+                                      <div className="space-y-1">
+                                        <p className="text-xs text-gray-600">
+                                          Scannez ce QR code pour accéder aux informations du bilan
+                                        </p>
+                                        <p className="text-xs text-gray-500">
+                                          Bilan: {bilan.nom} • {bilan.surface || 'Surface non calculée'} m²
+                                        </p>
+                                        <div className="flex justify-center space-x-2 pt-2">
+                                          <Button
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              handleViewQRCode(bilan.id);
+                                            }}
+                                            size="sm"
+                                            variant="outline"
+                                            className="text-xs border-greener-600 text-greener-600 hover:bg-greener-50"
+                                          >
+                                            <svg className="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                                            </svg>
+                                            Agrandir
+                                          </Button>
+                                          <Button
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              handleDownloadQRCode(bilan.id, bilan.nom);
+                                            }}
+                                            size="sm"
+                                            variant="outline"
+                                            className="text-xs border-blue-600 text-blue-600 hover:bg-blue-50"
+                                          >
+                                            <svg className="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                                            </svg>
+                                            Télécharger
+                                          </Button>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </div>
+                                )}
                               </div>
                             </CardContent>
                           </Card>
@@ -2266,24 +2398,84 @@ export default function TechnicianMap() {
           </div>
         )}
 
-        {/* Mobile Floating Action Button */}
+        {/* Mobile Floating Action Button - Enhanced */}
         <Button
           onClick={() => setIsMobilePanelOpen(!isMobilePanelOpen)}
-          className={cn(
-            "fixed bottom-6 left-6 w-16 h-16 rounded-full shadow-2xl bg-[#B4CC5F] hover:bg-[#B4CC5F]/90 text-white z-30 lg:z-30 text-2xl font-bold transition-all duration-200 hover:scale-110",
-            isDraggingPanel && "animate-pulse scale-110"
-          )}
+          className="fixed bottom-6 left-6 w-16 h-16 rounded-full shadow-2xl bg-[#B4CC5F] hover:bg-[#B4CC5F]/90 text-white z-30 lg:z-30 text-2xl font-bold transition-all duration-200 hover:scale-110 active:scale-95"
         >
           {isMobilePanelOpen ? '×' : '≡'}
         </Button>
 
-        {/* Panel Height Indicator */}
+        {/* Enhanced Mobile Panel Instructions */}
+        {!isMobilePanelOpen && (
+          <div className="fixed bottom-24 left-6 z-20 lg:hidden">
+            <div className="bg-white/90 backdrop-blur-sm border border-gray-200 rounded-lg px-3 py-2 shadow-lg">
+              <p className="text-xs text-gray-600 font-medium">
+                Appuyez pour ouvrir le panneau
+              </p>
+              <p className="text-xs text-gray-500">
+                Glissez pour redimensionner
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* Mobile Panel Quick Actions */}
         {isMobilePanelOpen && (
-          <div className="fixed bottom-6 left-24 z-30">
-            <div className="bg-black/80 text-white px-3 py-2 rounded-lg text-sm font-medium shadow-lg">
+          <div className="fixed bottom-24 right-6 z-20 lg:hidden">
+            <div className="flex flex-col space-y-2">
+              {/* Quick Resize Buttons */}
+              <Button
+                onClick={() => setMobilePanelHeight(30)}
+                size="sm"
+                variant="outline"
+                className="w-10 h-10 p-0 bg-white/90 backdrop-blur-sm border-gray-200 shadow-lg"
+                title="Vue compacte"
+              >
+                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 11l5-5m0 0l5 5m-5-5v12" />
+                </svg>
+              </Button>
+              <Button
+                onClick={() => setMobilePanelHeight(70)}
+                size="sm"
+                variant="outline"
+                className="w-10 h-10 p-0 bg-white/90 backdrop-blur-sm border-gray-200 shadow-lg"
+                title="Vue normale"
+              >
+                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                </svg>
+              </Button>
+              <Button
+                onClick={() => setMobilePanelHeight(90)}
+                size="sm"
+                variant="outline"
+                className="w-10 h-10 p-0 bg-white/90 backdrop-blur-sm border-gray-200 shadow-lg"
+                title="Vue étendue"
+              >
+                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 17l9.2-9.2M17 17V7H7" />
+                </svg>
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {/* Mobile Panel Status Indicator */}
+        {isMobilePanelOpen && (
+          <div className="fixed bottom-6 right-6 z-20 lg:hidden">
+            <div className="bg-white/90 backdrop-blur-sm border border-gray-200 rounded-lg px-3 py-2 shadow-lg">
               <div className="flex items-center space-x-2">
-                <div className="w-2 h-2 bg-[#B4CC5F] rounded-full"></div>
-                <span>{mobilePanelHeight}%</span>
+                <div className={cn(
+                  "w-2 h-2 rounded-full",
+                  mobilePanelHeight < 40 ? "bg-green-500" : 
+                  mobilePanelHeight < 70 ? "bg-yellow-500" : "bg-blue-500"
+                )}></div>
+                <span className="text-xs font-medium text-gray-700">
+                  {mobilePanelHeight < 40 ? "Compact" : 
+                   mobilePanelHeight < 70 ? "Moyen" : "Étendu"}
+                </span>
               </div>
             </div>
           </div>
@@ -2395,42 +2587,6 @@ export default function TechnicianMap() {
         onClose={() => setIsInterventionFormOpen(false)}
         onSubmit={handleInterventionSubmit}
       />
-
-      {/* CSS Animations for Panel Expansion */}
-      <style jsx>{`
-        @keyframes slideInFromBottom {
-          from {
-            opacity: 0;
-            transform: translateY(20px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-        
-        @keyframes panelExpand {
-          0% { transform: scaleY(1); }
-          50% { transform: scaleY(1.02); }
-          100% { transform: scaleY(1); }
-        }
-        
-        .panel-expanding {
-          animation: panelExpand 0.3s ease-in-out;
-        }
-        
-        .panel-dragging {
-          transition: none !important;
-        }
-        
-        .panel-handle:hover {
-          background-color: rgba(180, 204, 95, 0.1);
-        }
-        
-        .panel-handle:active {
-          background-color: rgba(180, 204, 95, 0.2);
-        }
-      `}</style>
     </div>
   );
 }

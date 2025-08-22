@@ -6,6 +6,13 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { 
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
+import { 
   Users, 
   Mail, 
   Phone, 
@@ -32,8 +39,6 @@ interface SupervisedTechnician extends Technician {
     inProgress: number;
     pending: number;
   };
-  lastActivity?: string;
-  status: 'active' | 'inactive' | 'pending';
 }
 
 export default function TechnicienSupTeamManagement(): JSX.Element {
@@ -74,13 +79,7 @@ export default function TechnicienSupTeamManagement(): JSX.Element {
               // Get assigned serres
               const assignedSerres = await serreService.getSerresAssignedToUser(tech.id);
               
-              // Calculate status
-              let status: 'active' | 'inactive' | 'pending' = 'inactive';
-              if (tech.directeur_valide && tech.email_valide) {
-                status = 'active';
-              } else if (tech.directeur_valide && !tech.email_valide) {
-                status = 'pending';
-              }
+
 
               return {
                 id: tech.id,
@@ -103,7 +102,7 @@ export default function TechnicienSupTeamManagement(): JSX.Element {
                   inProgress: interventions.filter((int: any) => int.status === 'encours').length,
                   pending: interventions.filter((int: any) => int.status === 'en_attente').length,
                 },
-                lastActivity: tech.updated_at,
+
                 status,
               };
             } catch (error) {
@@ -319,7 +318,7 @@ export default function TechnicienSupTeamManagement(): JSX.Element {
                     <TableHead className="text-xs">Statut</TableHead>
                     <TableHead className="text-xs hidden lg:table-cell">Serres</TableHead>
                     <TableHead className="text-xs hidden md:table-cell">Interventions</TableHead>
-                    <TableHead className="text-xs hidden lg:table-cell">Activité</TableHead>
+                    <TableHead className="text-xs hidden lg:table-cell">Dernière Modif.</TableHead>
                     <TableHead className="text-xs">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -409,8 +408,8 @@ export default function TechnicienSupTeamManagement(): JSX.Element {
                       
                       <TableCell className="hidden lg:table-cell">
                         <div className="text-xs text-gray-500">
-                          {technician.lastActivity ? (
-                            new Date(technician.lastActivity).toLocaleDateString('fr-FR')
+                          {technician.updated_at ? (
+                            new Date(technician.updated_at).toLocaleDateString('fr-FR')
                           ) : (
                             'Jamais'
                           )}
@@ -436,6 +435,158 @@ export default function TechnicienSupTeamManagement(): JSX.Element {
           )}
         </CardContent>
       </Card>
+
+      {/* Technician Details Modal */}
+      <Dialog open={!!selectedTechnician} onOpenChange={() => setSelectedTechnician(null)}>
+        <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Détails du Technicien</DialogTitle>
+            <DialogDescription>
+              Informations détaillées et statistiques du technicien
+            </DialogDescription>
+          </DialogHeader>
+          
+          {selectedTechnician && (
+            <div className="space-y-6">
+              {/* Basic Information */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <Card>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-lg">Informations Personnelles</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <div className="flex items-center space-x-3">
+                      <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                        <span className="text-blue-600 font-semibold text-lg">
+                          {selectedTechnician.fullName.charAt(0).toUpperCase()}
+                        </span>
+                      </div>
+                      <div>
+                        <h3 className="font-semibold text-gray-900">{selectedTechnician.fullName}</h3>
+                        <p className="text-sm text-gray-500">ID: {selectedTechnician.id}</p>
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <div className="flex items-center space-x-2">
+                        <Mail className="h-4 w-4 text-gray-400" />
+                        <span className="text-sm">{selectedTechnician.email}</span>
+                      </div>
+                      {selectedTechnician.telephone && (
+                        <div className="flex items-center space-x-2">
+                          <Phone className="h-4 w-4 text-gray-400" />
+                          <span className="text-sm">{selectedTechnician.telephone}</span>
+                        </div>
+                      )}
+                      {selectedTechnician.birthday && (
+                        <div className="flex items-center space-x-2">
+                          <Calendar className="h-4 w-4 text-gray-400" />
+                          <span className="text-sm">
+                            {new Date(selectedTechnician.birthday).toLocaleDateString('fr-FR')}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-lg">Statut et Validation</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <div className="flex items-center space-x-2">
+                      {getStatusIcon(selectedTechnician.status)}
+                      <span className="font-medium">
+                        {selectedTechnician.status === 'active' ? 'Actif' : 
+                         selectedTechnician.status === 'pending' ? 'En attente' : 'Inactif'}
+                      </span>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-gray-600">Validation Directeur:</span>
+                        <Badge variant={selectedTechnician.directeur_valide ? "default" : "secondary"}>
+                          {selectedTechnician.directeur_valide ? "Validé" : "Non validé"}
+                        </Badge>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-gray-600">Email Validé:</span>
+                        <Badge variant={selectedTechnician.email_valide ? "default" : "secondary"}>
+                          {selectedTechnician.email_valide ? "Validé" : "Non validé"}
+                        </Badge>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-gray-600">Configuration:</span>
+                        <Badge variant={selectedTechnician.setup_completed ? "default" : "secondary"}>
+                          {selectedTechnician.setup_completed ? "Terminée" : "En cours"}
+                        </Badge>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Serres Assigned */}
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-lg">Serres Assignées</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {selectedTechnician.assignedSerres.length > 0 ? (
+                    <div className="flex flex-wrap gap-2">
+                      {selectedTechnician.assignedSerres.map((serre, index) => (
+                        <Badge key={index} variant="outline" className="text-sm">
+                          {serre}
+                        </Badge>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-gray-500 text-sm">Aucune serre assignée</p>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Intervention Statistics */}
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-lg">Statistiques des Interventions</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-blue-600">
+                        {selectedTechnician.interventionStats.total}
+                      </div>
+                      <div className="text-sm text-gray-600">Total</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-green-600">
+                        {selectedTechnician.interventionStats.completed}
+                      </div>
+                      <div className="text-sm text-gray-600">Terminées</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-yellow-600">
+                        {selectedTechnician.interventionStats.inProgress}
+                      </div>
+                      <div className="text-sm text-gray-600">En cours</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-orange-600">
+                        {selectedTechnician.interventionStats.pending}
+                      </div>
+                      <div className="text-sm text-gray-600">En attente</div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+       
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

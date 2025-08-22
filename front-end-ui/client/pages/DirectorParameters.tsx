@@ -126,7 +126,7 @@ export default function DirectorParameters() {
                   Assignez techniciens aux superviseurs et aux serres. Gérez les relations hiérarchiques.
                 </p>
                 <Link
-                  to="/directeur/assignments"
+                  to="/directeur/permissions-assignments"
                   className="inline-flex items-center justify-center px-4 h-10 rounded-lg bg-greener text-white text-sm font-medium hover:bg-greener-600 transition-colors w-full sm:w-auto"
                 >
                   Ouvrir la gestion
@@ -150,7 +150,7 @@ export default function DirectorParameters() {
                   Configurez les permissions d'accès aux différentes fonctionnalités du système.
                 </p>
                 <Link
-                  to="/directeur/assignments"
+                  to="/directeur/permissions-assignments"
                   className="inline-flex items-center justify-center px-4 h-10 rounded-lg bg-greener text-white text-sm font-medium hover:bg-greener-600 transition-colors w-full sm:w-auto"
                 >
                   Configurer les autorisations

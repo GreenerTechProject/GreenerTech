@@ -132,52 +132,7 @@ export const technicianService = {
     }
   },
 
-  // Get technicians by company ID
-  getTechniciansByCompany: async (companyId: number): Promise<Technician[]> => {
-    try {
-      console.log('[TechService] Fetching technicians for company:', companyId);
-      console.log('[TechService] API URL:', `${API_BASE_URL}/technicien/company/${companyId}`);
-      
-      const response = await axios.get<{
-        success: boolean;
-        technicians: Technician[];
-      }>(`${API_BASE_URL}/technicien/company/${companyId}`,
-        createAuthenticatedRequest());
-  
-      console.log('[TechService] Response:', response.data);
-      
-      console.log('[TechService] Full response data:', response.data);
-      
-      // Handle different response formats
-      if (response.data?.success && response.data?.technicians) {
-        console.log('[TechService] Success response with technicians array:', response.data.technicians);
-        return response.data.technicians;
-      } else if (Array.isArray(response.data)) {
-        console.log('[TechService] Direct array response:', response.data);
-        return response.data;
-      } else if (response.data?.technicians && Array.isArray(response.data.technicians)) {
-        console.log('[TechService] Response with technicians array (no success field):', response.data.technicians);
-        return response.data.technicians;
-      }
-      
-      console.log('[TechService] Unexpected response format, returning empty array');
-      console.log('[TechService] Response data type:', typeof response.data);
-      console.log('[TechService] Response data keys:', Object.keys(response.data || {}));
-      return [];
-    } catch (error: any) {
-      console.error("Erreur lors de la récupération des techniciens:", error);
-
-      const errorMessage =
-        error.response?.data?.message ||
-        "Erreur lors de la récupération des techniciens";
-
-      throw {
-        message: errorMessage,
-        status: error.response?.status || 500,
-      } as ApiError;
-    }
-  },
-
+  // Get all technicians by company ID (including both technicien and technicien_superieur)
   getAllTechniciansByCompany: async (companyId: number): Promise<Technician[]> => {
     try {
       console.log('[TechService] Fetching technicians for company:', companyId);
@@ -220,6 +175,34 @@ export const technicianService = {
         message: errorMessage,
         status: error.response?.status || 500,
       } as ApiError;
+    }
+  },
+
+  // Get only technicians (not supervisors) by company ID
+  getTechniciansByCompany: async (companyId: number): Promise<Technician[]> => {
+    try {
+      const response = await axios.get(
+        `${API_BASE_URL}/technicien/company/${companyId}`,
+        createAuthenticatedRequest()
+      );
+      return response.data.technicians || [];
+    } catch (error: any) {
+      console.error("Error fetching technicians by company:", error);
+      throw new Error(error.response?.data?.message || "Erreur lors de la récupération des techniciens");
+    }
+  },
+
+  // Get all supervisors by company ID
+  getSupervisorsByCompany: async (companyId: number): Promise<Technician[]> => {
+    try {
+      const response = await axios.get(
+        `${API_BASE_URL}/technicien/supervisors/company/${companyId}`,
+        createAuthenticatedRequest()
+      );
+      return response.data.supervisors || [];
+    } catch (error: any) {
+      console.error("Error fetching supervisors by company:", error);
+      throw new Error(error.response?.data?.message || "Erreur lors de la récupération des superviseurs");
     }
   },
 

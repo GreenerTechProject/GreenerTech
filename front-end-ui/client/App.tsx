@@ -62,6 +62,7 @@ import RobotConfig from "./pages/RobotConfig";
 import CompanyUpdate from "./pages/CompanyUpdate";
 import InterventionRequestDetails from "./pages/InterventionRequestDetails";
 import DirectorParameters from "./pages/DirectorParameters";
+import DirectorPermissionsAssignments from "./pages/DirectorPermissionsAssignments";
 
 const queryClient = new QueryClient();
 
@@ -210,6 +211,16 @@ const App = () => (
               }
             />
 
+            {/* Director Permissions and Assignments */}
+            <Route
+              path="/directeur/permissions-assignments"
+              element={
+                <ProtectedRoute requiredRole="directeur">
+                  <DirectorPermissionsAssignments />
+                </ProtectedRoute>
+              }
+            />
+
             {/* Director Management Routes */}
             <Route
               path="/director/technicians"
@@ -269,16 +280,6 @@ const App = () => (
               element={
                 <ProtectedRoute requiredRole="directeur">
                   <MissionManagement />
-                </ProtectedRoute>
-              }
-            />
-
-            {/* Director Assignment Management */}
-            <Route
-              path="/directeur/assignments"
-              element={
-                <ProtectedRoute requiredRole="directeur">
-                  <AssignmentManagement />
                 </ProtectedRoute>
               }
             />

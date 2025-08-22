@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -30,7 +30,8 @@ import {
   SortDesc,
   User,
   Clock,
-  XCircle
+  XCircle,
+  X
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
@@ -96,6 +97,13 @@ export default function TechnicienSupInterventions() {
       loadInterventions();
     }
   }, [technicians, loading]);
+
+  // Reload technicians when interventions change to prioritize those with interventions in assigned serres
+  useEffect(() => {
+    if (interventions.length > 0 && assignedSerres.length > 0) {
+      loadTechnicians();
+    }
+  }, [interventions, assignedSerres]);
 
   // Reset filtered results when interventions change (e.g., after refresh)
   useEffect(() => {
@@ -164,12 +172,48 @@ export default function TechnicienSupInterventions() {
 
   const loadTechnicians = async () => {
     try {
-      if (user?.id_entreprise) {
-        const techs = await userService.getTechniciansByCompany(user.id_entreprise);
-        setTechnicians(techs);
+      if (user?.id) {
+        // First try to get technicians directly supervised by the current user
+        let supervisedTechnicians = await userService.getTechniciansBySupervisor(Number(user.id));
+        
+        if (supervisedTechnicians.length > 0) {
+          // We found technicians with explicit supervisor relationship
+          setTechnicians(supervisedTechnicians);
+          console.log(`Loaded ${supervisedTechnicians.length} directly supervised technicians`);
+        } else {
+          // Fallback: get all technicians in company and filter by supervisor relationship
+          if (user?.id_entreprise) {
+            const allTechs = await userService.getTechniciansByCompany(user.id_entreprise);
+            
+            // Filter to only show technicians that the current supervisor is supervising
+            // We'll check multiple possible supervisor field names
+            const filteredTechnicians = allTechs.filter(tech => {
+              // Check various possible supervisor field names
+              const techAny = tech as any;
+              const supervisorId = techAny.supervisor_id || techAny.id_superviseur || techAny.id_assigned;
+              
+              if (supervisorId) {
+                // If technician has a supervisor field, check if it matches current user
+                return Number(supervisorId) === Number(user.id);
+              } else {
+                // Fallback: check if technician has interventions in supervisor's assigned serres
+                return interventions.some(intervention => 
+                  Number(intervention.id_user) === Number(tech.id) &&
+                  assignedSerres.some(serre => 
+                    intervention.serre_nom === serre.nom
+                  )
+                );
+              }
+            });
+            
+            setTechnicians(filteredTechnicians);
+            console.log(`Loaded ${filteredTechnicians.length} filtered technicians out of ${allTechs.length} total`);
+          }
+        }
       }
     } catch (error) {
       console.error("Error loading technicians:", error);
+      setTechnicians([]);
     }
   };
 
@@ -208,7 +252,7 @@ export default function TechnicienSupInterventions() {
         // Temporary fallback for testing - show a more descriptive name
         let technicianName = technician?.name;
         if (!technicianName) {
-          if (user?.id && interventionUserId === user.id) {
+          if (user?.id && Number(interventionUserId) === Number(user.id)) {
             technicianName = "Vous-même";
           } else {
             technicianName = `Technicien #${interventionUserId}`;
@@ -257,7 +301,7 @@ export default function TechnicienSupInterventions() {
     applyFilters(searchTerm, statusFilter, technicianId);
   };
 
-  const applyFilters = (search: string, status: string, technicianId: string) => {
+  const applyFilters = useCallback((search: string, status: string, technicianId: string) => {
     console.log(`=== APPLYING FILTERS DEBUG ===`);
     console.log(`Current interventions state:`, interventions.slice(0, 3).map(i => ({ 
       id: i.id, 
@@ -266,78 +310,76 @@ export default function TechnicienSupInterventions() {
     })));
     console.log(`Filtering by: search="${search}", status="${status}", technicianId="${technicianId}"`);
     
-    // Always start with a fresh copy of the original interventions
+    // Start with a fresh copy of all interventions
     let filtered = [...interventions];
-    console.log(`Starting with ${filtered.length} interventions`);
+    console.log(`Starting with ${filtered.length} total interventions`);
 
-    // Apply status filter
+    // Apply status filter first (most restrictive)
     if (status !== "all") {
-      filtered = filtered.filter(intervention => intervention.status === status);
+      const beforeStatus = filtered.length;
+      filtered = filtered.filter(intervention => {
+        const matches = intervention.status === status;
+        console.log(`Status filter: intervention ${intervention.id} status "${intervention.status}" matches "${status}"? ${matches}`);
+        return matches;
+      });
+      console.log(`Status filter: ${beforeStatus} -> ${filtered.length} interventions`);
     }
 
-    // Apply search filter
+    // Apply technician filter (second most restrictive)
+    if (technicianId !== "all") {
+      const selectedTechnician = technicians.find(tech => String(tech.id) === technicianId);
+      console.log(`Selected technician for filter:`, selectedTechnician);
+      
+      if (selectedTechnician) {
+        const beforeTechnician = filtered.length;
+        filtered = filtered.filter(intervention => {
+          const matches = String(intervention.id_user) === String(selectedTechnician.id);
+          console.log(`Technician filter: intervention ${intervention.id} user ${intervention.id_user} matches technician ${selectedTechnician.id}? ${matches}`);
+          return matches;
+        });
+        console.log(`Technician filter: ${beforeTechnician} -> ${filtered.length} interventions`);
+      } else {
+        console.warn(`Technician with ID ${technicianId} not found in technicians list`);
+      }
+    }
+
+    // Apply search filter last (least restrictive but most expensive)
     if (search.trim()) {
       const searchLower = search.toLowerCase();
-      filtered = filtered.filter(intervention =>
-        (intervention.type_nom || '').toLowerCase().includes(searchLower) ||
-        (intervention.serre_nom || '').toLowerCase().includes(searchLower) ||
-        (intervention.domaine_nom || '').toLowerCase().includes(searchLower) ||
-        (intervention.description || '').toLowerCase().includes(searchLower) ||
-        (intervention.technician_name || '').toLowerCase().includes(searchLower)
-      );
-    }
-
-    // Apply technician filter
-    if (technicianId !== "all") {
-      console.log(`=== TECHNICIAN FILTER DEBUG ===`);
-      console.log(`Filtering by technician ID: ${technicianId}`);
-      console.log(`Available technicians:`, technicians.map(t => ({ id: t.id, name: t.name })));
-      console.log(`Before technician filtering: ${filtered.length} interventions`);
-      
-      const selectedTechnician = technicians.find(tech => String(tech.id) === technicianId);
-      console.log(`Selected technician:`, selectedTechnician);
-      
-      if (!selectedTechnician) {
-        console.error(`Technician with ID ${technicianId} not found!`);
-        return;
-      }
-      
-      const beforeCount = filtered.length;
+      const beforeSearch = filtered.length;
       filtered = filtered.filter(intervention => {
-        // Compare by user ID for more reliable filtering
-        const matches = String(intervention.id_user) === String(selectedTechnician.id);
+        const typeMatch = (intervention.type_nom || '').toLowerCase().includes(searchLower);
+        const serreMatch = (intervention.serre_nom || '').toLowerCase().includes(searchLower);
+        const domaineMatch = (intervention.domaine_nom || '').toLowerCase().includes(searchLower);
+        const descriptionMatch = (intervention.description || '').toLowerCase().includes(searchLower);
+        const technicianMatch = (intervention.technician_name || '').toLowerCase().includes(searchLower);
         
-        console.log(`Checking intervention ${intervention.id}:`, {
-          intervention_id_user: intervention.id_user,
-          intervention_technician_name: intervention.technician_name,
-          selected_technician_id: selectedTechnician.id,
-          selected_technician_name: selectedTechnician.name,
-          matches: matches
+        const matches = typeMatch || serreMatch || domaineMatch || descriptionMatch || technicianMatch;
+        console.log(`Search filter: intervention ${intervention.id} matches "${search}"? ${matches}`, {
+          type: typeMatch, serre: serreMatch, domaine: domaineMatch, 
+          description: descriptionMatch, technician: technicianMatch
         });
         
         return matches;
       });
-      
-      console.log(`After technician filtering: ${filtered.length} interventions (was ${beforeCount})`);
-      console.log(`=== END TECHNICIAN FILTER DEBUG ===`);
+      console.log(`Search filter: ${beforeSearch} -> ${filtered.length} interventions`);
     }
 
     console.log(`Final filtered results: ${filtered.length} interventions`);
     console.log(`Sample filtered interventions:`, filtered.slice(0, 3).map(i => ({ 
       id: i.id, 
-      technician_name: i.technician_name 
+      technician_name: i.technician_name,
+      status: i.status
     })));
     
     setFilteredInterventions(filtered);
-    
-    // Always reset to first page when filters change
     setCurrentPage(1);
     
     // Re-apply current sorting after filtering
     if (sortBy && filtered.length > 0) {
       applySorting(sortBy, sortOrder);
     }
-  };
+  }, [interventions, technicians, sortBy, sortOrder]);
 
   const handleSort = (sortField: string) => {
     let newSortOrder: "asc" | "desc";
@@ -583,21 +625,37 @@ export default function TechnicienSupInterventions() {
       </div>
 
       {/* Search and Actions Bar - Responsive */}
-      <div className="flex flex-col sm:flex-row gap-3 mb-6">
-        {/* Mobile: Stack vertically, Desktop: Side by side */}
-        <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 flex-1">
+      <div className="flex flex-col lg:flex-row gap-4 mb-6">
+        {/* Search Section - Full width on mobile, left side on desktop */}
+        <div className="flex-1">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+            <Input
+              placeholder="Rechercher par type, serre, domaine, description ou technicien..."
+              value={searchTerm}
+              onChange={(e) => handleSearch(e.target.value)}
+              className="pl-10 h-11 text-sm border-gray-300 focus:border-[#B4CC5F] focus:ring-[#B4CC5F]"
+            />
+          </div>
+        </div>
+
+        {/* Filters Section - Stack on mobile, side by side on desktop */}
+        <div className="flex flex-col sm:flex-row gap-2 lg:gap-3">
           {/* Status Filter */}
           <div className="relative" data-status-filter>
             <Button 
               variant="outline" 
-              className="w-full sm:w-auto bg-white border-gray-300 text-gray-700 hover:bg-gray-50 text-sm h-10 px-3"
+              className="w-full sm:w-auto bg-white border-gray-300 text-gray-700 hover:bg-gray-50 text-sm h-11 px-4 min-w-[140px]"
               onClick={() => setIsStatusFilterOpen(!isStatusFilterOpen)}
             >
               <Filter className="h-4 w-4 mr-2" />
-              {(() => {
-                const currentOption = statusFilterOptions.find(option => option.value === statusFilter);
-                return currentOption?.label || "Filtrer";
-              })()}
+              <span className="hidden sm:inline">
+                {(() => {
+                  const currentOption = statusFilterOptions.find(option => option.value === statusFilter);
+                  return currentOption?.label || "Statut";
+                })()}
+              </span>
+              <span className="sm:hidden">Statut</span>
               <ChevronDown className={`ml-2 h-4 w-4 transition-transform ${isStatusFilterOpen ? 'rotate-180' : ''}`} />
             </Button>
             
@@ -634,20 +692,23 @@ export default function TechnicienSupInterventions() {
           <div className="relative" data-technician-filter>
             <Button 
               variant="outline" 
-              className="w-full sm:w-auto bg-white border-gray-300 text-gray-700 hover:bg-gray-50 text-sm h-10 px-3"
+              className="w-full sm:w-auto bg-white border-gray-300 text-gray-700 hover:bg-gray-50 text-sm h-11 px-4 min-w-[160px]"
               onClick={() => setIsTechnicianFilterOpen(!isTechnicianFilterOpen)}
             >
               <User className="h-4 w-4 mr-2" />
-              {(() => {
-                if (technicianFilter === "all") return "Tous les techniciens";
-                const technician = technicians.find(tech => String(tech.id) === technicianFilter);
-                return technician?.name || "Technicien";
-              })()}
+              <span className="hidden sm:inline">
+                {(() => {
+                  if (technicianFilter === "all") return "Techniciens";
+                  const technician = technicians.find(tech => String(tech.id) === technicianFilter);
+                  return technician?.name || "Technicien";
+                })()}
+              </span>
+              <span className="sm:hidden">Techniciens</span>
               <ChevronDown className={`ml-2 h-4 w-4 transition-transform ${isTechnicianFilterOpen ? 'rotate-180' : ''}`} />
             </Button>
             
             {isTechnicianFilterOpen && (
-              <div className="absolute top-full left-0 mt-1 w-48 bg-white border border-gray-200 rounded-lg shadow-lg z-[9999]">
+              <div className="absolute top-full left-0 mt-1 w-56 bg-white border border-gray-200 rounded-lg shadow-lg z-[9999]">
                 <div className="p-2">
                   <div className="text-xs font-medium text-gray-500 px-3 py-1 mb-2">Filtrer par technicien</div>
                   <button
@@ -690,14 +751,17 @@ export default function TechnicienSupInterventions() {
           <div className="relative" data-sort-menu>
             <Button 
               variant="outline" 
-              className="w-full sm:w-auto bg-white border-gray-300 text-gray-700 hover:bg-gray-50 text-sm h-10 px-3"
+              className="w-full sm:w-auto bg-white border-gray-300 text-gray-700 hover:bg-gray-50 text-sm h-11 px-4 min-w-[120px]"
               onClick={() => setIsSortMenuOpen(!isSortMenuOpen)}
             >
               {sortOrder === "asc" ? <SortAsc className="h-4 w-4 mr-2" /> : <SortDesc className="h-4 w-4 mr-2" />}
-              {(() => {
-                const currentOption = sortOptions.find(option => option.value === sortBy);
-                return currentOption?.label || "Trier";
-              })()}
+              <span className="hidden sm:inline">
+                {(() => {
+                  const currentOption = sortOptions.find(option => option.value === sortBy);
+                  return currentOption?.label || "Trier";
+                })()}
+              </span>
+              <span className="sm:hidden">Trier</span>
               <ChevronDown className={`ml-2 h-4 w-4 transition-transform ${isSortMenuOpen ? 'rotate-180' : ''}`} />
             </Button>
             
@@ -719,49 +783,78 @@ export default function TechnicienSupInterventions() {
                         <span className="flex-1 text-left">{option.label}</span>
                         {sortBy === option.value && (
                           <span className="text-white">
-                            {sortOrder === "asc" ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                            <div className="w-2 h-2 rounded-full bg-white"></div>
                           </span>
                         )}
                       </button>
                     );
                   })}
-                  <div className="border-t border-gray-200 mt-2 pt-2">
-                    <button
-                      onClick={toggleSortOrder}
-                      className="w-full flex items-center justify-center gap-2 px-3 py-2 text-sm text-gray-600 hover:bg-gray-50 rounded-md transition-colors"
-                    >
-                      <span>Inverser l'ordre</span>
-                      <span className="text-[#B4CC5F]">
-                        {sortOrder === "asc" ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-                      </span>
-                    </button>
-                  </div>
                 </div>
               </div>
             )}
           </div>
-
-          <Button 
-            variant="outline"
-            className="w-full sm:w-auto bg-white border-gray-300 text-gray-700 hover:bg-gray-50 text-sm h-10 px-3"
-            onClick={() => {
-              console.log("Refresh button clicked - reloading all data");
-              // Clear all filters first
-              setSearchTerm("");
-              setStatusFilter("all");
-              setTechnicianFilter("all");
-              setCurrentPage(1);
-              // Then reload all data
-              loadData();
-            }}
-          >
-            <RefreshCw className="h-4 w-4" />
-            <span className="hidden sm:inline ml-2">Actualiser</span>
-          </Button>
         </div>
-
-        {/* Note: No "Nouvelle intervention" button for technicien sup */}
       </div>
+
+      {/* Refresh Button - Mobile friendly */}
+      <div className="flex justify-end mb-4">
+        <Button 
+          variant="outline"
+          className="bg-white border-gray-300 text-gray-700 hover:bg-gray-50 text-sm h-10 px-4"
+          onClick={() => {
+            console.log("Refresh button clicked - reloading all data");
+            setSearchTerm("");
+            setStatusFilter("all");
+            setTechnicianFilter("all");
+            setCurrentPage(1);
+            loadData();
+          }}
+        >
+          <RefreshCw className="h-4 w-4 mr-2" />
+          <span className="hidden sm:inline">Actualiser</span>
+          <span className="sm:hidden">Rafraîchir</span>
+        </Button>
+      </div>
+
+      {/* Filter Summary */}
+      {(searchTerm || statusFilter !== "all" || technicianFilter !== "all") && (
+        <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-sm font-medium text-blue-700">Filtres actifs:</span>
+              {searchTerm && (
+                <Badge variant="secondary" className="bg-blue-100 text-blue-800 border-blue-300">
+                  Recherche: "{searchTerm}"
+                </Badge>
+              )}
+              {statusFilter !== "all" && (
+                <Badge variant="secondary" className="bg-blue-100 text-blue-800 border-blue-300">
+                  Statut: {statusFilterOptions.find(opt => opt.value === statusFilter)?.label}
+                </Badge>
+              )}
+              {technicianFilter !== "all" && (
+                <Badge variant="secondary" className="bg-blue-100 text-blue-800 border-blue-300">
+                  Technicien: {technicians.find(tech => String(tech.id) === technicianFilter)?.name}
+                </Badge>
+              )}
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                setSearchTerm("");
+                setStatusFilter("all");
+                setTechnicianFilter("all");
+                setCurrentPage(1);
+              }}
+              className="text-blue-600 hover:text-blue-700 hover:bg-blue-100"
+            >
+              <X className="h-4 w-4 mr-1" />
+              Effacer tous les filtres
+            </Button>
+          </div>
+        </div>
+      )}
 
       {/* Interventions Table */}
       <Card className="bg-white shadow-sm border-0">
@@ -771,127 +864,240 @@ export default function TechnicienSupInterventions() {
           </CardTitle>
         </CardHeader>
         <CardContent className="p-0">
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gray-50 border-b border-gray-200">
-                <tr>
-                                     <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">Type d'intervention</th>
-                   <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">Date de début</th>
-                   <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">Serre / Domaine</th>
-                   <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">Technicien</th>
-                   <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">Statut</th>
-                   <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">Description</th>
-                   <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">Charges</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200">
-                {currentInterventions.map((intervention) => (
-                  <tr key={intervention.id} className="hover:bg-gray-50 transition-colors">
-                                         <td className="px-6 py-4">
-                       <div className="flex items-center space-x-3">
-                         {getInterventionTypeIcon(intervention)}
-                         <span className="text-sm font-medium text-gray-900">{getInterventionTypeName(intervention)}</span>
-                       </div>
-                     </td>
-                     <td className="px-6 py-4">
-                       <div className="text-sm text-gray-700">
-                         {new Date(intervention.date_debut).toLocaleDateString('fr-FR')}
-                       </div>
-                     </td>
-                     <td className="px-6 py-4">
-                       <div className="flex items-center space-x-2">
-                         <MapPin className="h-4 w-4 text-gray-400" />
-                         <span className="text-sm text-gray-700">
-                           {intervention.serre_nom || 'Serre inconnue'} / {intervention.domaine_nom || 'Domaine inconnu'}
-                         </span>
-                       </div>
-                     </td>
-                     <td className="px-6 py-4">
-                       <div className="flex items-center space-x-2">
-                         <User className="h-4 w-4 text-[#B4CC5F]" />
-                         <div>
-                           <span className="text-xs text-gray-500 block">Technicien:</span>
-                           <span className="text-sm font-bold text-[#B4CC5F]">
-                             {intervention.technician_name}
-                           </span>
-                         </div>
-                       </div>
-                     </td>
-                     <td className="px-6 py-4">
-                       <div className="flex space-x-2">
-                         {getStatusBadge(intervention.status)}
-                       </div>
-                     </td>
-                     <td className="px-6 py-4">
-                       <div className="text-sm text-gray-700 max-w-xs truncate">
-                         {intervention.description}
-                       </div>
-                     </td>
-                     <td className="px-6 py-4">
-                       <div className="text-sm font-medium text-gray-900">
-                         {intervention.total_charges > 0 ? (
-                           <span className="text-[#B4CC5F]">
-                             {intervention.total_charges.toFixed(2)} MAD
-                           </span>
-                         ) : (
-                           <span className="text-gray-500">0.00 MAD</span>
-                         )}
-                       </div>
-                     </td>
+          {/* Mobile Card View */}
+          <div className="block lg:hidden space-y-4 p-4">
+            {currentInterventions.length === 0 ? (
+              <div className="text-center py-8">
+                <div className="text-gray-400 mb-2">
+                  <Search className="h-12 w-12 mx-auto" />
+                </div>
+                <h3 className="text-lg font-medium text-gray-900 mb-2">
+                  {filteredInterventions.length === 0 ? "Aucune intervention trouvée" : "Aucune intervention sur cette page"}
+                </h3>
+                <p className="text-gray-500">
+                  {filteredInterventions.length === 0 
+                    ? "Aucune intervention ne correspond aux filtres appliqués. Essayez de modifier vos critères de recherche."
+                    : "Modifiez les filtres ou naviguez vers une autre page pour voir plus d'interventions."
+                  }
+                </p>
+              </div>
+            ) : (
+              currentInterventions.map((intervention) => (
+                <div key={intervention.id} className="bg-gray-50 rounded-lg p-4 space-y-3">
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-center space-x-3">
+                      {getInterventionTypeIcon(intervention)}
+                      <div>
+                        <h3 className="text-sm font-semibold text-gray-900">{getInterventionTypeName(intervention)}</h3>
+                        <p className="text-xs text-gray-500">
+                          {new Date(intervention.date_debut).toLocaleDateString('fr-FR')}
+                        </p>
+                      </div>
+                    </div>
+                    {getStatusBadge(intervention.status)}
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <div className="flex items-center space-x-2">
+                      <MapPin className="h-4 w-4 text-gray-400" />
+                      <span className="text-sm text-gray-700">
+                        {intervention.serre_nom || 'Serre inconnue'} / {intervention.domaine_nom || 'Domaine inconnu'}
+                      </span>
+                    </div>
+                    
+                    <div className="flex items-center space-x-2">
+                      <User className="h-4 w-4 text-[#B4CC5F]" />
+                      <span className="text-sm font-medium text-[#B4CC5F]">
+                        {intervention.technician_name}
+                      </span>
+                    </div>
+                    
+                    {intervention.description && (
+                      <div className="text-sm text-gray-700">
+                        <span className="font-medium">Description:</span> {intervention.description}
+                      </div>
+                    )}
+                    
+                    <div className="text-sm font-medium">
+                      <span className="text-gray-600">Charges:</span>{' '}
+                      {intervention.total_charges > 0 ? (
+                        <span className="text-[#B4CC5F]">
+                          {intervention.total_charges.toFixed(2)} MAD
+                        </span>
+                      ) : (
+                        <span className="text-gray-500">0.00 MAD</span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+
+          {/* Desktop Table View */}
+          <div className="hidden lg:block overflow-x-auto">
+            {currentInterventions.length === 0 ? (
+              <div className="text-center py-8">
+                <div className="text-gray-400 mb-2">
+                  <Search className="h-12 w-12 mx-auto" />
+                </div>
+                <h3 className="text-lg font-medium text-gray-900 mb-2">
+                  {filteredInterventions.length === 0 ? "Aucune intervention trouvée" : "Aucune intervention sur cette page"}
+                </h3>
+                <p className="text-gray-500">
+                  {filteredInterventions.length === 0 
+                    ? "Aucune intervention ne correspond aux filtres appliqués. Essayez de modifier vos critères de recherche."
+                    : "Modifiez les filtres ou naviguez vers une autre page pour voir plus d'interventions."
+                  }
+                </p>
+              </div>
+            ) : (
+              <table className="w-full">
+                <thead className="bg-gray-50 border-b border-gray-200">
+                  <tr>
+                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">Type d'intervention</th>
+                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">Date de début</th>
+                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">Serre / Domaine</th>
+                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">Technicien</th>
+                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">Statut</th>
+                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">Description</th>
+                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">Charges</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="divide-y divide-gray-200">
+                  {currentInterventions.map((intervention) => (
+                    <tr key={intervention.id} className="hover:bg-gray-50 transition-colors">
+                      <td className="px-6 py-4">
+                        <div className="flex items-center space-x-3">
+                          {getInterventionTypeIcon(intervention)}
+                          <span className="text-sm font-medium text-gray-900">{getInterventionTypeName(intervention)}</span>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="text-sm text-gray-700">
+                          {new Date(intervention.date_debut).toLocaleDateString('fr-FR')}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex items-center space-x-2">
+                          <MapPin className="h-4 w-4 text-gray-400" />
+                          <span className="text-sm text-gray-700">
+                            {intervention.serre_nom || 'Serre inconnue'} / {intervention.domaine_nom || 'Domaine inconnu'}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex items-center space-x-2">
+                          <User className="h-4 w-4 text-[#B4CC5F]" />
+                          <div>
+                            <span className="text-xs text-gray-500 block">Technicien:</span>
+                            <span className="text-sm font-bold text-[#B4CC5F]">
+                              {intervention.technician_name}
+                            </span>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex space-x-2">
+                          {getStatusBadge(intervention.status)}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="text-sm text-gray-700 max-w-xs truncate">
+                          {intervention.description}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="text-sm font-medium text-gray-900">
+                          {intervention.total_charges > 0 ? (
+                            <span className="text-[#B4CC5F]">
+                              {intervention.total_charges.toFixed(2)} MAD
+                            </span>
+                          ) : (
+                            <span className="text-gray-500">0.00 MAD</span>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
           </div>
         </CardContent>
       </Card>
 
       {/* Pagination */}
-      <div className="flex items-center justify-between mt-6">
-        <div className="text-sm text-gray-700">
-          Affichage de {startIndex + 1} à {Math.min(endIndex, filteredInterventions.length)} sur {filteredInterventions.length} intervention{filteredInterventions.length !== 1 ? 's' : ''}
-        </div>
-        
-        <div className="flex items-center space-x-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => handlePageChange(currentPage - 1)}
-            disabled={currentPage === 1}
-            className="bg-white border-gray-300 text-gray-700 hover:bg-gray-50"
-          >
-            <ChevronLeft className="h-4 w-4 mr-1" />
-            Précédent
-          </Button>
+      {filteredInterventions.length > 0 ? (
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-6">
+          <div className="text-sm text-gray-700 text-center sm:text-left">
+            Affichage de {startIndex + 1} à {Math.min(endIndex, filteredInterventions.length)} sur {filteredInterventions.length} intervention{filteredInterventions.length !== 1 ? 's' : ''}
+          </div>
           
-          {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+          <div className="flex items-center space-x-2">
             <Button
-              key={page}
-              variant={page === currentPage ? "default" : "outline"}
+              variant="outline"
               size="sm"
-              onClick={() => handlePageChange(page)}
-                             className={cn(
-                 page === currentPage
-                   ? "bg-[#B4CC5F] text-white hover:bg-[#9BB84F]"
-                   : "bg-white border-gray-300 text-gray-700 hover:bg-gray-50"
-               )}
+              onClick={() => handlePageChange(currentPage - 1)}
+              disabled={currentPage === 1}
+              className="h-9 px-3"
             >
-              {page}
+              <ChevronLeft className="h-4 w-4" />
+              <span className="hidden sm:inline ml-1">Précédent</span>
             </Button>
-          ))}
-          
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => handlePageChange(currentPage + 1)}
-            disabled={currentPage === totalPages}
-            className="bg-white border-gray-300 text-gray-700 hover:bg-gray-50"
-          >
-            Suivant
-            <ChevronRight className="h-4 w-4 ml-1" />
-          </Button>
+            
+            <div className="flex items-center space-x-1">
+              {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                let pageNum: number;
+                if (totalPages <= 5) {
+                  pageNum = i + 1;
+                } else if (currentPage <= 3) {
+                  pageNum = i + 1;
+                } else if (currentPage >= totalPages - 2) {
+                  pageNum = totalPages - 4 + i;
+                } else {
+                  pageNum = currentPage - 2 + i;
+                }
+                
+                if (pageNum < 1 || pageNum > totalPages) return null;
+                
+                return (
+                  <Button
+                    key={pageNum}
+                    variant={currentPage === pageNum ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => handlePageChange(pageNum)}
+                    className="h-9 w-9 p-0"
+                  >
+                    {pageNum}
+                  </Button>
+                );
+              })}
+            </div>
+            
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => handlePageChange(currentPage + 1)}
+              disabled={currentPage === totalPages}
+              className="h-9 px-3"
+            >
+              <span className="hidden sm:inline mr-1">Suivant</span>
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
-      </div>
+      ) : (
+        <div className="mt-6 text-center">
+          <div className="text-gray-500">
+            {interventions.length === 0 ? (
+              <p>Aucune intervention disponible</p>
+            ) : (
+              <p>Aucune intervention ne correspond aux filtres appliqués</p>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -10,7 +10,8 @@ import {
   Menu,
   X,
   ChevronRight,
-  Settings
+  Settings,
+  Shield
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -29,11 +30,11 @@ const navigationItems = [
     description: 'Vue d\'ensemble et statistiques'
   },
   {
-    id: 'assignments',
-    label: 'Gestion des Assignments',
-    icon: UserCheck,
-    href: '/directeur/assignments',
-    description: 'Assigner techniciens aux superviseurs et aux serres'
+    id: 'permissions',
+    label: 'Autorisations et Assignations',
+    icon: Shield,
+    href: '/directeur/permissions-assignments',
+    description: 'Gérer les permissions et assignations'
   },
   {
     id: 'technicians',

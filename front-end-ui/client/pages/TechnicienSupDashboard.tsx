@@ -1289,18 +1289,40 @@ export default function TechnicienSupDashboard(): JSX.Element {
                         {selectedSerreGuides.length === 0 ? (
                           <div className="text-center py-6 text-gray-500">
                             <div className="text-4xl mb-2">🌱</div>
-                            <div className="text-sm">Aucun guide associé</div>
+                            <div className="text-sm">Aucun guide de culture associé à cette serre</div>
                           </div>
                         ) : (
                           <div className="space-y-3">
                             {selectedSerreGuides.map((g: any) => (
                               <div key={g.id} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
-                                <h4 className="font-semibold text-gray-900 mb-2">{g.nom}</h4>
-                                <p className="text-sm text-gray-600 mb-3">{g.description}</p>
-                                <div className="flex items-center gap-2 text-xs text-gray-500">
-                                  <span>Type: {g.type}</span>
-                                  <span>•</span>
-                                  <span>Difficulté: {g.niveau_difficulte}</span>
+                                <div className="flex items-start justify-between mb-3">
+                                  <h4 className="font-semibold text-gray-900 text-sm md:text-base">{g.nom || 'Guide de culture'}</h4>
+                                  <Badge variant="outline" className="text-xs">{g.variete || '—'}</Badge>
+                                </div>
+
+                                <div className="grid grid-cols-1 gap-2 text-xs text-gray-600">
+                                  {g.rendement && (
+                                    <div className="flex items-center justify-between p-2 bg-gray-50 rounded-md">
+                                      <span className="font-medium text-gray-700">Rendement prévu:</span>
+                                      <span className="font-semibold text-gray-900">
+                                        {typeof g.rendement === 'number' ? Number(g.rendement).toFixed(2) : g.rendement} kg/m²
+                                      </span>
+                                    </div>
+                                  )}
+                                  {g.nombre_de_plants && (
+                                    <div className="flex items-center justify-between p-2 bg-gray-50 rounded-md">
+                                      <span className="font-medium text-gray-700">Nombre de plants:</span>
+                                      <span className="font-semibold text-gray-900">{g.nombre_de_plants}</span>
+                                    </div>
+                                  )}
+                                  {g.date_debut_saison && g.date_fin_saison && (
+                                    <div className="flex items-center justify-between p-2 bg-green-50 rounded-md">
+                                      <span className="font-medium text-green-800">Période de culture:</span>
+                                      <span className="font-semibold text-green-900">
+                                        {new Date(g.date_debut_saison).toLocaleDateString('fr-FR')} → {new Date(g.date_fin_saison).toLocaleDateString('fr-FR')}
+                                      </span>
+                                    </div>
+                                  )}
                                 </div>
                               </div>
                             ))}
@@ -1339,32 +1361,59 @@ export default function TechnicienSupDashboard(): JSX.Element {
                                   <div className="flex items-center justify-between mb-2">
                                     <h4 className="font-semibold text-gray-900">{b.nom}</h4>
                                     {etat && (
-                                      <Badge variant={etat.etat === 'bon' ? 'default' : etat.etat === 'moyen' ? 'secondary' : 'destructive'}>
-                                        {etat.etat === 'bon' ? 'Bon' : etat.etat === 'moyen' ? 'Moyen' : 'Mauvais'}
+                                      <Badge variant="outline" className="text-xs">
+                                        État disponible
                                       </Badge>
                                     )}
                                   </div>
                                   <div className="space-y-2 text-sm">
-                                    <div className="flex items-center justify-between">
-                                      <span className="text-gray-600">Surface:</span>
-                                      <span className="font-medium">{b.surface} m²</span>
-                                    </div>
-                                    <div className="flex items-center justify-between">
-                                      <span className="text-gray-600">Type:</span>
-                                      <span className="font-medium">{b.type}</span>
-                                    </div>
-                                    {etat && (
-                                      <>
+                                                                      <div className="flex items-center justify-between">
+                                    <span className="text-gray-600">Surface:</span>
+                                    <span className="font-medium">{Number(b.surface).toFixed(2)} m²</span>
+                                  </div>
+                                  <div className="flex items-center justify-between">
+                                    <span className="text-gray-600">Type:</span>
+                                    <span className="font-medium">{b.type}</span>
+                                  </div>
+                                  {etat && (
+                                    <>
+                                      {etat.etat && (
                                         <div className="flex items-center justify-between">
                                           <span className="text-gray-600">État:</span>
                                           <span className="font-medium">{etat.etat === 'bon' ? 'Bon' : etat.etat === 'moyen' ? 'Moyen' : 'Mauvais'}</span>
                                         </div>
+                                      )}
+                                      {etat.date_evaluation && (
                                         <div className="flex items-center justify-between">
                                           <span className="text-gray-600">Date d'évaluation:</span>
                                           <span className="font-medium">{new Date(etat.date_evaluation).toLocaleDateString('fr-FR')}</span>
                                         </div>
-                                      </>
-                                    )}
+                                      )}
+                                      {!etat.etat && !etat.date_evaluation && (
+                                        <div className="flex items-center justify-between">
+                                          <span className="text-gray-600">Date d'évaluation:</span>
+                                          <span className="font-medium">{new Date(etat.date).toLocaleDateString('fr-FR')}</span>
+                                        </div>
+                                      )}
+                                      <div className="mt-2 p-2 bg-purple-50 rounded-md">
+                                        <div className="text-xs font-medium text-purple-800 mb-1">Conditions actuelles</div>
+                                        <div className="grid grid-cols-2 gap-1 text-xs">
+                                          {typeof etat.temperature === 'number' && (
+                                            <div className="text-purple-700">🌡️ {Number(etat.temperature).toFixed(2)}°C</div>
+                                          )}
+                                          {typeof etat.humidite === 'number' && (
+                                            <div className="text-purple-700">💧 {Number(etat.humidite).toFixed(2)}%</div>
+                                          )}
+                                          {typeof etat.luminosite === 'number' && (
+                                            <div className="text-purple-700">☀️ {Number(etat.luminosite).toFixed(2)} lux</div>
+                                          )}
+                                          {typeof etat.co2 === 'number' && (
+                                            <div className="text-purple-700">🌬️ {Number(etat.co2).toFixed(2)} ppm</div>
+                                          )}
+                                        </div>
+                                      </div>
+                                    </>
+                                  )}
                                   </div>
                                 </div>
                               );
@@ -1424,10 +1473,10 @@ export default function TechnicienSupDashboard(): JSX.Element {
                       <span className="text-gray-600 font-medium">Variété</span>
                       <span className="font-semibold text-gray-900">{selectedSerre?.variety || '—'}</span>
                     </div>
-                    <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200">
-                      <span className="text-gray-600 font-medium">Surface</span>
-                      <span className="font-semibold text-gray-900">{selectedSerre?.surface ?? 0} m²</span>
-                    </div>
+                                                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200">
+                              <span className="text-gray-600 font-medium">Surface</span>
+                              <span className="font-semibold text-gray-900">{Number(selectedSerre?.surface ?? 0).toFixed(2)} m²</span>
+                            </div>
                     <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200">
                       <span className="text-gray-600 font-medium">Zones</span>
                       <span className="font-semibold text-gray-900">{selectedSerre?.zones?.length || 0}</span>
@@ -1470,25 +1519,25 @@ export default function TechnicienSupDashboard(): JSX.Element {
                             <div className="flex items-center justify-between p-2 bg-gray-50 rounded-md">
                               <span className="font-medium text-gray-700">Rendement:</span>
                               <span className="font-semibold text-gray-900">
-                                {typeof g.rendement === 'number' ? g.rendement.toFixed(2) : g.rendement}
+                                {typeof g.rendement === 'number' ? Number(g.rendement).toFixed(2) : g.rendement} {g.rendement && 'kg/m²'}
                               </span>
                             </div>
                           )}
                           {g.nombre_de_plants && (
                             <div className="flex items-center justify-between p-2 bg-gray-50 rounded-md">
-                              <span className="font-medium text-gray-700">Plants:</span>
+                              <span className="font-medium text-gray-700">Nombre de plants:</span>
                               <span className="font-semibold text-gray-900">{g.nombre_de_plants}</span>
                             </div>
                           )}
-                        </div>
-                        {(g.date_debut_saison || g.date_fin_saison) && (
-                          <div className="mt-2 p-2 bg-blue-50 rounded-md">
-                            <div className="text-xs font-medium text-blue-800 mb-1">Période de culture</div>
-                            <div className="text-xs text-blue-700">
-                              {g.date_debut_saison || '—'} → {g.date_fin_saison || '—'}
+                          {g.date_debut_saison && g.date_fin_saison && (
+                            <div className="flex items-center justify-between p-2 bg-green-50 rounded-md">
+                              <span className="font-medium text-green-800">Période de culture:</span>
+                              <span className="font-semibold text-green-900">
+                                {new Date(g.date_debut_saison).toLocaleDateString('fr-FR')} → {new Date(g.date_fin_saison).toLocaleDateString('fr-FR')}
+                              </span>
                             </div>
-                          </div>
-                        )}
+                          )}
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -1551,7 +1600,7 @@ export default function TechnicienSupDashboard(): JSX.Element {
                                       <span className="text-purple-600">🌡️</span>
                                       <span className="font-medium text-gray-700">Température:</span>
                                     </div>
-                                    <span className="font-semibold text-gray-900">{etat.temperature.toFixed(2)}°C</span>
+                                    <span className="font-semibold text-gray-900">{Number(etat.temperature).toFixed(2)}°C</span>
                                   </div>
                                 )}
                                 {typeof etat.humidite === 'number' && (
@@ -1560,7 +1609,7 @@ export default function TechnicienSupDashboard(): JSX.Element {
                                       <span className="text-purple-600">💧</span>
                                       <span className="font-medium text-gray-700">Humidité:</span>
                                     </div>
-                                    <span className="font-semibold text-gray-900">{etat.humidite.toFixed(2)}%</span>
+                                    <span className="font-semibold text-gray-900">{Number(etat.humidite).toFixed(2)}%</span>
                                   </div>
                                 )}
                                 {typeof etat.luminosite === 'number' && (
@@ -1569,7 +1618,7 @@ export default function TechnicienSupDashboard(): JSX.Element {
                                       <span className="text-purple-600">☀️</span>
                                       <span className="font-medium text-gray-700">Luminosité:</span>
                                     </div>
-                                    <span className="font-semibold text-gray-900">{etat.luminosite.toFixed(2)}</span>
+                                    <span className="font-semibold text-gray-900">{Number(etat.luminosite).toFixed(2)} lux</span>
                                   </div>
                                 )}
                                 {typeof etat.co2 === 'number' && (
@@ -1578,7 +1627,7 @@ export default function TechnicienSupDashboard(): JSX.Element {
                                       <span className="text-purple-600">🌬️</span>
                                       <span className="font-medium text-gray-700">CO₂:</span>
                                     </div>
-                                    <span className="font-semibold text-gray-900">{etat.co2.toFixed(2)} ppm</span>
+                                    <span className="font-semibold text-gray-900">{Number(etat.co2).toFixed(2)} ppm</span>
                                   </div>
                                 )}
                                 {typeof etat.rendement === 'number' && (
@@ -1587,7 +1636,24 @@ export default function TechnicienSupDashboard(): JSX.Element {
                                       <span className="text-purple-600">📈</span>
                                       <span className="font-medium text-gray-700">Rendement:</span>
                                     </div>
-                                    <span className="font-semibold text-gray-900">{etat.rendement.toFixed(2)}</span>
+                                    <span className="font-semibold text-gray-900">{Number(etat.rendement).toFixed(2)} kg/m²</span>
+                                  </div>
+                                )}
+                                {etat.date && (
+                                  <div className="flex items-center justify-between p-2 bg-blue-50 rounded-md border border-blue-200">
+                                    <div className="flex items-center gap-2">
+                                      <span className="text-blue-600">📅</span>
+                                      <span className="font-medium text-blue-800">Date d'évaluation:</span>
+                                    </div>
+                                    <span className="font-semibold text-blue-900">
+                                      {new Date(etat.date).toLocaleDateString('fr-FR', {
+                                        day: '2-digit',
+                                        month: '2-digit',
+                                        year: 'numeric',
+                                        hour: '2-digit',
+                                        minute: '2-digit'
+                                      })}
+                                    </span>
                                   </div>
                                 )}
                               </div>

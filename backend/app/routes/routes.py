@@ -1,7 +1,7 @@
 from flask import Blueprint
 
 
-from app.controllers.user import register, login, get_user, update_user, delete_user, create_technicien, register_technicien, verify_email, validate_technicien, get_technicien_by_email, get_all_technicians, get_techniciens_by_company,get_alltechniciens_by_company, get_pending_technicians_by_company, update_technicien, delete_technicien, get_interventions_by_technicien, assign_technician_to_supervisor
+from app.controllers.user import register, login, get_user, update_user, delete_user, create_technicien, register_technicien, verify_email, validate_technicien, get_technicien_by_email, get_all_technicians, get_techniciens_by_company,get_alltechniciens_by_company, get_pending_technicians_by_company, update_technicien, delete_technicien, get_interventions_by_technicien, assign_technician_to_supervisor, get_supervisors_by_company, remove_technician_assignment
 
 from app.controllers.entreprise import create_entreprise, get_entreprise, get_all_entreprises, update_entreprise, delete_entreprise, get_company_map_data, get_company_assignments
 from app.controllers.domaine import create_domaine, get_domaine, get_all_domaines, update_domaine, delete_domaine, get_serres_by_domaine
@@ -46,6 +46,7 @@ all_bp.route('/technicien/register', methods=['POST'])(register_technicien)
 # Specific routes must come BEFORE generic routes to avoid conflicts
 all_bp.route('/technicien/alltypes/company/<int:company_id>', methods=['GET'])(get_alltechniciens_by_company)
 all_bp.route('/technicien/company/<int:company_id>', methods=['GET'])(get_techniciens_by_company)
+all_bp.route('/technicien/supervisors/company/<int:company_id>', methods=['GET'])(get_supervisors_by_company)
 
 all_bp.route('/technicien/pending', methods=['GET'])(get_pending_technicians_by_company)
 all_bp.route('/technicien/validate/<int:id>', methods=['PUT'])(validate_technicien)
@@ -129,6 +130,7 @@ all_bp.route('/autorisation_serre/<int:autorisation_id>', methods=['DELETE'])(de
 # Assignment management routes
 all_bp.route('/assignments/company', methods=['GET'])(get_company_assignments)
 all_bp.route('/users/assign-supervisor', methods=['PUT'])(assign_technician_to_supervisor)
+all_bp.route('/users/remove-assignment', methods=['PUT'])(remove_technician_assignment)
 all_bp.route('/serres/assign-user', methods=['POST'])(assign_user_to_serre)
 all_bp.route('/serres/remove-user', methods=['DELETE'])(remove_user_from_serre)
 

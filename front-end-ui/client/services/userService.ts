@@ -91,6 +91,34 @@ export const userService = {
     }
   },
 
+  // Get technicians supervised by a specific supervisor
+  getTechniciansBySupervisor: async (supervisorId: number): Promise<User[]> => {
+    try {
+      console.log('[UserService] Fetching technicians for supervisor:', supervisorId);
+      
+      const response = await axios.get(
+        `${API_BASE_URL}/technicien/supervisor/${supervisorId}`,
+        createAuthenticatedRequest(),
+      );
+
+      console.log('[UserService] Supervisor technicians response:', response.data);
+      
+      // Handle different response formats
+      if (response.data?.success && response.data?.technicians) {
+        return response.data.technicians;
+      } else if (Array.isArray(response.data)) {
+        return response.data;
+      } else if (response.data?.technicians && Array.isArray(response.data.technicians)) {
+        return response.data.technicians;
+      }
+      
+      return [];
+    } catch (error: any) {
+      console.error("Error fetching technicians by supervisor:", error);
+      return [];
+    }
+  },
+
   // Get user by ID
   getUserById: async (userId: number): Promise<User | null> => {
     try {

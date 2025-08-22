@@ -261,7 +261,7 @@ const TechHeader: React.FC<TechHeaderProps> = ({ role, onMenuClick, isSidebarOpe
             </div>
             <div
               className="cursor-pointer hover:scale-110 transition-transform duration-200 active:scale-95 flex-shrink-0"
-              onClick={() => navigate(role === "technicien_sup" ? "/technicien-sup" : "/technician/map")}
+              onClick={() => navigate(role === "technicien_sup" ? "/technicien-sup/map" : "/technician/map")}
               title="Carte"
             >
               <Map className="h-5 w-5 text-greener-700" />
