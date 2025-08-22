@@ -13,13 +13,13 @@ function LayoutInner() {
   return (
     <div className="min-h-screen bg-gray-50 flex">
       <TechnicianSidebar userRole="technicien" />
-      <div className={`flex-1 transition-all duration-300 ${desktopPaddingClass}`}>
+      <div className={`flex-1 transition-all duration-300 `}>
         <TechHeader 
           role="technicien" 
           onMenuClick={() => setIsOpen(!isOpen)}
           isSidebarOpen={isOpen}
         />
-        <main className="p-4 sm:p-6 lg:p-8 space-y-6">
+        <main >
           <Outlet />
         </main>
       </div>

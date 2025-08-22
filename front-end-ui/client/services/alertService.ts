@@ -68,6 +68,33 @@ export class AlertService {
     }
   }
 
+  static async getAlertsByAssignedSerresForTechSup(): Promise<Alert[]> {
+    try {
+      // Use the main alerts endpoint which handles role-based filtering
+      const response = await axios.get(
+        `${API_BASE_URL}/alerte`,
+        createAuthenticatedRequest()
+      );
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching alerts by assigned serres for tech sup:", error);
+      throw error;
+    }
+  }
+
+  static async getAlertsBySerre(serreId: number): Promise<Alert[]> {
+    try {
+      const response = await axios.get(
+        `${API_BASE_URL}/alerte/serre/${serreId}`,
+        createAuthenticatedRequest()
+      );
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching alerts by serre:", error);
+      throw error;
+    }
+  }
+
   static async getAlert(id: number): Promise<Alert> {
     try {
       const response = await axios.get(

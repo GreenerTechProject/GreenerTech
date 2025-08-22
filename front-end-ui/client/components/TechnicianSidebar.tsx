@@ -15,6 +15,7 @@ import {
   X,
   Bot,
   Target,
+  Shield,
 } from "lucide-react";
 
 interface SidebarItem {
@@ -82,7 +83,13 @@ export default function TechnicianSidebar({
         icon: <Bookmark className="h-5 w-5" />,
         path: isSuperiorTechnician ? "/technicien-sup/reports" : "/technician/reports",
       },
-	
+      // Show Authorizations only for superior technicians
+      ...(isSuperiorTechnician ? [{
+        id: "authorizations",
+        label: "Autorisations",
+        icon: <Shield className="h-5 w-5" />,
+        path: "/technicien-sup/authorizations",
+      }] : []),
     ];
     // Show Surveillance only for regular technicians, not for tech-sup
     if (!isSuperiorTechnician) {

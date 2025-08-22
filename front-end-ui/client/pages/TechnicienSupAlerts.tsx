@@ -3,12 +3,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Bell, AlertTriangle, CheckCircle, Clock, Search, Image, ZoomIn, ChevronLeft, ChevronRight } from "lucide-react";
+import { Bell, AlertTriangle, CheckCircle, Clock, Search, Image, ZoomIn, ChevronLeft, ChevronRight, Trash2, Filter, RefreshCw } from "lucide-react";
 import { cn } from "@/lib/utils";
 import TechHeader from "@/components/TechHeader";
 import { AlertService } from "@/services/alertService";
 import { Alert } from "@/types/alert";
 import { serreService } from "../services/serreService";
+import { useToast } from "@/hooks/use-toast";
 
 interface Serre {
   id: string;
@@ -20,10 +21,12 @@ interface Serre {
 
 export default function TechnicienSupAlerts() {
   const [alerts, setAlerts] = useState<Alert[]>([]);
+  const [allAlerts, setAllAlerts] = useState<Alert[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [levelFilter, setLevelFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [serreFilter, setSerreFilter] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
   const [totalAlerts, setTotalAlerts] = useState(0);
   const [alertsPerPage] = useState(10);
@@ -36,6 +39,8 @@ export default function TechnicienSupAlerts() {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [showImageModal, setShowImageModal] = useState(false);
   const [assignedSerres, setAssignedSerres] = useState<Serre[]>([]);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState<number | null>(null);
+  const { toast } = useToast();
 
   useEffect(() => {
     loadAssignedSerres();
@@ -49,10 +54,16 @@ export default function TechnicienSupAlerts() {
   }, [assignedSerres]);
 
   useEffect(() => {
-    if (assignedSerres.length > 0) {
-      loadAlerts();
+    if (allAlerts.length > 0) {
+      applyFilters();
     }
-  }, [searchTerm, levelFilter, statusFilter, currentPage, assignedSerres]);
+  }, [searchTerm, levelFilter, statusFilter, serreFilter, allAlerts]);
+
+  useEffect(() => {
+    if (allAlerts.length > 0) {
+      applyFilters();
+    }
+  }, [currentPage]);
 
   const loadAssignedSerres = async () => {
     try {
@@ -61,60 +72,83 @@ export default function TechnicienSupAlerts() {
     } catch (error) {
       console.error("Error loading assigned serres:", error);
       setAssignedSerres([]);
+      toast({
+        title: "Erreur",
+        description: "Impossible de charger les serres assignées",
+        variant: "destructive",
+      });
     }
   };
 
   const loadAlerts = async () => {
     try {
       setLoading(true);
-      // Get all alerts and filter by assigned serres
-      const allAlerts = await AlertService.getAllAlerts(1, 1000);
-      
-      // Filter alerts to only include those from assigned serres
-      let filteredAlerts = allAlerts.alerts.filter(alert => {
-        // Check if alert belongs to assigned serres
-        return assignedSerres.some(serre => 
-          serre.id === alert.id_serre || 
-          serre.nom === alert.serre_nom
-        );
-      });
-
-      // Apply search filter
-      if (searchTerm) {
-        filteredAlerts = filteredAlerts.filter(alert => 
-          alert.maladie?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          alert.id_bilan?.toString().includes(searchTerm) ||
-          alert.bilan_nom?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          alert.serre_nom?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          alert.domaine_nom?.toLowerCase().includes(searchTerm.toLowerCase())
-        );
-      }
-      
-      // Apply level filter
-      if (levelFilter !== "all") {
-        filteredAlerts = filteredAlerts.filter(alert => {
-          const level = getAlertLevel(alert.status_alert);
-          return level === levelFilter;
-        });
-      }
-      
-      // Apply status filter
-      if (statusFilter !== "all") {
-        filteredAlerts = filteredAlerts.filter(alert => alert.status === statusFilter);
-      }
-      
-      const startIndex = (currentPage - 1) * alertsPerPage;
-      const endIndex = startIndex + alertsPerPage;
-      const paginatedAlerts = filteredAlerts.slice(startIndex, endIndex);
-      
-      setAlerts(paginatedAlerts);
-      setTotalAlerts(filteredAlerts.length);
+      // Get all alerts for assigned serres from the backend
+      const alertsData = await AlertService.getAlertsByAssignedSerresForTechSup();
+      setAllAlerts(alertsData);
+      setTotalAlerts(alertsData.length);
     } catch (error) {
       console.error("Error loading alerts:", error);
-      setAlerts([]);
+      setAllAlerts([]);
       setTotalAlerts(0);
+      toast({
+        title: "Erreur",
+        description: "Impossible de charger les alertes",
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const applyFilters = () => {
+    let filteredAlerts = [...allAlerts];
+
+    // Apply serre filter
+    if (serreFilter !== "all") {
+      filteredAlerts = filteredAlerts.filter(alert => 
+        alert.id_serre?.toString() === serreFilter || 
+        alert.serre_nom === assignedSerres.find(s => s.id === serreFilter)?.nom
+      );
+    }
+
+    // Apply search filter
+    if (searchTerm) {
+      filteredAlerts = filteredAlerts.filter(alert => 
+        alert.maladie?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        alert.id_bilan?.toString().includes(searchTerm) ||
+        alert.bilan_nom?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        alert.serre_nom?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        alert.domaine_nom?.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
+    
+    // Apply level filter
+    if (levelFilter !== "all") {
+      filteredAlerts = filteredAlerts.filter(alert => {
+        const level = getAlertLevel(alert.status_alert);
+        return level === levelFilter;
+      });
+    }
+    
+    // Apply status filter
+    if (statusFilter !== "all") {
+      filteredAlerts = filteredAlerts.filter(alert => alert.status === statusFilter);
+    }
+    
+    // Update total count
+    setTotalAlerts(filteredAlerts.length);
+    
+    // Apply pagination
+    const startIndex = (currentPage - 1) * alertsPerPage;
+    const endIndex = startIndex + alertsPerPage;
+    const paginatedAlerts = filteredAlerts.slice(startIndex, endIndex);
+    
+    setAlerts(paginatedAlerts);
+    
+    // Reset to first page if current page is out of bounds
+    if (currentPage > Math.ceil(filteredAlerts.length / alertsPerPage) && filteredAlerts.length > 0) {
+      setCurrentPage(1);
     }
   };
 
@@ -127,13 +161,52 @@ export default function TechnicienSupAlerts() {
     }
   };
 
+  const handleRefresh = () => {
+    loadAlerts();
+    loadStats();
+    setCurrentPage(1);
+    setSearchTerm("");
+    setLevelFilter("all");
+    setStatusFilter("all");
+    setSerreFilter("all");
+  };
+
   const handleUpdateAlert = async (alertId: number, status: "résolue" | "non résolue") => {
     try {
       await AlertService.updateAlert(alertId, { status });
+      toast({
+        title: "Succès",
+        description: "Statut de l'alerte mis à jour avec succès",
+      });
       loadAlerts();
       loadStats();
     } catch (error) {
       console.error("Error updating alert:", error);
+      toast({
+        title: "Erreur",
+        description: "Erreur lors de la mise à jour du statut",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDeleteAlert = async (alertId: number) => {
+    try {
+      await AlertService.deleteAlert(alertId);
+      toast({
+        title: "Succès",
+        description: "Alerte supprimée avec succès",
+      });
+      setShowDeleteConfirm(null);
+      loadAlerts();
+      loadStats();
+    } catch (error) {
+      console.error("Error deleting alert:", error);
+      toast({
+        title: "Erreur",
+        description: "Erreur lors de la suppression de l'alerte",
+        variant: "destructive",
+      });
     }
   };
 
@@ -197,12 +270,24 @@ export default function TechnicienSupAlerts() {
       <div className="p-6">
       {/* Header Section */}
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">
-          Gestion des Alertes
-        </h1>
-        <p className="text-gray-600 text-lg">
-            Sur vos serres supervisées ({assignedSerres.length})
-          </p>
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">
+              Gestion des Alertes
+            </h1>
+            <p className="text-gray-600 text-lg">
+              Sur vos serres supervisées ({assignedSerres.length})
+            </p>
+          </div>
+          <Button
+            onClick={handleRefresh}
+            variant="outline"
+            className="flex items-center gap-2"
+          >
+            <RefreshCw className="h-4 w-4" />
+            Actualiser
+          </Button>
+        </div>
           
           {/* Search and Filters */}
           <div className="mt-6 flex flex-col sm:flex-row gap-4">
@@ -215,6 +300,19 @@ export default function TechnicienSupAlerts() {
               className="pl-10"
             />
             </div>
+            
+            <select
+              value={serreFilter}
+              onChange={(e) => setSerreFilter(e.target.value)}
+              className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#B4CC5F]"
+            >
+              <option value="all">Toutes les serres</option>
+              {assignedSerres.map((serre) => (
+                <option key={serre.id} value={serre.id}>
+                  {serre.nom} {serre.domaine ? `- ${serre.domaine.nom}` : ''}
+                </option>
+              ))}
+            </select>
             
             <select
               value={levelFilter}
@@ -315,101 +413,122 @@ export default function TechnicienSupAlerts() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b">
-                  <th className="text-left py-3 px-4 font-medium text-gray-700">Nom d'anomalie</th>
-                  <th className="text-left py-3 px-4 font-medium text-gray-700">Niveau</th>
-                  <th className="text-left py-3 px-4 font-medium text-gray-700">Statut</th>
-                  <th className="text-left py-3 px-4 font-medium text-gray-700">Localisation</th>
-                  <th className="text-left py-3 px-4 font-medium text-gray-700">Horodatage</th>
-                    <th className="text-left py-3 px-4 font-medium text-gray-700">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                  {alerts.map((alert) => (
-                  <tr key={alert.id} className="border-b hover:bg-gray-50">
-                    <td className="py-3 px-4">
-                      <div className="font-medium text-gray-900">{alert.maladie}</div>
-                    </td>
-                    <td className="py-3 px-4">
-                      {getAlertLevelBadge(alert.status_alert)}
-                    </td>
-                    <td className="py-3 px-4">
-                      <div className="flex items-center gap-2">
-                        {getStatusIcon(alert.status)}
-                        <span className={cn(
-                          "text-sm",
-                          alert.status === "résolue" ? "text-green-600" : "text-red-600"
-                        )}>
-                          {getStatusText(alert.status)}
-                        </span>
-                      </div>
-                    </td>
-                    <td className="py-3 px-4 text-sm text-gray-600">
-                        {alert.serre_nom} - {alert.domaine_nom}
-                    </td>
-                    <td className="py-3 px-4 text-sm text-gray-600">
-                      {formatDate(alert.date)}
-                    </td>
-                      <td className="py-3 px-4">
-                        {alert.status !== "résolue" && (
-                          <Button
-                            size="sm"
-                            onClick={() => handleUpdateAlert(alert.id, "résolue")}
-                            className="bg-green-600 hover:bg-green-700"
-                          >
-                            Marquer comme résolu
-                          </Button>
-                        )}
-                      </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-
-          {/* Pagination */}
-          {totalPages > 1 && (
-            <div className="flex items-center justify-between mt-6">
-              <div className="text-sm text-gray-600">
-                Affichage de {(currentPage - 1) * alertsPerPage + 1} à {Math.min(currentPage * alertsPerPage, totalAlerts)} sur {totalAlerts} alerte{totalAlerts !== 1 ? 's' : ''}
-              </div>
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setCurrentPage(currentPage - 1)}
-                  disabled={currentPage === 1}
-                >
-                  <ChevronLeft className="h-4 w-4 mr-1" />
-                  Précédent
-                </Button>
-                
-                {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                  <Button
-                    key={page}
-                    variant={currentPage === page ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => setCurrentPage(page)}
-                    className="w-10"
-                  >
-                    {page}
-                  </Button>
-                ))}
-                
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setCurrentPage(currentPage + 1)}
-                  disabled={currentPage === totalPages}
-                >
-                  Suivant
-                  <ChevronRight className="h-4 w-4 ml-1" />
-                </Button>
-              </div>
+          {alerts.length === 0 ? (
+            <div className="text-center py-8">
+              <AlertTriangle className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+              <p className="text-gray-500 text-lg">Aucune alerte trouvée</p>
+              <p className="text-gray-400">Essayez de modifier vos filtres ou actualisez la page</p>
             </div>
+          ) : (
+            <>
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b">
+                      <th className="text-left py-3 px-4 font-medium text-gray-700">Nom d'anomalie</th>
+                      <th className="text-left py-3 px-4 font-medium text-gray-700">Niveau</th>
+                      <th className="text-left py-3 px-4 font-medium text-gray-700">Statut</th>
+                      <th className="text-left py-3 px-4 font-medium text-gray-700">Localisation</th>
+                      <th className="text-left py-3 px-4 font-medium text-gray-700">Horodatage</th>
+                        <th className="text-left py-3 px-4 font-medium text-gray-700">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                      {alerts.map((alert) => (
+                      <tr key={alert.id} className="border-b hover:bg-gray-50">
+                        <td className="py-3 px-4">
+                          <div className="font-medium text-gray-900">{alert.maladie}</div>
+                        </td>
+                        <td className="py-3 px-4">
+                          {getAlertLevelBadge(alert.status_alert)}
+                        </td>
+                        <td className="py-3 px-4">
+                          <div className="flex items-center gap-2">
+                            {getStatusIcon(alert.status)}
+                            <span className={cn(
+                              "text-sm",
+                              alert.status === "résolue" ? "text-green-600" : "text-red-600"
+                            )}>
+                              {getStatusText(alert.status)}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="py-3 px-4 text-sm text-gray-600">
+                            {alert.serre_nom} - {alert.domaine_nom}
+                        </td>
+                        <td className="py-3 px-4 text-sm text-gray-600">
+                          {formatDate(alert.date)}
+                        </td>
+                          <td className="py-3 px-4">
+                            <div className="flex items-center gap-2">
+                              {alert.status !== "résolue" && (
+                                <Button
+                                  size="sm"
+                                  onClick={() => handleUpdateAlert(alert.id, "résolue")}
+                                  className="bg-green-600 hover:bg-green-700"
+                                >
+                                  Marquer comme résolu
+                                </Button>
+                              )}
+                              
+                              <Button
+                                size="sm"
+                                variant="destructive"
+                                onClick={() => setShowDeleteConfirm(alert.id)}
+                                className="bg-red-600 hover:bg-red-700"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Pagination */}
+              {totalPages > 1 && (
+                <div className="flex items-center justify-between mt-6">
+                  <div className="text-sm text-gray-600">
+                    Affichage de {(currentPage - 1) * alertsPerPage + 1} à {Math.min(currentPage * alertsPerPage, totalAlerts)} sur {totalAlerts} alerte{totalAlerts !== 1 ? 's' : ''}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCurrentPage(currentPage - 1)}
+                      disabled={currentPage === 1}
+                    >
+                      <ChevronLeft className="h-4 w-4 mr-1" />
+                      Précédent
+                    </Button>
+                    
+                    {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                      <Button
+                        key={page}
+                        variant={currentPage === page ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => setCurrentPage(page)}
+                        className="w-10"
+                      >
+                        {page}
+                      </Button>
+                    ))}
+                    
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCurrentPage(currentPage + 1)}
+                      disabled={currentPage === totalPages}
+                    >
+                      Suivant
+                      <ChevronRight className="h-4 w-4 ml-1" />
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </>
           )}
           </CardContent>
         </Card>
@@ -430,6 +549,34 @@ export default function TechnicienSupAlerts() {
             >
               Fermer
             </Button>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">
+              Confirmer la suppression
+            </h3>
+            <p className="text-gray-600 mb-6">
+              Êtes-vous sûr de vouloir supprimer cette alerte ? Cette action est irréversible.
+            </p>
+            <div className="flex justify-end gap-3">
+              <Button
+                variant="outline"
+                onClick={() => setShowDeleteConfirm(null)}
+              >
+                Annuler
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={() => handleDeleteAlert(showDeleteConfirm)}
+              >
+                Supprimer
+              </Button>
+            </div>
           </div>
         </div>
       )}

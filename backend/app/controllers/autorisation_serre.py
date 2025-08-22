@@ -49,8 +49,8 @@ def get_autorisation_serre(current_user):
 
 @token_required
 @role_required("directeur", "technicien_superieur")
-def delete_autorisation_serre(current_user, autorisation_serre_id):
-    autorisation_serre = Autorisation_serre.query.get(autorisation_serre_id)
+def delete_autorisation_serre(current_user, autorisation_id):
+    autorisation_serre = Autorisation_serre.query.get(autorisation_id)
     if not autorisation_serre:
         return jsonify({"status": "error", "message": "Autorisation_serre non trouvée"}), 404
 
@@ -59,7 +59,7 @@ def delete_autorisation_serre(current_user, autorisation_serre_id):
         db.session.commit()
         return jsonify({
             "status": "success",
-            "message": f"Autorisation_serre {autorisation_serre_id} supprimée avec succès"
+            "message": f"Autorisation_serre {autorisation_id} supprimée avec succès"
         }), 200
 
     except Exception as e:

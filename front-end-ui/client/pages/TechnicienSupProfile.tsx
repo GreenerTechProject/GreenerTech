@@ -103,7 +103,7 @@ export default function TechnicienSupProfile() {
   const getRoleColor = (role?: string) => {
     switch (role) {
       case "technicien":
-        return "bg-blue-100 text-blue-800";
+        return "bg-green-100 text-green-800";
       case "technicien_superieur":
         return "bg-green-100 text-green-800";
       case "directeur":
@@ -139,7 +139,7 @@ export default function TechnicienSupProfile() {
     return (
       <div className="min-h-screen bg-white flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto"></div>
           <p className="mt-4 text-gray-600">Chargement du profil...</p>
         </div>
       </div>
@@ -164,7 +164,7 @@ export default function TechnicienSupProfile() {
           <Button 
             variant="ghost" 
             onClick={() => navigate("/technicien-sup")}
-            className="text-blue-600 hover:text-blue-800"
+            className="text-green-600 hover:text-green-800"
           >
             <ArrowLeft className="h-4 w-4 mr-2" />
             Retour
@@ -172,16 +172,16 @@ export default function TechnicienSupProfile() {
         </div>
         
         <Card className="w-full max-w-md shadow-lg border-0">
-          {/* Blue Header with User Info */}
-          <div className="bg-blue-600 rounded-t-lg p-6 relative">
+          {/* Green Header with User Info */}
+          <div className="bg-green-600 rounded-t-lg p-6 relative">
             {/* Profile Picture Placeholder */}
             <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center mb-4 relative">
-              <div className="text-2xl font-bold text-blue-600">
+              <div className="text-2xl font-bold text-green-600">
                 {userInfo.firstName ? userInfo.firstName[0] : 'U'}
                 {userInfo.lastName ? userInfo.lastName[0] : ''}
               </div>
               {/* Online status dot */}
-              <div className="absolute bottom-0 right-0 w-4 h-4 bg-blue-500 rounded-full border-2 border-white"></div>
+              <div className="absolute bottom-0 right-0 w-4 h-4 bg-green-500 rounded-full border-2 border-white"></div>
             </div>
             
             {/* User Name and Role */}
@@ -199,8 +199,8 @@ export default function TechnicienSupProfile() {
           <CardContent className="p-6 space-y-4">
             {/* Company Information */}
             <div className="flex items-center space-x-3">
-              <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                <Building2 className="w-4 h-4 text-blue-600" />
+              <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+                <Building2 className="w-4 h-4 text-green-600" />
               </div>
               <div>
                 <div className="text-sm text-gray-600">Entreprise</div>
@@ -213,8 +213,8 @@ export default function TechnicienSupProfile() {
 
             {/* Phone Number */}
             <div className="flex items-center space-x-3">
-              <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                <Phone className="w-4 h-4 text-blue-600" />
+              <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+                <Phone className="w-4 h-4 text-green-600" />
               </div>
               <div>
                 <div className="text-sm text-gray-600">Numéro de téléphone</div>
@@ -249,7 +249,7 @@ export default function TechnicienSupProfile() {
           <div className="p-6 pt-0 flex flex-col space-y-3">
             <Button
               onClick={handleEditProfile}
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+              className="w-full bg-green-600 hover:bg-green-700 text-white"
             >
               <Edit className="h-4 w-4 mr-2" />
               Modifier le profil

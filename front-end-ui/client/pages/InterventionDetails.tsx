@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
+import TechnicianLayout from "../components/TechnicianLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -16,6 +17,7 @@ import {
   AlertCircle,
   Wrench,
   BarChart3,
+  Bell,
 } from "lucide-react";
 
 interface Intervention {
@@ -43,18 +45,36 @@ export default function InterventionDetails() {
   const [intervention, setIntervention] = useState<Intervention | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [notificationId, setNotificationId] = useState<string | null>(null);
 
   useEffect(() => {
     if (id) {
       loadInterventionDetails(parseInt(id));
     }
-  }, [id]);
+    
+    // Get notification ID from URL params if present
+    const notifId = searchParams.get('notificationId');
+    if (notifId) {
+      setNotificationId(notifId);
+    }
+  }, [id, searchParams]);
 
   const loadInterventionDetails = async (interventionId: number) => {
     try {
       setLoading(true);
       const { InterventionService } = await import("../services/interventionService");
       const data = await InterventionService.getIntervention(interventionId);
+      
+      // Map the status properly based on the API response
+      let status = "En cours";
+      if (data.status) {
+        status = data.status;
+      } else if (data.valid === true) {
+        status = "Validée";
+      } else if (data.valid === false) {
+        status = "Rejetée";
+      }
+      
       const normalized: Intervention = {
         id: data.id,
         type: data.type_nom || data.type_tache || "Intervention",
@@ -63,8 +83,8 @@ export default function InterventionDetails() {
         serre_nom: data.serre_nom || "",
         domaine_nom: data.domaine_nom || "",
         bilan_trimestre: "",
-        statut: data.status || (data.valid ? "Validée" : "En cours"),
-        actions: data.valid ? "Validée" : "",
+        statut: status,
+        actions: data.valid === true ? "Validée" : data.valid === false ? "Rejetée" : "",
         date_creation: data.created_at || "",
         date_modification: data.updated_at || "",
         technicien: data.technician_name,
@@ -90,6 +110,10 @@ export default function InterventionDetails() {
         return { label: status, color: "bg-blue-100 text-blue-800 border-blue-300" };
       case "en attente":
         return { label: status, color: "bg-gray-100 text-gray-800 border-gray-300" };
+      case "validée":
+        return { label: status, color: "bg-green-100 text-green-800 border-green-300" };
+      case "rejetée":
+        return { label: status, color: "bg-red-100 text-red-800 border-red-300" };
       default:
         return { label: status, color: "bg-gray-100 text-gray-800 border-gray-300" };
     }
@@ -140,10 +164,37 @@ export default function InterventionDetails() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <TechnicianLayout>
       <div className="max-w-4xl mx-auto px-4 py-6">
         {/* Header */}
         <div className="mb-6">
+          {/* Notification Banner */}
+          {notificationId && (
+            <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-blue-100 rounded-lg">
+                  <Bell className="h-5 w-5 text-blue-600" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-sm font-medium text-blue-900">
+                    Notification d'intervention
+                  </h3>
+                  <p className="text-sm text-blue-700">
+                    Vous consultez cette intervention suite à une notification de votre superviseur
+                  </p>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => navigate('/technician/notifications')}
+                  className="text-blue-600 hover:text-blue-700 hover:bg-blue-100"
+                >
+                  Voir toutes les notifications
+                </Button>
+              </div>
+            </div>
+          )}
+          
           <Button
             onClick={() => navigate(-1)}
             variant="ghost"
@@ -170,6 +221,14 @@ export default function InterventionDetails() {
               >
                 {getStatusBadge(intervention.statut).label}
               </Badge>
+              {intervention.actions && (
+                <Badge
+                  variant="outline"
+                  className={intervention.actions === "Validée" ? "bg-green-100 text-green-800 border-green-300" : "bg-red-100 text-red-800 border-red-300"}
+                >
+                  {intervention.actions}
+                </Badge>
+              )}
               <Badge
                 variant="outline"
                 className={getPriorityBadge(intervention.priorite).color}
@@ -219,6 +278,61 @@ export default function InterventionDetails() {
                 </div>
               </CardContent>
             </Card>
+
+            {/* Supervisor Decision Information */}
+            {intervention.actions && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <CheckCircle className="h-5 w-5 text-green-600" />
+                    Décision du superviseur
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-sm font-medium text-gray-500">Statut de la demande</label>
+                      <p className="text-gray-900 font-medium">
+                        {intervention.actions === "Validée" ? "✅ Demande approuvée" : "❌ Demande rejetée"}
+                      </p>
+                    </div>
+                    
+                    <div>
+                      <label className="text-sm font-medium text-gray-500">Date de la décision</label>
+                      <p className="text-gray-900">
+                        {intervention.date_modification ? 
+                          new Date(intervention.date_modification).toLocaleDateString("fr-FR", {
+                            day: "2-digit",
+                            month: "2-digit",
+                            year: "numeric",
+                            hour: "2-digit",
+                            minute: "2-digit"
+                          }) : "Non disponible"
+                        }
+                      </p>
+                    </div>
+                  </div>
+                  
+                  {intervention.actions === "Validée" && (
+                    <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
+                      <p className="text-sm text-green-800">
+                        <strong>Votre demande d'intervention a été validée par votre superviseur.</strong> 
+                        Vous pouvez maintenant procéder à l'exécution de cette intervention.
+                      </p>
+                    </div>
+                  )}
+                  
+                  {intervention.actions !== "Validée" && (
+                    <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
+                      <p className="text-sm text-red-800">
+                        <strong>Votre demande d'intervention a été rejetée par votre superviseur.</strong> 
+                        Veuillez contacter votre superviseur pour plus de détails ou soumettre une nouvelle demande.
+                      </p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
 
             {/* Serre and Domain Information */}
             <Card>
@@ -287,6 +401,23 @@ export default function InterventionDetails() {
                       </p>
                     </div>
                   </div>
+                  
+                  {/* Supervisor Decision Timeline */}
+                  {intervention.actions && (
+                    <div className="flex items-start gap-3">
+                      <div className={`w-3 h-3 rounded-full mt-2 ${
+                        intervention.actions === "Validée" ? "bg-green-500" : "bg-red-500"
+                      }`}></div>
+                      <div>
+                        <p className="text-sm font-medium text-gray-900">
+                          {intervention.actions === "Validée" ? "Validation par le superviseur" : "Rejet par le superviseur"}
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          {new Date(intervention.date_modification).toLocaleDateString("fr-FR")}
+                        </p>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -295,30 +426,63 @@ export default function InterventionDetails() {
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <BarChart3 className="h-5 w-5 text-orange-600" />
+                  <BarChart3 className="h-5 w-4 text-orange-600" />
                   Actions rapides
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
-                <Button className="w-full" variant="outline">
-                  <FileText className="h-4 w-4 mr-2" />
-                  Créer un rapport
-                </Button>
-                
-                <Button className="w-full" variant="outline">
-                  <CheckCircle className="h-4 w-4 mr-2" />
-                  Marquer comme terminé
-                </Button>
-                
-                <Button className="w-full" variant="outline">
-                  <Wrench className="h-4 w-4 mr-2" />
-                  Modifier l'intervention
-                </Button>
+                {intervention.actions === "Validée" ? (
+                  <>
+                    <Button className="w-full" variant="outline">
+                      <FileText className="h-4 w-4 mr-2" />
+                      Créer un rapport
+                    </Button>
+                    
+                    <Button className="w-full" variant="outline">
+                      <CheckCircle className="h-4 w-4 mr-2" />
+                      Marquer comme terminé
+                    </Button>
+                    
+                    <Button className="w-full" variant="outline">
+                      <Wrench className="h-4 w-4 mr-2" />
+                      Commencer l'intervention
+                    </Button>
+                  </>
+                ) : intervention.actions && intervention.actions !== "Validée" ? (
+                  <>
+                    <Button className="w-full" variant="outline">
+                      <Wrench className="h-4 w-4 mr-2" />
+                      Modifier et resoumettre
+                    </Button>
+                    
+                    <Button className="w-full" variant="outline">
+                      <FileText className="h-4 w-4 mr-2" />
+                      Contacter le superviseur
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    <Button className="w-full" variant="outline">
+                      <FileText className="h-4 w-4 mr-2" />
+                      Créer un rapport
+                    </Button>
+                    
+                    <Button className="w-full" variant="outline">
+                      <CheckCircle className="h-4 w-4 mr-2" />
+                      Marquer comme terminé
+                    </Button>
+                    
+                    <Button className="w-full" variant="outline">
+                      <Wrench className="h-4 w-4 mr-2" />
+                      Modifier l'intervention
+                    </Button>
+                  </>
+                )}
               </CardContent>
             </Card>
           </div>
         </div>
       </div>
-    </div>
+    </TechnicianLayout>
   );
 }
