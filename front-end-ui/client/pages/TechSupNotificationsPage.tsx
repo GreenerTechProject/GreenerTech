@@ -150,7 +150,7 @@ export default function TechSupNotificationsPage() {
     if (type === 'intervention_creee') return "bg-yellow-100 text-yellow-800";
     if (type === 'intervention_validee') return "bg-green-100 text-green-800";
     if (type === 'compte_technicien') return "bg-blue-100 text-blue-800";
-    if (type === 'compte_valide') return "bg-purple-100 text-purple-800";
+    if (type === 'compte_valide') return "bg-green-100 text-green-800";
     return "bg-gray-100 text-gray-800";
   };
 

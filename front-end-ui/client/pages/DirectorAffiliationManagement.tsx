@@ -213,7 +213,7 @@ export default function DirectorAffiliationManagement() {
   const getRoleBadge = (role: string) => {
     const roleColors = {
       'technicien': 'bg-blue-100 text-blue-800 border-blue-200',
-      'technicien_superieur': 'bg-purple-100 text-purple-800 border-purple-200'
+              'technicien_superieur': 'bg-green-100 text-green-800 border-green-200'
     };
     
     const roleLabels = {

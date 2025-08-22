@@ -1,11 +1,10 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
-import TechnicianSidebar from "./TechnicianSidebar";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Home, Map, ChevronDown, User, LogOut, Sun, Moon, Bell, AlertTriangle, AlertCircle, AlertOctagon, CheckCircle, BarChart3, Clock, Wrench, ClipboardList, Users } from "lucide-react";
+import { Home, Map, ChevronDown, User, LogOut, Sun, Moon, Bell, AlertTriangle, AlertCircle, AlertOctagon, CheckCircle, BarChart3, Clock, Wrench, ClipboardList, Users, Menu, X } from "lucide-react";
 import { notificationService, NotificationCounts, Notification } from "../services/notificationService";
 import { AlertService } from "../services/alertService";
 
@@ -13,6 +12,8 @@ type UserRole = "technicien" | "technicien_sup";
 
 interface TechHeaderProps {
   role: UserRole;
+  onMenuClick?: () => void;
+  isSidebarOpen?: boolean;
 }
 
 interface AlertCounts {
@@ -22,7 +23,7 @@ interface AlertCounts {
   low: number;       // status_alert = 0 (low)
 }
 
-const TechHeader: React.FC<TechHeaderProps> = ({ role }) => {
+const TechHeader: React.FC<TechHeaderProps> = ({ role, onMenuClick, isSidebarOpen }) => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [isDarkMode, setIsDarkMode] = React.useState(false);
@@ -204,18 +205,33 @@ const TechHeader: React.FC<TechHeaderProps> = ({ role }) => {
   };
 
   return (
-    <header className="bg-white border-b shadow-sm sticky top-0 z-40">
+    <header className="bg-white border-b shadow-sm sticky top-0 z-10">
       <div className="max-w-screen-2xl mx-auto px-3 sm:px-4 lg:px-6">
         {/* Mobile-first responsive grid */}
-        <div className="grid grid-cols-3 items-center py-2 sm:py-3 min-h-[44px] sm:min-h-[48px]">
-          {/* Left: Hamburger / Navigation + Logo */}
+        <div className="grid grid-cols-3 items-center py-2 sm:py-3 min-h-[44px] sm:min-h-[48px] md:min-h-[52px] lg:min-h-[56px]">
+          {/* Left: Logo */}
           <div className="justify-self-start flex items-center gap-2">
-            <TechnicianSidebar userRole={role} />
+            {/* Hamburger menu button for mobile */}
+            {onMenuClick && (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={onMenuClick}
+                className="lg:hidden h-8 w-8 sm:h-9 sm:w-9 hover:bg-gray-100"
+                title="Ouvrir le menu"
+              >
+                {isSidebarOpen ? (
+                  <X className="h-5 w-5 text-gray-700" />
+                ) : (
+                  <Menu className="h-5 w-5 text-gray-700" />
+                )}
+              </Button>
+            )}
             {/* Mobile: leaf logo; Desktop: text logo */}
             <img 
               src="/GreenerTech-logo2.jpg" 
               alt="GreenerTech"
-              className="h-8 w-auto object-contain cursor-pointer sm:hidden"
+              className="h-12 w-auto object-contain cursor-pointer sm:hidden"
               title="Accueil"
               role="button"
               tabIndex={0}
@@ -225,7 +241,7 @@ const TechHeader: React.FC<TechHeaderProps> = ({ role }) => {
             <img 
               src="/GreenerTech-logo3.jpg" 
               alt="GreenerTech"
-              className="h-8 w-auto object-contain cursor-pointer hidden sm:block"
+              className="h-12 w-auto object-contain cursor-pointer hidden sm:block"
               title="Accueil"
               role="button"
               tabIndex={0}

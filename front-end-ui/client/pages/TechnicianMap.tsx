@@ -685,7 +685,7 @@ export default function TechnicianMap() {
       case "growing":
         return "bg-greener-100 text-greener-800 border-greener-300";
       case "ready":
-        return "bg-purple-100 text-purple-800 border-purple-300";
+        return "bg-green-100 text-green-800 border-green-300";
       case "harvested":
         return "bg-orange-100 text-orange-800 border-orange-300";
       default:

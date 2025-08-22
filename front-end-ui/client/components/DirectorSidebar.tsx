@@ -115,32 +115,21 @@ export default function DirectorSidebar({ isOpen, setIsOpen }: DirectorSidebarPr
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200 flex-shrink-0">
           <div className="flex items-center space-x-3">
-            <div className={cn("block", isOpen ? "lg:block" : "lg:hidden") }>
-              <h1 className="font-semibold text-gray-900">Directeur</h1>
-              <p className="text-sm text-gray-500">Gestion complète</p>
-            </div>
-          </div>
-          <div className="flex items-center space-x-2">
-            {/* Mobile expand button for small screens */}
+            {/* Hamburger menu button */}
             <Button
               variant="ghost"
               size="sm"
               onClick={() => setIsOpen(!isOpen)}
-              className="lg:hidden"
-              title="Toggle sidebar"
-            >
-              {isOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-            </Button>
-            {/* Desktop expand/collapse button */}
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setIsOpen(!isOpen)}
-              className="hidden lg:flex"
+              className="p-2"
               title={isOpen ? "Réduire la barre latérale" : "Agrandir la barre latérale"}
             >
               {isOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
             </Button>
+            
+            <div className={cn("block", isOpen ? "lg:block" : "lg:hidden") }>
+              <h1 className="font-semibold text-gray-900">Directeur</h1>
+              <p className="text-sm text-gray-500">Gestion complète</p>
+            </div>
           </div>
         </div>
 

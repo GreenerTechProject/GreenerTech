@@ -112,25 +112,12 @@ export default function TechnicianSidebar({
 
   return (
     <>
-      {/* Menu Button - match Director sidebar toggle */}
-      <Button
-        onClick={() => setIsOpen(!isOpen)}
-        className={cn(
-          "h-10 w-10 rounded-lg transition-all duration-300",
-          "bg-white hover:bg-gray-100 text-gray-700 border border-gray-200 shadow-sm",
-          isOpen && "bg-gray-100",
-          "lg:h-11 lg:w-11 xl:h-12 xl:w-12",
-        )}
-        size="sm"
-        title="Ouvrir le menu"
-      >
-        {isOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-      </Button>
+    
 
       {/* Backdrop */}
       {isOpen && (
         <div
-          className="fixed inset-0 bg-black/50 z-[68] lg:hidden"
+          className="fixed inset-0 bg-black/50 z-40 lg:hidden"
           onClick={() => setIsOpen(false)}
         />
       )}
@@ -138,8 +125,8 @@ export default function TechnicianSidebar({
       {/* Sidebar (Director style) */}
       <div
         className={cn(
-          "fixed left-0 top-0 z-[70] h-[100dvh] bg-white border-r border-gray-200 shadow-lg transform transition-all duration-300 ease-in-out overflow-hidden",
-          "lg:translate-x-0 lg:fixed lg:top-0 lg:z-[65] lg:h-[100dvh]",
+          "fixed left-0 top-0 z-50 h-[100dvh] bg-white border-r border-gray-200 shadow-lg transform transition-all duration-300 ease-in-out overflow-hidden",
+          "lg:translate-x-0 lg:sticky lg:top-0 lg:z-10 lg:h-[100dvh]",
           isOpen ? "translate-x-0" : "-translate-x-full",
           // Mobile width
           "w-80",
@@ -153,23 +140,22 @@ export default function TechnicianSidebar({
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200 flex-shrink-0">
           <div className="flex items-center space-x-3">
-            <div className="w-8 h-8 bg-greener rounded-lg flex items-center justify-center">
-              <Home className="h-5 w-5 text-white" />
-            </div>
+            {/* Hamburger menu button */}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setIsOpen(!isOpen)}
+              className="p-2"
+              title={isOpen ? "Réduire la barre latérale" : "Agrandir la barre latérale"}
+            >
+              {isOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+            </Button>
+            
             <div className={cn("block", isOpen ? "lg:block" : "lg:hidden") }>
               <h1 className="font-semibold text-gray-900">{isSuperiorTechnician ? "Technicien Supérieur" : "Technicien"}</h1>
               <p className="text-sm text-gray-500">Navigation</p>
             </div>
           </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setIsOpen(!isOpen)}
-            className="lg:hidden"
-            title="Toggle sidebar"
-          >
-            {isOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-          </Button>
         </div>
 
         {/* Navigation */}

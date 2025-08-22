@@ -105,7 +105,7 @@ export default function TechnicienSupProfile() {
       case "technicien":
         return "bg-blue-100 text-blue-800";
       case "technicien_superieur":
-        return "bg-purple-100 text-purple-800";
+        return "bg-green-100 text-green-800";
       case "directeur":
         return "bg-green-100 text-green-800";
       default:
