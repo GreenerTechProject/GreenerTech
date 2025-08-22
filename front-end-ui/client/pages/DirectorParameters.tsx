@@ -11,7 +11,7 @@ export default function DirectorParameters() {
 
   const handleLogout = async () => {
     await logout();
-    navigate("/login");
+    navigate("/");
   };
 
   const handleDeleteAccount = async () => {
@@ -20,7 +20,7 @@ export default function DirectorParameters() {
     try {
       await userService.deleteUser();
       await logout();
-      navigate("/login");
+      navigate("/");
     } catch (e) {
       // Optionally show a toast here
       console.error(e);

@@ -170,7 +170,7 @@ export default function AffiliationRequest() {
         alert(
           `Demande d'affiliation soumise avec succès! ID de demande: ${result.data.requestId}`,
         );
-        navigate("/login");
+        navigate("/");
       }
     } catch (error) {
       // Error is handled by AuthContext

@@ -128,7 +128,7 @@ export default function DirectorProfile() {
   const handleLogout = async () => {
     try {
       await logout();
-      navigate("/login");
+              navigate("/");
     } catch (error) {
       toast({
         title: "Erreur",

@@ -692,7 +692,7 @@ def get_pending_technicians_by_company(current_user):
         print(f"Error in get_pending_technicians_by_company: {str(e)}")
         return jsonify({"success": False, "message": str(e)}), 500
 
-# Update technician information by director
+# Update user information by director (can be any user in the company)
 @token_required
 @role_required('directeur')
 def update_technicien(current_user, id):
@@ -703,12 +703,15 @@ def update_technicien(current_user, id):
         if not user:
             return jsonify({"error": "Utilisateur non trouvé"}), 404
 
-        # Verify the technician belongs to the director's company
+        # Verify the user belongs to the director's company
         if user.id_entreprise != current_user.id_entreprise:
-            return jsonify({"error": "Accès non autorisé à ce technicien"}), 403
+            return jsonify({"error": "Accès non autorisé à cet utilisateur"}), 403
 
-        # Verify the user is a technician
-        if user.role not in ["technicien", "technicien_superieur"]:
+        # Verify the user is a technician (but allow updates for other roles when called from user route)
+        if user.role not in ["technicien", "technicien_superieur"] and current_user.role == "directeur":
+            # Allow directors to update any user in their company
+            pass
+        elif user.role not in ["technicien", "technicien_superieur"]:
             return jsonify({"error": "L'utilisateur n'est pas un technicien"}), 400
 
         # Update allowed fields
@@ -732,11 +735,23 @@ def update_technicien(current_user, id):
         
         if 'email_valide' in data:
             user.email_valide = data['email_valide']
+        
+        if 'id_assigned' in data:
+            # Validate that the assigned supervisor exists and is a technicien_superieur
+            if data['id_assigned'] is not None:
+                supervisor = User.query.get(data['id_assigned'])
+                if not supervisor:
+                    return jsonify({"error": "Superviseur assigné non trouvé"}), 404
+                if supervisor.role != "technicien_superieur":
+                    return jsonify({"error": "L'utilisateur assigné doit être un technicien_superieur"}), 400
+                if supervisor.id_entreprise != current_user.id_entreprise:
+                    return jsonify({"error": "Le superviseur doit appartenir à la même entreprise"}), 403
+            user.id_assigned = data['id_assigned']
 
         db.session.commit()
 
         return jsonify({
-            "message": "Technicien mis à jour avec succès",
+            "message": "Utilisateur mis à jour avec succès",
             "user": user.to_dict()
         }), 200
 
@@ -990,5 +1005,53 @@ def get_supervisors_by_company(current_user, company_id):
         ]
         
         return jsonify({"success": True, "supervisors": data}), 200
+    except Exception as e:
+        return jsonify({"success": False, "message": str(e)}), 400
+
+
+def get_supervisor_by_id(current_user, supervisor_id):
+    """Get a specific supervisor by ID"""
+    try:
+        try:
+            supervisor_id_int = int(supervisor_id)
+        except (ValueError, TypeError):
+            return jsonify({"message": "ID du superviseur invalide"}), 400
+
+        # Get the supervisor
+        supervisor = User.query.get(supervisor_id_int)
+
+        if not supervisor:
+            return jsonify({"message": "Superviseur non trouvé"}), 404
+
+        # Check if supervisor has the correct role
+        if supervisor.role != "technicien_superieur":
+            return jsonify({"message": "Cet utilisateur n'est pas un superviseur"}), 400
+
+        # Check if current user has access to this supervisor's company
+        if current_user.role == 'technicien_superieur' and current_user.id_entreprise != supervisor.id_entreprise:
+            return jsonify({"message": "Non autorisé"}), 403
+
+        if current_user.role == 'directeur' and current_user.id_entreprise != supervisor.id_entreprise:
+            return jsonify({"message": "Non autorisé"}), 403
+
+        # Return supervisor data
+        data = {
+            "id": supervisor.id,
+            "name": supervisor.name,
+            "fullName": supervisor.name,  # fullName for frontend compatibility
+            "email": supervisor.email,
+            "role": supervisor.role,
+            "telephone": supervisor.telephone,
+            "birthday": supervisor.birthday.isoformat() if supervisor.birthday else None,
+            "created_at": supervisor.created_at.isoformat() if supervisor.created_at else None,
+            "updated_at": supervisor.updated_at.isoformat() if supervisor.updated_at else None,
+            "id_assigned": supervisor.id_assigned,
+            "setup_completed": supervisor.setup_completed,
+            "directeur_valide": supervisor.directeur_valide,
+            "email_valide": supervisor.email_valide,
+            "id_entreprise": supervisor.id_entreprise
+        }
+
+        return jsonify({"success": True, "supervisor": data}), 200
     except Exception as e:
         return jsonify({"success": False, "message": str(e)}), 400

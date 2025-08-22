@@ -8,64 +8,7 @@ import { domainService } from "../services/domainService";
 import { serreService } from "../services/serreService";
 import { technicianService } from "../services/technicianService";
 import { guideService } from "../services/guideService";
-
-interface CompanyInfo {
-  nom: string;
-  adresse: string;
-  cie: string;
-  status_juridique: string;
-  email: string;
-}
-
-interface Domain {
-  id: string;
-  name: string;
-  area: number;
-  center: google.maps.LatLng;
-  path: google.maps.LatLng[];
-  serres: Serre[];
-}
-
-interface Serre {
-  id: string;
-  nom: string;
-  surface: number;
-  domainId: string;
-  guideId: string;
-  position: google.maps.LatLng[];
-  center: google.maps.LatLng;
-  guide?: {
-    id: string;
-    nom: string;
-    variete: string;
-    rendement: number;
-    date_debut_saison: Date | string;
-    date_fin_saison: Date | string;
-    irrigationType?: string;
-    notes?: string;
-  };
-}
-
-interface Technician {
-  id: string;
-  fullName: string;
-  email: string;
-  role: "technicien_superieur" | "technicien";
-  assignedSerres: string[];
-  id_assigned?: number | null; // ID of supervisor this technician reports to (for regular technicians)
-}
-
-interface SerreAssignment {
-  serreId: string;
-  supervisorIds: string[];
-}
-
-interface CompletedSetupData {
-  companyInfo: CompanyInfo;
-  domains: Domain[];
-  technicians: Technician[];
-  serreAssignments: SerreAssignment[];
-}
+import { CompletedSetupData, CompanyInfoSetup, DomainSetup, TechnicianSetup } from "@/types/setup";
 
 export default function DirecteurSetup() {
   const { user, updateUser, logout } = useAuth();
@@ -238,7 +181,7 @@ export default function DirecteurSetup() {
       }
 
       // Step 5: Create technicians
-      let createdTechnicians: { id: number; email: string; role: Technician["role"]; assignedSerres: string[]; id_assigned?: number | null }[] = [];
+      let createdTechnicians: { id: number; email: string; role: TechnicianSetup["role"]; assignedSerres: string[]; id_assigned?: string | null }[] = [];
       let technicianIdMap = new Map<string, number>(); // Map temp ID to backend ID
       
       if (setupData.technicians.length > 0) {
@@ -284,7 +227,7 @@ export default function DirecteurSetup() {
           if (tech.id_assigned && typeof tech.id_assigned === 'string') {
             const supervisorBackendId = technicianIdMap.get(tech.id_assigned);
             if (supervisorBackendId) {
-              tech.id_assigned = supervisorBackendId;
+              tech.id_assigned = supervisorBackendId.toString(); // Convert number to string
               console.log(`Updated ${tech.email} supervisor assignment from temp ID ${tech.id_assigned} to backend ID ${supervisorBackendId}`);
             } else {
               console.warn(`Could not find backend ID for supervisor temp ID ${tech.id_assigned} for ${tech.email}`);
@@ -303,14 +246,13 @@ export default function DirecteurSetup() {
           if (!tech.id_assigned) {
             try {
               console.log(`Resetting ${tech.email} (${tech.role}) to have no supervisor initially...`);
-              const response = await fetch(`${window.location.protocol}//${window.location.hostname}:5000/api/user`, {
+              const response = await fetch(`${window.location.protocol}//${window.location.hostname}:5000/api/user/${tech.id}`, {
                 method: 'PUT',
                 headers: {
                   'Content-Type': 'application/json',
                   Authorization: `Bearer ${localStorage.getItem('auth_token') || ''}`,
                 },
                 body: JSON.stringify({ 
-                  id: tech.id,
                   id_assigned: null 
                 }),
               });
@@ -400,7 +342,7 @@ export default function DirecteurSetup() {
           console.log(`Processing technician ${tech.email} with backend id_assigned: ${tech.id_assigned}`);
           
           // Find the supervisor in the created technicians by the backend ID
-          const supervisor = createdTechnicians.find(t => t.id === tech.id_assigned);
+          const supervisor = createdTechnicians.find(t => t.id === parseInt(tech.id_assigned!, 10));
           console.log(`Found supervisor in created technicians:`, supervisor);
           
           if (supervisor && supervisor.role === "technicien_superieur") {
@@ -408,14 +350,13 @@ export default function DirecteurSetup() {
               console.log(`Applying hierarchy: ${tech.email} (${tech.id}) → ${supervisor.email} (${supervisor.id})`);
               
               // Update the technician's supervisor assignment in the backend
-              const response = await fetch(`${window.location.protocol}//${window.location.hostname}:5000/api/user`, {
+              const response = await fetch(`${window.location.protocol}//${window.location.hostname}:5000/api/user/${tech.id}`, {
                 method: 'PUT',
                 headers: {
                   'Content-Type': 'application/json',
                   Authorization: `Bearer ${localStorage.getItem('auth_token') || ''}`,
                 },
                 body: JSON.stringify({ 
-                  id: tech.id,
                   id_assigned: supervisor.id 
                 }),
               });
@@ -479,7 +420,7 @@ export default function DirecteurSetup() {
             // Check if the assignment is correct
             if (tech.id_assigned) {
               // Find the supervisor by looking up the technician with the matching backend ID
-              const expectedSupervisor = createdTechnicians.find(t => t.id === tech.id_assigned);
+              const expectedSupervisor = createdTechnicians.find(t => t.id === parseInt(tech.id_assigned!, 10));
               if (expectedSupervisor && userData.id_assigned !== expectedSupervisor.id) {
                 console.error(`❌ Hierarchy mismatch for ${tech.email}! Expected: ${expectedSupervisor.id}, Got: ${userData.id_assigned}`);
               } else if (expectedSupervisor) {
@@ -510,7 +451,7 @@ export default function DirecteurSetup() {
       if (techniciansWithSupervisors.length > 0) {
         console.log("Technicians with supervisors:");
         techniciansWithSupervisors.forEach(tech => {
-          const supervisor = createdTechnicians.find(t => t.id === tech.id_assigned);
+          const supervisor = createdTechnicians.find(t => t.id === parseInt(tech.id_assigned!, 10));
           console.log(`  ${tech.email} → ${supervisor?.email || 'Unknown'}`);
         });
       }

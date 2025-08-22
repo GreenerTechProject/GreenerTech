@@ -153,7 +153,7 @@ export default function VerifyEmail() {
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
             {(status === "success" || status === "missing") && (
               <button
-                onClick={() => navigate("/login")}
+                onClick={() => navigate("/")}
                 className="px-6 py-3 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg transition-colors"
               >
                 Go to Login

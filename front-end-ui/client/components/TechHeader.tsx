@@ -4,9 +4,8 @@ import { useAuth } from "../contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Home, Map, ChevronDown, User, LogOut, Sun, Moon, Bell, AlertTriangle, AlertCircle, AlertOctagon, CheckCircle, BarChart3, Clock, Wrench, ClipboardList, Users, Menu, X } from "lucide-react";
+import { Home, Map, ChevronDown, User, LogOut, Sun, Moon, Bell, CheckCircle, BarChart3, Clock, Wrench, ClipboardList, Users, Menu, X } from "lucide-react";
 import { notificationService, NotificationCounts, Notification } from "../services/notificationService";
-import { AlertService } from "../services/alertService";
 
 type UserRole = "technicien" | "technicien_sup";
 
@@ -14,13 +13,6 @@ interface TechHeaderProps {
   role: UserRole;
   onMenuClick?: () => void;
   isSidebarOpen?: boolean;
-}
-
-interface AlertCounts {
-  total: number;
-  high: number;      // status_alert = 2 (very dangerous)
-  medium: number;    // status_alert = 1 (medium)
-  low: number;       // status_alert = 0 (low)
 }
 
 const TechHeader: React.FC<TechHeaderProps> = ({ role, onMenuClick, isSidebarOpen }) => {
@@ -41,13 +33,6 @@ const TechHeader: React.FC<TechHeaderProps> = ({ role, onMenuClick, isSidebarOpe
   });
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [notificationsLoading, setNotificationsLoading] = useState(false);
-  const [alertCounts, setAlertCounts] = useState<AlertCounts>({
-    total: 0,
-    high: 0,
-    medium: 0,
-    low: 0
-  });
-  const [loading, setLoading] = useState(true);
 
   const initials = (user?.name || user?.email || "U")
     .split(" ")
@@ -56,17 +41,15 @@ const TechHeader: React.FC<TechHeaderProps> = ({ role, onMenuClick, isSidebarOpe
     .slice(0, 2)
     .toUpperCase();
 
-  // Fetch notification counts and alert counts on component mount and when user changes
+  // Fetch notification counts on component mount and when user changes
   useEffect(() => {
     if (user) {
       fetchNotificationCounts();
       fetchNotifications();
-      fetchAlertCounts();
       // Set up interval to refresh data every 30 seconds
       const interval = setInterval(() => {
         fetchNotificationCounts();
         fetchNotifications();
-        fetchAlertCounts();
       }, 30000);
       return () => clearInterval(interval);
     }
@@ -95,38 +78,12 @@ const TechHeader: React.FC<TechHeaderProps> = ({ role, onMenuClick, isSidebarOpe
     }
   };
 
-  const fetchAlertCounts = async () => {
-    try {
-      // Get alerts from user's assigned serres
-      const alerts = await AlertService.getAlertsByAssignedSerres();
-      
-      // Count alerts by status
-      const counts: AlertCounts = {
-        total: alerts.length,
-        high: alerts.filter(a => a.status_alert === 2).length,
-        medium: alerts.filter(a => a.status_alert === 1).length,
-        low: alerts.filter(a => a.status_alert === 0).length
-      };
-      
-      setAlertCounts(counts);
-    } catch (error) {
-      console.error('Error fetching alert counts:', error);
-      setAlertCounts({ total: 0, high: 0, medium: 0, low: 0 });
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const handleProfile = () => {
     navigate(role === "technicien_sup" ? "/technicien-sup/profile" : "/technician/profile");
   };
 
   const handleNotifications = () => {
     navigate(role === "technicien_sup" ? "/technicien-sup/notifications" : "/technician/notifications");
-  };
-
-  const handleAlerts = () => {
-    navigate(role === "technicien_sup" ? "/technicien-sup/alerts" : "/technician/alerts");
   };
 
   const handleNotificationClick = async (notification: Notification) => {
@@ -250,78 +207,20 @@ const TechHeader: React.FC<TechHeaderProps> = ({ role, onMenuClick, isSidebarOpe
             />
           </div>
 
-          {/* Center: Home and Map icons */}
-          <div className="justify-self-center flex items-center gap-3 px-2">
-            <div
-              className="h-9 w-9 rounded-xl bg-greener-600 flex items-center justify-center shadow-sm cursor-pointer hover:bg-greener-700 transition-colors duration-200 active:scale-95 flex-shrink-0"
-              onClick={() => navigate(role === "technicien_sup" ? "/technicien-sup/home" : "/technician/dashboard")}
-              title="Accueil"
-            >
-              <Home className="h-5 w-5 text-white" />
-            </div>
-            <div
-              className="cursor-pointer hover:scale-110 transition-transform duration-200 active:scale-95 flex-shrink-0"
-              onClick={() => navigate(role === "technicien_sup" ? "/technicien-sup/map" : "/technician/map")}
-              title="Carte"
-            >
-              <Map className="h-5 w-5 text-greener-700" />
-            </div>
+          {/* Center: Empty - removed navigation icons */}
+          <div className="justify-self-center">
           </div>
 
-          {/* Right: Alerts, Notifications and User dropdown */}
+          {/* Right: Notifications and User dropdown */}
           <div className="justify-self-end flex items-center gap-1 sm:gap-2 flex-shrink-0">
-            {/* Alert Triangle Icon - for REAL alerts from assigned serres */}
-            <div className="relative group">
-              <div 
-                className="h-8 w-8 sm:h-9 sm:w-9 rounded-xl bg-orange-100 flex items-center justify-center shadow-sm cursor-pointer hover:bg-orange-200 transition-colors duration-200 active:scale-95 border border-orange-200 flex-shrink-0"
-                onClick={handleAlerts}
-                title="Alertes des serres assignées"
-              >
-                <AlertTriangle className="h-4 w-4 sm:h-5 sm:w-5 text-orange-600" />
-                {/* Alert Badge - Real alert data */}
-                {alertCounts.total > 0 && (
-                  <div className="absolute -top-1 -right-1 w-3 h-3 sm:w-4 sm:h-4 bg-orange-500 text-white text-xs rounded-full flex items-center justify-center">
-                    <span className="text-xs sm:text-xs">{alertCounts.total}</span>
-                  </div>
-                )}
-              </div>
-              
-              {/* Tooltip below the Alert icon - Real alert data */}
-              <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
-                <div className="text-center">
-                  <div className="font-medium mb-1">Alertes des Serres</div>
-                  <div className="space-y-1 text-gray-300">
-                    <div className="flex items-center justify-center gap-2">
-                      <AlertOctagon className="h-3 w-3 text-red-400" />
-                      <span>{alertCounts.high} alerte(s) critique(s)</span>
-                    </div>
-                    <div className="flex items-center justify-center gap-2">
-                      <AlertCircle className="h-3 w-3 text-yellow-400" />
-                      <span>{alertCounts.medium} alerte(s) moyenne(s)</span>
-                    </div>
-                    <div className="flex items-center justify-center gap-2">
-                      <CheckCircle className="h-3 w-3 text-green-400" />
-                      <span>{alertCounts.low} alerte(s) faible(s)</span>
-                    </div>
-                    <div className="border-t border-gray-600 pt-1 mt-1 flex items-center justify-center gap-2">
-                      <BarChart3 className="h-3 w-3 text-greener-500" />
-                      <span>Total: {alertCounts.total} alerte(s)</span>
-                    </div>
-                  </div>
-                </div>
-                {/* Arrow pointing up to the Alert icon */}
-                <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900"></div>
-              </div>
-            </div>
-
             {/* Notification Bell Icon - for intervention requests */}
             <div className="relative group">
               <div 
-                className="h-8 w-8 sm:h-9 sm:w-9 rounded-xl bg-greener-100 flex items-center justify-center shadow-sm cursor-pointer hover:bg-greener-200 transition-colors duration-200 active:scale-95 border border-greener-200 flex-shrink-0"
+                className="h-8 w-8 sm:h-9 sm:w-9 flex items-center justify-center cursor-pointer hover:scale-110 transition-transform duration-200 active:scale-95 flex-shrink-0"
                 onClick={handleNotifications}
                 title="Demandes d'intervention"
               >
-                <Bell className="h-4 w-4 sm:h-5 sm:w-5 text-greener-700" />
+                <Bell className="h-5 w-6 sm:h-6 sm:w-6 text-black" />
                 {/* Notification Badge */}
                 {notificationCounts.non_vue > 0 && (
                   <div className="absolute -top-1 -right-1 w-3 h-3 sm:w-4 sm:h-4 bg-greener-600 text-white text-xs rounded-full flex items-center justify-center">

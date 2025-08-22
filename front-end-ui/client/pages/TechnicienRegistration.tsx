@@ -633,7 +633,7 @@ export default function TechnicienRegistration() {
             <p className="text-sm text-gray-600">
               Déjà membre ?{" "}
               <button
-                onClick={() => navigate("/login")}
+                onClick={() => navigate("/")}
                 className="text-[#2E7D32] hover:text-[#276A2B] transition-colors"
               >
                 Se connecter

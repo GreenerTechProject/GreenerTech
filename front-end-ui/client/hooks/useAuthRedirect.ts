@@ -33,7 +33,7 @@ export const useAuthRedirect = (redirectTo: string = "/dashboard") => {
 /**
  * Hook to require authentication and redirect if not authenticated
  */
-export const useRequireAuth = (redirectTo: string = "/login") => {
+export const useRequireAuth = (redirectTo: string = "/") => {
   const { isAuthenticated, isLoading, user } = useAuth();
   const navigate = useNavigate();
 

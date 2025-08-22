@@ -91,19 +91,12 @@ export default function TechnicienSupInterventions() {
     loadData();
   }, []);
 
-  // Load interventions when technicians are available
+  // Load interventions after initial data is loaded (technicians and serres)
   useEffect(() => {
-    if (technicians.length > 0 && !loading) {
+    if (technicians.length > 0 && assignedSerres.length > 0 && !loading) {
       loadInterventions();
     }
-  }, [technicians, loading]);
-
-  // Reload technicians when interventions change to prioritize those with interventions in assigned serres
-  useEffect(() => {
-    if (interventions.length > 0 && assignedSerres.length > 0) {
-      loadTechnicians();
-    }
-  }, [interventions, assignedSerres]);
+  }, [technicians, assignedSerres, loading]);
 
   // Reset filtered results when interventions change (e.g., after refresh)
   useEffect(() => {
@@ -141,12 +134,16 @@ export default function TechnicienSupInterventions() {
   }, [isSortMenuOpen, isStatusFilterOpen, isTechnicianFilterOpen]);
 
   const loadData = async () => {
+    if (loading) return; // Prevent duplicate calls
+
     try {
       setLoading(true);
-      // Load technicians first, then interventions to ensure proper mapping
-      await loadTechnicians();
-      await loadAssignedSerres();
-      // loadInterventions will be called by useEffect when technicians are available
+      // Load technicians and serres in parallel for better performance
+      await Promise.all([
+        loadTechnicians(),
+        loadAssignedSerres()
+      ]);
+      // loadInterventions will be called by useEffect when both are available
     } catch (error) {
       console.error("Error loading data:", error);
       toast({
@@ -218,61 +215,41 @@ export default function TechnicienSupInterventions() {
   };
 
   const loadInterventions = async () => {
+    if (loading) return; // Prevent duplicate calls
+
     try {
+      setLoading(true);
       // Use the dedicated service for assigned serres - more efficient!
       const interventions = await InterventionService.getInterventionsByAssignedSerres();
-      
+
+      // Create a map of technicians for faster lookup
+      const technicianMap = new Map(technicians.map(tech => [Number(tech.id), tech]));
+
       // Add technician names to interventions
-      console.log(`=== LOADING INTERVENTIONS DEBUG ===`);
-      console.log(`Total interventions loaded:`, interventions.length);
-      console.log(`Available technicians:`, technicians.map(t => ({ id: t.id, name: t.name })));
-      
-      const interventionsWithTechnicianNames = await Promise.all(interventions.map(async (intervention) => {
+      const interventionsWithTechnicianNames = interventions.map((intervention) => {
         // Ensure both IDs are numbers for proper comparison
         const interventionUserId = Number(intervention.id_user);
-        let technician = technicians.find(tech => Number(tech.id) === interventionUserId);
-        
-        console.log(`Mapping intervention ${intervention.id}:`, {
-          intervention_id_user: intervention.id_user,
-          interventionUserId: interventionUserId,
-          found_technician: technician,
-          technician_name: technician?.name
-        });
-        
-        // If technician not found in local array, try to fetch individually
-        if (!technician && interventionUserId) {
-          try {
-            technician = await userService.getUserById(interventionUserId);
-            console.log(`Fetched individual technician for ${interventionUserId}:`, technician);
-          } catch (error) {
-            console.warn(`Could not fetch technician ${interventionUserId}:`, error);
-          }
-        }
-        
-        // Temporary fallback for testing - show a more descriptive name
+        let technician = technicianMap.get(interventionUserId);
+
+        // Determine technician name
         let technicianName = technician?.name;
         if (!technicianName) {
-          if (user?.id && Number(interventionUserId) === Number(user.id)) {
+          if (user?.id && interventionUserId === Number(user.id)) {
             technicianName = "Vous-même";
           } else {
             technicianName = `Technicien #${interventionUserId}`;
           }
         }
-        
-        console.log(`Final technician name for intervention ${intervention.id}:`, technicianName);
-        
+
         return {
           ...intervention,
           technician_name: technicianName
         };
-      }));
-      
-      console.log(`Final interventions with technician names:`, interventionsWithTechnicianNames.slice(0, 3));
-      console.log(`=== END LOADING INTERVENTIONS DEBUG ===`);
-      
+      });
+
       setInterventions(interventionsWithTechnicianNames);
       setFilteredInterventions(interventionsWithTechnicianNames);
-      
+
       if (sortBy) {
         applySorting(sortBy, sortOrder);
       }
@@ -280,6 +257,8 @@ export default function TechnicienSupInterventions() {
       console.error("Error loading interventions:", error);
       setInterventions([]);
       setFilteredInterventions([]);
+    } finally {
+      setLoading(false);
     }
   };
 

@@ -10,11 +10,11 @@ export interface EtatBilan {
   nombre_tomates_non_maladies: number;
   nombre_malade1: number;
   nombre_malade2: number;
-  temperature?: number;
-  humidite?: number;
-  luminosite?: number;
-  co2?: number;
-  rendement?: number;
+  temperature?: number | null;
+  humidite?: number | null;
+  luminosite?: number | null;
+  co2?: number | null;
+  rendement?: number | null;
   date: string;
 }
 

@@ -102,8 +102,8 @@ export default function DirectorSidebar({ isOpen, setIsOpen }: DirectorSidebarPr
 
       {/* Sidebar */}
       <div className={cn(
-        "fixed left-0 top-0 z-50 h-[100dvh] bg-white border-r border-gray-200 shadow-lg transform transition-all duration-300 ease-in-out overflow-hidden",
-        "lg:translate-x-0 lg:sticky lg:top-0 lg:z-10 lg:h-[100dvh]",
+        "fixed left-0 top-0 z-50 h-screen bg-white border-r border-gray-200 shadow-lg transform transition-all duration-300 ease-in-out overflow-hidden",
+        "lg:translate-x-0 lg:sticky lg:top-0 lg:z-10 lg:h-screen",
         isOpen ? "translate-x-0" : "-translate-x-full",
         // Mobile width
         "w-80",
@@ -111,7 +111,7 @@ export default function DirectorSidebar({ isOpen, setIsOpen }: DirectorSidebarPr
         isOpen
           ? "lg:w-64 lg:min-w-64 lg:max-w-64 xl:w-64 xl:min-w-64 xl:max-w-64 2xl:w-80 2xl:min-w-80 2xl:max-w-80"
           : "lg:w-20 lg:min-w-20 lg:max-w-20 xl:w-20 xl:min-w-20 xl:max-w-20 2xl:w-20 2xl:min-w-20 2xl:max-w-20",
-        "flex flex-col"
+        "flex flex-col h-full"
       )}>
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200 flex-shrink-0">
@@ -135,7 +135,7 @@ export default function DirectorSidebar({ isOpen, setIsOpen }: DirectorSidebarPr
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
+        <nav className="flex-1 p-4 space-y-2 overflow-y-auto min-h-0">
           {navigationItems.map((item) => {
             const Icon = item.icon;
             const active = isActive(item.href);

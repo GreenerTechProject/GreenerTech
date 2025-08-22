@@ -630,17 +630,8 @@ export default function TechnicianMap() {
   ) => {
     map.panTo(location);
 
-    const currentZoom = map.getZoom() || 13;
-    let zoom = currentZoom;
-
-    const zoomInterval = setInterval(() => {
-      if (zoom < targetZoom) {
-        zoom += 1;
-        map.setZoom(zoom);
-      } else {
-        clearInterval(zoomInterval);
-      }
-    }, 150);
+    // Set zoom directly without interval to avoid constant re-renders
+    map.setZoom(targetZoom);
   };
 
   const handleSelectSerre = (serre: Serre) => {

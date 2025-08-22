@@ -313,55 +313,55 @@ export default function Interventions() {
           {/* Stats Section - Highlighted First */}
           <div className="mb-8">
             {/* Charges Summary - Responsive Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-              <div className="bg-white rounded-lg px-4 py-4 shadow-md border border-gray-200 hover:shadow-lg transition-shadow">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-[#B4CC5F]/10 rounded-full">
-                    <Euro className="h-6 w-6 text-[#B4CC5F]" />
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6 mb-6">
+              <div className="bg-white rounded-lg px-3 sm:px-4 py-3 sm:py-4 shadow-md border border-gray-200 hover:shadow-lg transition-shadow">
+                <div className="flex items-center gap-2 sm:gap-3">
+                  <div className="p-2 bg-[#B4CC5F]/10 rounded-full flex-shrink-0">
+                    <Euro className="h-5 w-5 sm:h-6 sm:w-6 text-[#B4CC5F]" />
                   </div>
-                  <div>
-                    <p className="text-sm text-gray-500 font-medium">Total des Charges</p>
-                    <p className="text-xl font-bold text-[#B4CC5F]">
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs sm:text-sm text-gray-500 font-medium truncate">Total des Charges</p>
+                    <p className="text-lg sm:text-xl font-bold text-[#B4CC5F] truncate">
                       {interventions.reduce((sum, intervention) => sum + intervention.total_charges, 0).toFixed(2)} MAD
                     </p>
                   </div>
                 </div>
               </div>
             
-              <div className="bg-white rounded-lg px-4 py-4 shadow-md border border-gray-200 hover:shadow-lg transition-shadow">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-blue-100 rounded-full">
-                    <BarChart3 className="h-6 w-6 text-blue-600" />
+              <div className="bg-white rounded-lg px-3 sm:px-4 py-3 sm:py-4 shadow-md border border-gray-200 hover:shadow-lg transition-shadow">
+                <div className="flex items-center gap-2 sm:gap-3">
+                  <div className="p-2 bg-blue-100 rounded-full flex-shrink-0">
+                    <BarChart3 className="h-5 w-5 sm:h-6 sm:w-6 text-blue-600" />
                   </div>
-                  <div>
-                    <p className="text-sm text-gray-500 font-medium">Interventions</p>
-                    <p className="text-xl font-bold text-blue-600">{interventions.length}</p>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs sm:text-sm text-gray-500 font-medium truncate">Interventions</p>
+                    <p className="text-lg sm:text-xl font-bold text-blue-600 truncate">{interventions.length}</p>
                   </div>
                 </div>
               </div>
-              
-              <div className="bg-white rounded-lg px-4 py-4 shadow-md border border-gray-200 hover:shadow-lg transition-shadow">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-green-100 rounded-full">
-                    <Calendar className="h-6 w-6 text-green-600" />
+
+              <div className="bg-white rounded-lg px-3 sm:px-4 py-3 sm:py-4 shadow-md border border-gray-200 hover:shadow-lg transition-shadow">
+                <div className="flex items-center gap-2 sm:gap-3">
+                  <div className="p-2 bg-green-100 rounded-full flex-shrink-0">
+                    <Calendar className="h-5 w-5 sm:h-6 sm:w-6 text-green-600" />
                   </div>
-                  <div>
-                    <p className="text-sm text-gray-500 font-medium">En Cours</p>
-                    <p className="text-xl font-bold text-green-600">
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs sm:text-sm text-gray-500 font-medium truncate">En Cours</p>
+                    <p className="text-lg sm:text-xl font-bold text-green-600 truncate">
                       {interventions.filter(i => i.status === 'encours').length}
                     </p>
                   </div>
                 </div>
               </div>
 
-              <div className="bg-white rounded-lg px-4 py-4 shadow-md border border-gray-200 hover:shadow-lg transition-shadow">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-green-100 rounded-full">
-                    <CheckCircle className="h-6 w-6 text-green-600" />
+              <div className="bg-white rounded-lg px-3 sm:px-4 py-3 sm:py-4 shadow-md border border-gray-200 hover:shadow-lg transition-shadow">
+                <div className="flex items-center gap-2 sm:gap-3">
+                  <div className="p-2 bg-green-100 rounded-full flex-shrink-0">
+                    <CheckCircle className="h-5 w-5 sm:h-6 sm:w-6 text-green-600" />
                   </div>
-                  <div>
-                    <p className="text-sm text-gray-500 font-medium">Terminées</p>
-                    <p className="text-xl font-bold text-green-600">
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs sm:text-sm text-gray-500 font-medium truncate">Terminées</p>
+                    <p className="text-lg sm:text-xl font-bold text-green-600 truncate">
                       {interventions.filter(i => i.status === 'terminé').length}
                     </p>
                   </div>
@@ -370,40 +370,42 @@ export default function Interventions() {
             </div>
 
             {/* Search Bar - Mobile First */}
-            <div className="mb-6">
-              <div className="relative max-w-md">
+            <div className="mb-4 sm:mb-6">
+              <div className="relative w-full max-w-md">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
                 <Input
                   placeholder="Rechercher une intervention..."
                   value={searchTerm}
                   onChange={(e) => handleSearch(e.target.value)}
-                  className="pl-10 h-11 bg-white border-gray-200 focus:border-[#B4CC5F] focus:ring-[#B4CC5F] text-sm"
+                  className="pl-10 h-10 sm:h-11 bg-white border-gray-200 focus:border-[#B4CC5F] focus:ring-[#B4CC5F] text-sm w-full"
                 />
               </div>
             </div>
           </div>
 
           {/* Search and Actions Bar - Responsive */}
-          <div className="flex flex-col sm:flex-row gap-3 mb-6">
+          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 mb-4 sm:mb-6">
             {/* Mobile: Stack vertically, Desktop: Side by side */}
             <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 flex-1">
               {/* Status Filter */}
-              <div className="relative" data-status-filter>
-                <Button 
-                  variant="outline" 
-                  className="w-full sm:w-auto bg-white border-gray-300 text-gray-700 hover:bg-gray-50 text-sm h-10 px-3"
+              <div className="relative w-full sm:w-auto" data-status-filter>
+                <Button
+                  variant="outline"
+                  className="w-full sm:w-auto bg-white border-gray-300 text-gray-700 hover:bg-gray-50 text-sm h-10 px-3 min-h-[40px]"
                   onClick={() => setIsStatusFilterOpen(!isStatusFilterOpen)}
                 >
-                  <Filter className="h-4 w-4 mr-2" />
-                  {(() => {
-                    const currentOption = statusFilterOptions.find(option => option.value === statusFilter);
-                    return currentOption?.label || "Filtrer";
-                  })()}
-                  <ChevronDown className={`ml-2 h-4 w-4 transition-transform ${isStatusFilterOpen ? 'rotate-180' : ''}`} />
+                  <Filter className="h-4 w-4 mr-2 flex-shrink-0" />
+                  <span className="truncate">
+                    {(() => {
+                      const currentOption = statusFilterOptions.find(option => option.value === statusFilter);
+                      return currentOption?.label || "Filtrer";
+                    })()}
+                  </span>
+                  <ChevronDown className={`ml-2 h-4 w-4 transition-transform flex-shrink-0 ${isStatusFilterOpen ? 'rotate-180' : ''}`} />
                 </Button>
-                
+
                 {isStatusFilterOpen && (
-                  <div className="absolute top-full left-0 mt-1 w-48 bg-white border border-gray-200 rounded-lg shadow-lg z-[9999]">
+                  <div className="absolute top-full left-0 mt-1 w-full sm:w-48 bg-white border border-gray-200 rounded-lg shadow-lg z-[9999]">
                     <div className="p-2">
                       <div className="text-xs font-medium text-gray-500 px-3 py-1 mb-2">Filtrer par statut</div>
                       {statusFilterOptions.map((option) => {
@@ -416,10 +418,10 @@ export default function Interventions() {
                               statusFilter === option.value ? 'bg-[#B4CC5F]/10 text-[#B4CC5F]' : 'text-gray-700'
                             }`}
                           >
-                            <IconComponent className="h-4 w-4" />
-                            <span className="flex-1 text-left">{option.label}</span>
+                            <IconComponent className="h-4 w-4 flex-shrink-0" />
+                            <span className="flex-1 text-left truncate">{option.label}</span>
                             {statusFilter === option.value && (
-                              <span className="text-[#B4CC5F]">
+                              <span className="text-[#B4CC5F] flex-shrink-0">
                                 <div className="w-2 h-2 rounded-full bg-[#B4CC5F]"></div>
                               </span>
                             )}
@@ -432,22 +434,24 @@ export default function Interventions() {
               </div>
 
               {/* Sort Button */}
-              <div className="relative" data-sort-menu>
-                <Button 
-                  variant="outline" 
-                  className="w-full sm:w-auto bg-white border-gray-300 text-gray-700 hover:bg-gray-50 text-sm h-10 px-3"
+              <div className="relative w-full sm:w-auto" data-sort-menu>
+                <Button
+                  variant="outline"
+                  className="w-full sm:w-auto bg-white border-gray-300 text-gray-700 hover:bg-gray-50 text-sm h-10 px-3 min-h-[40px]"
                   onClick={() => setIsSortMenuOpen(!isSortMenuOpen)}
                 >
-                  {sortOrder === "asc" ? <SortAsc className="h-4 w-4 mr-2" /> : <SortDesc className="h-4 w-4 mr-2" />}
-                  {(() => {
-                    const currentOption = sortOptions.find(option => option.value === sortBy);
-                    return currentOption?.label || "Trier";
-                  })()}
-                  <ChevronDown className={`ml-2 h-4 w-4 transition-transform ${isSortMenuOpen ? 'rotate-180' : ''}`} />
+                  {sortOrder === "asc" ? <SortAsc className="h-4 w-4 mr-2 flex-shrink-0" /> : <SortDesc className="h-4 w-4 mr-2 flex-shrink-0" />}
+                  <span className="truncate">
+                    {(() => {
+                      const currentOption = sortOptions.find(option => option.value === sortBy);
+                      return currentOption?.label || "Trier";
+                    })()}
+                  </span>
+                  <ChevronDown className={`ml-2 h-4 w-4 transition-transform flex-shrink-0 ${isSortMenuOpen ? 'rotate-180' : ''}`} />
                 </Button>
-                
+
                 {isSortMenuOpen && (
-                  <div className="absolute top-full left-0 mt-1 w-56 bg-white border border-gray-200 rounded-lg shadow-lg z-[9999]">
+                  <div className="absolute top-full left-0 mt-1 w-full sm:w-56 bg-white border border-gray-200 rounded-lg shadow-lg z-[9999]">
                     <div className="p-2">
                       <div className="text-xs font-medium text-gray-500 px-3 py-1 mb-2">Trier par</div>
                       {sortOptions.map((option) => {
@@ -460,10 +464,10 @@ export default function Interventions() {
                               sortBy === option.value ? 'bg-[#B4CC5F] text-white' : 'text-gray-700'
                             }`}
                           >
-                            <IconComponent className="h-4 w-4" />
-                            <span className="flex-1 text-left">{option.label}</span>
+                            <IconComponent className="h-4 w-4 flex-shrink-0" />
+                            <span className="flex-1 text-left truncate">{option.label}</span>
                             {sortBy === option.value && (
-                              <span className="text-white">
+                              <span className="text-white flex-shrink-0">
                                 {sortOrder === "asc" ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
                               </span>
                             )}
@@ -476,7 +480,7 @@ export default function Interventions() {
                           className="w-full flex items-center justify-center gap-2 px-3 py-2 text-sm text-gray-600 hover:bg-gray-50 rounded-md transition-colors"
                         >
                           <span>Inverser l'ordre</span>
-                          <span className="text-[#B4CC5F]">
+                          <span className="text-[#B4CC5F] flex-shrink-0">
                             {sortOrder === "asc" ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
                           </span>
                         </button>
@@ -486,22 +490,23 @@ export default function Interventions() {
                 )}
               </div>
 
-              <Button 
+              <Button
                 variant="outline"
-                className="w-full sm:w-auto bg-white border-gray-300 text-gray-700 hover:bg-gray-50 text-sm h-10 px-3"
+                className="w-full sm:w-auto bg-white border-gray-300 text-gray-700 hover:bg-gray-50 text-sm h-10 px-3 min-h-[40px]"
                 onClick={loadInterventions}
               >
-                <RefreshCw className="h-4 w-4" />
+                <RefreshCw className="h-4 w-4 flex-shrink-0" />
                 <span className="hidden sm:inline ml-2">Actualiser</span>
+                <span className="sm:hidden ml-2">Actualiser</span>
               </Button>
             </div>
 
             {/* New Intervention Button */}
-            <Button 
-              className="w-full sm:w-auto bg-[#B4CC5F] hover:bg-[#9BB84F] text-white text-sm h-10 px-4"
+            <Button
+              className="w-full sm:w-auto bg-[#B4CC5F] hover:bg-[#9BB84F] text-white text-sm h-10 px-4 min-h-[40px] whitespace-nowrap"
               onClick={openInterventionForm}
             >
-              <FileText className="mr-2 h-4 w-4" />
+              <FileText className="mr-2 h-4 w-4 flex-shrink-0" />
               <span className="hidden sm:inline">Nouvelle intervention</span>
               <span className="sm:hidden">Nouvelle</span>
             </Button>
@@ -518,16 +523,16 @@ export default function Interventions() {
             {/* Mobile Cards View */}
             <div className="block sm:hidden">
               {/* Sort Status Indicator for Mobile */}
-              <div className="px-4 py-2 bg-gray-50 border-b border-gray-200">
+              <div className="px-3 sm:px-4 py-2 bg-gray-50 border-b border-gray-200">
                 <div className="flex items-center justify-between text-xs text-gray-600">
-                  <span>
+                  <span className="truncate">
                     Trié par: <span className="font-medium text-[#B4CC5F]">
                       {sortOptions.find(option => option.value === sortBy)?.label}
                     </span>
                   </span>
-                  <div className="flex items-center gap-1">
+                  <div className="flex items-center gap-1 flex-shrink-0 ml-2">
                     <span className="text-[#B4CC5F]">
-                      {sortOrder === "asc" ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                      {sortOrder === "asc" ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
                     </span>
                     <span className="text-xs text-gray-500">
                       {sortOrder === "asc" ? "Croissant" : "Décroissant"}
@@ -535,37 +540,67 @@ export default function Interventions() {
                   </div>
                 </div>
               </div>
-              
+
               {currentInterventions.map((intervention) => (
-                <div key={intervention.id} className="border-b border-gray-200 p-4 hover:bg-gray-50 transition-colors">
-                  <div className="space-y-3">
-                    <div className="flex items-center space-x-3">
-                      {getInterventionTypeIcon(intervention.type_nom || '')}
-                      <span className="text-sm font-medium text-gray-900">{intervention.type_nom || 'Type non défini'}</span>
+                <div key={intervention.id} className="border-b border-gray-200 p-3 sm:p-4 hover:bg-gray-50 transition-colors">
+                  <div className="space-y-2 sm:space-y-3">
+                    {/* Header with icon and type */}
+                    <div className="flex items-start space-x-2 sm:space-x-3">
+                      <div className="flex-shrink-0">
+                        {getInterventionTypeIcon(intervention.type_nom || '')}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <h3 className="text-sm sm:text-base font-semibold text-gray-900 truncate">
+                          {intervention.type_nom || 'Type non défini'}
+                        </h3>
+                      </div>
                     </div>
-                    <div className="flex items-center space-x-2">
-                      <MapPin className="h-4 w-4 text-gray-400" />
-                      <span className="text-xs text-gray-700">
+
+                    {/* Location */}
+                    <div className="flex items-start space-x-2">
+                      <MapPin className="h-3 w-3 sm:h-4 sm:w-4 text-gray-400 mt-0.5 flex-shrink-0" />
+                      <span className="text-xs sm:text-sm text-gray-700 line-clamp-2">
                         {intervention.serre_nom || 'Serre inconnue'} / {intervention.domaine_nom || 'Domaine inconnu'}
                       </span>
                     </div>
-                    <div className="text-xs text-gray-600">
-                      {intervention.description}
-                    </div>
-                    <div className="flex flex-wrap gap-2">
+
+                    {/* Description */}
+                    {intervention.description && (
+                      <div className="text-xs sm:text-sm text-gray-600 line-clamp-2">
+                        {intervention.description}
+                      </div>
+                    )}
+
+                    {/* Badges */}
+                    <div className="flex flex-wrap gap-1.5 sm:gap-2">
                       {getStatusBadge(intervention.status)}
                       {intervention.valid && (
-                        <Badge variant="outline" className="bg-green-100 text-green-700 border-green-300 text-xs">Validé</Badge>
+                        <Badge variant="outline" className="bg-green-100 text-green-700 border-green-300 text-xs px-2 py-0.5">
+                          Validé
+                        </Badge>
                       )}
                     </div>
-                    <div className="text-xs text-gray-500">
-                      Début: {new Date(intervention.date_debut).toLocaleDateString('fr-FR')}
-                      {intervention.date_fin && ` | Fin: ${new Date(intervention.date_fin).toLocaleDateString('fr-FR')}`}
+
+                    {/* Dates */}
+                    <div className="text-xs text-gray-500 space-y-1">
+                      <div className="flex flex-wrap gap-2">
+                        <span className="font-medium">Début:</span>
+                        <span>{new Date(intervention.date_debut).toLocaleDateString('fr-FR')}</span>
+                      </div>
+                      {intervention.date_fin && (
+                        <div className="flex flex-wrap gap-2">
+                          <span className="font-medium">Fin:</span>
+                          <span>{new Date(intervention.date_fin).toLocaleDateString('fr-FR')}</span>
+                        </div>
+                      )}
                     </div>
-                    <div className="flex items-center justify-between">
+
+                    {/* Charges */}
+                    <div className="flex items-center justify-between pt-1">
                       <div className="text-xs text-gray-500">
-                        Charges: {intervention.total_charges > 0 ? (
-                          <span className="font-medium text-[#B4CC5F]">
+                        <span className="font-medium">Charges: </span>
+                        {intervention.total_charges > 0 ? (
+                          <span className="font-semibold text-[#B4CC5F]">
                             {intervention.total_charges.toFixed(2)} MAD
                           </span>
                         ) : (
@@ -724,61 +759,100 @@ export default function Interventions() {
         </Card>
 
         {/* Pagination - Responsive */}
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 sm:gap-0">
-          <div className="text-xs sm:text-sm text-gray-700 text-center sm:text-left">
-            Affichage de {startIndex + 1} à {Math.min(endIndex, filteredInterventions.length)} sur {filteredInterventions.length} intervention{filteredInterventions.length !== 1 ? 's' : ''}
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-4">
+          <div className="text-xs sm:text-sm text-gray-700 text-center sm:text-left w-full sm:w-auto">
+            <span className="sm:hidden">Affichage </span>
+            <span className="hidden sm:inline">Affichage de </span>
+            {startIndex + 1} à {Math.min(endIndex, filteredInterventions.length)} sur {filteredInterventions.length} intervention{filteredInterventions.length !== 1 ? 's' : ''}
           </div>
-          
-          <div className="flex items-center space-x-1 sm:space-x-2">
+
+          <div className="flex items-center justify-center sm:justify-end space-x-1 sm:space-x-2 w-full sm:w-auto">
             <Button
               variant="outline"
               size="sm"
               onClick={() => handlePageChange(currentPage - 1)}
               disabled={currentPage === 1}
-              className="bg-white border-gray-300 text-gray-700 hover:bg-gray-50 text-xs sm:text-sm px-2 sm:px-3 h-8 sm:h-9"
+              className={cn(
+                "bg-white border-gray-300 text-gray-700 hover:bg-gray-50 text-xs sm:text-sm px-2 sm:px-3 h-9 sm:h-9 min-w-[80px] sm:min-w-[90px]",
+                currentPage === 1 && "opacity-50 cursor-not-allowed"
+              )}
             >
-              <ChevronLeft className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
+              <ChevronLeft className="h-3 w-3 sm:h-4 sm:w-4 mr-1 flex-shrink-0" />
               <span className="hidden sm:inline">Précédent</span>
               <span className="sm:hidden">Préc.</span>
             </Button>
-            
-            {/* Show limited page numbers on mobile */}
+
+            {/* Desktop: Show page numbers */}
             <div className="hidden sm:flex items-center space-x-2">
-            {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-              <Button
-                key={page}
-                variant={page === currentPage ? "default" : "outline"}
-                size="sm"
-                onClick={() => handlePageChange(page)}
-                className={cn(
-                  "w-8 h-8 sm:w-9 sm:h-9 text-xs sm:text-sm",
-                  page === currentPage
-                       ? "bg-[#B4CC5F] text-white hover:bg-[#9BB84F]"
-                    : "bg-white border-gray-300 text-gray-700 hover:bg-gray-50"
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                <Button
+                  key={page}
+                  variant={page === currentPage ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => handlePageChange(page)}
+                  className={cn(
+                    "w-8 h-8 sm:w-9 sm:h-9 text-xs sm:text-sm min-w-[32px] sm:min-w-[36px]",
+                    page === currentPage
+                         ? "bg-[#B4CC5F] text-white hover:bg-[#9BB84F]"
+                      : "bg-white border-gray-300 text-gray-700 hover:bg-gray-50"
+                  )}
+                >
+                  {page}
+                </Button>
+              ))}
+            </div>
+
+            {/* Mobile: Enhanced page indicator with touch-friendly navigation */}
+            <div className="sm:hidden flex items-center space-x-2 px-2">
+              <div className="flex items-center space-x-1">
+                {/* Quick navigation for mobile */}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handlePageChange(1)}
+                  disabled={currentPage === 1}
+                  className="h-8 w-8 p-0 text-xs hover:bg-gray-100 disabled:opacity-50"
+                >
+                  1
+                </Button>
+                {totalPages > 1 && currentPage > 3 && <span className="text-gray-400">...</span>}
+                {currentPage > 1 && currentPage < totalPages && (
+                  <Button
+                    variant="default"
+                    size="sm"
+                    className="h-8 w-8 p-0 text-xs bg-[#B4CC5F] text-white hover:bg-[#9BB84F]"
+                  >
+                    {currentPage}
+                  </Button>
                 )}
-              >
-                {page}
-              </Button>
-            ))}
+                {totalPages > 1 && currentPage < totalPages - 2 && <span className="text-gray-400">...</span>}
+                {totalPages > 1 && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handlePageChange(totalPages)}
+                    disabled={currentPage === totalPages}
+                    className="h-8 w-8 p-0 text-xs hover:bg-gray-100 disabled:opacity-50"
+                  >
+                    {totalPages}
+                  </Button>
+                )}
+              </div>
             </div>
-            
-            {/* Mobile page indicator */}
-            <div className="sm:hidden flex items-center space-x-2">
-              <span className="text-xs text-gray-600 px-2">
-                {currentPage} / {totalPages}
-              </span>
-            </div>
-            
+
             <Button
               variant="outline"
               size="sm"
               onClick={() => handlePageChange(currentPage + 1)}
               disabled={currentPage === totalPages}
-              className="bg-white border-gray-300 text-gray-700 hover:bg-gray-50 text-xs sm:text-sm px-2 sm:px-3 h-8 sm:h-9"
+              className={cn(
+                "bg-white border-gray-300 text-gray-700 hover:bg-gray-50 text-xs sm:text-sm px-2 sm:px-3 h-9 sm:h-9 min-w-[80px] sm:min-w-[90px]",
+                currentPage === totalPages && "opacity-50 cursor-not-allowed"
+              )}
             >
               <span className="hidden sm:inline">Suivant</span>
               <span className="sm:hidden">Suiv.</span>
-              <ChevronRight className="h-3 w-3 sm:h-4 sm:w-4 ml-1" />
+              <ChevronRight className="h-3 w-3 sm:h-4 sm:w-4 ml-1 flex-shrink-0" />
             </Button>
           </div>
         </div>

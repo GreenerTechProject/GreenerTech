@@ -291,12 +291,13 @@ export default function TechnicienSupDashboard(): JSX.Element {
     };
 
     if (!tryInit()) {
-      const id = window.setInterval(() => {
+      // Only check once after a delay, not continuously
+      const timeoutId = window.setTimeout(() => {
         if (tryInit()) {
-          window.clearInterval(id);
+          console.debug('[TechSup] Google Maps loaded after timeout');
         }
-      }, 150);
-      return () => window.clearInterval(id);
+      }, 1000); // Check once after 1 second instead of polling every 150ms
+      return () => window.clearTimeout(timeoutId);
     }
   }, [map]);
 
@@ -537,18 +538,7 @@ export default function TechnicienSupDashboard(): JSX.Element {
     targetZoom: number,
   ) => {
     map.panTo(location);
-
-    const currentZoom = map.getZoom() || 13;
-    let zoom = currentZoom;
-
-    const zoomInterval = setInterval(() => {
-      if (zoom < targetZoom) {
-        zoom += 1;
-        map.setZoom(zoom);
-      } else {
-        clearInterval(zoomInterval);
-      }
-    }, 150);
+    map.setZoom(targetZoom); // Set zoom directly instead of using interval
   };
 
   const handleSelectSerre = (serre: Serre) => {
@@ -1164,60 +1154,7 @@ export default function TechnicienSupDashboard(): JSX.Element {
                 </GoogleMap>
               </GoogleMapsWrapper>
 
-              {/* Map Overlay Info: keep concise, detailed info moved to right panel */}
-              {selectedSerre && (
-                <div className="absolute top-4 right-4 bg-white rounded-lg shadow-lg p-4 max-w-xs">
-                  <div className="flex items-center space-x-2 mb-2">
-                    <div
-                      className={cn(
-                        "w-3 h-3 rounded-full",
-                        selectedSerre.status === "active"
-                          ? "bg-green-500"
-                          : selectedSerre.status === "maintenance"
-                            ? "bg-yellow-500"
-                            : "bg-red-500",
-                      )}
-                    />
-                    <h4 className="font-semibold text-gray-900">
-                      {selectedSerre.nom}
-                    </h4>
-                  </div>
-                  <p className="text-sm text-gray-600 mb-1">{selectedSerre.variety || '—'}</p>
-                  <p className="text-xs text-gray-500">{selectedSerre.surface} m² • {selectedSerre.zones.length} zones</p>
-                  {selectedSerre.assignedTechnicians && selectedSerre.assignedTechnicians.length > 0 && (
-                    <p className="text-xs text-blue-600 mt-1">
-                      {selectedSerre.assignedTechnicians.length === 1 ? (
-                        `Technicien: ${selectedSerre.assignedTechnicians[0].name}`
-                      ) : (
-                        `Techniciens: ${selectedSerre.assignedTechnicians.map(t => t.name).join(', ')}`
-                      )}
-                    </p>
-                  )}
-                  {selectedSerre.supervisedBy && (!selectedSerre.assignedTechnicians || selectedSerre.assignedTechnicians.length === 0) && (
-                    <p className="text-xs text-blue-600 mt-1">
-                      {selectedSerre.supervisedBy}
-                    </p>
-                  )}
 
-                  <div className="mt-3 flex gap-2">
-                    <Button 
-                      size="sm" 
-                      variant="outline" 
-                      className="flex-1"
-                      onClick={() => setIsAssignDialogOpen(true)}
-                    >
-                      Assigner un technicien
-                    </Button>
-                    <Button
-                      size="sm"
-                      className="flex-1"
-                      onClick={() => setIsDetailsOpen(true)}
-                    >
-                      Voir détails
-                    </Button>
-                  </div>
-                </div>
-              )}
 
             </div>
           </ResizablePanel>
@@ -1377,24 +1314,23 @@ export default function TechnicienSupDashboard(): JSX.Element {
                                   </div>
                                   {etat && (
                                     <>
-                                      {etat.etat && (
                                         <div className="flex items-center justify-between">
                                           <span className="text-gray-600">État:</span>
-                                          <span className="font-medium">{etat.etat === 'bon' ? 'Bon' : etat.etat === 'moyen' ? 'Moyen' : 'Mauvais'}</span>
+                                        <span className="font-medium">
+                                          {(() => {
+                                            const totalTomates = etat.nombre_tomates_maladies + etat.nombre_tomates_non_maladies;
+                                            if (totalTomates === 0) return 'Non évalué';
+                                            const healthyRatio = etat.nombre_tomates_non_maladies / totalTomates;
+                                            if (healthyRatio >= 0.8) return 'Bon';
+                                            if (healthyRatio >= 0.6) return 'Moyen';
+                                            return 'Mauvais';
+                                          })()}
+                                        </span>
                                         </div>
-                                      )}
-                                      {etat.date_evaluation && (
-                                        <div className="flex items-center justify-between">
-                                          <span className="text-gray-600">Date d'évaluation:</span>
-                                          <span className="font-medium">{new Date(etat.date_evaluation).toLocaleDateString('fr-FR')}</span>
-                                        </div>
-                                      )}
-                                      {!etat.etat && !etat.date_evaluation && (
                                         <div className="flex items-center justify-between">
                                           <span className="text-gray-600">Date d'évaluation:</span>
                                           <span className="font-medium">{new Date(etat.date).toLocaleDateString('fr-FR')}</span>
                                         </div>
-                                      )}
                                       <div className="mt-2 p-2 bg-purple-50 rounded-md">
                                         <div className="text-xs font-medium text-purple-800 mb-1">Conditions actuelles</div>
                                         <div className="grid grid-cols-2 gap-1 text-xs">

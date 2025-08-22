@@ -11,7 +11,10 @@ import {
   MapPin,
   ChevronLeft,
   ChevronRight,
-  Plus
+  Plus,
+  Filter,
+  X,
+  RefreshCw
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
@@ -27,6 +30,9 @@ interface Intervention {
   actions: string;
   date_creation: string;
   date_modification: string;
+  technicien: string; // Add technician field
+  description: string;
+  charges: number;
 }
 
 interface InterventionType {
@@ -53,39 +59,55 @@ export default function InterventionManagement() {
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [interventionsPerPage] = useState(7);
+  
+  // Add filtering state
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [technicianFilter, setTechnicianFilter] = useState<string>("all");
+  const [startDateFilter, setStartDateFilter] = useState<string>("");
+  const [activeFilters, setActiveFilters] = useState<{[key: string]: string}>({});
 
   useEffect(() => {
     loadInterventions();
   }, []);
 
+  // Apply filters whenever filter values change
+  useEffect(() => {
+    applyFilters();
+  }, [interventions, searchTerm, statusFilter, technicianFilter, startDateFilter]);
+
   const loadInterventions = async () => {
     try {
-      setLoading(true);
-      // Mock data for now - in real implementation, fetch from backend
+      // Mock data with technician information
       const mockInterventions: Intervention[] = [
         {
           id: 1,
-          type: "Préparation du Sol",
+          type: "Maintenance préventive",
           id_serre: 1,
-          serre_nom: "Serre A1",
-          domaine_nom: "Domaine Nord",
+          serre_nom: "Serre B1",
+          domaine_nom: "Domaine Sud",
           bilan_trimestre: "Bilan Q1",
-          statut: "Terminé",
+          statut: "En cours",
           actions: "Programmé",
-          date_creation: "2024-01-15",
-          date_modification: "2024-01-20"
+          date_creation: "2024-01-20",
+          date_modification: "2024-01-25",
+          technicien: "Charlie Tech",
+          description: "BILLON A2",
+          charges: 2000.00
         },
         {
           id: 2,
           type: "Plantation",
           id_serre: 2,
-          serre_nom: "Serre B2",
-          domaine_nom: "Domaine Sud",
+          serre_nom: "Serre A2",
+          domaine_nom: "Domaine Nord",
           bilan_trimestre: "Bilan Q2",
-          statut: "En cours",
-          actions: "Demande",
-          date_creation: "2024-01-18",
-          date_modification: "2024-01-22"
+          statut: "Terminé",
+          actions: "Programmé",
+          date_creation: "2024-01-22",
+          date_modification: "2024-01-25",
+          technicien: "Diana Tech",
+          description: "Maintenance système",
+          charges: 1500.00
         },
         {
           id: 3,
@@ -93,11 +115,14 @@ export default function InterventionManagement() {
           id_serre: 3,
           serre_nom: "Serre C3",
           domaine_nom: "Domaine Est",
-          bilan_trimestre: "Bilan Q1",
-          statut: "Terminé",
-          actions: "Demande",
-          date_creation: "2024-01-20",
-          date_modification: "2024-01-25"
+          bilan_trimestre: "Bilan Q3",
+          statut: "En cours",
+          actions: "Programmé",
+          date_creation: "2024-01-24",
+          date_modification: "2024-01-26",
+          technicien: "Diana Tech",
+          description: "Installation support",
+          charges: 1800.00
         },
         {
           id: 4,
@@ -109,7 +134,10 @@ export default function InterventionManagement() {
           statut: "En cours",
           actions: "Programmé",
           date_creation: "2024-01-22",
-          date_modification: "2024-01-26"
+          date_modification: "2024-01-26",
+          technicien: "Charlie Tech",
+          description: "Entretien plantes",
+          charges: 1200.00
         },
         {
           id: 5,
@@ -121,7 +149,10 @@ export default function InterventionManagement() {
           statut: "Terminé",
           actions: "Programmé",
           date_creation: "2024-01-25",
-          date_modification: "2024-01-28"
+          date_modification: "2024-01-28",
+          technicien: "Diana Tech",
+          description: "Nettoyage feuilles",
+          charges: 900.00
         },
         {
           id: 6,
@@ -133,11 +164,14 @@ export default function InterventionManagement() {
           statut: "En cours",
           actions: "Programmé",
           date_creation: "2024-01-28",
-          date_modification: "2024-01-30"
+          date_modification: "2024-01-30",
+          technicien: "Charlie Tech",
+          description: "Éclaircissage plantation",
+          charges: 1100.00
         }
       ];
 
-    setInterventions(mockInterventions);
+      setInterventions(mockInterventions);
       setFilteredInterventions(mockInterventions);
     } catch (error) {
       console.error("Error loading interventions:", error);
@@ -146,210 +180,421 @@ export default function InterventionManagement() {
     }
   };
 
+  const applyFilters = () => {
+    let filtered = [...interventions];
+
+    // Apply search filter
+    if (searchTerm.trim()) {
+      filtered = filtered.filter(intervention =>
+        intervention.type.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        intervention.serre_nom.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        intervention.domaine_nom.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        intervention.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        intervention.technicien.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
+
+    // Apply status filter
+    if (statusFilter !== "all") {
+      filtered = filtered.filter(intervention => intervention.statut === statusFilter);
+    }
+
+    // Apply technician filter
+    if (technicianFilter !== "all") {
+      filtered = filtered.filter(intervention => intervention.technicien === technicianFilter);
+    }
+
+    // Apply start date filter
+    if (startDateFilter) {
+      filtered = filtered.filter(intervention => 
+        intervention.date_creation === startDateFilter
+      );
+    }
+
+    setFilteredInterventions(filtered);
+    setCurrentPage(1);
+  };
+
   const handleSearch = (value: string) => {
     setSearchTerm(value);
-    setCurrentPage(1);
-    
-    if (!value.trim()) {
-      setFilteredInterventions(interventions);
+  };
+
+  const handleStatusFilterChange = (value: string) => {
+    setStatusFilter(value);
+    updateActiveFilters('status', value);
+  };
+
+  const handleTechnicianFilterChange = (value: string) => {
+    setTechnicianFilter(value);
+    updateActiveFilters('technician', value);
+  };
+
+  const handleStartDateFilterChange = (value: string) => {
+    setStartDateFilter(value);
+    updateActiveFilters('startDate', value);
+  };
+
+  const updateActiveFilters = (key: string, value: string) => {
+    if (value === "all" || value === "") {
+      const newFilters = { ...activeFilters };
+      delete newFilters[key];
+      setActiveFilters(newFilters);
     } else {
-      const filtered = interventions.filter(intervention =>
-        intervention.type.toLowerCase().includes(value.toLowerCase()) ||
-        intervention.serre_nom.toLowerCase().includes(value.toLowerCase()) ||
-        intervention.domaine_nom.toLowerCase().includes(value.toLowerCase())
-      );
-      setFilteredInterventions(filtered);
+      setActiveFilters(prev => ({ ...prev, [key]: value }));
     }
+  };
+
+  const clearAllFilters = () => {
+    setSearchTerm("");
+    setStatusFilter("all");
+    setTechnicianFilter("all");
+    setStartDateFilter("");
+    setActiveFilters({});
+  };
+
+  const removeFilter = (key: string) => {
+    if (key === 'status') {
+      setStatusFilter("all");
+    } else if (key === 'technician') {
+      setTechnicianFilter("all");
+    } else if (key === 'startDate') {
+      setStartDateFilter("");
+    }
+    
+    const newFilters = { ...activeFilters };
+    delete newFilters[key];
+    setActiveFilters(newFilters);
+  };
+
+  const refreshData = () => {
+    loadInterventions();
   };
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
   };
 
-  const getInterventionTypeIcon = (typeName: string) => {
-    const type = interventionTypes.find(t => t.nom === typeName);
-    if (!type) return "📋";
-    
-    return (
-      <div className={cn("w-8 h-8 rounded-full flex items-center justify-center text-white", type.couleur)}>
-        <span className="text-sm">{type.icone}</span>
-      </div>
-    );
+  // Get unique technicians for filter dropdown
+  const getUniqueTechnicians = () => {
+    const technicians = [...new Set(interventions.map(int => int.technicien))];
+    return technicians.sort();
   };
 
-  const getStatusBadge = (status: string) => {
-    if (status === "Terminé") {
-      return <Badge variant="outline" className="bg-gray-100 text-gray-700 border-gray-300">Terminé</Badge>;
-    } else if (status === "En cours") {
-      return <Badge className="bg-red-500 text-white">En cours</Badge>;
-    }
-    return <Badge variant="outline" className="bg-gray-100 text-gray-700 border-gray-300">{status}</Badge>;
+  // Get unique statuses for filter dropdown
+  const getUniqueStatuses = () => {
+    const statuses = [...new Set(interventions.map(int => int.statut))];
+    return statuses.sort();
   };
 
-  const getActionBadge = (action: string) => {
-    if (action === "Programmé") {
-      return <Badge className="bg-green-500 text-white">Programmé</Badge>;
-    } else if (action === "Demande") {
-      return <Badge variant="outline" className="bg-gray-100 text-gray-700 border-gray-300">Demande</Badge>;
-    }
-    return <Badge variant="outline" className="bg-gray-100 text-gray-700 border-gray-300">{action}</Badge>;
-  };
-
+  // Calculate pagination
+  const indexOfLastIntervention = currentPage * interventionsPerPage;
+  const indexOfFirstIntervention = indexOfLastIntervention - interventionsPerPage;
+  const currentInterventions = filteredInterventions.slice(indexOfFirstIntervention, indexOfLastIntervention);
   const totalPages = Math.ceil(filteredInterventions.length / interventionsPerPage);
-  const startIndex = (currentPage - 1) * interventionsPerPage;
-  const endIndex = startIndex + interventionsPerPage;
-  const currentInterventions = filteredInterventions.slice(startIndex, endIndex);
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#B4CC5F]"></div>
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-green-500"></div>
       </div>
     );
   }
 
+  // Map user role to TechHeader role
+  const getTechHeaderRole = (userRole?: string) => {
+    switch (userRole) {
+      case "technicien":
+        return "technicien" as const;
+      case "technicien_superieur":
+        return "technicien_sup" as const;
+      default:
+        return "technicien" as const;
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header removed: provided by TechnicianLayout */}
+      <TechHeader role={getTechHeaderRole(user?.role)} />
       
-      {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Header Section */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            Gestion des Interventions
-              </h1>
-          <p className="text-gray-600 text-lg">
-            Suivi et gestion des interventions entre superviseurs et techniciens
-          </p>
+      <div className="p-6">
+        {/* Summary Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Total</CardTitle>
+              <FileText className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{interventions.length}</div>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">En cours</CardTitle>
+              <div className="h-4 w-4 rounded-full bg-blue-500"></div>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-blue-600">
+                {interventions.filter(i => i.statut === "En cours").length}
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Terminées</CardTitle>
+              <div className="h-4 w-4 rounded-full bg-green-500"></div>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-green-600">
+                {interventions.filter(i => i.statut === "Terminé").length}
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Rejetées</CardTitle>
+              <div className="h-4 w-4 rounded-full bg-red-500"></div>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-red-600">
+                {interventions.filter(i => i.statut === "Rejetée").length}
+              </div>
+            </CardContent>
+          </Card>
         </div>
 
-        {/* Search and Actions Bar */}
-        <div className="flex flex-col sm:flex-row gap-4 mb-6">
-                <div className="flex-1">
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-                    <Input
-                placeholder="Rechercher une Intervention..."
-                      value={searchTerm}
-                onChange={(e) => handleSearch(e.target.value)}
-                className="pl-10 bg-white border-gray-200 focus:border-green-500 focus:ring-green-500"
-                    />
+        {/* Search and Filters */}
+        <Card className="mb-6">
+          <CardContent className="p-6">
+            <div className="flex flex-col lg:flex-row gap-4 items-start lg:items-center">
+              {/* Search Bar */}
+              <div className="flex-1 relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                <Input
+                  placeholder="Rechercher par type, serre, domaine, description ou technicien..."
+                  value={searchTerm}
+                  onChange={(e) => handleSearch(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+
+              {/* Filter Dropdowns */}
+              <div className="flex flex-col sm:flex-row gap-3">
+                {/* Status Filter */}
+                <div className="relative">
+                  <select
+                    value={statusFilter}
+                    onChange={(e) => handleStatusFilterChange(e.target.value)}
+                    className="appearance-none bg-white border border-gray-300 rounded-md px-3 py-2 pr-8 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  >
+                    <option value="all">Tous les statuts</option>
+                    {getUniqueStatuses().map(status => (
+                      <option key={status} value={status}>{status}</option>
+                    ))}
+                  </select>
+                  <Filter className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4 pointer-events-none" />
+                </div>
+
+                {/* Technician Filter */}
+                <div className="relative">
+                  <select
+                    value={technicianFilter}
+                    onChange={(e) => handleTechnicianFilterChange(e.target.value)}
+                    className="appearance-none bg-white border border-gray-300 rounded-md px-3 py-2 pr-8 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  >
+                    <option value="all">Tous les techniciens</option>
+                    {getUniqueTechnicians().map(tech => (
+                      <option key={tech} value={tech}>{tech}</option>
+                    ))}
+                  </select>
+                  <div className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4 pointer-events-none">
+                    <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                    </svg>
                   </div>
                 </div>
-          
-          <div className="flex gap-3">
-            <Button variant="outline" className="bg-white border-gray-300 text-gray-700 hover:bg-gray-50">
-              Trier par
-              <ChevronDown className="ml-2 h-4 w-4" />
-            </Button>
-            <Button className="bg-green-500 hover:bg-green-600 text-white">
-              <Plus className="mr-2 h-4 w-4" />
-              Nouvelle intervention
-            </Button>
+
+                {/* Start Date Filter */}
+                <div className="relative">
+                  <input
+                    type="date"
+                    value={startDateFilter}
+                    onChange={(e) => handleStartDateFilterChange(e.target.value)}
+                    className="bg-white border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  />
+                  <div className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4 pointer-events-none">
+                    <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                  </div>
+                </div>
+
+                {/* Refresh Button */}
+                <Button
+                  onClick={refreshData}
+                  variant="outline"
+                  className="flex items-center gap-2"
+                >
+                  <RefreshCw className="h-4 w-4" />
+                  Actualiser
+                </Button>
               </div>
-                          </div>
-                          
+            </div>
+
+            {/* Active Filters Display */}
+            {Object.keys(activeFilters).length > 0 && (
+              <div className="mt-4">
+                <div className="text-sm font-medium text-gray-700 mb-2">Filtres actifs:</div>
+                <div className="flex flex-wrap gap-2">
+                  {Object.entries(activeFilters).map(([key, value]) => (
+                    <Badge
+                      key={key}
+                      variant="secondary"
+                      className="flex items-center gap-1 px-3 py-1"
+                    >
+                      {key === 'status' && 'Statut: '}
+                      {key === 'technician' && 'Technicien: '}
+                      {key === 'startDate' && 'Date de début: '}
+                      {value}
+                      <button
+                        onClick={() => removeFilter(key)}
+                        className="ml-1 hover:text-red-500"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </Badge>
+                  ))}
+                  <Button
+                    onClick={clearAllFilters}
+                    variant="ghost"
+                    size="sm"
+                    className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                  >
+                    <X className="h-4 w-4 mr-1" />
+                    Effacer tous les filtres
+                  </Button>
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
         {/* Interventions Table */}
-        <Card className="bg-white shadow-sm border-0">
-          <CardHeader className="pb-4">
-            <CardTitle className="text-lg font-semibold text-gray-900">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
               Interventions ({filteredInterventions.length})
             </CardTitle>
           </CardHeader>
-          <CardContent className="p-0">
+          <CardContent>
             <div className="overflow-x-auto">
               <table className="w-full">
-                <thead className="bg-gray-50 border-b border-gray-200">
-                  <tr>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">Type d'intervention</th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">ID Serre</th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">Statut</th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">Actions</th>
+                <thead>
+                  <tr className="border-b">
+                    <th className="text-left py-3 px-4 font-medium">Type d'intervention</th>
+                    <th className="text-left py-3 px-4 font-medium">Date de début</th>
+                    <th className="text-left py-3 px-4 font-medium">Serre / Domaine</th>
+                    <th className="text-left py-3 px-4 font-medium">Technicien</th>
+                    <th className="text-left py-3 px-4 font-medium">Statut</th>
+                    <th className="text-left py-3 px-4 font-medium">Description</th>
+                    <th className="text-left py-3 px-4 font-medium">Charges</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-200">
+                <tbody>
                   {currentInterventions.map((intervention) => (
-                    <tr key={intervention.id} className="hover:bg-gray-50 transition-colors">
-                      <td className="px-6 py-4">
-                        <div className="flex items-center space-x-3">
-                          {getInterventionTypeIcon(intervention.type)}
-                          <span className="text-sm font-medium text-gray-900">{intervention.type}</span>
-                            </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="flex items-center space-x-2">
-                          <MapPin className="h-4 w-4 text-gray-400" />
-                          <span className="text-sm text-gray-700">
-                            {intervention.serre_nom} / {intervention.domaine_nom} / {intervention.bilan_trimestre}
+                    <tr key={intervention.id} className="border-b hover:bg-gray-50">
+                      <td className="py-3 px-4">
+                        <div className="flex items-center gap-2">
+                          <span className="text-lg">
+                            {interventionTypes.find(t => t.nom === intervention.type)?.icone || "🔧"}
                           </span>
-                            </div>
+                          {intervention.type}
+                        </div>
                       </td>
-                      <td className="px-6 py-4">
-                        <div className="flex space-x-2">
-                          {getStatusBadge(intervention.statut)}
-                          {intervention.statut === "En cours" && (
-                            <Badge variant="outline" className="bg-gray-100 text-gray-700 border-gray-300">Terminé</Badge>
-                            )}
+                      <td className="py-3 px-4">
+                        {new Date(intervention.date_creation).toLocaleDateString('fr-FR')}
+                      </td>
+                      <td className="py-3 px-4">
+                        <div className="flex items-center gap-1">
+                          <MapPin className="h-4 w-4 text-gray-400" />
+                          {intervention.serre_nom} / {intervention.domaine_nom}
+                        </div>
+                      </td>
+                      <td className="py-3 px-4">
+                        <div className="flex items-center gap-1">
+                          <div className="h-6 w-6 rounded-full bg-gray-200 flex items-center justify-center text-xs font-medium">
+                            {intervention.technicien.split(' ').map(n => n[0]).join('')}
                           </div>
+                          {intervention.technicien}
+                        </div>
                       </td>
-                      <td className="px-6 py-4">
-                        {getActionBadge(intervention.actions)}
+                      <td className="py-3 px-4">
+                        <Badge
+                          variant={intervention.statut === "Terminé" ? "default" : "secondary"}
+                          className={cn(
+                            intervention.statut === "Terminé" && "bg-green-100 text-green-800",
+                            intervention.statut === "En cours" && "bg-blue-100 text-blue-800",
+                            intervention.statut === "Rejetée" && "bg-red-100 text-red-800"
+                          )}
+                        >
+                          {intervention.statut}
+                        </Badge>
+                      </td>
+                      <td className="py-3 px-4">{intervention.description}</td>
+                      <td className="py-3 px-4 font-medium">
+                        {intervention.charges.toFixed(2)} MAD
                       </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
-                              </div>
+            </div>
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="flex items-center justify-between mt-6">
+                <div className="text-sm text-gray-700">
+                  Affichage de {indexOfFirstIntervention + 1} à {Math.min(indexOfLastIntervention, filteredInterventions.length)} sur {filteredInterventions.length} intervention{filteredInterventions.length > 1 ? 's' : ''}
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handlePageChange(currentPage - 1)}
+                    disabled={currentPage === 1}
+                  >
+                    <ChevronLeft className="h-4 w-4 mr-1" />
+                    Précédent
+                  </Button>
+                  
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                    <Button
+                      key={page}
+                      variant={currentPage === page ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => handlePageChange(page)}
+                    >
+                      {page}
+                    </Button>
+                  ))}
+                  
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handlePageChange(currentPage + 1)}
+                    disabled={currentPage === totalPages}
+                  >
+                    Suivant
+                    <ChevronRight className="h-4 w-4 ml-1" />
+                  </Button>
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
-
-        {/* Pagination */}
-        <div className="flex items-center justify-between mt-6">
-          <div className="text-sm text-gray-700">
-            Affichage de {startIndex + 1} à {Math.min(endIndex, filteredInterventions.length)} sur {filteredInterventions.length} intervention{filteredInterventions.length !== 1 ? 's' : ''}
-                        </div>
-
-          <div className="flex items-center space-x-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => handlePageChange(currentPage - 1)}
-              disabled={currentPage === 1}
-              className="bg-white border-gray-300 text-gray-700 hover:bg-gray-50"
-            >
-              <ChevronLeft className="h-4 w-4 mr-1" />
-              Précédent
-                                </Button>
-            
-            {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                                      <Button
-                key={page}
-                variant={page === currentPage ? "default" : "outline"}
-                                        size="sm"
-                onClick={() => handlePageChange(page)}
-                className={cn(
-                  page === currentPage
-                    ? "bg-blue-600 text-white hover:bg-blue-700"
-                    : "bg-white border-gray-300 text-gray-700 hover:bg-gray-50"
-                )}
-              >
-                {page}
-                                      </Button>
-                                  ))}
-
-                              <Button
-                                variant="outline"
-                                size="sm"
-              onClick={() => handlePageChange(currentPage + 1)}
-              disabled={currentPage === totalPages}
-              className="bg-white border-gray-300 text-gray-700 hover:bg-gray-50"
-            >
-              Suivant
-              <ChevronRight className="h-4 w-4 ml-1" />
-                              </Button>
-          </div>
-        </div>
       </div>
     </div>
   );

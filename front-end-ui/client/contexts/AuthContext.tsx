@@ -169,8 +169,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setError(null);
     } finally {
       setIsLoading(false);
-      // Redirect to login page after logout
-      window.location.href = "/login";
+      // Redirect to landing page after logout
+      window.location.href = "/";
     }
   };
 
@@ -191,8 +191,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setUser(null);
       await authService.logout();
       
-      // Redirect to login page
-      window.location.href = "/login";
+      // Redirect to landing page
+      window.location.href = "/";
     } catch (error) {
       const apiError = error as ApiError;
       setError(apiError.message);

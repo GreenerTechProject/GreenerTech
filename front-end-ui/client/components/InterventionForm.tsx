@@ -301,20 +301,20 @@ export default function InterventionForm({
   
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="max-w-[95vw] w-full max-h-[95vh] overflow-y-auto p-0 rounded-xl border border-border shadow-2xl mx-auto z-[9998] fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-card">
+      <DialogContent className="max-w-[95vw] w-full max-h-[90vh] sm:max-h-[95vh] overflow-y-auto p-0 rounded-xl border border-border shadow-2xl mx-auto z-[9998] fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-card scrollbar-mobile">
         {/* Close Button */}
         <button
           onClick={handleClose}
-          className="absolute top-3 right-3 z-[9999] p-2 hover:bg-muted rounded-full transition-colors"
+          className="absolute top-2 right-2 sm:top-3 sm:right-3 z-[9999] p-1.5 sm:p-2 hover:bg-muted rounded-full transition-colors"
         >
           <X className="h-4 w-4 text-muted-foreground" />
         </button>
-        
-        <div className="flex min-h-[400px] p-4 sm:p-6 items-center bg-card rounded-xl relative z-[9997]">
-          <form className="flex w-full min-h-[350px] flex-col justify-center items-start gap-3 sm:gap-4 relative z-[9996]">
+
+        <div className="flex min-h-[300px] sm:min-h-[400px] p-3 sm:p-4 lg:p-6 items-center bg-card rounded-xl relative z-[9997]">
+          <form className="flex w-full min-h-[280px] sm:min-h-[350px] flex-col justify-start items-start gap-3 sm:gap-4 relative z-[9996]">
             {/* Row 1: Type d'intervention & ID Serre */}
-            <div className="w-full grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4">
-              <div className="flex w-full flex-col justify-center items-start gap-2">
+            <div className="w-full grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
+              <div className="flex w-full flex-col justify-start items-start gap-2">
                 <Label htmlFor="intervention-type" className="flex items-start gap-0 text-xs sm:text-sm font-semibold text-foreground">
                   Type d'intervention demandée
                   <span className="text-red-500 ml-1">*</span>
@@ -327,7 +327,7 @@ export default function InterventionForm({
                   <SelectTrigger
                     id="intervention-type-trigger"
                     className={cn(
-                      "flex h-10 sm:h-11 w-full px-3 py-0 justify-between items-center rounded-lg border border-border bg-card text-sm",
+                      "flex h-10 sm:h-11 w-full px-3 py-2 justify-between items-center rounded-lg border border-border bg-card text-sm min-h-[44px]",
                       errors.interventionType && "border-red-500 focus:border-red-500 focus:ring-red-500"
                     )}
                     disabled={loadingTypeTaches}
@@ -337,16 +337,16 @@ export default function InterventionForm({
                       className="text-foreground font-normal text-sm"
                     />
                   </SelectTrigger>
-                  <SelectContent 
-                    className="z-[9999] relative min-w-[200px]" 
-                    position="popper" 
-                    side="bottom" 
+                  <SelectContent
+                    className="z-[9999] relative min-w-[250px] sm:min-w-[200px] max-h-[200px] overflow-y-auto"
+                    position="popper"
+                    side="bottom"
                     align="start"
                     sideOffset={4}
                     avoidCollisions={true}
                   >
                     {typeTaches.map((type) => (
-                      <SelectItem key={type.id} value={type.id.toString()}>
+                      <SelectItem key={type.id} value={type.id.toString()} className="text-sm">
                         {type.nom}
                       </SelectItem>
                     ))}
@@ -357,7 +357,7 @@ export default function InterventionForm({
                 )}
               </div>
 
-              <div className="flex w-full flex-col justify-center items-start gap-2">
+              <div className="flex w-full flex-col justify-start items-start gap-2">
                 <Label htmlFor="serre-id" className="flex items-start gap-0 text-xs sm:text-sm font-semibold text-foreground">
                   Sélectionner une serre
                   <span className="text-red-500 ml-1">*</span>
@@ -370,7 +370,7 @@ export default function InterventionForm({
                   <SelectTrigger
                     id="serre-id"
                     className={cn(
-                      "flex h-10 sm:h-11 px-3 py-0 items-center rounded-lg border border-border bg-card text-sm text-foreground",
+                      "flex h-10 sm:h-11 px-3 py-2 items-center rounded-lg border border-border bg-card text-sm text-foreground min-h-[44px]",
                       errors.serreId && "border-red-500 focus:border-red-500 focus:ring-red-500",
                       loadingSerres && "opacity-50 cursor-not-allowed"
                     )}
@@ -381,17 +381,17 @@ export default function InterventionForm({
                       className="text-foreground font-normal text-sm"
                     />
                   </SelectTrigger>
-                  <SelectContent 
-                    className="z-[9999] relative min-w-[200px]" 
-                    position="popper" 
-                    side="bottom" 
+                  <SelectContent
+                    className="z-[9999] relative min-w-[250px] sm:min-w-[200px] max-h-[200px] overflow-y-auto"
+                    position="popper"
+                    side="bottom"
                     align="start"
                     sideOffset={4}
                     avoidCollisions={true}
                   >
                     {serres.length > 0 ? (
                       serres.map((serre) => (
-                        <SelectItem key={serre.id} value={serre.id.toString()}>
+                        <SelectItem key={serre.id} value={serre.id.toString()} className="text-sm">
                           {serre.nom}
                         </SelectItem>
                       ))
@@ -409,8 +409,8 @@ export default function InterventionForm({
             </div>
 
             {/* Row 2: Date d'intervention & Date de fin */}
-            <div className="w-full grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4">
-              <div className="flex w-full flex-col justify-center items-start gap-2">
+            <div className="w-full grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
+              <div className="flex w-full flex-col justify-start items-start gap-2">
                 <Label htmlFor="intervention-date" className="flex items-start gap-0 text-xs sm:text-sm font-semibold text-foreground">
                   Date de l'intervention
                   <span className="text-red-500 ml-1">*</span>
@@ -422,19 +422,18 @@ export default function InterventionForm({
                     value={formData.interventionDate}
                     onChange={(e) => updateFormData("interventionDate", e.target.value)}
                     className={cn(
-                      "w-full h-full rounded-lg border border-border bg-card px-3 text-foreground text-sm font-normal focus:border-greener-600 focus:ring-greener-600 focus:ring-2",
+                      "w-full h-full rounded-lg border border-border bg-card px-3 py-2 text-foreground text-sm font-normal focus:border-greener-600 focus:ring-greener-600 focus:ring-2 min-h-[44px]",
                       errors.interventionDate && "border-red-500 focus:border-red-500 focus:ring-red-500"
                     )}
-                    placeholder="mm/dd/yyyy"
                   />
-                  <Calendar className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Calendar className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
                 </div>
                 {errors.interventionDate && (
                   <p className="text-xs text-red-500">{errors.interventionDate}</p>
                 )}
               </div>
 
-              <div className="flex w-full flex-col justify-center items-start gap-2">
+              <div className="flex w-full flex-col justify-start items-start gap-2">
                 <Label htmlFor="date-fin" className="flex items-start gap-0 text-xs sm:text-sm font-semibold text-foreground">
                   Date de fin
                   <span className="text-muted-foreground text-xs ml-1">(optionnel)</span>
@@ -445,10 +444,9 @@ export default function InterventionForm({
                     type="date"
                     value={formData.dateFin}
                     onChange={(e) => updateFormData("dateFin", e.target.value)}
-                    className="w-full h-full rounded-lg border border-border bg-card px-3 text-foreground text-sm font-normal focus:border-greener-600 focus:ring-greener-600 focus:ring-2"
-                    placeholder="mm/dd/yyyy"
+                    className="w-full h-full rounded-lg border border-border bg-card px-3 py-2 text-foreground text-sm font-normal focus:border-greener-600 focus:ring-greener-600 focus:ring-2 min-h-[44px]"
                   />
-                  <Calendar className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Calendar className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
                 </div>
               </div>
             </div>
@@ -474,10 +472,10 @@ export default function InterventionForm({
                     onBlur={(e) => {
                       console.log("💰 Input blur event:", e.target.value);
                     }}
-                    className="h-10 sm:h-11 px-3 pl-10 rounded-lg border border-border bg-card hover:border-greener-600 focus:border-greener-600 focus:ring-greener-600 focus:ring-2 transition-colors text-foreground font-medium text-sm"
+                    className="h-10 sm:h-11 px-3 pl-10 py-2 rounded-lg border border-border bg-card hover:border-greener-600 focus:border-greener-600 focus:ring-greener-600 focus:ring-2 transition-colors text-foreground font-medium text-sm min-h-[44px]"
                     placeholder="0.00"
                   />
-                  <Tag className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-greener-600" />
+                  <Tag className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-greener-600 pointer-events-none" />
                 </div>
                 {errors.estimatedCharges && (
                   <p className="text-xs text-red-500">{errors.estimatedCharges}</p>
@@ -498,19 +496,19 @@ export default function InterventionForm({
                   onChange={(e) => updateFormData("description", e.target.value)}
                   placeholder="Détails supplémentaires sur l'intervention..."
                   rows={3}
-                  className="w-full p-3 rounded-lg border border-border bg-card resize-none text-sm text-foreground focus:border-greener-600 focus:ring-greener-600 focus:ring-2"
+                  className="w-full p-3 rounded-lg border border-border bg-card resize-none text-sm text-foreground focus:border-greener-600 focus:ring-greener-600 focus:ring-2 min-h-[80px] sm:min-h-[90px]"
                 />
               </div>
             </div>
 
             {/* Footer Actions */}
-            <div className="flex flex-col sm:flex-row gap-3 pt-4 sm:pt-6 justify-center items-center w-full border-t border-border">
+            <div className="flex flex-col sm:flex-row gap-3 pt-4 sm:pt-6 justify-center items-stretch sm:items-center w-full border-t border-border">
               <Button
                 type="button"
                 onClick={handleClose}
-                className="flex h-10 sm:h-11 px-4 sm:px-6 justify-center items-center gap-2 rounded-lg bg-muted hover:bg-muted/80 border-0 w-full sm:w-auto text-sm"
+                className="flex h-11 sm:h-11 px-4 sm:px-6 justify-center items-center gap-2 rounded-lg bg-muted hover:bg-muted/80 border-0 w-full sm:w-auto text-sm min-h-[44px] order-2 sm:order-1"
               >
-                <ArrowLeft className="h-4 w-4 text-muted-foreground" />
+                <ArrowLeft className="h-4 w-4 text-muted-foreground flex-shrink-0" />
                 <span className="text-muted-foreground text-center font-medium">Annuler</span>
               </Button>
 
@@ -518,9 +516,9 @@ export default function InterventionForm({
                 type="button"
                 onClick={handleSubmit}
                 disabled={isSubmitting}
-                className="flex h-10 sm:h-11 px-4 sm:px-6 justify-center items-center gap-2 rounded-lg bg-greener-600 hover:bg-greener-700 text-white shadow-md border-0 w-full sm:w-auto text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex h-11 sm:h-11 px-4 sm:px-6 justify-center items-center gap-2 rounded-lg bg-greener-600 hover:bg-greener-700 text-white shadow-md border-0 w-full sm:w-auto text-sm disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px] order-1 sm:order-2"
               >
-                <Send className="h-4 w-4 text-white" />
+                <Send className="h-4 w-4 text-white flex-shrink-0" />
                 <span className="text-white text-center font-medium">
                   {isSubmitting ? "Envoi en cours..." : "Envoyer la demande"}
                 </span>
