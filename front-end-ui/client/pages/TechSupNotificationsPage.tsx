@@ -36,7 +36,6 @@ export default function TechSupNotificationsPage() {
       const allNotifications = await notificationService.getNotifications();
       setNotifications(allNotifications);
       
-      // Calculate stats
       const unreadCount = allNotifications.filter(n => n.status === 'non_vue').length;
       const readCount = allNotifications.filter(n => n.status === 'vue').length;
       
@@ -46,7 +45,6 @@ export default function TechSupNotificationsPage() {
         read: readCount
       });
     } catch (error) {
-      console.error('Error fetching notifications:', error);
       setNotifications([]);
     } finally {
       setLoading(false);
@@ -71,21 +69,10 @@ export default function TechSupNotificationsPage() {
   };
 
   const handleNotificationClick = async (notification: Notification) => {
-    console.log('🔔 TechSupNotificationsPage - Notification clicked:', {
-      id: notification.id,
-      type: notification.type_notification,
-      description: notification.description,
-      status: notification.status,
-      date: notification.date,
-      id_intervention: notification.id_intervention
-    });
-
     if (notification.status === 'non_vue') {
       try {
         await notificationService.markAsSeen(notification.id);
-        console.log('✅ TechSupNotificationsPage - Notification marked as seen');
         
-        // Update local state
         setNotifications(prev => prev.map(n => 
           n.id === notification.id ? { ...n, status: 'vue' as const } : n
         ));
@@ -95,24 +82,16 @@ export default function TechSupNotificationsPage() {
           read: prev.read + 1
         }));
       } catch (error) {
-        console.error('❌ TechSupNotificationsPage - Error marking notification as seen:', error);
+        // Error marking notification as seen
       }
     }
 
-    // Navigate based on notification type
     if (notification.type_notification.includes('intervention')) {
-      console.log('🔧 TechSupNotificationsPage - Intervention notification detected');
-      
-      // If there's an intervention ID, go to intervention request details page
       if (notification.id_intervention) {
-        console.log('🎯 TechSupNotificationsPage - Navigating to intervention request details:', `/technicien-sup/intervention-request/${notification.id_intervention}?notificationId=${notification.id}`);
         navigate(`/technicien-sup/intervention-request/${notification.id_intervention}?notificationId=${notification.id}`);
       } else {
-        console.log('⚠️ TechSupNotificationsPage - No intervention ID found, navigating to missions');
         navigate("/technicien-sup/missions");
       }
-    } else {
-      console.log('ℹ️ TechSupNotificationsPage - Non-intervention notification, staying on notifications page');
     }
   };
 
@@ -134,7 +113,6 @@ export default function TechSupNotificationsPage() {
   };
 
   const getNotificationDescription = (notification: Notification) => {
-    // Show the actual notification description instead of generic text
     return notification.description;
   };
 

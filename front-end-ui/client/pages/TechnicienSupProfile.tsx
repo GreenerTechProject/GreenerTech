@@ -31,7 +31,6 @@ export default function TechnicienSupProfile() {
         try {
           setLoading(true);
           
-          // Fetch company data for the user via company ID
           let companyData = null;
           try {
             const companyId = user.id_entreprise != null ? Number(user.id_entreprise) : undefined;
@@ -42,15 +41,11 @@ export default function TechnicienSupProfile() {
             // Could not fetch company data
           }
 
-          // Format user data for display
           const formattedUser = {
             ...user,
-            // Split name into first and last name if available
             firstName: user.name ? user.name.split(' ')[0] : '',
             lastName: user.name ? user.name.split(' ').slice(1).join(' ') : '',
-            // Format role display
             roleDisplay: getRoleDisplayName(user.role),
-            // Use actual user data or provide defaults
             telephone: user.telephone || "Non renseigné",
             birthday: user.birthday ? formatBirthday(user.birthday) : "Non renseigné",
           };
@@ -158,7 +153,6 @@ export default function TechnicienSupProfile() {
   return (
     <div className="min-h-screen bg-white">
       <div className="flex items-center justify-center p-4">
-        {/* Back button */}
         <div className="absolute top-4 left-4">
           <Button 
             variant="ghost" 
@@ -171,19 +165,15 @@ export default function TechnicienSupProfile() {
         </div>
         
         <Card className="w-full max-w-md shadow-lg border-0">
-          {/* Green Header with User Info */}
           <div className="bg-green-600 rounded-t-lg p-6 relative">
-            {/* Profile Picture Placeholder */}
             <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center mb-4 relative">
               <div className="text-2xl font-bold text-green-600">
                 {userInfo.firstName ? userInfo.firstName[0] : 'U'}
                 {userInfo.lastName ? userInfo.lastName[0] : ''}
               </div>
-              {/* Online status dot */}
               <div className="absolute bottom-0 right-0 w-4 h-4 bg-green-500 rounded-full border-2 border-white"></div>
             </div>
             
-            {/* User Name and Role */}
             <div className="text-white">
               <h1 className="text-2xl font-bold mb-1">
                 {userInfo.firstName} {userInfo.lastName}
@@ -194,9 +184,7 @@ export default function TechnicienSupProfile() {
             </div>
           </div>
 
-          {/* User Details */}
           <CardContent className="p-6 space-y-4">
-            {/* Company Information */}
             <div className="flex items-center space-x-3">
               <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
                 <Building2 className="w-4 h-4 text-green-600" />
@@ -210,7 +198,6 @@ export default function TechnicienSupProfile() {
               </div>
             </div>
 
-            {/* Phone Number */}
             <div className="flex items-center space-x-3">
               <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
                 <Phone className="w-4 h-4 text-green-600" />
@@ -221,7 +208,6 @@ export default function TechnicienSupProfile() {
               </div>
             </div>
 
-            {/* Email */}
             <div className="flex items-center space-x-3">
               <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center">
                 <Mail className="w-4 h-4 text-gray-600" />
@@ -232,7 +218,6 @@ export default function TechnicienSupProfile() {
               </div>
             </div>
 
-            {/* Birthday */}
             <div className="flex items-center space-x-3">
               <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center">
                 <Calendar className="w-4 h-4 text-purple-600" />
@@ -244,7 +229,6 @@ export default function TechnicienSupProfile() {
             </div>
           </CardContent>
 
-          {/* Action Buttons */}
           <div className="p-6 pt-0 flex flex-col space-y-3">
             <Button
               onClick={handleEditProfile}

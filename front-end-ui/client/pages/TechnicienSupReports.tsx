@@ -68,7 +68,6 @@ export default function TechnicienSupReports() {
   };
 
   const handleGenerateReport = () => {
-    // Navigate to report creation page or open modal
     navigate("/technicien-sup/reports/create");
   };
 
@@ -147,7 +146,6 @@ export default function TechnicienSupReports() {
     <div className="min-h-screen bg-white dark:bg-gray-900">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
 
-        {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
           <Card className="hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
             <CardContent className="p-6">
@@ -229,7 +227,6 @@ export default function TechnicienSupReports() {
           </Card>
         </div>
 
-        {/* Filters and Search */}
         <Card className="mb-8 hover:shadow-md transition-shadow duration-300">
           <CardHeader className="pb-4">
             <CardTitle className="flex items-center space-x-2 text-lg">
@@ -292,7 +289,6 @@ export default function TechnicienSupReports() {
           </CardContent>
         </Card>
 
-        {/* Reports List */}
         <Card className="hover:shadow-md transition-shadow duration-300">
           <CardHeader className="pb-4">
             <CardTitle className="flex items-center space-x-2 text-lg">

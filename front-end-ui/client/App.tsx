@@ -81,14 +81,23 @@ const RoleHomeRedirect = () => {
       ? "/technician"
       : user?.role === "technicien_superieur"
         ? "/technicien-sup/home"
-        : "/login";
+        : "/";  // Fallback to landing page, NOT /login
   return <Navigate to={target} replace />;
 };
 
 const RootRoute = () => {
+  console.log("RootRoute component starting to render");
+  
   const { user, isLoading } = useAuth();
   
+  console.log("RootRoute - user:", user);
+  console.log("RootRoute - isLoading:", isLoading);
+  console.log("RootRoute - user?.role:", user?.role);
+  console.log("RootRoute - user?.id:", user?.id);
+  console.log("RootRoute - user?.email:", user?.email);
+  
   if (isLoading) {
+    console.log("RootRoute - Still loading...");
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#B4CC5F]"></div>
@@ -97,22 +106,29 @@ const RootRoute = () => {
   }
   
   // If user is authenticated, redirect to their dashboard
-  if (user) {
+  if (user && user.role) {
+    console.log("RootRoute - User authenticated, redirecting to dashboard");
     return <RoleHomeRedirect />;
   }
   
   // If user is not authenticated, show the landing page
+  console.log("RootRoute - User not authenticated, showing landing page");
+  console.log("RootRoute - About to render LandingPage component");
   return <LandingPage />;
 };
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <AuthProvider>
-          <Routes>
+const App = () => {
+  console.log("App component rendering");
+  console.log("Current window.location.pathname:", window.location.pathname);
+  
+  return (
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <AuthProvider>
+            <Routes>
             {/* Public Routes */}
             <Route path="/login" element={<Index />} />
             <Route path="/role-selection" element={<RoleSelection />} />
@@ -408,14 +424,14 @@ const App = () => (
               }
             />
 
+            {/* Landing page route */}
+            <Route path="/landing" element={<LandingPage />} />
+
             {/* Root route: Landing page for unauthenticated users, dashboard for authenticated users */}
             <Route
               path="/"
               element={<RootRoute />}
             />
-            
-            {/* Landing page route */}
-            <Route path="/landing" element={<LandingPage />} />
 
             {/* Catch-all */}
             <Route path="*" element={<NotFound />} />
@@ -424,6 +440,7 @@ const App = () => (
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
-);
+  );
+};
 
 export default App;

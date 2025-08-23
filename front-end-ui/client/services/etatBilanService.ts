@@ -10,11 +10,11 @@ export interface EtatBilan {
   nombre_tomates_non_maladies: number;
   nombre_malade1: number;
   nombre_malade2: number;
-  temperature?: number | null;
-  humidite?: number | null;
-  luminosite?: number | null;
-  co2?: number | null;
-  rendement?: number | null;
+  temperature: number;
+  humidite: number;
+  luminosite: number;
+  co2: number;
+  rendement: number;
   date: string;
 }
 
@@ -37,16 +37,13 @@ export const etatBilanService = {
   // Get etat de bilan by bilan ID
   getEtatBilanByBilan: async (bilanId: number): Promise<EtatBilan[]> => {
     try {
-      console.log('[EtatBilanService] Fetching etat de bilan for bilan:', bilanId);
       const response = await axios.get<EtatBilan[]>(
         `${API_BASE_URL}/etat_bilan/bilan/${bilanId}`,
         createAuthenticatedRequest()
       );
       
-      console.log('[EtatBilanService] Response:', response.data);
       return response.data;
     } catch (error: any) {
-      console.error('[EtatBilanService] Error:', error);
       const errorMessage = error.response?.data?.message || 
         "Erreur lors de la récupération de l'état de bilan";
       throw {
@@ -57,24 +54,23 @@ export const etatBilanService = {
   },
 
   // Get last etat de bilan by serre ID
-  getLastEtatBilanBySerre: async (serreId: number): Promise<EtatBilan[]> => {
+  getLastEtatBilanBySerre: async (serreId: number): Promise<EtatBilan | null> => {
     try {
-      console.log('[EtatBilanService] Fetching last etat de bilan for serre:', serreId);
-      const response = await axios.get<EtatBilan[]>(
-        `${API_BASE_URL}/etat_bilan/serre/${serreId}`,
-        createAuthenticatedRequest()
-      );
-      
-      console.log('[EtatBilanService] Response:', response.data);
-      return response.data;
+      const response = await axios.get(`${API_BASE_URL}/etat_bilan/serre/${serreId}/last`, createAuthenticatedRequest());
+      return response.data || null;
     } catch (error: any) {
-      console.error('[EtatBilanService] Error:', error);
-      const errorMessage = error.response?.data?.message || 
-        "Erreur lors de la récupération de l'état de bilan de la serre";
-      throw {
-        message: errorMessage,
-        status: error.response?.status || 500,
-      } as ApiError;
+      const errorMessage = error.response?.data?.message || "Erreur lors de la récupération du dernier état de bilan";
+      throw { message: errorMessage, status: error.response?.status || 500 } as ApiError;
+    }
+  },
+
+  getLastEtatBilanByBilan: async (bilanId: number): Promise<EtatBilan | null> => {
+    try {
+      const response = await axios.get(`${API_BASE_URL}/etat_bilan/bilan/${bilanId}/last`, createAuthenticatedRequest());
+      return response.data || null;
+    } catch (error: any) {
+      const errorMessage = error.response?.data?.message || "Erreur lors de la récupération du dernier état de bilan";
+      throw { message: errorMessage, status: error.response?.status || 500 } as ApiError;
     }
   },
 
@@ -124,5 +120,5 @@ export const etatBilanService = {
     }
   }
 };
-
 export default etatBilanService;
+

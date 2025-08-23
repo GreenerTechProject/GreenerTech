@@ -973,7 +973,7 @@ def get_supervisors_by_company(current_user, company_id):
         # Check if current user has access to this company
         if current_user.role == 'technicien_superieur' and current_user.id_entreprise != company_id_int:
             return jsonify({"message": "Non autorisé"}), 403
-        
+
         if current_user.role == 'directeur' and current_user.id_entreprise != company_id_int:
             return jsonify({"message": "Non autorisé"}), 403
 
@@ -1009,6 +1009,63 @@ def get_supervisors_by_company(current_user, company_id):
         return jsonify({"success": False, "message": str(e)}), 400
 
 
+@token_required
+@role_required('directeur', 'technicien_superieur')
+def get_techniciens_by_supervisor(current_user, supervisor_id):
+    """Get all technicians supervised by a specific supervisor"""
+    try:
+        try:
+            supervisor_id_int = int(supervisor_id)
+        except (ValueError, TypeError):
+            return jsonify({"message": "ID du superviseur invalide"}), 400
+
+        # Get the supervisor to check their company
+        supervisor = User.query.get(supervisor_id_int)
+        if not supervisor:
+            return jsonify({"message": "Superviseur non trouvé"}), 404
+
+        # Check if current user has access to this supervisor's company
+        if current_user.role == 'technicien_superieur' and current_user.id_entreprise != supervisor.id_entreprise:
+            return jsonify({"message": "Non autorisé"}), 403
+
+        if current_user.role == 'directeur' and current_user.id_entreprise != supervisor.id_entreprise:
+            return jsonify({"message": "Non autorisé"}), 403
+
+        # Get technicians supervised by this supervisor
+        technicians = (
+            User.query
+            .filter(User.id_assigned == supervisor_id_int)
+            .filter(User.role == "technicien")
+            .all()
+        )
+        
+        data = [
+            {
+                "id": tech.id,
+                "name": tech.name,  
+                "fullName": tech.name,  # fullName for frontend compatibility
+                "email": tech.email,
+                "role": tech.role,
+                "telephone": tech.telephone,
+                "birthday": tech.birthday.isoformat() if tech.birthday else None,
+                "created_at": tech.created_at.isoformat() if tech.created_at else None,
+                "updated_at": tech.updated_at.isoformat() if tech.updated_at else None,
+                "id_assigned": tech.id_assigned,
+                "setup_completed": tech.setup_completed,
+                "directeur_valide": tech.directeur_valide,
+                "email_valide": tech.email_valide,
+                "id_entreprise": tech.id_entreprise
+            }
+            for tech in technicians
+        ]
+        
+        return jsonify({"success": True, "technicians": data}), 200
+    except Exception as e:
+        return jsonify({"success": False, "message": str(e)}), 400
+
+
+@token_required
+@role_required('directeur', 'technicien_superieur')
 def get_supervisor_by_id(current_user, supervisor_id):
     """Get a specific supervisor by ID"""
     try:

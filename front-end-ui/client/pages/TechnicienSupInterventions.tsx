@@ -69,12 +69,21 @@ interface Serre {
 }
 
 export default function TechnicienSupInterventions() {
-  const { user } = useAuth();
+  const { user, isAuthenticated, isLoading: authLoading } = useAuth();
   const { toast } = useToast();
+  
+  console.log("🔍 TechnicienSupInterventions: Component rendered", { 
+    userId: user?.id, 
+    userRole: user?.role,
+    userEmail: user?.email,
+    isAuthenticated,
+    authLoading
+  });
+  
   const [assignedSerres, setAssignedSerres] = useState<Serre[]>([]);
   const [interventions, setInterventions] = useState<Intervention[]>([]);
   const [filteredInterventions, setFilteredInterventions] = useState<Intervention[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false); // Start with false since we'll control it manually
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [interventionsPerPage] = useState(7);
@@ -86,19 +95,58 @@ export default function TechnicienSupInterventions() {
   const [technicians, setTechnicians] = useState<UserInterface[]>([]);
   const [technicianFilter, setTechnicianFilter] = useState<string>("all");
   const [isTechnicianFilterOpen, setIsTechnicianFilterOpen] = useState(false);
+  const [retryCount, setRetryCount] = useState(0);
+  const [maxRetries] = useState(3);
+  const [hasError, setHasError] = useState(false);
 
   useEffect(() => {
-    loadData();
-  }, []);
-
-  // Load interventions after initial data is loaded (technicians and serres)
-  useEffect(() => {
-    if (technicians.length > 0 && assignedSerres.length > 0 && !loading) {
-      loadInterventions();
+    console.log("🔍 TechnicienSupInterventions: Initial useEffect triggered");
+    if (!authLoading && isAuthenticated && user?.id && !hasError) {
+      console.log("🔍 TechnicienSupInterventions: User authenticated and available, loading data");
+      
+      // Add a timeout to prevent hanging
+      const timeoutId = setTimeout(() => {
+        console.log("🔍 TechnicienSupInterventions: Timeout reached, stopping");
+        setLoading(false);
+        setRetryCount(0);
+      }, 30000); // 30 seconds timeout
+      
+      loadData();
+      
+      return () => {
+        clearTimeout(timeoutId);
+      };
+    } else if (authLoading) {
+      console.log("🔍 TechnicienSupInterventions: Auth still loading, waiting...");
+    } else if (!isAuthenticated) {
+      console.log("🔍 TechnicienSupInterventions: User not authenticated");
+    } else if (hasError) {
+      console.log("🔍 TechnicienSupInterventions: Has error, skipping data load");
+    } else {
+      console.log("🔍 TechnicienSupInterventions: User not available, skipping data load");
     }
-  }, [technicians, assignedSerres, loading]);
+  }, [authLoading, isAuthenticated, user?.id, hasError]);
 
-  // Reset filtered results when interventions change (e.g., after refresh)
+  useEffect(() => {
+    console.log("🔍 TechnicienSupInterventions: Data dependencies changed", { 
+      techniciansLength: technicians.length, 
+      assignedSerresLength: assignedSerres.length,
+      userId: user?.id,
+      hasError
+    });
+    if (user?.id && technicians.length > 0 && assignedSerres.length > 0 && !hasError) {
+      console.log("🔍 TechnicienSupInterventions: Loading interventions");
+      loadInterventions();
+    } else {
+      console.log("🔍 TechnicienSupInterventions: Skipping intervention load", {
+        hasUser: !!user?.id,
+        hasTechnicians: technicians.length > 0,
+        hasSerres: assignedSerres.length > 0,
+        hasError
+      });
+    }
+  }, [user?.id, technicians, assignedSerres, hasError]);
+
   useEffect(() => {
     if (interventions.length > 0) {
       setFilteredInterventions(interventions);
@@ -110,17 +158,14 @@ export default function TechnicienSupInterventions() {
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as HTMLElement;
       
-      // Check if click is outside sort menu
       if (isSortMenuOpen && !target.closest('[data-sort-menu]')) {
         setIsSortMenuOpen(false);
       }
       
-      // Check if click is outside status filter menu
       if (isStatusFilterOpen && !target.closest('[data-status-filter]')) {
         setIsStatusFilterOpen(false);
       }
 
-      // Check if click is outside technician filter menu
       if (isTechnicianFilterOpen && !target.closest('[data-technician-filter]')) {
         setIsTechnicianFilterOpen(false);
       }
@@ -133,23 +178,46 @@ export default function TechnicienSupInterventions() {
   }, [isSortMenuOpen, isStatusFilterOpen, isTechnicianFilterOpen]);
 
   const loadData = async () => {
-    if (loading) return; // Prevent duplicate calls
-
+    console.log("🔍 TechnicienSupInterventions: loadData started");
+    if (loading || hasError) {
+      console.log("🔍 TechnicienSupInterventions: Already loading or has error, skipping");
+      return;
+    }
+    
+    if (retryCount >= maxRetries) {
+      console.error("🔍 TechnicienSupInterventions: Max retries reached, stopping");
+      setHasError(true);
+      toast({
+        title: "Erreur",
+        description: "Impossible de charger les données après plusieurs tentatives",
+        variant: "destructive"
+      });
+      return;
+    }
+    
     try {
       setLoading(true);
-      // Load technicians and serres in parallel for better performance
+      setHasError(false);
+      console.log("🔍 TechnicienSupInterventions: Loading technicians and assigned serres");
       await Promise.all([
         loadTechnicians(),
         loadAssignedSerres()
       ]);
-      // loadInterventions will be called by useEffect when both are available
+      console.log("🔍 TechnicienSupInterventions: Data loading completed");
+      setRetryCount(0); // Reset retry count on success
     } catch (error) {
+      console.error("🔍 TechnicienSupInterventions: Error in loadData", error);
+      setRetryCount(prev => prev + 1);
+      if (retryCount + 1 >= maxRetries) {
+        setHasError(true);
+      }
       toast({
         title: "Erreur",
         description: "Impossible de charger les données",
         variant: "destructive"
       });
     } finally {
+      console.log("🔍 TechnicienSupInterventions: Setting loading to false");
       setLoading(false);
     }
   };
@@ -168,35 +236,23 @@ export default function TechnicienSupInterventions() {
   const loadTechnicians = async () => {
     try {
       if (user?.id) {
-        // First try to get technicians directly supervised by the current user
         let supervisedTechnicians = await userService.getTechniciansBySupervisor(Number(user.id));
         
         if (supervisedTechnicians.length > 0) {
-          // We found technicians with explicit supervisor relationship
           setTechnicians(supervisedTechnicians);
         } else {
-          // Fallback: get all technicians in company and filter by supervisor relationship
           if (user?.id_entreprise) {
             const allTechs = await userService.getTechniciansByCompany(user.id_entreprise);
             
-            // Filter to only show technicians that the current supervisor is supervising
-            // We'll check multiple possible supervisor field names
             const filteredTechnicians = allTechs.filter(tech => {
-              // Check various possible supervisor field names
               const techAny = tech as any;
               const supervisorId = techAny.supervisor_id || techAny.id_superviseur || techAny.id_assigned;
               
               if (supervisorId) {
-                // If technician has a supervisor field, check if it matches current user
                 return Number(supervisorId) === Number(user.id);
               } else {
-                // Fallback: check if technician has interventions in supervisor's assigned serres
-                return interventions.some(intervention => 
-                  Number(intervention.id_user) === Number(tech.id) &&
-                  assignedSerres.some(serre => 
-                    intervention.serre_nom === serre.nom
-                  )
-                );
+                // Remove circular dependency - we'll filter these later if needed
+                return false;
               }
             });
             
@@ -210,23 +266,23 @@ export default function TechnicienSupInterventions() {
   };
 
   const loadInterventions = async () => {
-    if (loading) return; // Prevent duplicate calls
-
+    console.log("🔍 TechnicienSupInterventions: loadInterventions started");
+    if (loading || hasError) {
+      console.log("🔍 TechnicienSupInterventions: Already loading interventions or has error, skipping");
+      return;
+    }
     try {
       setLoading(true);
-      // Use the dedicated service for assigned serres - more efficient!
+      console.log("🔍 TechnicienSupInterventions: Fetching interventions from API");
       const interventions = await InterventionService.getInterventionsByAssignedSerres();
+      console.log("🔍 TechnicienSupInterventions: Interventions fetched", interventions.length);
 
-      // Create a map of technicians for faster lookup
       const technicianMap = new Map(technicians.map(tech => [Number(tech.id), tech]));
 
-      // Add technician names to interventions
       const interventionsWithTechnicianNames = interventions.map((intervention) => {
-        // Ensure both IDs are numbers for proper comparison
         const interventionUserId = Number(intervention.id_user);
         let technician = technicianMap.get(interventionUserId);
 
-        // Determine technician name
         let technicianName = technician?.name;
         if (!technicianName) {
           if (user?.id && interventionUserId === Number(user.id)) {
@@ -242,16 +298,20 @@ export default function TechnicienSupInterventions() {
         };
       });
 
+      console.log("🔍 TechnicienSupInterventions: Setting interventions state");
       setInterventions(interventionsWithTechnicianNames);
       setFilteredInterventions(interventionsWithTechnicianNames);
 
       if (sortBy) {
+        console.log("🔍 TechnicienSupInterventions: Applying sorting");
         applySorting(sortBy, sortOrder);
       }
     } catch (error) {
+      console.error("🔍 TechnicienSupInterventions: Error in loadInterventions", error);
       setInterventions([]);
       setFilteredInterventions([]);
     } finally {
+      console.log("🔍 TechnicienSupInterventions: Setting loading to false in loadInterventions");
       setLoading(false);
     }
   };
@@ -275,17 +335,14 @@ export default function TechnicienSupInterventions() {
   };
 
   const applyFilters = useCallback((search: string, status: string, technicianId: string) => {
-    // Start with a fresh copy of all interventions
     let filtered = [...interventions];
 
-    // Apply status filter first (most restrictive)
     if (status !== "all") {
       filtered = filtered.filter(intervention => {
         return intervention.status === status;
       });
     }
 
-    // Apply technician filter (second most restrictive)
     if (technicianId !== "all") {
       const selectedTechnician = technicians.find(tech => String(tech.id) === technicianId);
 
@@ -296,7 +353,6 @@ export default function TechnicienSupInterventions() {
       }
     }
 
-    // Apply search filter last (least restrictive but most expensive)
     if (search.trim()) {
       const searchLower = search.toLowerCase();
       filtered = filtered.filter(intervention => {
@@ -313,9 +369,13 @@ export default function TechnicienSupInterventions() {
     setFilteredInterventions(filtered);
     setCurrentPage(1);
     
-    // Re-apply current sorting after filtering
+    // Only apply sorting if we have filtered results and sortBy is set
     if (sortBy && filtered.length > 0) {
-      applySorting(sortBy, sortOrder);
+      try {
+        applySorting(sortBy, sortOrder);
+      } catch (error) {
+        console.error("🔍 TechnicienSupInterventions: Error applying sorting", error);
+      }
     }
   }, [interventions, technicians, sortBy, sortOrder]);
 
@@ -336,50 +396,51 @@ export default function TechnicienSupInterventions() {
   };
 
   const applySorting = (sortField: string, order: "asc" | "desc") => {
-    if (filteredInterventions.length === 0) return;
-    
-    const sorted = [...filteredInterventions].sort((a, b) => {
-      let aValue: any = a[sortField as keyof Intervention];
-      let bValue: any = b[sortField as keyof Intervention];
+    try {
+      if (filteredInterventions.length === 0) return;
       
-      // Handle null/undefined values
-      if (aValue === null || aValue === undefined) aValue = "";
-      if (bValue === null || bValue === undefined) bValue = "";
+      const sorted = [...filteredInterventions].sort((a, b) => {
+        let aValue: any = a[sortField as keyof Intervention];
+        let bValue: any = b[sortField as keyof Intervention];
+        
+        if (aValue === null || aValue === undefined) aValue = "";
+        if (bValue === null || bValue === undefined) bValue = "";
+        
+        if (sortField.includes('date')) {
+          const aDate = new Date(aValue || new Date());
+          const bDate = new Date(bValue || new Date());
+          aValue = aDate.getTime();
+          bValue = bDate.getTime();
+        }
+        
+        if (sortField === 'total_charges') {
+          aValue = parseFloat(aValue) || 0;
+          bValue = parseFloat(bValue) || 0;
+        }
+        
+        if (typeof aValue === 'string') {
+          aValue = aValue.toLowerCase();
+          bValue = bValue.toLowerCase();
+        }
+        
+        if (order === "asc") {
+          if (aValue < bValue) return -1;
+          if (aValue > bValue) return 1;
+          return 0;
+        } else {
+          if (aValue > bValue) return -1;
+          if (aValue < bValue) return 1;
+          return 0;
+        }
+      });
       
-      // Handle date sorting
-      if (sortField.includes('date')) {
-        const aDate = new Date(aValue || new Date());
-        const bDate = new Date(bValue || new Date());
-        aValue = aDate.getTime();
-        bValue = bDate.getTime();
-      }
-      
-      // Handle numeric sorting
-      if (sortField === 'total_charges') {
-        aValue = parseFloat(aValue) || 0;
-        bValue = parseFloat(bValue) || 0;
-      }
-      
-      // Handle string sorting
-      if (typeof aValue === 'string') {
-        aValue = aValue.toLowerCase();
-        bValue = bValue.toLowerCase();
-      }
-      
-      // Apply sorting logic
-      if (order === "asc") {
-        if (aValue < bValue) return -1;
-        if (aValue > bValue) return 1;
-        return 0;
-      } else {
-        if (aValue > bValue) return -1;
-        if (aValue < bValue) return 1;
-        return 0;
-      }
-    });
-    
-    setFilteredInterventions(sorted);
-    setCurrentPage(1);
+      setFilteredInterventions(sorted);
+      setCurrentPage(1);
+    } catch (error) {
+      console.error("🔍 TechnicienSupInterventions: Error in applySorting", error);
+      // If sorting fails, just use the original filtered interventions
+      setFilteredInterventions([...filteredInterventions]);
+    }
   };
 
   const toggleSortOrder = () => {
@@ -389,10 +450,8 @@ export default function TechnicienSupInterventions() {
   };
 
   const getInterventionTypeIcon = (intervention: Intervention) => {
-    // Try to get the type name from multiple possible fields
     const typeName = intervention.type_nom || intervention.type_tache || '';
     
-    // Handle null/undefined/empty type names
     if (!typeName || typeName.trim() === '') {
       return (
         <div className="w-8 h-8 rounded-full flex items-center justify-center text-white bg-gray-500">
@@ -427,11 +486,9 @@ export default function TechnicienSupInterventions() {
   };
 
   const getInterventionTypeName = (intervention: Intervention) => {
-    // Try to get the type name from multiple possible fields
     const typeName = intervention.type_nom || intervention.type_tache || '';
     
     if (!typeName || typeName.trim() === '') {
-      // If no type name, try to get it from the id_type_tache
       if (intervention.id_type_tache) {
         return `Type ${intervention.id_type_tache}`;
       }
@@ -464,10 +521,61 @@ export default function TechnicienSupInterventions() {
 
 
 
+  if (hasError) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-red-500 mb-4">
+            <XCircle className="h-16 w-16 mx-auto" />
+          </div>
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">Erreur de chargement</h2>
+          <p className="text-gray-600 mb-4">
+            Impossible de charger les données après plusieurs tentatives.
+          </p>
+          <Button 
+            onClick={() => {
+              setHasError(false);
+              setRetryCount(0);
+              loadData();
+            }}
+            className="bg-[#B4CC5F] hover:bg-[#A3BB4E]"
+          >
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Réessayer
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#B4CC5F] mx-auto mb-4"></div>
+          <p className="text-gray-600">Vérification de l'authentification...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated || !user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-gray-600">Vous devez être connecté pour accéder à cette page.</p>
+        </div>
+      </div>
+    );
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#B4CC5F]"></div>
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#B4CC5F] mx-auto mb-4"></div>
+          <p className="text-gray-600">Chargement des données...</p>
+        </div>
       </div>
     );
   }
@@ -744,6 +852,8 @@ export default function TechnicienSupInterventions() {
             setStatusFilter("all");
             setTechnicianFilter("all");
             setCurrentPage(1);
+            setHasError(false);
+            setRetryCount(0);
             loadData();
           }}
         >
@@ -783,6 +893,8 @@ export default function TechnicienSupInterventions() {
                 setStatusFilter("all");
                 setTechnicianFilter("all");
                 setCurrentPage(1);
+                setHasError(false);
+                setRetryCount(0);
               }}
               className="text-blue-600 hover:text-blue-700 hover:bg-blue-100"
             >

@@ -60,27 +60,20 @@ export default function TechnicienSupTeamManagement(): JSX.Element {
         setLoading(true);
         setError(null);
 
-        // Fetch all technicians from the company
         const allTechnicians = await technicianService.getAllTechniciansByCompany(user.id_entreprise);
         
-        // Filter only technicians assigned to this supervisor
         const supervisedTechnicians = allTechnicians.filter((tech: any) => 
           tech.role === 'technicien' && 
           String(tech.id_assigned) === String(user.id)
         );
 
-        // Enhance technician data with additional information
         const enhancedTechnicians: SupervisedTechnician[] = await Promise.all(
           supervisedTechnicians.map(async (tech: any) => {
             try {
-              // Get intervention statistics
               const interventions = await technicianService.getInterventionsByTechnician(tech.id);
               
-              // Get assigned serres
               const assignedSerres = await serreService.getSerresAssignedToUser(tech.id);
               
-
-
               return {
                 id: tech.id,
                 fullName: tech.fullName || tech.name || tech.email,
@@ -102,7 +95,6 @@ export default function TechnicienSupTeamManagement(): JSX.Element {
                   inProgress: interventions.filter((int: any) => int.status === 'encours').length,
                   pending: interventions.filter((int: any) => int.status === 'en_attente').length,
                 },
-
                 status,
               };
             } catch (error) {
@@ -129,7 +121,6 @@ export default function TechnicienSupTeamManagement(): JSX.Element {
     return () => { isMounted = false; };
   }, [user?.id, user?.id_entreprise]);
 
-  // Filter technicians based on search and status
   useEffect(() => {
     let filtered = technicians;
     
@@ -191,7 +182,6 @@ export default function TechnicienSupTeamManagement(): JSX.Element {
 
   return (
     <div className="p-4 space-y-4">
-      {/* Header - Simplified */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Gestion de l'Équipe</h1>
@@ -205,7 +195,6 @@ export default function TechnicienSupTeamManagement(): JSX.Element {
         </div>
       </div>
 
-      {/* Status Cards - Moved to top and made responsive */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         <Card className="bg-green-50 border-green-200">
           <CardContent className="pt-4 pb-3">
@@ -264,7 +253,6 @@ export default function TechnicienSupTeamManagement(): JSX.Element {
         </Card>
       </div>
 
-      {/* Filters - Simplified */}
       <Card>
         <CardContent className="pt-4 pb-4">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -299,7 +287,6 @@ export default function TechnicienSupTeamManagement(): JSX.Element {
         </CardContent>
       </Card>
 
-      {/* Technicians List - Simplified header */}
       <Card>
         <CardContent className="pt-4">
           {filteredTechnicians.length === 0 ? (
@@ -435,7 +422,6 @@ export default function TechnicienSupTeamManagement(): JSX.Element {
         </CardContent>
       </Card>
 
-      {/* Technician Details Modal */}
       <Dialog open={!!selectedTechnician} onOpenChange={() => setSelectedTechnician(null)}>
         <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
@@ -447,7 +433,6 @@ export default function TechnicienSupTeamManagement(): JSX.Element {
           
           {selectedTechnician && (
             <div className="space-y-6">
-              {/* Basic Information */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <Card>
                   <CardHeader className="pb-3">
@@ -526,7 +511,6 @@ export default function TechnicienSupTeamManagement(): JSX.Element {
                 </Card>
               </div>
 
-              {/* Serres Assigned */}
               <Card>
                 <CardHeader className="pb-3">
                   <CardTitle className="text-lg">Serres Assignées</CardTitle>
@@ -546,7 +530,6 @@ export default function TechnicienSupTeamManagement(): JSX.Element {
                 </CardContent>
               </Card>
 
-              {/* Intervention Statistics */}
               <Card>
                 <CardHeader className="pb-3">
                   <CardTitle className="text-lg">Statistiques des Interventions</CardTitle>

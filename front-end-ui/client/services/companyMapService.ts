@@ -37,16 +37,13 @@ export const companyMapService = {
   // Fetch all company data in one optimized call
   getCompanyMapData: async (companyId: string): Promise<CompanyMapData> => {
     try {
-      console.log('[CompanyMapService] Attempting to fetch optimized data for company:', companyId);
       const response = await axios.get<CompanyMapData>(
         `${API_BASE_URL}/company/${companyId}/map-data`,
         createAuthenticatedRequest()
       );
-      console.log('[CompanyMapService] Optimized endpoint response:', response.data);
       return response.data;
     } catch (error: any) {
       // Fallback to individual API calls if the optimized endpoint doesn't exist
-      console.warn('[CompanyMapService] Optimized endpoint not available, falling back to individual calls:', error);
       return await companyMapService.getCompanyMapDataFallback(companyId);
     }
   },
@@ -54,8 +51,6 @@ export const companyMapService = {
   // Fallback method using individual API calls
   getCompanyMapDataFallback: async (companyId: string): Promise<CompanyMapData> => {
     try {
-      console.log('[CompanyMapService] Using fallback method for company:', companyId);
-      
       // Fetch domains
       const domainsResponse = await axios.get<{ success: boolean; domains: Domain[] }>(
         `${API_BASE_URL}/domains/company/${companyId}`,
@@ -67,7 +62,6 @@ export const companyMapService = {
       }
 
       const domains = domainsResponse.data.domains;
-      console.log('[CompanyMapService] Fetched domains:', domains);
       
       const domainsWithSerresAndBilans: DomainWithSerresAndBilans[] = [];
 
@@ -83,8 +77,6 @@ export const companyMapService = {
           const serres: SerreWithBilans[] = [];
           
           if (serresResponse.data.success) {
-            console.log(`[CompanyMapService] Fetched serres for domain ${domain.id}:`, serresResponse.data.serres);
-            
             // Fetch bilans for each serre
             for (const serre of serresResponse.data.serres) {
               try {
@@ -93,14 +85,11 @@ export const companyMapService = {
                   createAuthenticatedRequest()
                 );
                 
-                console.log(`[CompanyMapService] Fetched bilans for serre ${serre.id}:`, bilansResponse.data);
-                
                 serres.push({
                   ...serre,
                   bilans: bilansResponse.data || []
                 });
               } catch (bilanError) {
-                console.warn(`[CompanyMapService] Failed to fetch bilans for serre ${serre.id}:`, bilanError);
                 serres.push({
                   ...serre,
                   bilans: []
@@ -114,7 +103,6 @@ export const companyMapService = {
             serres
           });
         } catch (serreError) {
-          console.warn(`[CompanyMapService] Failed to fetch serres for domain ${domain.id}:`, serreError);
           domainsWithSerresAndBilans.push({
             ...domain,
             serres: []
@@ -126,7 +114,6 @@ export const companyMapService = {
         domains: domainsWithSerresAndBilans
       };
       
-      console.log('[CompanyMapService] Fallback method result:', result);
       return result;
     } catch (error: any) {
       const errorMessage = error.response?.data?.message || 

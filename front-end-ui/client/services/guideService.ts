@@ -52,17 +52,13 @@ export const guideService = {
     guide: CreateGuideRequest,
   ): Promise<CreateGuideResponse> => {
     try {
-      console.log("Creating guide:", guide);
       const response = await axios.post<CreateGuideResponse>(
         `${API_BASE_URL}/guide_culture`,
         guide,
         createAuthenticatedRequest(),
       );
-      console.log("Guide creation response:", response.data);
       return response.data;
     } catch (error: any) {
-      console.error("Erreur lors de la création du guide:", error);
-
       const errorMessage =
         error.response?.data?.message ||
         "Erreur lors de la création du guide de culture";
@@ -83,8 +79,6 @@ export const guideService = {
       );
       return response.data;
     } catch (error: any) {
-      console.error("Erreur lors de la récupération des guides:", error);
-
       const errorMessage =
         error.response?.data?.message ||
         "Erreur lors de la récupération des guides de culture";
@@ -99,16 +93,12 @@ export const guideService = {
   // Get guides by serre ID
   getGuidesBySerre: async (serreId: number): Promise<GuideDeCulture[]> => {
     try {
-      console.log("Fetching guides for serre:", serreId);
       const response = await axios.get<GuideDeCulture[]>(
         `${API_BASE_URL}/serre/${serreId}/guides`, 
         createAuthenticatedRequest()
       );
-      console.log("Received guides for serre:", response.data);
       return response.data;
     } catch (error: any) {
-      console.error("Erreur lors de la récupération des guides pour la serre:", error);
-
       const errorMessage =
         error.response?.data?.message ||
         "Erreur lors de la récupération des guides de culture pour cette serre";

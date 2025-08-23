@@ -1,7 +1,7 @@
 from flask import Blueprint
 
 
-from app.controllers.user import register, login, get_user, update_user, delete_user, create_technicien, register_technicien, verify_email, validate_technicien, get_technicien_by_email, get_all_technicians, get_techniciens_by_company,get_alltechniciens_by_company, get_pending_technicians_by_company, update_technicien, delete_technicien, get_interventions_by_technicien, assign_technician_to_supervisor, get_supervisors_by_company, get_supervisor_by_id, remove_technician_assignment
+from app.controllers.user import register, login, get_user, update_user, delete_user, create_technicien, register_technicien, verify_email, validate_technicien, get_technicien_by_email, get_all_technicians, get_techniciens_by_company,get_alltechniciens_by_company, get_pending_technicians_by_company, update_technicien, delete_technicien, get_interventions_by_technicien, assign_technician_to_supervisor, get_supervisors_by_company, get_supervisor_by_id, remove_technician_assignment, get_techniciens_by_supervisor
 
 from app.controllers.entreprise import create_entreprise, get_entreprise, get_all_entreprises, update_entreprise, delete_entreprise, get_company_map_data, get_company_assignments
 from app.controllers.domaine import create_domaine, get_domaine, get_all_domaines, update_domaine, delete_domaine, get_serres_by_domaine
@@ -49,6 +49,7 @@ all_bp.route('/technicien/alltypes/company/<int:company_id>', methods=['GET'])(g
 all_bp.route('/technicien/company/<int:company_id>', methods=['GET'])(get_techniciens_by_company)
 all_bp.route('/technicien/supervisors/company/<int:company_id>', methods=['GET'])(get_supervisors_by_company)
 all_bp.route('/technicien/supervisor/<int:supervisor_id>', methods=['GET'])(get_supervisor_by_id)
+all_bp.route('/technicien/supervisor/<int:supervisor_id>/technicians', methods=['GET'])(get_techniciens_by_supervisor)
 
 all_bp.route('/technicien/pending', methods=['GET'])(get_pending_technicians_by_company)
 all_bp.route('/technicien/validate/<int:id>', methods=['PUT'])(validate_technicien)

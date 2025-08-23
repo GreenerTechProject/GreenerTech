@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { MapPin, Plus, Trash2, Home, Loader2, Info, X, Building2, Leaf, BarChart3, Eye, EyeOff, BookOpen, GripVertical, Move, Maximize2, Minimize2 } from "lucide-react";
+import { MapPin, Plus, Trash2, Home, Loader2, Info, X, Building2, Leaf, BarChart3, Eye, EyeOff, BookOpen, GripVertical, Move, Maximize2, Minimize2, Menu } from "lucide-react";
 import { useLoadScript } from "@react-google-maps/api";
 import MapComponent, { DrawnShape } from "@/components/MapComponent";
 import { getGoogleMapsAPIKey } from "@/config/maps";
@@ -714,7 +714,6 @@ export default function DirectorMapConfig() {
 
   const startDrawingDomain = () => {
     setIsCreatingDomain(true);
-    setIsCreatingSerre(false);
     setPendingShape(null);
     setNewDomainName("");
   };
@@ -740,18 +739,6 @@ export default function DirectorMapConfig() {
     setIsCreatingGuide(false);
     setPendingShape(null);
     setNewDomainName("");
-    setNewSerreName("");
-    setGuideFormData({
-      nom: "",
-      variete: "",
-      rendement: 0,
-      nombre_de_plants: 0,
-      date_debut_saison: "",
-      date_fin_saison: "",
-      id_serre: ""
-    });
-    setNewlyCreatedSerreId(null);
-    setShowGuideSuccess(false);
   };
 
   const allShapes = useMemo((): DrawnShape[] => {
@@ -866,52 +853,61 @@ export default function DirectorMapConfig() {
     <div className="min-h-screen bg-gray-50">
       <DirectorHeader isSidebarOpen={isOpen} onMenuClick={() => setIsOpen(!isOpen)} />
       
-      <div className="flex h-[calc(100vh-80px)]">
+      <div className="flex flex-col lg:flex-row h-[calc(100vh-80px)]">
         {/* Sidebar */}
         <DirectorSidebar isOpen={isOpen} setIsOpen={setIsOpen} />
         
         {/* Left Panel - Controls and Info */}
-        <div className="w-120 bg-white border-r border-gray-200 flex flex-col">
+        <div 
+          data-panel="left-controls"
+          className="w-full lg:w-120 bg-white border-r border-gray-200 flex flex-col order-2 lg:order-1 hidden lg:flex"
+        >
           {/* Header */}
-          <div className="p-4 border-b border-gray-200">
-            <div className="flex items-center justify-between mb-4">
-              <h1 className="text-2xl font-bold text-gray-900">Configuration de la Carte</h1>
+          <div className="p-3 lg:p-4 border-b border-gray-200">
+            <div className="flex items-center justify-between mb-3 lg:mb-4">
+              <h1 className="text-lg lg:text-2xl font-bold text-gray-900">Configuration de la Carte</h1>
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => setShowHelp(!showHelp)}
+                className="p-2 lg:p-2"
               >
                 <Info className="h-4 w-4" />
               </Button>
             </div>
             
-            <div className="flex space-x-2 mb-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 lg:flex lg:space-x-2 mb-3 lg:mb-4">
               <Button
                 onClick={startDrawingDomain}
                 disabled={isCreatingDomain || isCreatingSerre || isCreatingGuide}
-                className="flex-1"
+                className="w-full lg:flex-1"
                 variant="default"
+                size="sm"
               >
-                <Building2 className="h-4 w-4 mr-2" />
-                Nouveau Domaine
+                <Building2 className="h-4 w-4 mr-1 lg:mr-2" />
+                <span className="hidden sm:inline">Nouveau Domaine</span>
+                <span className="sm:hidden">Domaine</span>
               </Button>
               <Button
                 onClick={startDrawingSerre}
                 disabled={isCreatingDomain || isCreatingSerre || isCreatingGuide || !selectedDomainId}
-                className="flex-1"
+                className="w-full lg:flex-1"
                 variant="outline"
+                size="sm"
               >
-                <Leaf className="h-4 w-4 mr-2" />
-                Nouvelle Serre
+                <Leaf className="h-4 w-4 mr-1 lg:mr-2" />
+                <span className="hidden sm:inline">Nouvelle Serre</span>
+                <span className="sm:hidden">Serre</span>
               </Button>
             </div>
 
-            <div className="flex space-x-2 mb-4">
+            <div className="flex space-x-2 mb-3 lg:mb-4">
               <Button
                 variant="outline"
                 onClick={fetchCompanyData}
                 disabled={isLoading}
                 className="flex-1"
+                size="sm"
               >
                 <Loader2 className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
                 Actualiser
@@ -919,26 +915,36 @@ export default function DirectorMapConfig() {
             </div>
 
             {/* Visibility Toggles */}
-            <div className="flex space-x-2">
+            <div className="grid grid-cols-2 gap-2 lg:flex lg:space-x-2">
               <Button
                 variant={showSerres ? "default" : "outline"}
                 size="sm"
                 onClick={() => setShowSerres(!showSerres)}
-                className="flex-1"
+                className="w-full lg:flex-1"
               >
-                <Leaf className="h-4 w-4 mr-2" />
-                {showSerres ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
-                Serres
+                <Leaf className="h-4 w-4 mr-1 lg:mr-2" />
+                <span className="hidden sm:inline">
+                  {showSerres ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
+                  Serres
+                </span>
+                <span className="sm:hidden">
+                  {showSerres ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
+                </span>
               </Button>
               <Button
                 variant={showBilans ? "default" : "outline"}
                 size="sm"
                 onClick={() => setShowBilans(!showBilans)}
-                className="flex-1"
+                className="w-full lg:flex-1"
               >
-                <BarChart3 className="h-4 w-4 mr-2" />
-                {showBilans ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
-                Billons
+                <BarChart3 className="h-4 w-4 mr-1 lg:mr-2" />
+                <span className="hidden sm:inline">
+                  {showBilans ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
+                  Billons
+                </span>
+                <span className="sm:hidden">
+                  {showBilans ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
+                </span>
               </Button>
             </div>
           </div>
@@ -1167,69 +1173,77 @@ export default function DirectorMapConfig() {
           )}
 
           {/* Tab Navigation */}
-          <div className="flex border-b border-gray-200">
+          <div className="grid grid-cols-2 lg:flex border-b border-gray-200">
             <button
               onClick={() => {
                 setActiveTab("domains");
                 setShowGuideSuccess(false);
               }}
-              className={`flex-1 px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+              className={`px-2 lg:px-4 py-2 text-xs lg:text-sm font-medium border-b-2 transition-colors ${
                 activeTab === "domains"
                   ? "border-[#B4CC5F] text-[#B4CC5F]"
                   : "border-transparent text-gray-500 hover:text-gray-700"
               }`}
             >
-              <Building2 className="h-4 w-4 inline mr-2" />
-              Domaines ({companyData?.domains.length || 0})
+              <Building2 className="h-3 w-3 lg:h-4 lg:w-4 inline mr-1 lg:mr-2" />
+              <span className="hidden sm:inline">Domaines</span>
+              <span className="sm:hidden">Dom</span>
+              <span className="hidden lg:inline"> ({companyData?.domains.length || 0})</span>
             </button>
             <button
               onClick={() => {
                 setActiveTab("serres");
                 setShowGuideSuccess(false);
               }}
-              className={`flex-1 px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+              className={`px-2 lg:px-4 py-2 text-xs lg:text-sm font-medium border-b-2 transition-colors ${
                 activeTab === "serres"
                   ? "border-[#FF6B6B] text-[#FF6B6B]"
                   : "border-transparent text-gray-500 hover:text-gray-700"
               }`}
             >
-              <Leaf className="h-4 w-4 inline mr-2" />
-              Serres ({companyData?.domains.reduce((acc, d) => acc + d.serres.length, 0) || 0})
+              <Leaf className="h-3 w-3 lg:h-4 lg:w-4 inline mr-1 lg:mr-2" />
+              <span className="hidden sm:inline">Serres</span>
+              <span className="sm:hidden">Ser</span>
+              <span className="hidden lg:inline"> ({companyData?.domains.reduce((acc, d) => acc + d.serres.length, 0) || 0})</span>
             </button>
             <button
               onClick={() => {
                 setActiveTab("bilans");
                 setShowGuideSuccess(false);
               }}
-              className={`flex-1 px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+              className={`px-2 lg:px-4 py-2 text-xs lg:text-sm font-medium border-b-2 transition-colors ${
                 activeTab === "bilans"
                   ? "border-[#3498DB] text-[#3498DB]"
                   : "border-transparent text-gray-500 hover:text-gray-700"
               }`}
             >
-              <BarChart3 className="h-4 w-4 inline mr-2" />
-              Billon ({companyData?.domains.reduce((acc, d) => acc + d.serres.reduce((sacc, s) => sacc + s.bilans.length, 0), 0) || 0})
+              <BarChart3 className="h-3 w-3 lg:h-4 lg:w-4 inline mr-1 lg:mr-2" />
+              <span className="hidden sm:inline">Billons</span>
+              <span className="sm:hidden">Bil</span>
+              <span className="hidden lg:inline"> ({companyData?.domains.reduce((acc, d) => acc + d.serres.reduce((sacc, s) => sacc + s.bilans.length, 0), 0) || 0})</span>
             </button>
             <button
               onClick={() => {
                 setActiveTab("guides");
                 setShowGuideSuccess(false);
               }}
-              className={`flex-1 px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+              className={`px-2 lg:px-4 py-2 text-xs lg:text-sm font-medium border-b-2 transition-colors ${
                 activeTab === "guides"
                   ? "border-[#9C27B0] text-[#9C27B0]"
                   : "border-transparent text-gray-500 hover:text-gray-700"
               }`}
             >
-              <BookOpen className="h-4 w-4 inline mr-2" />
-              Guides ({companyData?.domains.reduce((acc, d) => acc + d.serres.filter(s => s.guideId).length, 0) || 0})
+              <BookOpen className="h-3 w-3 lg:h-4 lg:w-4 inline mr-1 lg:mr-2" />
+              <span className="hidden sm:inline">Guides</span>
+              <span className="sm:hidden">Gui</span>
+              <span className="hidden lg:inline"> ({companyData?.domains.reduce((acc, d) => acc + d.serres.filter(s => s.guideId).length, 0) || 0})</span>
             </button>
           </div>
 
           {/* Content based on active tab */}
-          <div className="flex-1 overflow-y-auto">
+          <div className="flex-1 overflow-y-auto max-h-[50vh] lg:max-h-none">
             {activeTab === "domains" ? (
-              <div className="p-4">
+              <div className="p-3 lg:p-4">
                 {!companyData || companyData.domains.length === 0 ? (
                   <p className="text-sm text-gray-500 text-center py-8">
                     Aucun domaine créé. Commencez par dessiner un nouveau domaine sur la carte.
@@ -1280,7 +1294,7 @@ export default function DirectorMapConfig() {
                 )}
               </div>
             ) : activeTab === "serres" ? (
-              <div className="p-4">
+              <div className="p-3 lg:p-4">
                 {!companyData || companyData.domains.reduce((acc, d) => acc + d.serres.length, 0) === 0 ? (
                   <p className="text-sm text-gray-500 text-center py-8">
                     Aucune serre créée. Sélectionnez un domaine et créez une nouvelle serre.
@@ -1381,7 +1395,7 @@ export default function DirectorMapConfig() {
                 )}
               </div>
             ) : activeTab === "guides" ? (
-              <div className="p-4">
+              <div className="p-3 lg:p-4">
                 {/* Header with refresh button */}
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-lg font-medium text-gray-900">Guides de Culture</h3>
@@ -1570,7 +1584,7 @@ export default function DirectorMapConfig() {
                 )}
               </div>
             ) : (
-              <div className="p-4">
+              <div className="p-3 lg:p-4">
                 {!companyData || companyData.domains.reduce((acc, d) => acc + d.serres.reduce((sacc, s) => sacc + s.bilans.length, 0), 0) === 0 ? (
                   <p className="text-sm text-gray-500 text-center py-8">
                     Aucun billon disponible. Les billons apparaîtront automatiquement pour chaque serre.
@@ -1864,10 +1878,26 @@ export default function DirectorMapConfig() {
         </div>
 
         {/* Right Panel - Map */}
-        <div className="flex-1 relative">
+        <div className="flex-1 relative order-1 lg:order-2 min-h-[400px] lg:min-h-0">
+          {/* Mobile Panel Toggle Button */}
+          <div className="lg:hidden absolute top-4 right-4 z-50">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                const leftPanel = document.querySelector('[data-panel="left-controls"]');
+                if (leftPanel) {
+                  leftPanel.classList.toggle('hidden');
+                }
+              }}
+              className="bg-white/90 backdrop-blur-sm shadow-lg"
+            >
+              <Menu className="h-4 w-4 mr-2" />
+              Panneau
+            </Button>
+          </div>
           
           {isLoaded ? (
-            <>
             <MapComponent
               onShapeComplete={handleShapeComplete}
               existingShapes={allShapes}
@@ -1884,36 +1914,6 @@ export default function DirectorMapConfig() {
               focusCenter={selectedDomain?.center || null}
               focusZoom={16}
             />
-        
-        {companyData && (
-              <div className="absolute bottom-4 left-4 bg-white rounded-lg shadow-lg border border-gray-200 p-4 z-40 text-sm">
-                <div className="font-medium mb-3 text-gray-900">Légende de la Carte</div>
-                <div className="space-y-1">
-                  {companyData.domains.map((domain, index) => (
-                    <div key={domain.id} className="flex items-center space-x-2">
-                      <div 
-                        className="w-3 h-3 rounded border border-gray-300" 
-                        style={{ 
-                          backgroundColor: [
-                            "#4CAF50", "#8BC34A", "#CDDC39", "#FFEB3B", "#FFC107",
-                            "#FF9800", "#FF5722", "#795548", "#9C27B0", "#673AB7",
-                            "#3F51B5", "#2196F3", "#03A9F4", "#00BCD4", "#009688"
-                          ][index % 15] 
-                        }}
-                      ></div>
-                      <span className="text-xs text-gray-600">{domain.name}</span>
-                    </div>
-                  ))}
-                  {/* Serres legend entry */}
-                  <div className="pt-1 mt-1 border-gray-100" />
-                  <div className="flex items-center space-x-2">
-                    <div className="w-3 h-3 rounded bg-[#FF5722] border border-gray-300"></div>
-                    <span className="text-xs text-gray-600">Serres</span>
-                  </div>
-                </div>
-              </div>
-            )}
-            </>
           ) : loadError ? (
             <div className="w-full h-full flex items-center justify-center bg-red-50">
               <div className="text-center">
@@ -1939,3 +1939,4 @@ export default function DirectorMapConfig() {
     </div>
   );
 }
+

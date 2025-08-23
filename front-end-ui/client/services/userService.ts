@@ -43,12 +43,11 @@ export const userService = {
       );
       
       if (response.status === 200) {
-        console.log('[UserService] User account deleted successfully');
+        // User account deleted successfully
       } else {
         throw new Error('Failed to delete user account');
       }
     } catch (error: any) {
-      console.error('[UserService] Error deleting user account:', error);
       throw {
         message: error.response?.data?.message || 'Failed to delete user account',
         status: error.response?.status || 500,
@@ -59,34 +58,22 @@ export const userService = {
   // Get all technicians and superior technicians by company
   getTechniciansByCompany: async (companyId: number): Promise<User[]> => {
     try {
-      console.log('[UserService] Fetching technicians for company:', companyId);
-      console.log('[UserService] API URL:', `${API_BASE_URL}/technicien/alltypes/company/${companyId}`);
-      
       const response = await axios.get(
         `${API_BASE_URL}/technicien/alltypes/company/${companyId}`,
         createAuthenticatedRequest(),
       );
 
-      console.log('[UserService] Response:', response.data);
-      
       // Handle different response formats
       if (response.data?.success && response.data?.technicians) {
-        console.log('[UserService] Success response with technicians array:', response.data.technicians);
         return response.data.technicians;
       } else if (Array.isArray(response.data)) {
-        console.log('[UserService] Direct array response:', response.data);
         return response.data;
       } else if (response.data?.technicians && Array.isArray(response.data.technicians)) {
-        console.log('[UserService] Response with technicians array (no success field):', response.data.technicians);
         return response.data.technicians;
       }
       
-      console.log('[UserService] Unexpected response format, returning empty array');
-      console.log('[UserService] Response data type:', typeof response.data);
-      console.log('[UserService] Response data keys:', Object.keys(response.data || {}));
       return [];
     } catch (error: any) {
-      console.error("Error fetching technicians by company:", error);
       return [];
     }
   },
@@ -94,15 +81,11 @@ export const userService = {
   // Get technicians supervised by a specific supervisor
   getTechniciansBySupervisor: async (supervisorId: number): Promise<User[]> => {
     try {
-      console.log('[UserService] Fetching technicians for supervisor:', supervisorId);
-      
       const response = await axios.get(
-        `${API_BASE_URL}/technicien/supervisor/${supervisorId}`,
+        `${API_BASE_URL}/technicien/supervisor/${supervisorId}/technicians`,
         createAuthenticatedRequest(),
       );
 
-      console.log('[UserService] Supervisor technicians response:', response.data);
-      
       // Handle different response formats
       if (response.data?.success && response.data?.technicians) {
         return response.data.technicians;
@@ -114,7 +97,6 @@ export const userService = {
       
       return [];
     } catch (error: any) {
-      console.error("Error fetching technicians by supervisor:", error);
       return [];
     }
   },
@@ -134,7 +116,6 @@ export const userService = {
       }
       return null;
     } catch (error: any) {
-      console.error("Error fetching user by ID:", error);
       return null;
     }
   },

@@ -42,7 +42,6 @@ export const notificationService = {
       const response = await axios.get(`${API_BASE_URL}/notifications`, createAuthenticatedRequest());
       return response.data;
     } catch (error) {
-      console.error('Error fetching notifications:', error);
       return [];
     }
   },
@@ -67,7 +66,6 @@ export const notificationService = {
       
       return counts;
     } catch (error) {
-      console.error('Error getting notification counts:', error);
       return {
         total: 0,
         non_vue: 0,
@@ -89,7 +87,6 @@ export const notificationService = {
       const response = await axios.get(`${API_BASE_URL}/notifications`, createAuthenticatedRequest());
       return response.data;
     } catch (error) {
-      console.error('Error fetching tech sup notifications:', error);
       return [];
     }
   },
@@ -99,7 +96,6 @@ export const notificationService = {
     try {
       await axios.put(`${API_BASE_URL}/notifications/vue/${notificationId}`, {}, createAuthenticatedRequest());
     } catch (error) {
-      console.error('Error marking notification as seen:', error);
       throw error;
     }
   },
@@ -109,7 +105,6 @@ export const notificationService = {
     try {
       await axios.put(`${API_BASE_URL}/notifications/mark-all-vue`, {}, createAuthenticatedRequest());
     } catch (error) {
-      console.error('Error marking all notifications as seen:', error);
       throw error;
     }
   }

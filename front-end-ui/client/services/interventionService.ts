@@ -19,10 +19,6 @@ const handleAuthError = (error: any) => {
 // Create axios request config with Authorization header (aligned with domainService)
 const createAuthenticatedRequest = () => {
   const token = tokenManager.getToken();
-  console.log(`DEBUG: createAuthenticatedRequest - Token available: ${token ? 'Yes' : 'No'}`); // Debug log
-  if (token) {
-    console.log(`DEBUG: createAuthenticatedRequest - Token starts with: ${token.substring(0, 20)}...`); // Debug log
-  }
   
   const config = {
     headers: {
@@ -31,7 +27,6 @@ const createAuthenticatedRequest = () => {
     },
   };
   
-  console.log(`DEBUG: createAuthenticatedRequest - Final headers:`, config.headers); // Debug log
   return config;
 };
 
@@ -70,7 +65,6 @@ export class InterventionService {
       const response = await axios.get(`${API_BASE_URL}/intervention`, createAuthenticatedRequest());
       return response.data;
     } catch (error) {
-      console.error("Error fetching interventions:", error);
       throw error;
     }
   }
@@ -80,7 +74,6 @@ export class InterventionService {
       const response = await axios.get(`${API_BASE_URL}/intervention/assigned`, createAuthenticatedRequest());
       return response.data;
     } catch (error) {
-      console.error("Error fetching interventions by assigned serres:", error);
       throw error;
     }
   }
@@ -90,7 +83,6 @@ export class InterventionService {
       const response = await axios.get(`${API_BASE_URL}/intervention/${id}`, createAuthenticatedRequest());
       return response.data;
     } catch (error) {
-      console.error("Error fetching intervention:", error);
       throw error;
     }
   }
@@ -100,26 +92,14 @@ export class InterventionService {
       const response = await axios.post(`${API_BASE_URL}/intervention`, intervention, createAuthenticatedRequest());
       return response.data;
     } catch (error) {
-      console.error("Error creating intervention:", error);
       throw error;
     }
   }
 
   static async validateIntervention(id: number): Promise<void> {
     try {
-      console.log(`DEBUG: Attempting to validate intervention ${id}`); // Debug log
-      const token = tokenManager.getToken();
-      console.log(`DEBUG: Token available: ${token ? 'Yes' : 'No'}`); // Debug log
-      if (token) {
-        console.log(`DEBUG: Token starts with: ${token.substring(0, 20)}...`); // Debug log
-      }
-      
       await axios.put(`${API_BASE_URL}/intervention/${id}/validate`, {}, createAuthenticatedRequest());
-      console.log(`DEBUG: Intervention ${id} validated successfully`); // Debug log
     } catch (error: any) {
-      console.error("Error validating intervention:", error);
-      console.log(`DEBUG: Error response status: ${error.response?.status}`); // Debug log
-      console.log(`DEBUG: Error response data:`, error.response?.data); // Debug log
       handleAuthError(error);
       if (error.response?.status === 403) {
         throw new Error("Accès refusé. Vous n'avez pas les permissions nécessaires.");
@@ -131,19 +111,8 @@ export class InterventionService {
 
   static async rejectIntervention(id: number, reason?: string): Promise<void> {
     try {
-      console.log(`DEBUG: Attempting to reject intervention ${id} with reason: ${reason}`); // Debug log
-      const token = tokenManager.getToken();
-      console.log(`DEBUG: Token available: ${token ? 'Yes' : 'No'}`); // Debug log
-      if (token) {
-        console.log(`DEBUG: Token starts with: ${token.substring(0, 20)}...`); // Debug log
-      }
-      
       await axios.put(`${API_BASE_URL}/intervention/${id}/reject`, { reason }, createAuthenticatedRequest());
-      console.log(`DEBUG: Intervention ${id} rejected successfully`); // Debug log
     } catch (error: any) {
-      console.error("Error rejecting intervention:", error);
-      console.log(`DEBUG: Error response status: ${error.response?.status}`); // Debug log
-      console.log(`DEBUG: Error response data:`, error.response?.data); // Debug log
       handleAuthError(error);
       if (error.response?.status === 403) {
         throw new Error("Accès refusé. Vous n'avez pas les permissions nécessaires.");
@@ -158,7 +127,6 @@ export class InterventionService {
       const response = await axios.get(`${API_BASE_URL}/intervention/entreprise/${entrepriseId}`, createAuthenticatedRequest());
       return response.data;
     } catch (error) {
-      console.error("Error fetching interventions by enterprise:", error);
       throw error;
     }
   }
@@ -167,7 +135,6 @@ export class InterventionService {
     try {
       await axios.delete(`${API_BASE_URL}/intervention/${id}`, createAuthenticatedRequest());
     } catch (error) {
-      console.error("Error deleting intervention:", error);
       throw error;
     }
   }

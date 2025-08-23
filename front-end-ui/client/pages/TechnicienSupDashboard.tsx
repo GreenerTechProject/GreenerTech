@@ -92,131 +92,6 @@ interface Zone {
   lastReading: Date;
 }
 
-
-
-const mockSerres: Serre[] = [
-  {
-    id: "1",
-    nom: "Serre Nord A",
-    variety: "Tomates",
-    surface: 450,
-    location: { lat: 46.7111, lng: 1.7191 },
-    status: "active",
-    lastUpdate: new Date(),
-    supervisedBy: "Technicien Jean Dupont",
-    zones: [
-      {
-        id: "z1",
-        name: "Zone Irrigation",
-        type: "irrigation",
-        status: "optimal",
-        value: 75,
-        unit: "%",
-        lastReading: new Date(),
-      },
-      {
-        id: "z2",
-        name: "Température",
-        type: "temperature",
-        status: "warning",
-        value: 28.5,
-        unit: "°C",
-        lastReading: new Date(),
-      },
-      {
-        id: "z3",
-        name: "Éclairage",
-        type: "lighting",
-        status: "optimal",
-        value: 85,
-        unit: "%",
-        lastReading: new Date(),
-      },
-    ],
-  },
-  {
-    id: "2",
-    nom: "Serre Sud B",
-    variety: "Concombres",
-    surface: 320,
-    location: { lat: 46.6991, lng: 1.7341 },
-    status: "active",
-    lastUpdate: new Date(),
-    supervisedBy: "Technicien Marie Martin",
-    zones: [
-      {
-        id: "z4",
-        name: "Zone Irrigation",
-        type: "irrigation",
-        status: "critical",
-        value: 45,
-        unit: "%",
-        lastReading: new Date(),
-      },
-      {
-        id: "z5",
-        name: "Ventilation",
-        type: "ventilation",
-        status: "optimal",
-        value: 65,
-        unit: "%",
-        lastReading: new Date(),
-      },
-    ],
-  },
-  {
-    id: "3",
-    nom: "Serre Est C",
-    variety: "Laitues",
-    surface: 280,
-    location: { lat: 46.7051, lng: 1.7441 },
-    status: "maintenance",
-    lastUpdate: new Date(),
-    supervisedBy: "Technicien Paul Bernard",
-    zones: [
-      {
-        id: "z6",
-        name: "Température",
-        type: "temperature",
-        status: "optimal",
-        value: 22.1,
-        unit: "°C",
-        lastReading: new Date(),
-      },
-    ],
-  },
-  {
-    id: "4",
-    nom: "Serre Ouest D",
-    variety: "Poivrons",
-    surface: 380,
-    location: { lat: 46.7121, lng: 1.7141 },
-    status: "active",
-    lastUpdate: new Date(),
-    supervisedBy: "Technicien Sophie Blanc",
-    zones: [
-      {
-        id: "z7",
-        name: "Zone Irrigation",
-        type: "irrigation",
-        status: "optimal",
-        value: 82,
-        unit: "%",
-        lastReading: new Date(),
-      },
-      {
-        id: "z8",
-        name: "Température",
-        type: "temperature",
-        status: "optimal",
-        value: 24.2,
-        unit: "°C",
-        lastReading: new Date(),
-      },
-    ],
-  },
-];
-
 export default function TechnicienSupDashboard(): JSX.Element {
   const { user, logout } = useAuth();
   const { toast } = useToast();
@@ -876,7 +751,7 @@ export default function TechnicienSupDashboard(): JSX.Element {
 
   return (
     <div className="h-[calc(100vh-73px)] relative">
-      {/* Mobile Header Overlay */}
+
       <div className="lg:hidden absolute top-0 left-0 right-0 z-20 bg-white/95 backdrop-blur-sm border-b border-gray-200">
         <div className="flex items-center justify-between p-3">
           <div className="flex items-center gap-2">
@@ -891,7 +766,7 @@ export default function TechnicienSupDashboard(): JSX.Element {
             <div className="flex items-center gap-2">
               <div className="relative group">
                 <Bell className="h-4 w-4 text-red-500 cursor-pointer" />
-                {/* Tooltip below the Bell icon */}
+        
                 <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
                   <div className="text-center">
                     <div className="font-medium mb-1">Notifications</div>
@@ -901,7 +776,7 @@ export default function TechnicienSupDashboard(): JSX.Element {
                       <div>🟢 {alertsSummary.low} alertes faibles</div>
                     </div>
                   </div>
-                  {/* Arrow pointing up to the Bell icon */}
+          
                   <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900"></div>
                 </div>
               </div>
@@ -909,7 +784,7 @@ export default function TechnicienSupDashboard(): JSX.Element {
             </div>
           </div>
           
-          {/* Mobile Alerts Summary */}
+  
           <div className="flex items-center gap-1 text-xs">
             <span className="px-1.5 py-0.5 rounded bg-red-100 text-red-700 font-medium">
               {alertsSummary.high}
@@ -924,10 +799,10 @@ export default function TechnicienSupDashboard(): JSX.Element {
         </div>
       </div>
 
-      {/* Desktop Layout */}
+      
       <div className="hidden lg:block h-full">
         <ResizablePanelGroup direction="horizontal">
-          {/* Left Panel: Serres list */}
+
           <ResizablePanel defaultSize={25} minSize={20} maxSize={35} className="bg-white shadow-lg">
             <div className="h-full flex flex-col">
               <div className="p-4 border-b flex items-center justify-between">
@@ -970,7 +845,7 @@ export default function TechnicienSupDashboard(): JSX.Element {
             </div>
           </ResizablePanel>
           <ResizableHandle withHandle />
-          {/* Middle Panel: Map */}
+
           <ResizablePanel defaultSize={50} minSize={35} maxSize={70} className="min-w-0">
             <div className="h-full relative min-h-[500px] w-full flex-1" data-testid="map-section">
               <GoogleMapsWrapper>
@@ -998,7 +873,7 @@ export default function TechnicienSupDashboard(): JSX.Element {
                     scaleControl: true,
                   }}
                 >
-                  {/* Render polygons for all assigned serres */}
+  
                   {assignedSerresRaw.map((serre) => {
                     const polygonPath = (serre.position || []).map((p: any) => ({ lat: p.lat, lng: p.lng }));
                     if (!polygonPath || polygonPath.length === 0) return null;
@@ -1030,7 +905,7 @@ export default function TechnicienSupDashboard(): JSX.Element {
                     );
                   })}
 
-                  {/* Render markers for all assigned serres */}
+  
                   {assignedSerresRaw.map((serre) => {
                     // Get the correct position from serre data
                     const position = serre.center && serre.center.lat != null && serre.center.lng != null 
@@ -1061,7 +936,7 @@ export default function TechnicienSupDashboard(): JSX.Element {
                     );
                   })}
 
-                  {/* Info Window for selected serre */}
+  
                   {selectedSerre && isInfoWindowOpen && (
                     <InfoWindow
                       position={selectedSerre.location}
@@ -1136,7 +1011,7 @@ export default function TechnicienSupDashboard(): JSX.Element {
             </div>
           </ResizablePanel>
           <ResizableHandle withHandle />
-          {/* Right Panel: Serres Details */}
+
           <ResizablePanel defaultSize={25} minSize={20} maxSize={45} className="bg-white shadow-lg">
             <div className="h-full flex flex-col">
               <div className="p-4 border-b flex items-center justify-between">
@@ -1148,7 +1023,7 @@ export default function TechnicienSupDashboard(): JSX.Element {
               <ScrollArea className="flex-1">
                 {selectedSerre ? (
                   <div className="p-4 space-y-4">
-                    {/* Summary */}
+    
                     <Card className="shadow-sm border-gray-200">
                       <CardHeader className="pb-3 cursor-pointer hover:bg-gray-50 transition-colors rounded-t-lg" onClick={() => toggleSection('summary')}>
                         <CardTitle className="text-base md:text-lg flex items-center justify-between">
@@ -1185,7 +1060,7 @@ export default function TechnicienSupDashboard(): JSX.Element {
                       )}
                     </Card>
 
-                    {/* Guides */}
+    
                     <Card className="shadow-sm border-gray-200">
                       <CardHeader className="pb-3 cursor-pointer hover:bg-gray-50 transition-colors rounded-t-lg" onClick={() => toggleSection('guides')}>
                         <CardTitle className="text-base md:text-lg flex items-center justify-between">
@@ -1246,7 +1121,7 @@ export default function TechnicienSupDashboard(): JSX.Element {
                       )}
                     </Card>
 
-                    {/* Billons */}
+    
                     <Card className="shadow-sm border-gray-200">
                       <CardHeader className="pb-3 cursor-pointer hover:bg-gray-50 transition-colors rounded-t-lg" onClick={() => toggleSection('billons')}>
                         <CardTitle className="text-base md:text-lg flex items-center justify-between">
@@ -1349,7 +1224,7 @@ export default function TechnicienSupDashboard(): JSX.Element {
         </ResizablePanelGroup>
       </div>
 
-      {/* Details Sheet for selected serre */}
+      
       <Sheet open={isDetailsOpen} onOpenChange={setIsDetailsOpen}>
         <SheetContent 
           side="right" 
@@ -1362,7 +1237,7 @@ export default function TechnicienSupDashboard(): JSX.Element {
             </SheetDescription>
           </SheetHeader>
           <div className="mt-4 space-y-6 overflow-y-auto max-h-[calc(100vh-140px)] pr-2">
-            {/* Summary */}
+  
             <Card className="shadow-sm border-gray-200">
               <CardHeader className="pb-3 cursor-pointer hover:bg-gray-50 transition-colors rounded-t-lg" onClick={() => toggleSection('summary')}>
                 <CardTitle className="text-base md:text-lg flex items-center justify-between">
@@ -1399,7 +1274,7 @@ export default function TechnicienSupDashboard(): JSX.Element {
               )}
             </Card>
 
-            {/* Guides */}
+  
             <Card className="shadow-sm border-gray-200">
               <CardHeader className="pb-3 cursor-pointer hover:bg-gray-50 transition-colors rounded-t-lg" onClick={() => toggleSection('guides')}>
                 <CardTitle className="text-base md:text-lg flex items-center justify-between">
@@ -1459,7 +1334,7 @@ export default function TechnicienSupDashboard(): JSX.Element {
               )}
             </Card>
 
-            {/* Billons */}
+  
             <Card className="shadow-sm border-gray-200">
               <CardHeader className="pb-3 cursor-pointer hover:bg-gray-50 transition-colors rounded-t-lg" onClick={() => toggleSection('billons')}>
                 <CardTitle className="text-base md:text-lg flex items-center justify-between">
@@ -1597,9 +1472,9 @@ export default function TechnicienSupDashboard(): JSX.Element {
         </SheetContent>
       </Sheet>
 
-      {/* Mobile Layout - Full Screen Map */}
+      
       <div className="lg:hidden h-full relative">
-        {/* Loading overlay for mobile */}
+        
         {isMapLoading && (
           <div className="absolute inset-0 bg-white/80 backdrop-blur-sm z-10 flex items-center justify-center">
             <div className="text-center">
@@ -1609,7 +1484,7 @@ export default function TechnicienSupDashboard(): JSX.Element {
           </div>
         )}
         
-        {/* Mobile Map Container - Full screen */}
+        
         <div className="w-full h-full relative">
           <GoogleMapsWrapper>
             <GoogleMap
@@ -1636,7 +1511,7 @@ export default function TechnicienSupDashboard(): JSX.Element {
                 scaleControl: true,
               }}
             >
-              {/* Render polygons for all assigned serres (mobile) */}
+  
               {assignedSerresRaw.map((serre) => {
                 const polygonPath = (serre.position || []).map((p: any) => ({ lat: p.lat, lng: p.lng }));
                 if (!polygonPath || polygonPath.length === 0) return null;
@@ -1667,7 +1542,7 @@ export default function TechnicienSupDashboard(): JSX.Element {
                   />
                 );
               })}
-              {/* Render markers for all assigned serres */}
+  
               {assignedSerresRaw.map((serre) => {
                 // Get the correct position from serre data
                 const position = serre.center && serre.center.lat != null && serre.center.lng != null 
@@ -1698,7 +1573,7 @@ export default function TechnicienSupDashboard(): JSX.Element {
                 );
               })}
 
-              {/* Info Window for selected serre */}
+  
               {selectedSerre && isInfoWindowOpen && (
                 <InfoWindow
                   position={selectedSerre.location}
@@ -1768,7 +1643,7 @@ export default function TechnicienSupDashboard(): JSX.Element {
             </GoogleMap>
           </GoogleMapsWrapper>
 
-          {/* Mobile Map Overlay Info */}
+
           {selectedSerre && (
             <div className="absolute top-20 left-4 right-4 z-10 bg-white rounded-xl shadow-lg p-4 border border-gray-200">
               <div className="flex items-start justify-between mb-3">
@@ -1823,7 +1698,7 @@ export default function TechnicienSupDashboard(): JSX.Element {
             </div>
           )}
 
-          {/* Mobile Alerts Overlay Panel on Map */}
+
           <div className="absolute top-4 left-4 z-10 bg-white/95 backdrop-blur rounded-lg shadow p-3 border">
             <div className="flex items-center justify-between gap-3">
               <div className="flex items-center gap-2">
@@ -1860,7 +1735,7 @@ export default function TechnicienSupDashboard(): JSX.Element {
           </div>
         </div>
 
-        {/* Mobile Floating Action Button */}
+        
         <div className="absolute bottom-6 right-4 z-10">
           <Button
             size="lg"
@@ -1871,17 +1746,17 @@ export default function TechnicienSupDashboard(): JSX.Element {
           </Button>
         </div>
 
-        {/* Mobile Bottom Panel */}
+        
         <div className={cn(
           "absolute bottom-0 left-0 right-0 bg-white rounded-t-3xl shadow-2xl transition-transform duration-300 ease-in-out z-20",
           isMobilePanelOpen ? "translate-y-0" : "translate-y-full"
         )}>
-          {/* Panel Handle */}
+          
           <div className="flex justify-center pt-3 pb-2">
             <div className="w-12 h-1 bg-gray-300 rounded-full"></div>
           </div>
 
-          {/* Panel Tabs */}
+          
           <div className="flex border-b border-gray-200">
             <button
               onClick={() => setActiveMobileTab('serres')}
@@ -1907,7 +1782,7 @@ export default function TechnicienSupDashboard(): JSX.Element {
             </button>
           </div>
 
-          {/* Panel Content */}
+          
           <div className="max-h-[60vh] overflow-y-auto scrollbar-mobile">
             {activeMobileTab === 'serres' && (
               <div className="p-4 space-y-3">
@@ -1953,7 +1828,7 @@ export default function TechnicienSupDashboard(): JSX.Element {
 
             {activeMobileTab === 'alerts' && (
               <div className="p-4 space-y-4">
-                {/* Alerts Summary Cards */}
+  
                 <div className="grid grid-cols-3 gap-3">
                   <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-center">
                     <div className="text-2xl font-bold text-red-600">{alertsSummary.high}</div>
@@ -1969,7 +1844,7 @@ export default function TechnicienSupDashboard(): JSX.Element {
                   </div>
                 </div>
 
-                {/* Heatmap Toggle */}
+                
                 <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                   <div className="flex items-center gap-2">
                     <Layers className="h-4 w-4 text-gray-600" />
@@ -1995,7 +1870,7 @@ export default function TechnicienSupDashboard(): JSX.Element {
           </div>
         </div>
 
-        {/* Mobile Serre Info Overlay */}
+        
         {selectedSerre && (
           <div className="absolute top-20 left-4 right-4 z-10 bg-white rounded-xl shadow-lg p-4 border border-gray-200">
             <div className="flex items-start justify-between mb-3">
@@ -2051,7 +1926,7 @@ export default function TechnicienSupDashboard(): JSX.Element {
         )}
       </div>
 
-      {/* Global Assign Technician Dialog */}
+      
       <Dialog open={isAssignDialogOpen} onOpenChange={setIsAssignDialogOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
@@ -2099,7 +1974,7 @@ export default function TechnicienSupDashboard(): JSX.Element {
         </DialogContent>
       </Dialog>
 
-      {/* Intervention Form Modal */}
+      
       <InterventionForm
         isOpen={isInterventionFormOpen}
         onClose={() => setIsInterventionFormOpen(false)}

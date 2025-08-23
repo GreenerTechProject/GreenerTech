@@ -38,15 +38,10 @@ export default function TechnicienSupHome(): JSX.Element {
         setLoading(true);
         setError(null);
 
-        // Fetch serres assigned to current user (with technician info)
         const serresPromise = serreService.getSerresWithTechnicians();
-        // Alerts on assigned serres
         const alertsPromise = AlertService.getAlertsByAssignedSerres();
-        // Interventions on assigned serres
         const interventionsPromise = InterventionService.getInterventionsByAssignedSerres();
-        // All missions; will filter to our serres
         const missionsPromise = missionService.getAllMissions();
-        // Company technicians to identify those assigned to this supervisor
         const techniciansPromise = user.id_entreprise
           ? technicianService.getTechniciansByCompany(user.id_entreprise)
           : Promise.resolve([]);
@@ -61,13 +56,11 @@ export default function TechnicienSupHome(): JSX.Element {
 
         if (!isMounted) return;
 
-        // Normalize
         const assignedSerres = Array.isArray(serreList) ? serreList : [];
         setSerres(assignedSerres);
         setAlerts(Array.isArray(alertList) ? alertList : []);
         setInterventions(Array.isArray(interventionList) ? interventionList : []);
 
-        // Filter missions to our serres
         const assignedSerreIds = new Set(
           assignedSerres.map((s: any) => (typeof s.id === 'string' ? parseInt(s.id, 10) : s.id))
         );
@@ -77,7 +70,6 @@ export default function TechnicienSupHome(): JSX.Element {
         });
         setMissions(filteredMissions);
 
-        // Technicians assigned to this supervisor
         const myTechs = (Array.isArray(companyTechs) ? companyTechs : []).filter((t: any) => {
           const isTech = t.role === 'technicien';
           const assignedToMe = t.id_assigned != null && String(t.id_assigned) === String(user.id);
@@ -94,7 +86,6 @@ export default function TechnicienSupHome(): JSX.Element {
     return () => { isMounted = false; };
   }, [user?.id, user?.id_entreprise]);
 
-  // Fetch bilans for each assigned serre to map alert.id_bilan -> serre id
   useEffect(() => {
     let isMounted = true;
     (async () => {
@@ -120,7 +111,6 @@ export default function TechnicienSupHome(): JSX.Element {
     return () => { isMounted = false; };
   }, [serres]);
 
-  // Compute alerts count per serre using id_serre, fallback to bilan mapping and serre name
   useEffect(() => {
     if (serres.length === 0) { setAlertsCountBySerreId({}); return; }
     const nameToSerreId: Record<string, number> = {};
@@ -151,7 +141,6 @@ export default function TechnicienSupHome(): JSX.Element {
     setAlertsCountBySerreId(counts);
   }, [alerts, serres, bilanIdToSerreId]);
 
-  // Derived metrics
   const alertCounts = useMemo(() => {
     let low = 0, medium = 0, high = 0;
     alerts.forEach((a: any) => {
@@ -178,7 +167,6 @@ export default function TechnicienSupHome(): JSX.Element {
     return { total, executed, scheduled };
   }, [missions]);
 
-  // Chart.js datasets
   const alertsChartData = useMemo(() => ({
     labels: ["Élevé", "Moyen", "Faible"],
     datasets: [
@@ -260,7 +248,7 @@ export default function TechnicienSupHome(): JSX.Element {
 
   return (
     <div className="p-4 space-y-6">
-      {/* Top metrics */}
+      
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -318,7 +306,7 @@ export default function TechnicienSupHome(): JSX.Element {
         </Card>
       </div>
 
-      {/* Missions summary */}
+      
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <Card className="lg:col-span-1">
           <CardHeader className="pb-2">
@@ -335,7 +323,7 @@ export default function TechnicienSupHome(): JSX.Element {
           </CardContent>
         </Card>
 
-        {/* Serres list with assigned technicians */}
+
         <Card className="lg:col-span-2">
           <CardHeader>
             <CardTitle className="text-sm font-medium">Serres et techniciens assignés</CardTitle>
@@ -390,8 +378,7 @@ export default function TechnicienSupHome(): JSX.Element {
         </Card>
       </div>
 
-      {/* Alternating rows: Chart | Info, then Info | Chart, then Chart | Info */}
-      {/* Row 1: Alerts Doughnut | Recent Alerts */}
+      
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <Card className="h-80">
           <CardHeader>
@@ -427,7 +414,7 @@ export default function TechnicienSupHome(): JSX.Element {
         </Card>
       </div>
 
-      {/* Row 2: Info (Serres table) | Interventions Bar */}
+      
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <Card>
           <CardHeader>
@@ -482,7 +469,7 @@ export default function TechnicienSupHome(): JSX.Element {
         </Card>
       </div>
 
-      {/* Row 3: Missions Bar | Info (Techniciens) */}
+      
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <Card className="h-80">
           <CardHeader>

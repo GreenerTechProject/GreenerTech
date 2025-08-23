@@ -25,6 +25,13 @@ export interface CreateDomainResponse {
   id?: string;
 }
 
+export interface UpdateDomainRequest {
+  name?: string;
+  area?: number;
+  center?: { lat: number; lng: number };
+  path?: { lat: number; lng: number; ordre: number }[];
+}
+
 export interface ApiError {
   message: string;
   status: number;
@@ -81,20 +88,16 @@ export const domainService = {
       const results: CreateDomainResponse[] = [];
 
       for (const domain of domains) {
-        console.log("Creating domain:", domain);
         const response = await axios.post<CreateDomainResponse>(
           `${API_BASE_URL}/domaine`,
           domain,
           createAuthenticatedRequest(),
         );
-        console.log("Domain creation response:", response.data);
         results.push(response.data);
       }
 
       return results;
     } catch (error: any) {
-      console.error("Erreur lors de la création des domaines:", error);
-
       const errorMessage =
         error.response?.data?.message ||
         "Erreur lors de la création des domaines";
@@ -120,8 +123,6 @@ export const domainService = {
         throw new Error("Échec de la récupération des domaines");
       }
     } catch (error: any) {
-      console.error("Erreur lors de la récupération des domaines:", error);
-
       const errorMessage =
         error.response?.data?.message ||
         "Erreur lors de la récupération des domaines";
@@ -130,6 +131,21 @@ export const domainService = {
         message: errorMessage,
         status: error.response?.status || 500,
       } as ApiError;
+    }
+  },
+
+  updateDomain: async (id: string | number, updates: UpdateDomainRequest): Promise<{ message: string }> => {
+    try {
+      const response = await axios.put<{ message: string }>(
+        `${API_BASE_URL}/domaine/${id}`,
+        updates,
+        createAuthenticatedRequest(),
+      );
+      return response.data;
+    } catch (error: any) {
+      const errorMessage =
+        error.response?.data?.message || "Erreur lors de la mise à jour du domaine";
+      throw { message: errorMessage, status: error.response?.status || 500 } as ApiError;
     }
   },
 };

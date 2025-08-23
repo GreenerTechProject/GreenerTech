@@ -18,7 +18,6 @@ export default function TechnicienSupAuthorizations(): JSX.Element {
   const [technicians, setTechnicians] = useState<Technician[]>([]);
   const [authBySerreId, setAuthBySerreId] = useState<Record<number, AutorisationSerre[]>>({});
 
-  // UI state for creating new authorization
   const [selectedSerreId, setSelectedSerreId] = useState<string>("");
   const [selectedTechnicianId, setSelectedTechnicianId] = useState<string>("");
   const [actionLoading, setActionLoading] = useState(false);
@@ -38,27 +37,25 @@ export default function TechnicienSupAuthorizations(): JSX.Element {
 
         if (!isMounted) return;
         setSerres(Array.isArray(serresList) ? serresList : []);
-        // Only technicians assigned to this supervisor
         const myTechs = (Array.isArray(techs) ? techs : []).filter((t: any) => t.role === 'technicien' && String(t.id_assigned) === String(user.id));
         setTechnicians(myTechs);
 
-        // Create a set of technician IDs supervised by this supervisor for quick lookup
         const myTechnicianIds = new Set(myTechs.map((t: any) => String(t.id)));
 
-        // Fetch authorizations per serre and filter only for supervised technicians
-        const entries = await Promise.all((Array.isArray(serresList) ? serresList : []).map(async (s: any) => {
-          const sid = typeof s.id === 'string' ? parseInt(s.id, 10) : s.id;
-          try {
-            const list = await serreService.getAutorisationSerre({ id_serre: sid });
-            // Filter authorizations to only include technicians supervised by this supervisor
-            const filteredList = list.filter((auth: AutorisationSerre) =>
-              myTechnicianIds.has(String(auth.id_user)) && String(auth.id_user) !== String(user.id)
-            );
-            return [sid, filteredList] as [number, AutorisationSerre[]];
-          } catch {
-            return [sid, []] as [number, AutorisationSerre[]];
-          }
-        }));
+        const entries = await Promise.all(
+          (Array.isArray(serresList) ? serresList : []).map(async (s: any) => {
+            const sid = typeof s.id === 'string' ? parseInt(s.id, 10) : s.id;
+            try {
+              const list = await serreService.getAutorisationSerre({ id_serre: sid });
+              const filteredList = list.filter((auth: AutorisationSerre) =>
+                myTechnicianIds.has(String(auth.id_user)) && String(auth.id_user) !== String(user.id)
+              );
+              return [sid, filteredList] as [number, AutorisationSerre[]];
+            } catch {
+              return [sid, []] as [number, AutorisationSerre[]];
+            }
+          })
+        );
         if (!isMounted) return;
         const map: Record<number, AutorisationSerre[]> = {};
         entries.forEach(([sid, list]) => { map[sid] = list; });
@@ -79,14 +76,12 @@ export default function TechnicienSupAuthorizations(): JSX.Element {
       return;
     }
 
-    // Validate that the selected technician is supervised by this supervisor
     const selectedTech = technicians.find((t) => String(t.id) === selectedTechnicianId);
     if (!selectedTech) {
       toast.error("Technicien non trouvé ou non supervisé par vous");
       return;
     }
 
-    // Additional check to ensure the technician is assigned to this supervisor
     if (String(selectedTech.id_assigned) !== String(user?.id)) {
       toast.error("Vous ne pouvez pas donner d'autorisation à ce technicien car il n'est pas sous votre supervision");
       return;
@@ -112,14 +107,12 @@ export default function TechnicienSupAuthorizations(): JSX.Element {
   };
 
   const handleDeleteAuthorization = async (sid: number, auth: AutorisationSerre) => {
-    // Validate that the technician being removed is supervised by this supervisor
     const techToRemove = technicians.find((t) => String(t.id) === String(auth.id_user));
     if (!techToRemove) {
       toast.error("Technicien non trouvé ou non supervisé par vous");
       return;
     }
 
-    // Additional check to ensure the technician is assigned to this supervisor
     if (String(techToRemove.id_assigned) !== String(user?.id)) {
       toast.error("Vous ne pouvez pas retirer l'autorisation de ce technicien car il n'est pas sous votre supervision");
       return;
@@ -223,7 +216,6 @@ export default function TechnicienSupAuthorizations(): JSX.Element {
                 {serres.map((s: any) => {
                   const sid = typeof s.id === 'string' ? parseInt(s.id, 10) : s.id;
                   const list = (authBySerreId[sid] || []).filter((a) => {
-                    // Double-check that the authorization belongs to a technician supervised by this supervisor
                     const tech = technicians.find((t) => String(t.id) === String(a.id_user));
                     return tech && String(tech.id_assigned) === String(user?.id);
                   });

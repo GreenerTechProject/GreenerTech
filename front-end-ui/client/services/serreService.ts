@@ -41,19 +41,24 @@ export interface AutorisationSerre {
   id_serre: number;
 }
 
-// Configure axios base URL - use correct backend port
+export interface UpdateSerreRequest {
+  nom?: string;
+  position?: {
+    latitude: number;
+    longitude: number;
+    ordre: number;
+  }[];
+  surface?: number;
+  center?: {
+    lat: number;
+    lng: number;
+  };
+}
+
 const API_BASE_URL = `${window.location.protocol}//${window.location.hostname}:5000/api`;
 
-// Create axios instance with auth headers
 const createAuthenticatedRequest = () => {
   const token = tokenManager.getToken();
-  console.log("=== AUTH DEBUG ===");
-  console.log("Token exists:", !!token);
-  console.log("Token value:", token ? `${token.substring(0, 20)}...` : "null");
-  console.log("Headers:", {
-    "Content-Type": "application/json",
-    ...(token && { Authorization: `Bearer ${token}` }),
-  });
   return {
     headers: {
       "Content-Type": "application/json",
@@ -63,89 +68,51 @@ const createAuthenticatedRequest = () => {
 };
 
 export const serreService = {
-  // Create a single serre
   createSerre: async (serre: CreateSerreRequest): Promise<CreateSerreResponse> => {
     try {
-      console.log("=== SERRE CREATION DEBUG ===");
-      console.log("Creating serre:", serre);
-      console.log("API URL:", `${API_BASE_URL}/serre`);
-      console.log("Request data:", JSON.stringify(serre, null, 2));
-      
       const authHeaders = createAuthenticatedRequest();
-      console.log("Auth headers:", authHeaders);
       
-      // Check if token exists and is valid
       const token = tokenManager.getToken();
-      console.log("=== TOKEN DEBUG ===");
-      console.log("Token exists:", !!token);
-      console.log("Token length:", token ? token.length : 0);
-      console.log("Token preview:", token ? `${token.substring(0, 50)}...` : "null");
       
       if (!token) {
         throw new Error("No authentication token found");
       }
       
-      // Try to refresh token if it might be expired
       try {
         const refreshToken = tokenManager.getRefreshToken();
         if (refreshToken) {
-          console.log("Attempting token refresh...");
           const refreshResponse = await axios.post(`${API_BASE_URL}/auth/refresh`, {
             refreshToken,
           });
           const newToken = refreshResponse.data.token;
           tokenManager.setToken(newToken);
-          console.log("Token refreshed successfully");
           
-          // Update auth headers with new token
           const newAuthHeaders = createAuthenticatedRequest();
-          console.log("New auth headers:", newAuthHeaders);
           
           const response = await axios.post<CreateSerreResponse>(
             `${API_BASE_URL}/serre`,
             serre,
             newAuthHeaders,
           );
-          console.log("Serre creation response:", response.data);
           return response.data;
         }
       } catch (refreshError) {
-        console.log("Token refresh failed, continuing with current token:", refreshError);
+        // Token refresh failed, continuing with current token
       }
       
-      // Test authentication first
       try {
-        console.log("Testing authentication...");
         const testResponse = await axios.get(`${API_BASE_URL}/user`, authHeaders);
-        console.log("Auth test successful:", testResponse.data);
-        console.log("User role:", testResponse.data?.role);
-        console.log("User ID:", testResponse.data?.id);
       } catch (authError: any) {
-        console.error("Auth test failed:", authError.response?.status, authError.response?.data);
         throw new Error(`Authentication failed: ${authError.response?.data?.message || 'Unknown error'}`);
       }
-      
-      console.log("=== FINAL SERRE REQUEST ===");
-      console.log("URL:", `${API_BASE_URL}/serre`);
-      console.log("Headers:", JSON.stringify(authHeaders, null, 2));
-      console.log("Data:", JSON.stringify(serre, null, 2));
       
       const response = await axios.post<CreateSerreResponse>(
         `${API_BASE_URL}/serre`,
         serre,
         authHeaders,
       );
-      console.log("Serre creation response:", response.data);
-      console.log("Response status:", response.status);
-      console.log("Response headers:", response.headers);
       return response.data;
     } catch (error: any) {
-      console.error("=== SERRE CREATION ERROR ===");
-      console.error("Erreur lors de la création de la serre:", error);
-      console.error("Error response:", error.response?.data);
-      console.error("Error status:", error.response?.status);
-      console.error("Error headers:", error.response?.headers);
-
       const errorMessage =
         error.response?.data?.message ||
         "Erreur lors de la création de la serre";
@@ -167,7 +134,6 @@ export const serreService = {
     }
   },
 
-
   deleteSerre: async (id: string | number, id_domaine: string | number): Promise<{ message: string }> => {
     try {
       const auth = createAuthenticatedRequest();
@@ -185,10 +151,8 @@ export const serreService = {
     }
   },
 
-  // Get serres assigned to a given user (by autorisations)
   getSerresAssignedToUser: async (userId: number): Promise<any[]> => {
     try {
-      // Fetch autorisations for this user
       const authzResp = await axios.get(
         `${API_BASE_URL}/autorisation_serre`,
         {
@@ -236,7 +200,6 @@ export const serreService = {
       const serreIds: number[] = autorisations.map((a: any) => a.id_serre);
       if (serreIds.length === 0) return [];
 
-      // Fetch company technicians to get their details
       let companyTechnicians: any[] = [];
       try {
         if (currentUser.id_entreprise) {
@@ -247,17 +210,15 @@ export const serreService = {
           companyTechnicians = techResponse.data?.technicians || [];
         }
       } catch (techError) {
-        console.warn('Could not fetch company technicians:', techError);
+        // Could not fetch company technicians
       }
 
-      // Fetch details for each serre with technician information
       const results: any[] = [];
       for (const id of serreIds) {
         try {
           const serreResponse = await axios.get(`${API_BASE_URL}/serre/${id}`, createAuthenticatedRequest());
           const serre = serreResponse.data;
           
-          // Fetch technician assignments for this serre
           try {
             const techResponse = await axios.get(
               `${API_BASE_URL}/autorisation_serre`,
@@ -267,17 +228,10 @@ export const serreService = {
               }
             );
             
-            console.log(`[SerreService] Fetching technicians for serre ${id}:`, techResponse.data);
-            
-            // Find all technician assignments (not the current user's assignment)
             const technicianAuths = techResponse.data?.data?.filter((auth: any) => {
-              // Only filter out the current user's own assignment
               const isCurrentUser = auth.id_user === currentUser.id;
-              console.log(`[SerreService] Auth ${auth.id_user} vs current user ${currentUser.id}: ${isCurrentUser}`);
               return !isCurrentUser;
             }) || [];
-            
-            console.log(`[SerreService] Found ${technicianAuths.length} technician assignments for serre ${id}:`, technicianAuths);
             
             if (technicianAuths.length > 0) {
               const assignedTechnicians = [];
@@ -289,28 +243,20 @@ export const serreService = {
                     name: companyTech.fullName || companyTech.name || companyTech.email,
                     email: companyTech.email
                   });
-                  console.log(`[SerreService] Found technician:`, companyTech);
-                } else {
-                  console.log(`[SerreService] Technician ${techAuth.id_user} not found in company technicians`);
                 }
               }
               
               if (assignedTechnicians.length > 0) {
                 serre.assignedTechnicians = assignedTechnicians;
-                console.log(`[SerreService] Set assignedTechnicians for serre ${id}:`, assignedTechnicians);
-              } else {
-                console.log(`[SerreService] No valid technicians found for serre ${id}`);
               }
-            } else {
-              console.log(`[SerreService] No technician assignments found for serre ${id}`);
             }
           } catch (authError) {
-            console.warn(`Could not fetch technician assignments for serre ${id}:`, authError);
+            // Could not fetch technician assignments
           }
           
           results.push(serre);
         } catch (serreError) {
-          console.warn(`Could not fetch serre ${id}:`, serreError);
+          // Could not fetch serre
         }
       }
       
@@ -325,7 +271,6 @@ export const serreService = {
     }
   },
 
-  // Get serres assigned to the current user
   getSerresByUser: async (): Promise<any[]> => {
     try {
       const response = await axios.get(`${API_BASE_URL}/serre/user`, createAuthenticatedRequest());
@@ -340,7 +285,6 @@ export const serreService = {
     }
   },
 
-  // Create multiple serres (optional - keep if you need bulk creation)
   createSerres: async (
     serres: CreateSerreRequest[],
   ): Promise<CreateSerreResponse[]> => {
@@ -358,8 +302,6 @@ export const serreService = {
 
       return results;
     } catch (error: any) {
-      console.error("Erreur lors de la création des serres:", error);
-
       const errorMessage =
         error.response?.data?.message ||
         "Erreur lors de la création des serres";
@@ -371,8 +313,6 @@ export const serreService = {
     }
   },
 
-
-  // Get serres by domain ID
   getSerresByDomain: async (domainId: string): Promise<ExtendedSerre[]> => {
     try {
       const response = await axios.get<{ success: boolean; serres: ExtendedSerre[] }>(
@@ -386,8 +326,6 @@ export const serreService = {
         throw new Error("Échec de la récupération des serres");
       }
     } catch (error: any) {
-      console.error("Erreur lors de la récupération des serres:", error);
-
       const errorMessage =
         error.response?.data?.message ||
         "Erreur lors de la récupération des serres";
@@ -399,7 +337,7 @@ export const serreService = {
     }
   },
 
-getAllSerres: async (): Promise<ExtendedSerre[]> => {
+  getAllSerres: async (): Promise<ExtendedSerre[]> => {
     try {
         const response = await axios.get<ExtendedSerre[]>(
             `${API_BASE_URL}/serre`,
@@ -408,8 +346,6 @@ getAllSerres: async (): Promise<ExtendedSerre[]> => {
         
         return response.data;
     } catch (error: any) {
-        console.error("Error fetching all serres:", error);
-
         const errorMessage = error.response?.data?.message || 
             "Failed to fetch serres";
         
@@ -420,7 +356,6 @@ getAllSerres: async (): Promise<ExtendedSerre[]> => {
     }
 },
   
-  // Create an autorisation for a user to access a serre
   createAutorisationSerre: async (
     payload: { id_user: number; id_serre: number }
   ): Promise<AutorisationSerre> => {
@@ -432,7 +367,6 @@ getAllSerres: async (): Promise<ExtendedSerre[]> => {
       );
       return response.data;
     } catch (error: any) {
-      console.error("Erreur lors de la création d'autorisation serre:", error);
       const errorMessage =
         error.response?.data?.message ||
         "Erreur lors de la création d'autorisation serre";
@@ -443,7 +377,6 @@ getAllSerres: async (): Promise<ExtendedSerre[]> => {
     }
   },
   
-  // Delete an autorisation by id
   deleteAutorisationSerre: async (
     autorisationId: number
   ): Promise<void> => {
@@ -453,7 +386,6 @@ getAllSerres: async (): Promise<ExtendedSerre[]> => {
         createAuthenticatedRequest()
       );
     } catch (error: any) {
-      console.error("Erreur lors de la suppression d'autorisation serre:", error);
       const errorMessage =
         error.response?.data?.message ||
         "Erreur lors de la suppression d'autorisation serre";
@@ -464,7 +396,6 @@ getAllSerres: async (): Promise<ExtendedSerre[]> => {
     }
   },
   
-  // Get bilans by serre
   getBilansBySerre: async (serreId: number): Promise<any[]> => {
     try {
       const response = await axios.get(
@@ -478,7 +409,6 @@ getAllSerres: async (): Promise<ExtendedSerre[]> => {
     }
   },
 
-  // Get guides by serre to extract 'variete'
   getGuidesBySerre: async (serreId: number): Promise<any[]> => {
     try {
       const response = await axios.get(
@@ -492,7 +422,6 @@ getAllSerres: async (): Promise<ExtendedSerre[]> => {
     }
   },
 
-  // Get autorisations for serres filtered by user or serre
   getAutorisationSerre: async (
     params: { id_user?: number; id_serre?: number }
   ): Promise<AutorisationSerre[]> => {
@@ -517,7 +446,6 @@ getAllSerres: async (): Promise<ExtendedSerre[]> => {
     }
   },
 
-  // Get serres assigned to the current user using the new backend endpoint
   getSerresByCurrentUser: async (): Promise<any[]> => {
     try {
       const response = await axios.get(
@@ -533,6 +461,21 @@ getAllSerres: async (): Promise<ExtendedSerre[]> => {
         message: errorMessage,
         status: error.response?.status || 500,
       } as ApiError;
+    }
+  },
+
+  updateSerre: async (id: string | number, updates: UpdateSerreRequest): Promise<{ message: string }> => {
+    try {
+      const response = await axios.put<{ message: string }>(
+        `${API_BASE_URL}/serre/${id}`,
+        updates,
+        createAuthenticatedRequest(),
+      );
+      return response.data;
+    } catch (error: any) {
+      const errorMessage =
+        error.response?.data?.message || "Erreur lors de la mise à jour de la serre";
+      throw { message: errorMessage, status: error.response?.status || 500 } as ApiError;
     }
   },
 };

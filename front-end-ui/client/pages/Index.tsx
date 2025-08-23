@@ -4,6 +4,8 @@ import { useAuth } from "../contexts/AuthContext";
 import { useAuthRedirect } from "../hooks/useAuthRedirect";
 
 export default function Index() {
+  console.log("Index (Login) component is rendering!");
+  
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [errorMsg, setErrorMsg] = useState("");

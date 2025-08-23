@@ -7,6 +7,7 @@ import React, {
 } from "react";
 import {
   authService,
+  tokenManager,
   User,
   LoginRequest,
   RegisterRequest,
@@ -63,22 +64,39 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         setIsLoading(true);
 
         // Check if user data exists in localStorage
-        const storedUser = authService.getStoredUser();
+        const storedUser = localStorage.getItem("user_data") ? JSON.parse(localStorage.getItem("user_data")!) : null;
+        const token = localStorage.getItem("auth_token");
 
-        if (storedUser && authService.isAuthenticated()) {
+        if (storedUser && token) {
           // Try to get fresh user data from server
           try {
             const currentUser = await authService.getCurrentUser();
-            setUser(currentUser);
+            // Validate the user data has required fields
+            if (currentUser && currentUser.role) {
+              setUser(currentUser);
+            } else {
+              console.error("Invalid user data from server, clearing auth");
+              // Don't call logout here, just clear local state
+              localStorage.removeItem("user_data");
+              localStorage.removeItem("auth_token");
+              localStorage.removeItem("refresh_token");
+              setUser(null);
+            }
           } catch (error) {
-            // If server request fails, use stored user data
-            setUser(storedUser);
+            console.error("Server auth check failed:", error);
+            // If server request fails, clear invalid auth data
+            // Don't call logout here, just clear local state
+            localStorage.removeItem("user_data");
+            localStorage.removeItem("auth_token");
+            localStorage.removeItem("refresh_token");
+            setUser(null);
           }
         }
       } catch (error) {
         console.error("Auth initialization failed:", error);
-        // Clear invalid auth data
-        await authService.logout();
+        // Clear invalid auth data but don't redirect
+        setUser(null);
+        // Don't call authService.logout() here as it might redirect
       } finally {
         setIsLoading(false);
       }

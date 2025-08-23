@@ -1,35 +1,30 @@
-import axios from 'axios';
-import { tokenManager } from './authService';
-
-const API_BASE_URL = `${window.location.protocol}//${window.location.hostname}:5000/api`;
-
-export interface BilanPoint {
-  lat: number;
-  lng: number;
-  ordre: number;
-}
+import axios from "axios";
+import { tokenManager } from "./authService";
 
 export interface Bilan {
   id: number;
   nom: string;
   id_serre: number;
+  serre_nom?: string;
+  domaine_nom?: string;
+  lien_pdf?: string;
+  status?: string;
   surface?: number;
-  center_lat?: number;
-  center_lng?: number;
-  created_by?: number;
-  created_by_name?: string;
-  position: BilanPoint[];
 }
 
 export interface CreateBilanRequest {
-  name: string;
+  nom: string;
+  description?: string;
+  date: string;
   id_serre: number;
-  position: BilanPoint[];
-  area?: number;
-  center?: {
-    lat: number;
-    lng: number;
-  };
+}
+
+export interface UpdateBilanRequest {
+  nom?: string;
+  description?: string;
+  date?: string;
+  lien_pdf?: string;
+  status?: string;
 }
 
 export interface ApiError {
@@ -37,155 +32,108 @@ export interface ApiError {
   status: number;
 }
 
+const API_BASE_URL = `${window.location.protocol}//${window.location.hostname}:5000/api`;
+
 const createAuthenticatedRequest = () => {
   const token = tokenManager.getToken();
   return {
     headers: {
-      'Content-Type': 'application/json',
+      "Content-Type": "application/json",
       ...(token && { Authorization: `Bearer ${token}` }),
     },
   };
 };
 
 export const bilanService = {
-  // Get all bilans
   getAllBilans: async (): Promise<Bilan[]> => {
     try {
-      const response = await axios.get<Bilan[]>(
-        `${API_BASE_URL}/bilan`,
-        createAuthenticatedRequest()
-      );
+      const response = await axios.get(`${API_BASE_URL}/bilan`, createAuthenticatedRequest());
+      return response.data || [];
+    } catch (error: any) {
+      const errorMessage = error.response?.data?.message || "Erreur lors de la récupération des bilans";
+      throw { message: errorMessage, status: error.response?.status || 500 } as ApiError;
+    }
+  },
+
+  getBilan: async (id: number): Promise<Bilan> => {
+    try {
+      const response = await axios.get(`${API_BASE_URL}/bilan/${id}`, createAuthenticatedRequest());
       return response.data;
     } catch (error: any) {
-      const errorMessage = error.response?.data?.message || 
-        "Erreur lors de la récupération des bilans";
-      throw {
-        message: errorMessage,
-        status: error.response?.status || 500,
-      } as ApiError;
+      const errorMessage = error.response?.data?.message || "Erreur lors de la récupération du bilan";
+      throw { message: errorMessage, status: error.response?.status || 500 } as ApiError;
     }
   },
 
-  // Get bilan by ID
-  getBilan: async (bilanId: number): Promise<Bilan> => {
+  createBilan: async (bilan: CreateBilanRequest): Promise<Bilan> => {
     try {
-      const response = await axios.get<Bilan>(
-        `${API_BASE_URL}/bilan/${bilanId}`,
-        createAuthenticatedRequest()
-      );
+      const response = await axios.post(`${API_BASE_URL}/bilan`, bilan, createAuthenticatedRequest());
       return response.data;
-      } catch (error: any) {
-      const errorMessage = error.response?.data?.message || 
-        "Erreur lors de la récupération du bilan";
-      throw {
-        message: errorMessage,
-        status: error.response?.status || 500,
-      } as ApiError;
+    } catch (error: any) {
+      const errorMessage = error.response?.data?.message || "Erreur lors de la création du bilan";
+      throw { message: errorMessage, status: error.response?.status || 500 } as ApiError;
     }
   },
 
-  // Get bilans by serre ID
+  updateBilan: async (id: number, updates: UpdateBilanRequest): Promise<Bilan> => {
+    try {
+      const response = await axios.put(`${API_BASE_URL}/bilan/${id}`, updates, createAuthenticatedRequest());
+      return response.data;
+    } catch (error: any) {
+      const errorMessage = error.response?.data?.message || "Erreur lors de la mise à jour du bilan";
+      throw { message: errorMessage, status: error.response?.status || 500 } as ApiError;
+    }
+  },
+
+  deleteBilan: async (id: number): Promise<{ message: string }> => {
+    try {
+      const response = await axios.delete(`${API_BASE_URL}/bilan/${id}`, createAuthenticatedRequest());
+      return response.data;
+    } catch (error: any) {
+      const errorMessage = error.response?.data?.message || "Erreur lors de la suppression du bilan";
+      throw { message: errorMessage, status: error.response?.status || 500 } as ApiError;
+    }
+  },
+
   getBilansBySerre: async (serreId: number): Promise<Bilan[]> => {
     try {
-      console.log('[BilanService] Fetching bilans for serre:', serreId);
-      console.log('[BilanService] API URL:', `${API_BASE_URL}/serre/${serreId}/bilans`);
-      
       const requestConfig = createAuthenticatedRequest();
-      console.log('[BilanService] Request config:', requestConfig);
+      const response = await axios.get(`${API_BASE_URL}/serre/${serreId}/bilans`, requestConfig);
+      return response.data || [];
+    } catch (error: any) {
+      const errorMessage = error.response?.data?.message || "Erreur lors de la récupération des bilans de la serre";
+      throw { message: errorMessage, status: error.response?.status || 500 } as ApiError;
+    }
+  },
+
+  getBilansByEnterprise: async (enterpriseId: number): Promise<Bilan[]> => {
+    try {
+      const response = await axios.get(`${API_BASE_URL}/bilan/enterprise/${enterpriseId}`, createAuthenticatedRequest());
+      return response.data || [];
+    } catch (error: any) {
+      const errorMessage = error.response?.data?.message || "Erreur lors de la récupération des bilans de l'entreprise";
+      throw { message: errorMessage, status: error.response?.status || 500 } as ApiError;
+    }
+  },
+
+  downloadBilan: async (lienPdf: string, filename: string): Promise<void> => {
+    try {
+      const response = await axios.get(lienPdf, {
+        ...createAuthenticatedRequest(),
+        responseType: 'blob',
+      });
       
-      const response = await axios.get<Bilan[]>(
-        `${API_BASE_URL}/serre/${serreId}/bilans`,
-        requestConfig
-      );
-      
-      console.log('[BilanService] Response:', response.data);
-      return response.data;
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', filename);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
     } catch (error: any) {
-      console.error('[BilanService] Error:', error);
-      console.error('[BilanService] Error response:', error.response);
-      
-      const errorMessage = error.response?.data?.message || 
-        "Erreur lors de la récupération des bilans de la serre";
-      throw {
-        message: errorMessage,
-        status: error.response?.status || 500,
-      } as ApiError;
+      const errorMessage = error.response?.data?.message || "Erreur lors du téléchargement du bilan";
+      throw { message: errorMessage, status: error.response?.status || 500 } as ApiError;
     }
   },
-
-  // Create new bilan
-  createBilan: async (bilanData: CreateBilanRequest): Promise<Bilan> => {
-    try {
-      const response = await axios.post<Bilan>(
-        `${API_BASE_URL}/bilan`,
-        bilanData,
-        createAuthenticatedRequest()
-      );
-      return response.data;
-    } catch (error: any) {
-      const errorMessage = error.response?.data?.message || 
-        "Erreur lors de la création du bilan";
-      throw {
-        message: errorMessage,
-        status: error.response?.status || 500,
-      } as ApiError;
-    }
-  },
-
-  // Update bilan
-  updateBilan: async (bilanId: number, bilanData: Partial<Bilan>): Promise<Bilan> => {
-    try {
-      const response = await axios.put<Bilan>(
-        `${API_BASE_URL}/bilan/${bilanId}`,
-        bilanData,
-        createAuthenticatedRequest()
-      );
-      return response.data;
-    } catch (error: any) {
-      const errorMessage = error.response?.data?.message || 
-        "Erreur lors de la mise à jour du bilan";
-      throw {
-        message: errorMessage,
-        status: error.response?.status || 500,
-      } as ApiError;
-    }
-  },
-
-  // Delete bilan
-  deleteBilan: async (bilanId: number): Promise<void> => {
-    try {
-      await axios.delete(
-        `${API_BASE_URL}/bilan/${bilanId}`,
-        createAuthenticatedRequest()
-      );
-    } catch (error: any) {
-      const errorMessage = error.response?.data?.message || 
-        "Erreur lors de la suppression du bilan";
-      throw {
-        message: errorMessage,
-        status: error.response?.status || 500,
-      } as ApiError;
-    }
-  },
-
-  // Generate QR code for bilan
-  generateBilanQRCode: async (bilanId: number): Promise<Blob> => {
-    try {
-      const response = await axios.get(
-        `${API_BASE_URL}/bilan/${bilanId}/qrcode`,
-        {
-          ...createAuthenticatedRequest(),
-          responseType: 'blob'
-        }
-      );
-      return response.data;
-    } catch (error: any) {
-      const errorMessage = error.response?.data?.message || 
-        "Erreur lors de la génération du QR code";
-      throw {
-        message: errorMessage,
-        status: error.response?.status || 500,
-      } as ApiError;
-    }
-  }
 };

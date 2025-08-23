@@ -48,7 +48,6 @@ export class ReportService {
       );
       return response.data;
     } catch (error) {
-      console.error("Error creating report:", error);
       throw error;
     }
   }
@@ -61,7 +60,6 @@ export class ReportService {
       );
       return response.data;
     } catch (error) {
-      console.error("Error fetching enterprise reports:", error);
       throw error;
     }
   }
@@ -74,7 +72,6 @@ export class ReportService {
       );
       return response.data;
     } catch (error) {
-      console.error("Error fetching assigned serre reports:", error);
       throw error;
     }
   }
@@ -87,7 +84,6 @@ export class ReportService {
       );
       return response.data;
     } catch (error) {
-      console.error("Error fetching user reports:", error);
       throw error;
     }
   }

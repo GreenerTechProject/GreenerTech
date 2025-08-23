@@ -86,7 +86,7 @@ export const assignmentService = {
             }));
             allSerres.push(...serresWithDomain);
           } catch (error) {
-            console.warn(`Failed to fetch serres for domain ${domain.id}:`, error);
+            // Failed to fetch serres for domain
           }
         }
       }
@@ -109,7 +109,6 @@ export const assignmentService = {
       
       // The backend returns a complex object, we need to extract the assignments array
       const data = response.data;
-      console.log('Backend response for assignments:', data);
       
       if (data && data.assignments && Array.isArray(data.assignments)) {
         // Transform the backend format to match our Assignment interface
@@ -121,7 +120,6 @@ export const assignmentService = {
         }));
       }
       
-      console.warn('No assignments found in response or invalid format:', data);
       return [];
     } catch (error: any) {
       const errorMessage =
@@ -136,28 +134,14 @@ export const assignmentService = {
     supervisor_id: number
   ): Promise<{ message: string; technician_id: number; supervisor_id: number }> => {
     try {
-      console.log("=== ASSIGNMENT SERVICE DEBUG ===");
-      console.log("Making API call to:", `${API_BASE_URL}/users/assign-supervisor`);
-      console.log("Request payload:", { technician_id, supervisor_id });
-      console.log("Request headers:", createAuthenticatedRequest());
-      
       const response = await axios.put(
         `${API_BASE_URL}/users/assign-supervisor`,
         { technician_id, supervisor_id },
         createAuthenticatedRequest(),
       );
       
-      console.log("=== ASSIGNMENT SERVICE RESPONSE ===");
-      console.log("Response status:", response.status);
-      console.log("Response data:", response.data);
-      
       return response.data;
     } catch (error: any) {
-      console.error("=== ASSIGNMENT SERVICE ERROR ===");
-      console.error("Error in assignTechnicianToSupervisor:", error);
-      console.error("Error response:", error.response?.data);
-      console.error("Error status:", error.response?.status);
-      
       const errorMessage =
         error.response?.data?.message || "Erreur lors de l'assignation du technicien";
       throw { message: errorMessage, status: error.response?.status || 500 } as ApiError;

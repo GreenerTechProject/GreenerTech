@@ -66,19 +66,15 @@ export default function TechnicienSupAlerts() {
   const loadAlerts = async () => {
     try {
       setLoading(true);
-      // Get all alerts and filter by assigned serres
       const allAlerts = await AlertService.getAllAlerts(1, 1000);
       
-      // Filter alerts to only include those from assigned serres
       let filteredAlerts = allAlerts.alerts.filter(alert => {
-        // Check if alert belongs to assigned serres
         return assignedSerres.some(serre => 
           Number(serre.id) === alert.id_serre || 
           serre.nom === alert.serre_nom
         );
       });
 
-      // Apply search filter
       if (searchTerm) {
         filteredAlerts = filteredAlerts.filter(alert => 
           alert.maladie?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -89,7 +85,6 @@ export default function TechnicienSupAlerts() {
         );
       }
       
-      // Apply level filter
       if (levelFilter !== "all") {
         filteredAlerts = filteredAlerts.filter(alert => {
           const level = getAlertLevel(alert.status_alert);
@@ -97,7 +92,6 @@ export default function TechnicienSupAlerts() {
         });
       }
       
-      // Apply status filter
       if (statusFilter !== "all") {
         filteredAlerts = filteredAlerts.filter(alert => alert.status === statusFilter);
       }
@@ -121,7 +115,7 @@ export default function TechnicienSupAlerts() {
       const statsData = await AlertService.getAlertStats();
       setStats(statsData);
     } catch (error) {
-      // Error loading stats
+      // Handle error silently
     }
   };
 
@@ -131,7 +125,7 @@ export default function TechnicienSupAlerts() {
       loadAlerts();
       loadStats();
     } catch (error) {
-      // Error updating alert
+      // Handle error silently
     }
   };
 
@@ -193,25 +187,23 @@ export default function TechnicienSupAlerts() {
       <TechHeader role="technicien_sup" />
       
       <div className="p-6">
-      {/* Header Section */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">
-          Gestion des Alertes
-        </h1>
-        <p className="text-gray-600 text-lg">
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">
+            Gestion des Alertes
+          </h1>
+          <p className="text-gray-600 text-lg">
             Sur vos serres supervisées ({assignedSerres.length})
           </p>
           
-          {/* Search and Filters */}
           <div className="mt-6 flex flex-col sm:flex-row gap-4">
             <div className="relative max-w-md">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-            <Input
-              placeholder="Rechercher une alerte..."
-              value={searchTerm}
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+              <Input
+                placeholder="Rechercher une alerte..."
+                value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
-            />
+                className="pl-10"
+              />
             </div>
             
             <select
@@ -237,7 +229,6 @@ export default function TechnicienSupAlerts() {
           </div>
         </div>
 
-        {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
           <Card>
             <CardContent className="p-6">
@@ -302,55 +293,54 @@ export default function TechnicienSupAlerts() {
               </div>
             </CardContent>
           </Card>
-      </div>
+        </div>
 
-      {/* Alerts Table */}
         <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Bell className="h-5 w-5 text-red-500" />
-            Alertes ({totalAlerts})
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b">
-                  <th className="text-left py-3 px-4 font-medium text-gray-700">Nom d'anomalie</th>
-                  <th className="text-left py-3 px-4 font-medium text-gray-700">Niveau</th>
-                  <th className="text-left py-3 px-4 font-medium text-gray-700">Statut</th>
-                  <th className="text-left py-3 px-4 font-medium text-gray-700">Localisation</th>
-                  <th className="text-left py-3 px-4 font-medium text-gray-700">Horodatage</th>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Bell className="h-5 w-5 text-red-500" />
+              Alertes ({totalAlerts})
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b">
+                    <th className="text-left py-3 px-4 font-medium text-gray-700">Nom d'anomalie</th>
+                    <th className="text-left py-3 px-4 font-medium text-gray-700">Niveau</th>
+                    <th className="text-left py-3 px-4 font-medium text-gray-700">Statut</th>
+                    <th className="text-left py-3 px-4 font-medium text-gray-700">Localisation</th>
+                    <th className="text-left py-3 px-4 font-medium text-gray-700">Horodatage</th>
                     <th className="text-left py-3 px-4 font-medium text-gray-700">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
+                  </tr>
+                </thead>
+                <tbody>
                   {alerts.map((alert) => (
-                  <tr key={alert.id} className="border-b hover:bg-gray-50">
-                    <td className="py-3 px-4">
-                      <div className="font-medium text-gray-900">{alert.maladie}</div>
-                    </td>
-                    <td className="py-3 px-4">
-                      {getAlertLevelBadge(alert.status_alert)}
-                    </td>
-                    <td className="py-3 px-4">
-                      <div className="flex items-center gap-2">
-                        {getStatusIcon(alert.status)}
-                        <span className={cn(
-                          "text-sm",
-                          alert.status === "résolue" ? "text-green-600" : "text-red-600"
-                        )}>
-                          {getStatusText(alert.status)}
-                        </span>
-                      </div>
-                    </td>
-                    <td className="py-3 px-4 text-sm text-gray-600">
+                    <tr key={alert.id} className="border-b hover:bg-gray-50">
+                      <td className="py-3 px-4">
+                        <div className="font-medium text-gray-900">{alert.maladie}</div>
+                      </td>
+                      <td className="py-3 px-4">
+                        {getAlertLevelBadge(alert.status_alert)}
+                      </td>
+                      <td className="py-3 px-4">
+                        <div className="flex items-center gap-2">
+                          {getStatusIcon(alert.status)}
+                          <span className={cn(
+                            "text-sm",
+                            alert.status === "résolue" ? "text-green-600" : "text-red-600"
+                          )}>
+                            {getStatusText(alert.status)}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="py-3 px-4 text-sm text-gray-600">
                         {alert.serre_nom} - {alert.domaine_nom}
-                    </td>
-                    <td className="py-3 px-4 text-sm text-gray-600">
-                      {formatDate(alert.date)}
-                    </td>
+                      </td>
+                      <td className="py-3 px-4 text-sm text-gray-600">
+                        {formatDate(alert.date)}
+                      </td>
                       <td className="py-3 px-4">
                         {alert.status !== "résolue" && (
                           <Button
@@ -362,58 +352,56 @@ export default function TechnicienSupAlerts() {
                           </Button>
                         )}
                       </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-
-          {/* Pagination */}
-          {totalPages > 1 && (
-            <div className="flex items-center justify-between mt-6">
-              <div className="text-sm text-gray-600">
-                Affichage de {(currentPage - 1) * alertsPerPage + 1} à {Math.min(currentPage * alertsPerPage, totalAlerts)} sur {totalAlerts} alerte{totalAlerts !== 1 ? 's' : ''}
-              </div>
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setCurrentPage(currentPage - 1)}
-                  disabled={currentPage === 1}
-                >
-                  <ChevronLeft className="h-4 w-4 mr-1" />
-                  Précédent
-                </Button>
-                
-                {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                  <Button
-                    key={page}
-                    variant={currentPage === page ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => setCurrentPage(page)}
-                    className="w-10"
-                  >
-                    {page}
-                  </Button>
-                ))}
-                
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setCurrentPage(currentPage + 1)}
-                  disabled={currentPage === totalPages}
-                >
-                  Suivant
-                  <ChevronRight className="h-4 w-4 ml-1" />
-                </Button>
-              </div>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
-          )}
+
+            {totalPages > 1 && (
+              <div className="flex items-center justify-between mt-6">
+                <div className="text-sm text-gray-600">
+                  Affichage de {(currentPage - 1) * alertsPerPage + 1} à {Math.min(currentPage * alertsPerPage, totalAlerts)} sur {totalAlerts} alerte{totalAlerts !== 1 ? 's' : ''}
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(currentPage - 1)}
+                    disabled={currentPage === 1}
+                  >
+                    <ChevronLeft className="h-4 w-4 mr-1" />
+                    Précédent
+                  </Button>
+                  
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                    <Button
+                      key={page}
+                      variant={currentPage === page ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => setCurrentPage(page)}
+                      className="w-10"
+                    >
+                      {page}
+                    </Button>
+                  ))}
+                  
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(currentPage + 1)}
+                    disabled={currentPage === totalPages}
+                  >
+                    Suivant
+                    <ChevronRight className="h-4 w-4 ml-1" />
+                  </Button>
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
 
-      {/* Image Modal */}
       {showImageModal && selectedImage && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="relative max-w-4xl max-h-full">

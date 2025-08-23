@@ -18,20 +18,39 @@ import {
 
 export default function LandingPage() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  
+  console.log("LandingPage component is rendering!");
+  
+  // Add useEffect to log when component mounts
+  React.useEffect(() => {
+    console.log("LandingPage component mounted!");
+    document.title = "GreenerTech - L'avenir de l'agriculture est intelligent";
+  }, []);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#D6E2CC] via-[#FCFEFF] to-[#D6E2CC]">
       {/* Navigation */}
       <nav className="bg-white/80 backdrop-blur-md border-b border-green-100 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-4">
+          <div className="flex justify-between items-center py-3">
             {/* Logo */}
             <div className="flex items-center">
               <img
                 src="/GreenerTech-Logo4T.png"
                 alt="Greener Tech Logo"
-                className="h-8 sm:h-12 w-auto"
+                className="h-6 sm:h-8 w-auto object-contain"
+                onError={(e) => {
+                  // Fallback if logo doesn't load
+                  e.currentTarget.style.display = 'none';
+                  e.currentTarget.nextSibling.style.display = 'block';
+                }}
               />
+              <span 
+                className="text-lg sm:text-xl font-bold text-green-600 hidden"
+                style={{ display: 'none' }}
+              >
+                Greener Tech
+              </span>
             </div>
 
             {/* Desktop Navigation Links */}
@@ -380,6 +399,104 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* About Section */}
+      <section id="about" className="py-16 sm:py-20 px-4 sm:px-6 lg:px-8 bg-white">
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center mb-12 sm:mb-16">
+            <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">
+              À propos de Greener Tech
+            </h2>
+            <p className="text-lg sm:text-xl text-gray-600 max-w-3xl mx-auto px-4">
+              Une équipe passionnée de 9 experts dédiés à révolutionner l'agriculture 
+              avec des solutions technologiques innovantes et durables.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-3 md:grid-cols-9 gap-4 sm:gap-6">
+            {/* Team Member 1 */}
+            <div className="text-center">
+              <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4">
+                <Users className="h-8 w-8 sm:h-10 sm:w-10 text-white" />
+              </div>
+              <h4 className="text-sm sm:text-base font-semibold text-gray-900">CEO</h4>
+              <p className="text-xs sm:text-sm text-gray-600">Direction</p>
+            </div>
+
+            {/* Team Member 2 */}
+            <div className="text-center">
+              <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-blue-400 to-blue-600 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4">
+                <Users className="h-8 w-8 sm:h-10 sm:w-10 text-white" />
+              </div>
+              <h4 className="text-sm sm:text-base font-semibold text-gray-900">CTO</h4>
+              <p className="text-xs sm:text-sm text-gray-600">Technologie</p>
+            </div>
+
+            {/* Team Member 3 */}
+            <div className="text-center">
+              <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-purple-400 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4">
+                <Users className="h-8 w-8 sm:h-10 sm:w-10 text-white" />
+              </div>
+              <h4 className="text-sm sm:text-base font-semibold text-gray-900">Lead Dev</h4>
+              <p className="text-xs sm:text-sm text-gray-600">Développement</p>
+            </div>
+
+            {/* Team Member 4 */}
+            <div className="text-center">
+              <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-orange-400 to-orange-600 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4">
+                <Users className="h-8 w-8 sm:h-10 sm:w-10 text-white" />
+              </div>
+              <h4 className="text-sm sm:text-base font-semibold text-gray-900">IoT Expert</h4>
+              <p className="text-xs sm:text-sm text-gray-600">Capteurs</p>
+            </div>
+
+            {/* Team Member 5 */}
+            <div className="text-center">
+              <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-red-400 to-red-600 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4">
+                <Users className="h-8 w-8 sm:h-10 sm:w-10 text-white" />
+              </div>
+              <h4 className="text-sm sm:text-base font-semibold text-gray-900">AI Engineer</h4>
+              <p className="text-xs sm:text-sm text-gray-600">Intelligence</p>
+            </div>
+
+            {/* Team Member 6 */}
+            <div className="text-center">
+              <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-indigo-400 to-indigo-600 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4">
+                <Users className="h-8 w-8 sm:h-10 sm:w-10 text-white" />
+              </div>
+              <h4 className="text-sm sm:text-base font-semibold text-gray-900">UX Designer</h4>
+              <p className="text-xs sm:text-sm text-gray-600">Interface</p>
+            </div>
+
+            {/* Team Member 7 */}
+            <div className="text-center">
+              <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-pink-400 to-pink-600 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4">
+                <Users className="h-8 w-8 sm:h-10 sm:w-10 text-white" />
+              </div>
+              <h4 className="text-sm sm:text-base font-semibold text-gray-900">Agronome</h4>
+              <p className="text-xs sm:text-sm text-gray-600">Expertise</p>
+            </div>
+
+            {/* Team Member 8 */}
+            <div className="text-center">
+              <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-teal-400 to-teal-600 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4">
+                <Users className="h-8 w-8 sm:h-10 sm:w-10 text-white" />
+              </div>
+              <h4 className="text-sm sm:text-base font-semibold text-gray-900">Support</h4>
+              <p className="text-xs sm:text-sm text-gray-600">Client</p>
+            </div>
+
+            {/* Team Member 9 */}
+            <div className="text-center">
+              <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-amber-400 to-amber-600 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4">
+                <Users className="h-8 w-8 sm:h-10 sm:w-10 text-white" />
+              </div>
+              <h4 className="text-sm sm:text-base font-semibold text-gray-900">Marketing</h4>
+              <p className="text-xs sm:text-sm text-gray-600">Stratégie</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* CTA Section */}
       <section className="py-16 sm:py-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-r from-green-600 to-green-700">
         <div className="max-w-4xl mx-auto text-center">
@@ -402,6 +519,92 @@ export default function LandingPage() {
                 Se connecter
               </Button>
             </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* Contact Section */}
+      <section id="contact" className="py-16 sm:py-20 px-4 sm:px-6 lg:px-8 bg-gray-50">
+        <div className="max-w-4xl mx-auto">
+          <div className="text-center mb-12 sm:mb-16">
+            <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">
+              Contactez-nous
+            </h2>
+            <p className="text-lg sm:text-xl text-gray-600 max-w-2xl mx-auto px-4">
+              Avez-vous des questions ? Notre équipe est là pour vous aider 
+              à transformer votre agriculture.
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-2 gap-8 sm:gap-12">
+            {/* Contact Info */}
+            <div className="space-y-6">
+              <h3 className="text-xl sm:text-2xl font-semibold text-gray-900 mb-4">
+                Informations de contact
+              </h3>
+              <div className="space-y-4">
+                <div className="flex items-center space-x-3">
+                  <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
+                    <MapPin className="h-5 w-5 text-green-600" />
+                  </div>
+                  <div>
+                    <p className="font-medium text-gray-900">Adresse</p>
+                    <p className="text-gray-600">Maroc</p>
+                  </div>
+                </div>
+                <div className="flex items-center space-x-3">
+                  <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
+                    <Users className="h-5 w-5 text-green-600" />
+                  </div>
+                  <div>
+                    <p className="font-medium text-gray-900">Support</p>
+                    <p className="text-gray-600">contact@greenertech.com</p>
+                  </div>
+                </div>
+                <div className="flex items-center space-x-3">
+                  <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
+                    <Clock className="h-5 w-5 text-green-600" />
+                  </div>
+                  <div>
+                    <p className="font-medium text-gray-900">Horaires</p>
+                    <p className="text-gray-600">Lun-Ven: 9h-18h</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Contact Form */}
+            <div className="space-y-6">
+              <h3 className="text-xl sm:text-2xl font-semibold text-gray-900 mb-4">
+                Envoyez-nous un message
+              </h3>
+              <div className="space-y-4">
+                <div>
+                  <input
+                    type="text"
+                    placeholder="Votre nom"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  />
+                </div>
+                <div>
+                  <input
+                    type="email"
+                    placeholder="Votre email"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  />
+                </div>
+                <div>
+                  <textarea
+                    placeholder="Votre message"
+                    rows={4}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent resize-none"
+                  ></textarea>
+                </div>
+                <Button className="w-full bg-green-600 hover:bg-green-700 text-white">
+                  Envoyer le message
+                </Button>
+              </div>
+            </div>
           </div>
         </div>
       </section>
