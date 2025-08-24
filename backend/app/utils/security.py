@@ -22,10 +22,17 @@ def generate_token(user_id):
 def token_required(f):
     @wraps(f)
     def decorated(*args, **kwargs):
+        print(f"DEBUG: Request method: {request.method}")
+        print(f"DEBUG: Request headers: {dict(request.headers)}")
         token = None
         if 'Authorization' in request.headers:
-            token = request.headers['Authorization'].split(" ")[1]
-            print(f"DEBUG: Token received: {token[:20]}...")  # Debug log
+            auth_header = request.headers['Authorization']
+            if auth_header.startswith("Bearer "):
+                token = auth_header.split(" ")[1]
+                print(f"DEBUG: Token received: {token[:20]}...")  # Debug log
+            else:
+                print("DEBUG: Authorization header doesn't start with 'Bearer '")  # Debug log
+                token = None
         else:
             print("DEBUG: No Authorization header found")  # Debug log
 

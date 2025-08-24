@@ -1,4 +1,4 @@
-from flask import Blueprint
+from flask import Blueprint, jsonify
 
 
 from app.controllers.user import register, login, get_user, update_user, delete_user, create_technicien, register_technicien, verify_email, validate_technicien, get_technicien_by_email, get_all_technicians, get_techniciens_by_company,get_alltechniciens_by_company, get_pending_technicians_by_company, update_technicien, delete_technicien, get_interventions_by_technicien, assign_technician_to_supervisor, get_supervisors_by_company, get_supervisor_by_id, remove_technician_assignment, get_techniciens_by_supervisor
@@ -23,8 +23,9 @@ from app.controllers.robot import create_robot, get_robot, update_robot, get_all
 from app.controllers.etat_bilan import create_etat_bilan, get_etat_bilan, update_etat_bilan, get_etat_bilan_by_bilan, get_last_etat_bilan_by_serre, delete_etat_bilan, get_last_etat_bilan_by_bilan
 
 from app.controllers.alerte import (
-    get_alertes, get_alerte, update_alerte,
-    get_alertes_by_entreprise, get_alertes_by_director_entreprise
+    get_alertes, get_alerte, update_alerte, create_alerte, delete_alerte,
+    get_alertes_by_entreprise, get_alertes_by_director_entreprise, get_alertes_by_assigned_serres,
+    get_alertes_stats
 )
 
 from app.controllers.rapport import create_rapport, get_all_rapports, get_rapport, update_rapport, delete_rapport, get_rapports_by_director_entreprise, get_rapports_by_user, get_rapports_by_assigned_serres
@@ -110,10 +111,11 @@ all_bp.route('/types-tache' , methods=['POST'])(create_type_tache)
 all_bp.route('/types-tache/<int:id>', methods=['GET'])(get_type_tache)
 all_bp.route('/types-tache', methods=['GET'])(get_all_type_taches)
 
+all_bp.route('/test-auth', methods=['GET'])(lambda: jsonify({"message": "Authentication working", "user": "test"}))
 all_bp.route('/intervention', methods=['POST'])(create_intervention)
 
-all_bp.route('/intervention/<int:id>/validate', methods=['PUT', 'OPTIONS'])(validate_intervention)
-all_bp.route('/intervention/<int:id>/reject', methods=['PUT', 'OPTIONS'])(reject_intervention)
+all_bp.route('/intervention/<int:id>/validate', methods=['PUT'])(validate_intervention)
+all_bp.route('/intervention/<int:id>/reject', methods=['PUT'])(reject_intervention)
 all_bp.route('/intervention', methods=['GET'])(get_all_interention)
 all_bp.route('/intervention/assigned', methods=['GET'])(get_interventions_by_assigned_serres)
 all_bp.route('/intervention/entreprise/<int:entreprise_id>', methods=['GET'])(get_interventions_by_entreprise)
@@ -172,11 +174,15 @@ all_bp.route('/etat_bilan/<int:etat_bilan_id>', methods=['DELETE'])(delete_etat_
 
 
 
+all_bp.route('/alerte', methods=['POST'])(create_alerte)
 all_bp.route('/alerte', methods=['GET'])(get_alertes)
 all_bp.route('/alerte/<int:alerte_id>', methods=['GET'])(get_alerte)
 all_bp.route('/alerte/<int:alerte_id>', methods=['PUT'])(update_alerte)
+all_bp.route('/alerte/<int:alerte_id>', methods=['DELETE'])(delete_alerte)
 all_bp.route('/alerte/entreprise/<int:entreprise_id>', methods=['GET'])(get_alertes_by_entreprise)
 all_bp.route('/alerte/director-enterprise', methods=['GET'])(get_alertes_by_director_entreprise)
+all_bp.route('/alerte/assigned-serres', methods=['GET'])(get_alertes_by_assigned_serres)
+all_bp.route('/alerte/stats', methods=['GET'])(get_alertes_stats)
 
 
 

@@ -132,8 +132,6 @@ def get_domaine(current_user, id):
 
 @token_required
 @role_required("directeur")
-@token_required
-@role_required("directeur")
 def update_domaine(current_user, id):
     domaine = Domaine.query.get_or_404(id)
     entreprise = Entreprise.query.filter_by(id_user=current_user.id).first()
@@ -153,7 +151,19 @@ def update_domaine(current_user, id):
 
     path = data.get('path')
     if path:
-        domaine.path = path
+        # Update GPS coordinates through GroupCor
+        # First, delete existing coordinates
+        GroupCor.query.filter_by(id_group_cor=domaine.id_group_cor).delete()
+        
+        # Then create new coordinates
+        for i, point in enumerate(path):
+            gc = GroupCor(
+                id_group_cor=domaine.id_group_cor,
+                point_x=point['lat'],
+                point_y=point['lng'],
+                ordre=i
+            )
+            db.session.add(gc)
 
     db.session.commit()
     return jsonify(domaine.to_dict()), 200
@@ -232,5 +242,20 @@ def get_serres_by_domaine(current_user, id_domaine):
         return jsonify({"message": "Non autorisé"}), 403
 
     serres = Serre.query.filter_by(id_domaine=id_domaine).all()
-    return jsonify([s.to_dict() for s in serres]), 200
+    
+    # Add guide culture information to each serre
+    serres_data = []
+    for serre in serres:
+        serre_dict = serre.to_dict()
+        
+        # Add guide culture information
+        from app.models.guide_culture import GuideCulture
+        serre_dict['guideId'] = None
+        guide = GuideCulture.query.filter_by(id_serre=serre.id).first()
+        if guide:
+            serre_dict['guideId'] = guide.id
+        
+        serres_data.append(serre_dict)
+    
+    return jsonify(serres_data), 200
 

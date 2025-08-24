@@ -90,7 +90,21 @@ def get_all_serres(current_user):
     domaine_ids = [d.id for d in domaines]
     serres = Serre.query.filter(Serre.id_domaine.in_(domaine_ids)).all()
 
-    return jsonify([s.to_dict() for s in serres]), 200
+    # Add guide culture information to each serre
+    serres_data = []
+    for serre in serres:
+        serre_dict = serre.to_dict()
+        
+        # Add guide culture information
+        from app.models.guide_culture import GuideCulture
+        serre_dict['guideId'] = None
+        guide = GuideCulture.query.filter_by(id_serre=serre.id).first()
+        if guide:
+            serre_dict['guideId'] = guide.id
+        
+        serres_data.append(serre_dict)
+
+    return jsonify(serres_data), 200
 
 
 @token_required
@@ -105,12 +119,27 @@ def get_serre(current_user, id):
     if getattr(current_user, "role", None) == "technicien_superieur":
         auth = Autorisation_serre.query.filter_by(id_user=current_user.id, id_serre=serre.id).first()
         if auth:
-            return jsonify(serre.to_dict()), 200
+            serre_dict = serre.to_dict()
+            # Add guide culture information
+            from app.models.guide_culture import GuideCulture
+            serre_dict['guideId'] = None
+            guide = GuideCulture.query.filter_by(id_serre=serre.id).first()
+            if guide:
+                serre_dict['guideId'] = guide.id
+            return jsonify(serre_dict), 200
 
     if not entreprise or domaine.id_entreprise != entreprise.id:
         return jsonify({"message": "Non autorisé"}), 403
 
-    return jsonify(serre.to_dict()), 200
+    serre_dict = serre.to_dict()
+    # Add guide culture information
+    from app.models.guide_culture import GuideCulture
+    serre_dict['guideId'] = None
+    guide = GuideCulture.query.filter_by(id_serre=serre.id).first()
+    if guide:
+        serre_dict['guideId'] = guide.id
+
+    return jsonify(serre_dict), 200
 
 
 @token_required
@@ -275,6 +304,13 @@ def get_serres_by_user(current_user):
         serre_dict = serre.to_dict()
         if domaine:
             serre_dict['domaine_nom'] = domaine.nom
+        
+        # Add guide culture information
+        serre_dict['guideId'] = None
+        guide = GuideCulture.query.filter_by(id_serre=serre.id).first()
+        if guide:
+            serre_dict['guideId'] = guide.id
+        
         serres_data.append(serre_dict)
     
     return jsonify(serres_data), 200

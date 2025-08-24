@@ -292,3 +292,153 @@ def get_impact_from_severity(status_alert):
         return 'low'
     else:
         return 'low'  # default fallback
+
+# Get alerts by assigned serres for current user
+@token_required
+@role_required("technicien_superieur", "technicien")
+def get_alertes_by_assigned_serres(current_user):
+    try:
+        print(f"[DEBUG] Getting alerts for user {current_user.id} with role {current_user.role}")
+        
+        # Get assigned serres for current user
+        autorisations = Autorisation_serre.query.filter_by(id_user=current_user.id).all()
+        assigned_serre_ids = [auth.id_serre for auth in autorisations]
+        print(f"[DEBUG] Found {len(assigned_serre_ids)} assigned serres: {assigned_serre_ids}")
+        
+        if not assigned_serre_ids:
+            print("[DEBUG] No assigned serres found")
+            return jsonify([]), 200
+        
+        # Get bilans for assigned serres
+        bilans = Bilan.query.filter(Bilan.id_serre.in_(assigned_serre_ids)).all()
+        bilan_ids = [bilan.id for bilan in bilans]
+        print(f"[DEBUG] Found {len(bilan_ids)} bilans: {bilan_ids}")
+        
+        if not bilan_ids:
+            print("[DEBUG] No bilans found for assigned serres")
+            return jsonify([]), 200
+        
+        # Get alerts for these bilans
+        alertes = Alerte.query.filter(Alerte.id_bilan.in_(bilan_ids)).all()
+        print(f"[DEBUG] Found {len(alertes)} alerts for bilans")
+        
+        # Enhance alert data with location information
+        try:
+            enhanced_alertes = []
+            for alerte in alertes:
+                # Find the bilan for this alert
+                bilan = next((b for b in bilans if b.id == alerte.id_bilan), None)
+                if bilan:
+                    # Find the serre for this bilan
+                    serre = Serre.query.get(bilan.id_serre)
+                    if serre:
+                        # Find the domaine for this serre
+                        domaine = Domaine.query.get(serre.id_domaine)
+                        
+                        enhanced_alerte = alerte.to_dict()
+                        enhanced_alerte['bilan_nom'] = bilan.nom
+                        enhanced_alerte['serre_nom'] = serre.nom
+                        enhanced_alerte['id_serre'] = serre.id
+                        enhanced_alerte['domaine_nom'] = domaine.nom if domaine else "Domaine inconnu"
+                        enhanced_alertes.append(enhanced_alerte)
+                        print(f"[DEBUG] Enhanced alert {alerte.id}: {enhanced_alerte}")
+            
+            print(f"[DEBUG] Returning {len(enhanced_alertes)} enhanced alerts")
+            return jsonify(enhanced_alertes), 200
+        except Exception as e:
+            print(f"Error enhancing alerts: {e}")
+            # Fallback: return basic alert data without enhancement
+            return jsonify([a.to_dict() for a in alertes]), 200
+            
+    except Exception as e:
+        print(f"[DEBUG] Error in get_alertes_by_assigned_serres: {e}")
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+# Get alert statistics
+@token_required
+@role_required("directeur", "technicien_superieur", "technicien")
+def get_alertes_stats(current_user):
+    try:
+        # Get alerts based on user role
+        if current_user.role == "directeur":
+            # Get all alerts for director's enterprise
+            domaines = Domaine.query.filter_by(id_entreprise=current_user.id_entreprise).all()
+            if not domaines:
+                return jsonify({
+                    "totalAlerts": 0,
+                    "resolvedAlerts": 0,
+                    "unresolvedAlerts": 0,
+                    "averageResolutionTime": 0
+                }), 200
+            
+            domaine_ids = [domaine.id for domaine in domaines]
+            serres = Serre.query.filter(Serre.id_domaine.in_(domaine_ids)).all()
+            if not serres:
+                return jsonify({
+                    "totalAlerts": 0,
+                    "resolvedAlerts": 0,
+                    "unresolvedAlerts": 0,
+                    "averageResolutionTime": 0
+                }), 200
+            
+            serre_ids = [serre.id for serre in serres]
+            bilans = Bilan.query.filter(Bilan.id_serre.in_(serre_ids)).all()
+            if not bilans:
+                return jsonify({
+                    "totalAlerts": 0,
+                    "resolvedAlerts": 0,
+                    "unresolvedAlerts": 0,
+                    "averageResolutionTime": 0
+                }), 200
+            
+            bilan_ids = [bilan.id for bilan in bilans]
+            alertes = Alerte.query.filter(Alerte.id_bilan.in_(bilan_ids)).all()
+            
+        elif current_user.role in ["technicien_superieur", "technicien"]:
+            # Get alerts for assigned serres
+            autorisations = Autorisation_serre.query.filter_by(id_user=current_user.id).all()
+            assigned_serre_ids = [auth.id_serre for auth in autorisations]
+            
+            if not assigned_serre_ids:
+                return jsonify({
+                    "totalAlerts": 0,
+                    "resolvedAlerts": 0,
+                    "unresolvedAlerts": 0,
+                    "averageResolutionTime": 0
+                }), 200
+            
+            bilans = Bilan.query.filter(Bilan.id_serre.in_(assigned_serre_ids)).all()
+            bilan_ids = [bilan.id for bilan in bilans]
+            
+            if not bilan_ids:
+                return jsonify({
+                    "totalAlerts": 0,
+                    "resolvedAlerts": 0,
+                    "unresolvedAlerts": 0,
+                    "averageResolutionTime": 0
+                }), 200
+            
+            alertes = Alerte.query.filter(Alerte.id_bilan.in_(bilan_ids)).all()
+        else:
+            return jsonify({"status": "error", "message": "Rôle non autorisé"}), 403
+        
+        # Calculate statistics
+        total_alerts = len(alertes)
+        resolved_alerts = len([a for a in alertes if a.status == "résolue"])
+        unresolved_alerts = len([a for a in alertes if a.status == "non résolue"])
+        
+        # For now, set average resolution time to 0 since we don't have date_resolution field
+        # This can be enhanced later when the field is added to the database
+        average_resolution_time = 0
+        
+        stats = {
+            "totalAlerts": total_alerts,
+            "resolvedAlerts": resolved_alerts,
+            "unresolvedAlerts": unresolved_alerts,
+            "averageResolutionTime": average_resolution_time
+        }
+        
+        return jsonify(stats), 200
+        
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500

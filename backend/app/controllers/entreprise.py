@@ -149,7 +149,8 @@ def get_company_map_data(current_user, company_id):
                         "lat": serre.center_lat or domain.center_lat or 0,
                         "lng": serre.center_lng or domain.center_lng or 0
                     },
-                    "bilans": []
+                    "bilans": [],
+                    "guideId": None  # Initialize guideId as None
                 }
                 
                 # Fetch position points for the serre
@@ -162,6 +163,12 @@ def get_company_map_data(current_user, company_id):
                         }
                         for point in sorted(serre.group_coords, key=lambda x: x.ordre)
                     ]
+                
+                # Fetch guide culture for this serre
+                from app.models.guide_culture import GuideCulture
+                guide = GuideCulture.query.filter_by(id_serre=serre.id).first()
+                if guide:
+                    serre_dict["guideId"] = str(guide.id)
                 
                 # Fetch bilans for this serre
                 bilans = Bilan.query.filter_by(id_serre=serre.id).all()
@@ -259,8 +266,16 @@ def get_company_assignments(current_user):
                 "techniciens_assignes": assigned_users,
                 "techniciens_autorises": authorized_users,
                 "total_assignes": len(assigned_users),
-                "total_autorises": len(authorized_users)
+                "total_autorises": len(authorized_users),
+                "guideId": None  # Initialize guideId as None
             }
+            
+            # Fetch guide culture for this serre
+            from app.models.guide_culture import GuideCulture
+            guide = GuideCulture.query.filter_by(id_serre=serre.id).first()
+            if guide:
+                serre_info["guideId"] = guide.id
+                
             serres_detailed.append(serre_info)
 
         # Build supervisor assignments (technicians assigned to supervisors)
