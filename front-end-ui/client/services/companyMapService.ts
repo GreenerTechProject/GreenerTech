@@ -16,6 +16,7 @@ export interface DomainWithSerresAndBilans extends Domain {
 
 export interface SerreWithBilans extends ExtendedSerre {
   bilans: Bilan[];
+  guideData?: any; // Guide culture data fetched from API
 }
 
 export interface ApiError {

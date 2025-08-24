@@ -98,8 +98,16 @@ export class InterventionService {
 
   static async validateIntervention(id: number): Promise<void> {
     try {
-      await axios.put(`${API_BASE_URL}/intervention/${id}/validate`, {}, createAuthenticatedRequest());
+      const token = tokenManager.getToken();
+      console.log("DEBUG: Token before request:", token ? `${token.substring(0, 20)}...` : "No token");
+      
+      const requestConfig = createAuthenticatedRequest();
+      console.log("DEBUG: Request config:", requestConfig);
+      
+      await axios.put(`${API_BASE_URL}/intervention/${id}/validate`, {}, requestConfig);
     } catch (error: any) {
+      console.error("DEBUG: Error in validateIntervention:", error);
+      console.error("DEBUG: Error response:", error.response);
       handleAuthError(error);
       if (error.response?.status === 403) {
         throw new Error("Accès refusé. Vous n'avez pas les permissions nécessaires.");
@@ -111,8 +119,16 @@ export class InterventionService {
 
   static async rejectIntervention(id: number, reason?: string): Promise<void> {
     try {
-      await axios.put(`${API_BASE_URL}/intervention/${id}/reject`, { reason }, createAuthenticatedRequest());
+      const token = tokenManager.getToken();
+      console.log("DEBUG: Token before reject request:", token ? `${token.substring(0, 20)}...` : "No token");
+      
+      const requestConfig = createAuthenticatedRequest();
+      console.log("DEBUG: Reject request config:", requestConfig);
+      
+      await axios.put(`${API_BASE_URL}/intervention/${id}/reject`, { reason }, requestConfig);
     } catch (error: any) {
+      console.error("DEBUG: Error in rejectIntervention:", error);
+      console.error("DEBUG: Error response:", error.response);
       handleAuthError(error);
       if (error.response?.status === 403) {
         throw new Error("Accès refusé. Vous n'avez pas les permissions nécessaires.");

@@ -10,6 +10,14 @@ export interface Bilan {
   lien_pdf?: string;
   status?: string;
   surface?: number;
+  position?: Array<{
+    point_x?: number;
+    point_y?: number;
+    lat?: number;
+    lng?: number;
+    latitude?: number;
+    longitude?: number;
+  }>;
 }
 
 export interface CreateBilanRequest {
@@ -133,6 +141,19 @@ export const bilanService = {
       window.URL.revokeObjectURL(url);
     } catch (error: any) {
       const errorMessage = error.response?.data?.message || "Erreur lors du téléchargement du bilan";
+      throw { message: errorMessage, status: error.response?.status || 500 } as ApiError;
+    }
+  },
+
+  generateBilanQRCode: async (bilanId: number): Promise<Blob> => {
+    try {
+      const response = await axios.get(`${API_BASE_URL}/bilan/${bilanId}/qrcode`, {
+        ...createAuthenticatedRequest(),
+        responseType: 'blob',
+      });
+      return response.data;
+    } catch (error: any) {
+      const errorMessage = error.response?.data?.message || "Erreur lors de la génération du QR Code";
       throw { message: errorMessage, status: error.response?.status || 500 } as ApiError;
     }
   },

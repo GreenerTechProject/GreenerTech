@@ -109,6 +109,67 @@ export const guideService = {
       } as ApiError;
     }
   },
+
+  // Get guide by ID
+  getGuideById: async (guideId: string): Promise<GuideDeCulture> => {
+    try {
+      const response = await axios.get<GuideDeCulture>(
+        `${API_BASE_URL}/guide_culture/${guideId}`, 
+        createAuthenticatedRequest()
+      );
+      return response.data;
+    } catch (error: any) {
+      const errorMessage =
+        error.response?.data?.message ||
+        "Erreur lors de la récupération du guide de culture";
+
+      throw {
+        message: errorMessage,
+        status: error.response?.status || 500,
+      } as ApiError;
+    }
+  },
+
+  // Update guide by ID
+  updateGuide: async (guideId: string, updateData: Partial<CreateGuideRequest>): Promise<GuideDeCulture> => {
+    try {
+      const response = await axios.put<GuideDeCulture>(
+        `${API_BASE_URL}/guide_culture/${guideId}`,
+        updateData,
+        createAuthenticatedRequest()
+      );
+      return response.data;
+    } catch (error: any) {
+      const errorMessage =
+        error.response?.data?.message ||
+        "Erreur lors de la mise à jour du guide de culture";
+
+      throw {
+        message: errorMessage,
+        status: error.response?.status || 500,
+      } as ApiError;
+    }
+  },
+
+  // Delete guide by ID
+  deleteGuide: async (guideId: string): Promise<{ message: string }> => {
+    try {
+      const response = await axios.delete<{ message: string }>(
+        `${API_BASE_URL}/guide_culture/${guideId}`,
+        createAuthenticatedRequest()
+      );
+      return response.data;
+    } catch (error: any) {
+      const errorMessage =
+        error.response?.data?.message ||
+        "Erreur lors de la suppression du guide de culture";
+
+      throw {
+        message: errorMessage,
+        status: error.response?.status || 500,
+      } as ApiError;
+    }
+  },
 };
 
 export default guideService;
