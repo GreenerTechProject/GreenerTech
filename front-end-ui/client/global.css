@@ -101,6 +101,107 @@
     width: 4px;
   }
   
+  .scrollbar-mobile::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  
+  .scrollbar-mobile::-webkit-scrollbar-thumb {
+    background: #CBD5E1;
+    border-radius: 2px;
+  }
+  
+  /* Mobile viewport improvements */
+  @media (max-width: 1024px) {
+    .mobile-full-height {
+      height: 100vh;
+      height: 100dvh; /* Dynamic viewport height for mobile browsers */
+    }
+    
+    .mobile-safe-area {
+      padding-top: env(safe-area-inset-top);
+      padding-bottom: env(safe-area-inset-bottom);
+      padding-left: env(safe-area-inset-left);
+      padding-right: env(safe-area-inset-right);
+    }
+    
+    /* Prevent zoom on input focus on iOS */
+    input, textarea, select {
+      font-size: 16px;
+    }
+    
+    /* Improve touch targets */
+    button, [role="button"] {
+      min-height: 44px;
+      min-width: 44px;
+    }
+  }
+  
+  /* Very small screens */
+  @media (max-width: 480px) {
+    .mobile-compact {
+      font-size: 0.875rem;
+    }
+    
+    .mobile-compact .text-lg {
+      font-size: 1rem;
+    }
+    
+    .mobile-compact .text-xl {
+      font-size: 1.125rem;
+    }
+  }
+  
+  /* Mobile map specific improvements */
+  .mobile-map-container {
+    position: relative;
+    width: 100vw;
+    height: 100vh;
+    height: 100dvh;
+    overflow: hidden;
+  }
+  
+  .mobile-map-container .gm-style {
+    width: 100% !important;
+    height: 100% !important;
+  }
+  
+  /* Ensure mobile panels don't interfere with map */
+  .mobile-panel-overlay {
+    z-index: 1000;
+    pointer-events: auto;
+  }
+  
+  .mobile-panel-content {
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+  }
+  
+  /* Google Maps zoom controls - small and compact on mobile */
+  .mobile-map-container .gm-control-active {
+    margin-bottom: 0.25rem !important;
+    margin-right: 0.25rem !important;
+  }
+  
+  /* Ensure zoom controls are not cut off */
+  .mobile-map-container .gm-style-moc {
+    padding-bottom: 0.25rem !important;
+    padding-right: 0.25rem !important;
+  }
+  
+  /* Make zoom controls smaller on mobile */
+  .mobile-map-container .gm-control-active button {
+    width: 28px !important;
+    height: 28px !important;
+    font-size: 18px !important;
+    line-height: 28px !important;
+  }
+  
+  /* Ensure small zoom control style */
+  .mobile-map-container .gm-style-moc .gm-control-active {
+    transform: scale(0.8) !important;
+    transform-origin: bottom right !important;
+  }
+  
   /* Custom animations for enhanced UX */
   @keyframes fade-in-up {
     from {
@@ -141,15 +242,6 @@
   .hover-lift:hover {
     transform: translateY(-4px);
     box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-  }
-  
-  .scrollbar-mobile::-webkit-scrollbar-track {
-    background: transparent;
-  }
-  
-  .scrollbar-mobile::-webkit-scrollbar-thumb {
-    background-color: #CBD5E1;
-    border-radius: 2px;
   }
   
   /* Map responsive improvements */

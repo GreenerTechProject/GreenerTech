@@ -109,6 +109,17 @@ export class ReportService {
     link.parentNode?.removeChild(link);
     window.URL.revokeObjectURL(blobUrl);
   }
+
+  static async deleteReport(reportId: number): Promise<void> {
+    try {
+      await axios.delete(
+        `${API_BASE_URL}/rapport/${reportId}`,
+        createAuthenticatedRequest()
+      );
+    } catch (error) {
+      throw error;
+    }
+  }
 }
 
 export default ReportService;

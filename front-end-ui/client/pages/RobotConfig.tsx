@@ -195,75 +195,67 @@ const RobotConfig: React.FC = () => {
             <div className="mb-6">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div className="flex items-center space-x-3">
-                  <div className="p-2 bg-green-100 rounded-lg">
-                    <Bot className="h-6 w-6 text-green-600" />
-                  </div>
-                  <div>
-                    <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Configuration des Robots</h1>
-                    <p className="text-sm text-gray-600 mt-1">Gérez vos robots agricoles et leurs paramètres</p>
-                  </div>
+                  <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+                    <DialogTrigger asChild>
+                      <Button onClick={resetForm} className="w-full sm:w-auto text-sm sm:text-base">
+                        <Plus className="w-3 h-3 sm:w-4 sm:h-4 mr-2" />
+                        Nouveau Robot
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="sm:max-w-md">
+                      <DialogHeader>
+                        <DialogTitle className="flex items-center space-x-2 text-sm sm:text-base">
+                          <Bot className="h-4 w-4 sm:h-5 sm:w-5 text-green-600" />
+                          <span>Créer un nouveau robot</span>
+                        </DialogTitle>
+                      </DialogHeader>
+                      <div className="space-y-4">
+                        <div>
+                          <Label htmlFor="nom" className="text-sm sm:text-base">Nom du robot</Label>
+                          <Input
+                            id="nom"
+                            value={formData.nom}
+                            onChange={(e) => setFormData({ ...formData, nom: e.target.value })}
+                            placeholder="Nom du robot"
+                            className="mt-1 text-sm sm:text-base"
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="referance" className="text-sm sm:text-base">Référence</Label>
+                          <Input
+                            id="referance"
+                            value={formData.referance}
+                            onChange={(e) => setFormData({ ...formData, referance: e.target.value })}
+                            placeholder="Référence du robot"
+                            className="mt-1 text-sm sm:text-base"
+                          />
+                        </div>
+                        <div className="text-xs sm:text-sm text-gray-500 bg-gray-50 p-3 rounded-md">
+                          <p>Le robot sera automatiquement associé à votre entreprise.</p>
+                        </div>
+                        <div className="flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-2">
+                          <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)} className="w-full sm:w-auto text-sm sm:text-base">
+                            Annuler
+                          </Button>
+                          <Button onClick={handleCreateRobot} className="w-full sm:w-auto text-sm sm:text-base">
+                            Créer
+                          </Button>
+                        </div>
+                      </div>
+                    </DialogContent>
+                  </Dialog>
                 </div>
-                
-                <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-                  <DialogTrigger asChild>
-                    <Button onClick={resetForm} className="w-full sm:w-auto">
-                      <Plus className="w-4 h-4 mr-2" />
-                      Nouveau Robot
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent className="sm:max-w-md">
-                    <DialogHeader>
-                      <DialogTitle className="flex items-center space-x-2">
-                        <Bot className="h-5 w-5 text-green-600" />
-                        <span>Créer un nouveau robot</span>
-                      </DialogTitle>
-                    </DialogHeader>
-                    <div className="space-y-4">
-                      <div>
-                        <Label htmlFor="nom">Nom du robot</Label>
-                        <Input
-                          id="nom"
-                          value={formData.nom}
-                          onChange={(e) => setFormData({ ...formData, nom: e.target.value })}
-                          placeholder="Nom du robot"
-                          className="mt-1"
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="referance">Référence</Label>
-                        <Input
-                          id="referance"
-                          value={formData.referance}
-                          onChange={(e) => setFormData({ ...formData, referance: e.target.value })}
-                          placeholder="Référence du robot"
-                          className="mt-1"
-                        />
-                      </div>
-                      <div className="text-sm text-gray-500 bg-gray-50 p-3 rounded-md">
-                        <p>Le robot sera automatiquement associé à votre entreprise.</p>
-                      </div>
-                      <div className="flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-2">
-                        <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)} className="w-full sm:w-auto">
-                          Annuler
-                        </Button>
-                        <Button onClick={handleCreateRobot} className="w-full sm:w-auto">
-                          Créer
-                        </Button>
-                      </div>
-                    </div>
-                  </DialogContent>
-                </Dialog>
               </div>
             </div>
 
             {/* Robots List */}
             <Card className="shadow-sm border-0">
               <CardHeader className="border-b border-gray-200 bg-white">
-                <CardTitle className="flex items-center space-x-2">
-                  <Settings className="h-5 w-5 text-gray-600" />
+                <CardTitle className="flex items-center space-x-2 text-sm sm:text-base">
+                  <Settings className="h-4 w-4 sm:h-5 sm:w-5 text-gray-600" />
                   <span>Liste des Robots</span>
                   {robots.length > 0 && (
-                    <Badge variant="secondary" className="ml-2">
+                    <Badge variant="secondary" className="ml-2 text-xs">
                       {robots.length} robot{robots.length > 1 ? 's' : ''}
                     </Badge>
                   )}
@@ -277,11 +269,11 @@ const RobotConfig: React.FC = () => {
                   </div>
                 ) : robots.length === 0 ? (
                   <div className="text-center py-12 px-4">
-                    <Bot className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-                    <h3 className="text-lg font-medium text-gray-900 mb-2">Aucun robot configuré</h3>
-                    <p className="text-gray-500 mb-6">Commencez par créer votre premier robot pour automatiser vos tâches agricoles.</p>
-                    <Button onClick={() => setIsCreateDialogOpen(true)}>
-                      <Plus className="w-4 h-4 mr-2" />
+                    <Bot className="h-12 w-12 sm:h-16 sm:w-16 text-gray-300 mx-auto mb-4" />
+                    <h3 className="text-base sm:text-lg font-medium text-gray-900 mb-2">Aucun robot configuré</h3>
+                    <p className="text-sm sm:text-base text-gray-500 mb-6">Commencez par créer votre premier robot pour automatiser vos tâches agricoles.</p>
+                    <Button onClick={() => setIsCreateDialogOpen(true)} className="text-sm sm:text-base">
+                      <Plus className="w-3 h-3 sm:w-4 sm:h-4 mr-2" />
                       Créer le premier robot
                     </Button>
                   </div>
@@ -290,27 +282,27 @@ const RobotConfig: React.FC = () => {
                     <Table>
                       <TableHeader>
                         <TableRow className="bg-gray-50">
-                          <TableHead className="font-medium text-gray-700">Nom</TableHead>
-                          <TableHead className="font-medium text-gray-700">Référence</TableHead>
-                          <TableHead className="font-medium text-gray-700 hidden sm:table-cell">Entreprise ID</TableHead>
-                          <TableHead className="font-medium text-gray-700 text-right">Actions</TableHead>
+                          <TableHead className="font-medium text-gray-700 text-xs sm:text-sm">Nom</TableHead>
+                          <TableHead className="font-medium text-gray-700 text-xs sm:text-sm">Référence</TableHead>
+                          <TableHead className="font-medium text-gray-700 hidden sm:table-cell text-xs sm:text-sm">Entreprise ID</TableHead>
+                          <TableHead className="font-medium text-gray-700 text-right text-xs sm:text-sm">Actions</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
                         {robots.map((robot) => (
                           <TableRow key={robot.id} className="hover:bg-gray-50">
-                            <TableCell className="font-medium">
+                            <TableCell className="font-medium text-xs sm:text-sm">
                               <div className="flex items-center space-x-2">
-                                <Bot className="h-4 w-4 text-green-600" />
+                                <Bot className="h-3 w-3 sm:h-4 sm:w-4 text-green-600" />
                                 <span>{robot.nom}</span>
                               </div>
                             </TableCell>
-                            <TableCell>
+                            <TableCell className="text-xs sm:text-sm">
                               <Badge variant="secondary" className="text-xs">
                                 {robot.referance}
                               </Badge>
                             </TableCell>
-                            <TableCell className="hidden sm:table-cell">
+                            <TableCell className="hidden sm:table-cell text-xs sm:text-sm">
                               <Badge variant="outline" className="text-xs">
                                 {robot.id_entreprise || 'N/A'}
                               </Badge>
@@ -321,19 +313,19 @@ const RobotConfig: React.FC = () => {
                                   variant="outline"
                                   size="sm"
                                   onClick={() => openEditDialog(robot)}
-                                  className="h-8 w-8 p-0"
+                                  className="h-6 w-6 sm:h-8 sm:w-8 p-0"
                                   title="Modifier"
                                 >
-                                  <Edit className="h-4 w-4" />
+                                  <Edit className="h-3 w-3 sm:h-4 sm:w-4" />
                                 </Button>
                                 <Button
                                   variant="outline"
                                   size="sm"
                                   onClick={() => handleDeleteRobot(robot.id)}
-                                  className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
+                                  className="h-6 w-6 sm:h-8 sm:w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
                                   title="Supprimer"
                                 >
-                                  <Trash2 className="h-4 w-4" />
+                                  <Trash2 className="h-3 w-3 sm:h-4 sm:w-4" />
                                 </Button>
                               </div>
                             </TableCell>
@@ -350,37 +342,37 @@ const RobotConfig: React.FC = () => {
             <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
               <DialogContent className="sm:max-w-md">
                 <DialogHeader>
-                  <DialogTitle className="flex items-center space-x-2">
-                    <Edit className="h-5 w-5 text-blue-600" />
+                  <DialogTitle className="flex items-center space-x-2 text-sm sm:text-base">
+                    <Edit className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600" />
                     <span>Modifier le robot</span>
                   </DialogTitle>
                 </DialogHeader>
                 <div className="space-y-4">
                   <div>
-                    <Label htmlFor="edit-nom">Nom du robot</Label>
+                    <Label htmlFor="edit-nom" className="text-sm sm:text-base">Nom du robot</Label>
                     <Input
                       id="edit-nom"
                       value={formData.nom}
                       onChange={(e) => setFormData({ ...formData, nom: e.target.value })}
                       placeholder="Nom du robot"
-                      className="mt-1"
+                      className="mt-1 text-sm sm:text-base"
                     />
                   </div>
                   <div>
-                    <Label htmlFor="edit-referance">Référence</Label>
+                    <Label htmlFor="edit-referance" className="text-sm sm:text-base">Référence</Label>
                     <Input
                       id="edit-referance"
                       value={formData.referance}
                       onChange={(e) => setFormData({ ...formData, referance: e.target.value })}
                       placeholder="Référence du robot"
-                      className="mt-1"
+                      className="mt-1 text-sm sm:text-base"
                     />
                   </div>
                   <div className="flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-2">
-                    <Button variant="outline" onClick={() => setIsEditDialogOpen(false)} className="w-full sm:w-auto">
+                    <Button variant="outline" onClick={() => setIsEditDialogOpen(false)} className="w-full sm:w-auto text-sm sm:text-base">
                       Annuler
                     </Button>
-                    <Button onClick={handleEditRobot} className="w-full sm:w-auto">
+                    <Button onClick={handleEditRobot} className="w-full sm:w-auto text-sm sm:text-base">
                       Mettre à jour
                     </Button>
                   </div>

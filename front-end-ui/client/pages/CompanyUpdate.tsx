@@ -6,7 +6,7 @@ import { Label } from '../components/ui/label';
 import { Textarea } from '../components/ui/textarea';
 import { useToast } from '../hooks/use-toast';
 import { Building2, Save, Loader2 } from 'lucide-react';
-import { companyService, CompanyInfo } from '../services/companyService';
+import { companyService, UpdateCompanyRequest } from '../services/companyService';
 import { useSidebar } from '../hooks/useSidebar';
 import DirectorSidebar from '../components/DirectorSidebar';
 import DirectorHeader from '../components/DirectorHeader';
@@ -43,7 +43,7 @@ const CompanyUpdate: React.FC = () => {
   const fetchCompany = async () => {
     try {
       setLoading(true);
-      const companies = await companyService.getEnterprisesByDirector(0); // 0 is a placeholder, the service will get current user's companies
+      const companies = await companyService.getCompaniesByDirector(); // Get current user's companies
       
       if (companies && companies.length > 0) {
         const companyData = companies[0]; // Get first company
@@ -92,7 +92,7 @@ const CompanyUpdate: React.FC = () => {
       setSaving(true);
       
       // Prepare company data for the service
-      const companyData: CompanyInfo = {
+      const companyData: UpdateCompanyRequest = {
         nom: formData.nom,
         status_juridique: formData.status_juridique,
         adresse: formData.adresse,
@@ -102,7 +102,7 @@ const CompanyUpdate: React.FC = () => {
       };
 
       // Use the updateCompany method from the service
-      const response = await companyService.updateCompany(companyData);
+      const response = await companyService.updateCompany(company!.id, companyData);
       
       if (response.success || response.id) {
         toast({
