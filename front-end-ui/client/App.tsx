@@ -80,7 +80,7 @@ const RoleHomeRedirect = () => {
     : user?.role === "technicien"
       ? "/technician"
       : user?.role === "technicien_superieur"
-        ? "/technicien-sup/home"
+        ? "/technicien-sup/map"
         : "/";  // Fallback to landing page, NOT /login
   return <Navigate to={target} replace />;
 };

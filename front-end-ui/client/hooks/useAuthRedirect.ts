@@ -20,7 +20,7 @@ export const useAuthRedirect = (redirectTo: string = "/dashboard") => {
       else if (user?.role === "technicien") {
         navigate("/technician", { replace: true });
       } else if (user?.role === "technicien_superieur") {
-        navigate("/technicien-sup", { replace: true });
+        navigate("/technicien-sup/map", { replace: true });
       } else {
         navigate(redirectTo, { replace: true });
       }

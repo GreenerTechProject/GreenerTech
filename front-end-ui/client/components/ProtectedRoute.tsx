@@ -45,7 +45,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
       return "/technician";
     }
     if (user?.role === "technicien_superieur") {
-      return "/technicien-sup";
+      return "/technicien-sup/map";
     }
     return "/dashboard";
   };
