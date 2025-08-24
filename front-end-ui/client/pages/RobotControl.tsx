@@ -25,8 +25,8 @@ import {
   ChevronUp,
   ChevronDown,
   X,
-  GripVertical,
-  Settings,
+  QrCode,
+  Activity,
   Eye,
   EyeOff
 } from 'lucide-react';
@@ -74,12 +74,12 @@ export default function RobotControl() {
   const [pressedButton, setPressedButton] = useState<string | null>(null);
   const [isBottomPanelExpanded, setIsBottomPanelExpanded] = useState<boolean>(false);
   
-  // New UI states
+  // Enhanced UI states
   const [isCompactMode, setIsCompactMode] = useState<boolean>(false);
   const [isStickyPanel, setIsStickyPanel] = useState<boolean>(true);
-  const [controlPosition, setControlPosition] = useState<ControlPosition>({ x: 0, y: 0 });
-  const [isDragging, setIsDragging] = useState<boolean>(false);
-  const [dragOffset, setDragOffset] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
+  const [controlPosition, setControlPosition] = useState<ControlPosition>({ x: 20, y: 100 });
+  const [showSensorPanel, setShowSensorPanel] = useState<boolean>(true);
+  const [showQRPanel, setShowQRPanel] = useState<boolean>(true);
 
   // WebSocket references
   const qrWsRef = useRef<WebSocket | null>(null);
@@ -325,37 +325,48 @@ export default function RobotControl() {
     sendCommand("STOP");
   };
 
-  // Drag and drop functionality for controls
-  const handleMouseDown = (e: React.MouseEvent) => {
-    setIsDragging(true);
-    const rect = e.currentTarget.getBoundingClientRect();
-    setDragOffset({
-      x: e.clientX - rect.left,
-      y: e.clientY - rect.top
-    });
-  };
-
-  const handleMouseMove = (e: MouseEvent) => {
-    if (isDragging) {
-      const newX = e.clientX - dragOffset.x;
-      const newY = e.clientY - dragOffset.y;
-      
-      // Constrain to screen bounds
-      const maxX = window.innerWidth - 200; // Control panel width
-      const maxY = window.innerHeight - 300; // Control panel height
-      
-      setControlPosition({
-        x: Math.max(0, Math.min(newX, maxX)),
-        y: Math.max(0, Math.min(newY, maxY))
-      });
+  // Enhanced QR data display - extract and show bilan name
+  const getBilanName = (qrData: any): string => {
+    if (!qrData) return 'N/A';
+    
+    // Try to find bilan name in various possible locations
+    if (qrData.bilan_name) return qrData.bilan_name;
+    if (qrData.name) return qrData.name;
+    if (qrData.title) return qrData.title;
+    if (qrData.nom) return qrData.nom;
+    if (qrData.bilan) return qrData.bilan;
+    
+    // If it's a string, try to parse it
+    if (typeof qrData === 'string') {
+      try {
+        const parsed = JSON.parse(qrData);
+        return getBilanName(parsed);
+      } catch {
+        return qrData.substring(0, 30) + (qrData.length > 30 ? '...' : '');
+      }
     }
+    
+    // If it's an object, look for any string value that might be a name
+    if (typeof qrData === 'object') {
+      for (const [key, value] of Object.entries(qrData)) {
+        if (typeof value === 'string' && value.length > 0 && value.length < 100) {
+          if (key.toLowerCase().includes('name') || key.toLowerCase().includes('nom') || key.toLowerCase().includes('title')) {
+            return value;
+          }
+        }
+      }
+      // Return first string value if no obvious name found
+      for (const [key, value] of Object.entries(qrData)) {
+        if (typeof value === 'string' && value.length > 0 && value.length < 100) {
+          return value;
+        }
+      }
+    }
+    
+    return 'QR Code détecté';
   };
 
-  const handleMouseUp = () => {
-    setIsDragging(false);
-  };
-
-  // Control button component with responsive sizing
+  // Enhanced control button component with responsive sizing and touch optimization
   const ControlButton: React.FC<{ 
     mode: string; 
     children: React.ReactNode; 
@@ -363,9 +374,9 @@ export default function RobotControl() {
     size?: 'sm' | 'md' | 'lg';
   }> = ({ mode, children, className = "", size = 'md' }) => {
     const sizeClasses = {
-      sm: 'w-8 h-8 p-1',
-      md: 'w-10 h-10 p-2',
-      lg: 'w-12 h-12 p-3'
+      sm: 'w-8 h-8 p-1', // Very small for mobile
+      md: 'w-10 h-10 p-1.5', // Small for tablet
+      lg: 'w-12 h-12 p-2'  // Medium for desktop
     };
 
     const iconSizes = {
@@ -376,8 +387,14 @@ export default function RobotControl() {
 
     return (
       <Button
-        onTouchStart={() => handleButtonDown(mode)}
-        onTouchEnd={() => handleButtonUp()}
+        onTouchStart={(e) => {
+          e.preventDefault();
+          handleButtonDown(mode);
+        }}
+        onTouchEnd={(e) => {
+          e.preventDefault();
+          handleButtonUp();
+        }}
         onMouseDown={() => handleButtonDown(mode)}
         onMouseUp={() => handleButtonUp()}
         onMouseLeave={() => {
@@ -385,7 +402,7 @@ export default function RobotControl() {
             handleButtonUp();
           }
         }}
-        className={`${className} ${sizeClasses[size]} ${pressedButton === mode ? "ring-2 ring-white/50" : ""}`}
+        className={`${className} ${sizeClasses[size]} ${pressedButton === mode ? "ring-1 ring-white/50 scale-95" : ""} transition-all duration-150 touch-manipulation select-none text-xs`}
         variant="outline"
       >
         {children}
@@ -404,9 +421,18 @@ export default function RobotControl() {
       setIsFullScreen(!!document.fullscreenElement);
     };
 
+    const handleResize = () => {
+      // Reposition controls on screen resize for better mobile/tablet experience
+      const optimalPos = getOptimalControlPosition();
+      setControlPosition(optimalPos);
+    };
+
     document.addEventListener('fullscreenchange', handleFullscreenChange);
-    document.addEventListener('mousemove', handleMouseMove);
-    document.addEventListener('mouseup', handleMouseUp);
+    window.addEventListener('resize', handleResize);
+
+    // Set initial optimal position
+    const optimalPos = getOptimalControlPosition();
+    setControlPosition(optimalPos);
 
     return () => {
       if (pcRef.current) pcRef.current.close();
@@ -414,8 +440,7 @@ export default function RobotControl() {
       if (controlWsRef.current) controlWsRef.current.close();
       if (sensorWsRef.current) sensorWsRef.current.close();
       document.removeEventListener('fullscreenchange', handleFullscreenChange);
-      document.removeEventListener('mousemove', handleMouseMove);
-      document.removeEventListener('mouseup', handleMouseUp);
+      window.removeEventListener('resize', handleResize);
     };
   }, []);
 
@@ -437,12 +462,40 @@ export default function RobotControl() {
     };
   }, [selectedRobot, selectedCamera]);
 
-  // Responsive button sizes based on screen size
+  // Enhanced responsive button sizes and positioning for mobile/tablet/desktop
   const getButtonSize = () => {
     if (isCompactMode) return 'sm';
-    if (window.innerWidth < 480) return 'sm';
-    if (window.innerWidth < 768) return 'md';
-    return 'lg';
+    if (window.innerWidth < 480) return 'sm'; // Mobile: very small
+    if (window.innerWidth < 768) return 'sm'; // Mobile: very small
+    if (window.innerWidth < 1024) return 'md'; // Tablet: small
+    return 'lg'; // Desktop: medium
+  };
+
+  // Get optimal control position based on screen size - Fixed positions
+  const getOptimalControlPosition = () => {
+    if (window.innerWidth < 768) {
+      // Mobile: Fixed position on the right side, very small
+      return { x: window.innerWidth - 140, y: 100 };
+    } else if (window.innerWidth < 1024) {
+      // Small desktop: Fixed position on the right side
+      return { x: window.innerWidth - 160, y: 120 };
+    } else {
+      // Large desktop: Fixed position on the right side
+      return { x: window.innerWidth - 180, y: 140 };
+    }
+  };
+
+  // Get current date and time for display
+  const getCurrentDateTime = () => {
+    const now = new Date();
+    return now.toLocaleDateString('fr-FR', { 
+      day: '2-digit', 
+      month: '2-digit', 
+      year: 'numeric' 
+    }) + ' ' + now.toLocaleTimeString('fr-FR', { 
+      hour: '2-digit', 
+      minute: '2-digit' 
+    });
   };
 
   const buttonSize = getButtonSize();
@@ -469,147 +522,211 @@ export default function RobotControl() {
           </div>
         )}
 
-        {/* QR Code Data Overlay - Top Right */}
-        <div className="absolute top-4 right-4 bg-black/80 backdrop-blur-sm text-white p-3 rounded-lg border border-white/20 max-w-xs">
-          <div className="flex items-center gap-2 mb-2">
-            <div className="h-4 w-4 border-2 border-white rounded-sm" />
-            <span className="font-semibold text-sm">QR Codes ({qrCodes.length})</span>
-          </div>
-          <div className="max-h-32 overflow-y-auto space-y-1 text-xs">
-            {qrCodes.length > 0 ? (
-              qrCodes.slice(0, 2).map((qr) => (
-                <div key={qr.id} className="p-2 bg-white/10 rounded text-xs">
-                  <div className="font-medium mb-1">QR {qr.id + 1}:</div>
-                  <div className="truncate">{String(qr.data).substring(0, 50)}...</div>
+        {/* Small Date/Time Display - Top Center */}
+        <div className="absolute top-1 left-1/2 transform -translate-x-1/2 bg-black/50 backdrop-blur-sm text-white px-1.5 py-0.5 rounded text-[10px] border border-white/10 font-mono">
+          {getCurrentDateTime()}
+        </div>
+
+        {/* Enhanced QR Code Data Overlay - Responsive Positioning */}
+        {showQRPanel && (
+          <div className={`absolute bg-black/90 backdrop-blur-sm text-white p-4 rounded-lg border border-white/20 ${
+            window.innerWidth < 768 
+              ? 'top-4 left-4 right-4 max-w-none' 
+              : 'top-4 right-4 max-w-sm'
+          }`}>
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <QrCode className="h-4 w-4 text-green-400" />
+                <span className="font-semibold text-sm">QR Codes ({qrCodes.length})</span>
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowQRPanel(false)}
+                className="h-6 w-6 p-0 text-white/60 hover:text-white"
+              >
+                <X className="h-3 w-3" />
+              </Button>
+            </div>
+            <div className="max-h-48 overflow-y-auto space-y-2 text-xs">
+              {qrCodes.length > 0 ? (
+                qrCodes.slice(0, 3).map((qr) => (
+                  <div key={qr.id} className="p-3 bg-white/10 rounded border border-white/20">
+                    <div className="font-medium mb-2 text-green-300">QR {qr.id + 1}</div>
+                    <div className="space-y-1">
+                      <div className="font-semibold text-white">
+                        {getBilanName(qr.data)}
+                      </div>
+                      {typeof qr.data === 'object' && qr.data !== null && (
+                        <div className="text-gray-300 space-y-1">
+                          {Object.entries(qr.data).slice(0, 2).map(([key, value]) => (
+                            <div key={key} className="flex justify-between">
+                              <span className="text-gray-400">{key}:</span>
+                              <span className="truncate ml-2 max-w-24">{String(value)}</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="text-center py-4 text-gray-400">
+                  <QrCode className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                  <p className="text-xs">Aucun QR code détecté</p>
                 </div>
-              ))
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Enhanced Sensor Data Overlay - Top Center */}
+        {showSensorPanel && (
+          <div className="absolute top-4 left-1/2 transform -translate-x-1/2 bg-black/90 backdrop-blur-sm text-white p-4 rounded-lg border border-white/20">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <Activity className="h-4 w-4 text-blue-400" />
+                <span className="font-semibold text-sm">Capteurs</span>
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowSensorPanel(false)}
+                className="h-6 w-6 p-0 text-white/60 hover:text-white"
+              >
+                <X className="h-3 w-3" />
+              </Button>
+            </div>
+            {sensorData ? (
+              <div className="grid grid-cols-2 gap-3 text-sm">
+                <div className="flex items-center gap-2 p-2 bg-white/10 rounded">
+                  <Thermometer className="h-4 w-4 text-red-400" />
+                  <div>
+                    <div className="text-xs text-gray-300">Température</div>
+                    <div className="font-semibold">{sensorData.temperature}°C</div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 p-2 bg-white/10 rounded">
+                  <Droplets className="h-4 w-4 text-blue-400" />
+                  <div>
+                    <div className="text-xs text-gray-300">Humidité</div>
+                    <div className="font-semibold">{sensorData.humidity}%</div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 p-2 bg-white/10 rounded">
+                  <Zap className="h-4 w-4 text-green-400" />
+                  <div>
+                    <div className="text-xs text-gray-300">CO₂</div>
+                    <div className="font-semibold">{sensorData.co2} ppm</div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 p-2 bg-white/10 rounded">
+                  <Sun className="h-4 w-4 text-yellow-400" />
+                  <div>
+                    <div className="text-xs text-gray-300">Luminosité</div>
+                    <div className="font-semibold">{sensorData.luminosite} lux</div>
+                  </div>
+                </div>
+              </div>
             ) : (
-              <p className="text-gray-300 text-xs">Aucun QR code détecté</p>
+              <div className="text-center py-4 text-gray-400">
+                <Activity className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                <p className="text-xs">En attente des données...</p>
+              </div>
             )}
           </div>
-        </div>
+        )}
 
-        {/* Sensor Data Overlay - Top Center */}
-        <div className="absolute top-4 left-1/2 transform -translate-x-1/2 bg-black/80 backdrop-blur-sm text-white p-3 rounded-lg border border-white/20">
-          <div className="flex items-center gap-2 mb-2">
-            <Thermometer className="h-4 w-4" />
-            <span className="font-semibold text-sm">Capteurs</span>
-          </div>
-          {sensorData ? (
-            <div className="grid grid-cols-2 gap-2 text-xs">
-              <div className="flex items-center gap-1">
-                <Thermometer className="h-3 w-3 text-red-400" />
-                <span>{sensorData.temperature}°C</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <Droplets className="h-3 w-3 text-blue-400" />
-                <span>{sensorData.humidity}%</span>
-              </div>
-            </div>
-          ) : (
-            <p className="text-gray-300 text-xs">En attente...</p>
-          )}
-        </div>
-
-        {/* Floating Robot Control Buttons - Draggable */}
+        {/* Enhanced Floating Robot Control Buttons - Fixed Position and Very Small */}
         <div 
-          className={`absolute pointer-events-none transition-transform ${isDragging ? 'scale-105' : ''}`}
+          className="absolute pointer-events-none transition-all duration-200"
           style={{ 
             left: controlPosition.x, 
-            top: controlPosition.y,
-            transform: `translate(${isDragging ? '0, 0' : '0, 0'})`
+            top: controlPosition.y
           }}
         >
-          <div className="bg-black/70 backdrop-blur-sm rounded-xl p-3 pointer-events-auto border border-white/20">
-            {/* Drag Handle */}
-            <div 
-              className="flex items-center justify-center mb-2 cursor-move select-none"
-              onMouseDown={handleMouseDown}
-            >
-              <GripVertical className="h-4 w-4 text-white/60" />
-            </div>
-
-            <div className="space-y-2">
+          <div className="bg-black/90 backdrop-blur-sm rounded-lg p-1.5 pointer-events-auto border border-white/30 shadow-xl">
+            <div className="space-y-0.5">
               {/* Mission Controls */}
-              <div className="flex flex-col gap-1">
+              <div className="flex flex-col gap-0.5">
                 <ControlButton 
                   mode="PAUSE_MISSION" 
                   size={buttonSize}
-                  className="bg-amber-600/90 hover:bg-amber-700/90 border-amber-500 text-white"
+                  className="bg-amber-600/90 hover:bg-amber-700/90 border-amber-500 text-white shadow-lg"
                 >
-                  <Pause className={buttonSize === 'sm' ? 'h-3 w-3' : buttonSize === 'md' ? 'h-4 w-4' : 'h-5 w-5'} />
+                  <Pause className={buttonSize === 'sm' ? 'h-2.5 w-2.5' : buttonSize === 'md' ? 'h-3 w-3' : 'h-4 w-4'} />
                 </ControlButton>
                 <ControlButton 
                   mode="PLAY_MISSION" 
                   size={buttonSize}
-                  className="bg-emerald-600/90 hover:bg-emerald-700/90 border-emerald-500 text-white"
+                  className="bg-emerald-600/90 hover:bg-emerald-700/90 border-emerald-500 text-white shadow-lg"
                 >
-                  <Play className={buttonSize === 'sm' ? 'h-3 w-3' : buttonSize === 'md' ? 'h-4 w-4' : 'h-5 w-5'} />
+                  <Play className={buttonSize === 'sm' ? 'h-2.5 w-2.5' : buttonSize === 'md' ? 'h-3 w-3' : 'h-4 w-4'} />
                 </ControlButton>
               </div>
 
               {/* Movement Controls - Cross Pattern */}
-              <div className="grid grid-cols-3 gap-1" style={{ width: buttonSize === 'sm' ? '72px' : buttonSize === 'md' ? '90px' : '108px' }}>
+              <div className="grid grid-cols-3 gap-0.5" style={{ width: buttonSize === 'sm' ? '48px' : buttonSize === 'md' ? '60px' : '72px' }}>
                 <div></div>
                 <ControlButton 
                   mode="TOP" 
                   size={buttonSize}
-                  className="bg-slate-600/90 hover:bg-slate-700/90 border-slate-500 text-white"
+                  className="bg-slate-600/90 hover:bg-slate-700/90 border-slate-500 text-white shadow-lg"
                 >
-                  <ArrowUp className={buttonSize === 'sm' ? 'h-3 w-3' : buttonSize === 'md' ? 'h-4 w-4' : 'h-5 w-5'} />
+                  <ArrowUp className={buttonSize === 'sm' ? 'h-2.5 w-2.5' : buttonSize === 'md' ? 'h-3 w-3' : 'h-4 w-4'} />
                 </ControlButton>
                 <div></div>
 
                 <ControlButton 
                   mode="LEFT" 
                   size={buttonSize}
-                  className="bg-slate-600/90 hover:bg-slate-700/90 border-slate-500 text-white"
+                  className="bg-slate-600/90 hover:bg-slate-700/90 border-slate-500 text-white shadow-lg"
                 >
-                  <ArrowLeft className={buttonSize === 'sm' ? 'h-3 w-3' : buttonSize === 'md' ? 'h-4 w-4' : 'h-5 w-5'} />
+                  <ArrowLeft className={buttonSize === 'sm' ? 'h-2.5 w-2.5' : buttonSize === 'md' ? 'h-3 w-3' : 'h-4 w-4'} />
                 </ControlButton>
                 <div className="flex items-center justify-center">
                   <div className={`rounded-full bg-white/20 border border-white/40 flex items-center justify-center ${
-                    buttonSize === 'sm' ? 'w-4 h-4' : buttonSize === 'md' ? 'w-5 h-5' : 'w-6 h-6'
+                    buttonSize === 'sm' ? 'w-3 h-3' : buttonSize === 'md' ? 'w-4 h-4' : 'w-5 h-5'
                   }`}>
                     <div className={`rounded-full bg-white ${
-                      buttonSize === 'sm' ? 'w-1.5 h-1.5' : buttonSize === 'md' ? 'w-2 h-2' : 'w-2.5 h-2.5'
+                      buttonSize === 'sm' ? 'w-1 h-1' : buttonSize === 'md' ? 'w-1.5 h-1.5' : 'w-2 h-2'
                     }`}></div>
                   </div>
                 </div>
                 <ControlButton 
                   mode="RIGHT" 
                   size={buttonSize}
-                  className="bg-slate-600/90 hover:bg-slate-700/90 border-slate-500 text-white"
+                  className="bg-slate-600/90 hover:bg-slate-700/90 border-slate-500 text-white shadow-lg"
                 >
-                  <ArrowRight className={buttonSize === 'sm' ? 'h-3 w-3' : buttonSize === 'md' ? 'h-4 w-4' : 'h-5 w-5'} />
+                  <ArrowRight className={buttonSize === 'sm' ? 'h-2.5 w-2.5' : buttonSize === 'md' ? 'h-3 w-3' : 'h-4 w-4'} />
                 </ControlButton>
 
                 <div></div>
                 <ControlButton 
                   mode="DOWN" 
                   size={buttonSize}
-                  className="bg-slate-600/90 hover:bg-slate-700/90 border-slate-500 text-white"
+                  className="bg-slate-600/90 hover:bg-slate-700/90 border-slate-500 text-white shadow-lg"
                 >
-                  <ArrowDown className={buttonSize === 'sm' ? 'h-3 w-3' : buttonSize === 'md' ? 'h-4 w-4' : 'h-5 w-5'} />
+                  <ArrowDown className={buttonSize === 'sm' ? 'h-2.5 w-2.5' : buttonSize === 'md' ? 'h-3 w-3' : 'h-4 w-4'} />
                 </ControlButton>
                 <div></div>
               </div>
 
               {/* Camera Controls */}
-              <div className="flex flex-col gap-1">
+              <div className="flex flex-col gap-0.5">
                 <ControlButton 
                   mode="TOP_CAM" 
                   size={buttonSize}
-                  className="bg-indigo-600/90 hover:bg-indigo-700/90 border-indigo-500 text-white"
+                  className="bg-indigo-600/90 hover:bg-indigo-700/90 border-indigo-500 text-white shadow-lg"
                 >
-                  <ArrowUp className={buttonSize === 'sm' ? 'h-3 w-3' : buttonSize === 'md' ? 'h-4 w-4' : 'h-5 w-5'} />
+                  <ArrowUp className={buttonSize === 'sm' ? 'h-2.5 w-2.5' : buttonSize === 'md' ? 'h-3 w-3' : 'h-4 w-4'} />
                 </ControlButton>
                 <ControlButton 
                   mode="DOWN_CAM" 
                   size={buttonSize}
-                  className="bg-indigo-600/90 hover:bg-indigo-700/90 border-indigo-500 text-white"
+                  className="bg-indigo-600/90 hover:bg-indigo-700/90 border-indigo-500 text-white shadow-lg"
                 >
-                  <ArrowDown className={buttonSize === 'sm' ? 'h-3 w-3' : buttonSize === 'md' ? 'h-4 w-4' : 'h-5 w-5'} />
+                  <ArrowDown className={buttonSize === 'sm' ? 'h-2.5 w-2.5' : buttonSize === 'md' ? 'h-3 w-3' : 'h-4 w-4'} />
                 </ControlButton>
               </div>
             </div>
@@ -629,9 +746,36 @@ export default function RobotControl() {
             </div>
           </div>
         </div>
+
+        {/* Panel Toggle Buttons - Bottom Right */}
+        <div className="absolute bottom-4 right-4 flex gap-2">
+          {!showSensorPanel && (
+            <Button
+              onClick={() => setShowSensorPanel(true)}
+              variant="outline"
+              size="sm"
+              className="bg-black/80 text-white border-white/20 hover:bg-white/10"
+            >
+              <Activity className="h-4 w-4 mr-2" />
+              Capteurs
+            </Button>
+          )}
+          {!showQRPanel && (
+            <Button
+              onClick={() => setShowQRPanel(true)}
+              variant="outline"
+              size="sm"
+              className="bg-black/80 text-white border-white/20 hover:bg-white/10"
+            >
+              <QrCode className="h-4 w-4 mr-2" />
+              QR Codes
+            </Button>
+          )}
+        </div>
+
       </div>
 
-      {/* Bottom Control Panel - Sticky and Collapsible */}
+      {/* Enhanced Bottom Control Panel - Sticky and Collapsible */}
       <div className={`absolute bottom-0 left-0 right-0 bg-white/95 backdrop-blur-sm transition-all duration-300 ease-in-out ${
         isBottomPanelExpanded ? 'h-80' : 'h-16'
       } ${isStickyPanel ? 'sticky' : ''}`}>
