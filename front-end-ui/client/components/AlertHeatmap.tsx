@@ -33,7 +33,7 @@ const SAMPLE_ALERTS: Alert[] = [
     status: "non résolue",
     x1: -6.8498,
     y1: 33.9716,
-    bilan_nom: "Bilan Serre 1",
+    bilan_nom: "Billon Serre 1",
     serre_nom: "Serre Principale",
     domaine_nom: "Domaine Nord"
   },
@@ -46,7 +46,7 @@ const SAMPLE_ALERTS: Alert[] = [
     status: "non résolue",
     x1: -6.8500,
     y1: 33.9718,
-    bilan_nom: "Bilan Serre 2",
+    bilan_nom: "Billon Serre 2",
     serre_nom: "Serre Secondaire",
     domaine_nom: "Domaine Nord"
   },
@@ -59,7 +59,7 @@ const SAMPLE_ALERTS: Alert[] = [
     status: "résolue",
     x1: -6.8495,
     y1: 33.9714,
-    bilan_nom: "Bilan Serre 3",
+    bilan_nom: "Billon Serre 3",
     serre_nom: "Serre Est",
     domaine_nom: "Domaine Sud"
   },
@@ -72,7 +72,7 @@ const SAMPLE_ALERTS: Alert[] = [
     status: "non résolue",
     x1: -6.8505,
     y1: 33.9720,
-    bilan_nom: "Bilan Serre 4",
+    bilan_nom: "Billon Serre 4",
     serre_nom: "Serre Ouest",
     domaine_nom: "Domaine Sud"
   },
@@ -85,7 +85,7 @@ const SAMPLE_ALERTS: Alert[] = [
     status: "non résolue",
     x1: -6.8490,
     y1: 33.9710,
-    bilan_nom: "Bilan Serre 5",
+    bilan_nom: "Billon Serre 5",
     serre_nom: "Serre Centre",
     domaine_nom: "Domaine Nord"
   }
@@ -503,14 +503,14 @@ export default function AlertHeatmap({
         {usingSampleData && (
           <div className="mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded-md">
             <p className="text-xs text-yellow-800">
-              ⚠️ Données de démonstration - Connectez-vous à votre backend pour voir vos vraies alertes
+              Données de démonstration - Connectez-vous à votre backend pour voir vos vraies alertes
             </p>
           </div>
         )}
         {!googleMapsLoaded && (
           <div className="mt-2 p-2 bg-blue-50 border border-blue-200 rounded-md">
             <p className="text-xs text-blue-800">
-              🔄 Chargement de Google Maps...
+              Chargement de Google Maps...
             </p>
           </div>
         )}

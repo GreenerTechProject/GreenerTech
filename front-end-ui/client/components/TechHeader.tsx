@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -18,6 +18,7 @@ interface TechHeaderProps {
 const TechHeader: React.FC<TechHeaderProps> = ({ role, onMenuClick, isSidebarOpen }) => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const [isDarkMode, setIsDarkMode] = React.useState(false);
   const [notificationCounts, setNotificationCounts] = useState<NotificationCounts>({
     total: 0,
@@ -199,21 +200,11 @@ const TechHeader: React.FC<TechHeaderProps> = ({ role, onMenuClick, isSidebarOpe
                 )}
               </Button>
             )}
-            {/* Mobile: leaf logo; Desktop: text logo */}
+            {/* Logo - using GreenerTech-Logo4T.png for both mobile and desktop */}
             <img 
-              src="/GreenerTech-logo2.jpg" 
+              src="/GreenerTech-Logo4T.png" 
               alt="GreenerTech"
-              className="h-12 w-auto object-contain cursor-pointer sm:hidden"
-              title="Accueil"
-              role="button"
-              tabIndex={0}
-              onClick={() => navigate(role === "technicien_sup" ? "/technicien-sup" : "/technician/dashboard")}
-              onKeyDown={(e) => e.key === 'Enter' && navigate(role === "technicien_sup" ? "/technicien-sup" : "/technician/dashboard")}
-            />
-            <img 
-              src="/GreenerTech-logo3.jpg" 
-              alt="GreenerTech"
-              className="h-12 w-auto object-contain cursor-pointer hidden sm:block"
+              className="h-8 w-auto object-contain cursor-pointer"
               title="Accueil"
               role="button"
               tabIndex={0}
@@ -225,26 +216,33 @@ const TechHeader: React.FC<TechHeaderProps> = ({ role, onMenuClick, isSidebarOpe
           {/* Center: Navigation Icons */}
           <div className="justify-self-center flex items-center gap-1">
             {/* Home Icon */}
-            <Button
-              variant="ghost"
-              size="sm"
+            <div 
+              className={`h-8 w-8 sm:h-9 sm:w-9 flex items-center justify-center cursor-pointer hover:scale-110 transition-transform duration-200 active:scale-95 flex-shrink-0 rounded-lg ${
+                location.pathname.includes('/dashboard') || 
+                (role === "technicien_sup" && location.pathname === "/technicien-sup")
+                  ? 'bg-green-600 text-white'
+                  : 'hover:bg-green-50'
+              }`}
               onClick={() => navigate(role === "technicien_sup" ? "/technicien-sup" : "/technician/dashboard")}
-              className="flex items-center px-1 py-1 hover:bg-green-50 hover:text-green-700 transition-colors"
               title="Accueil"
             >
               <Home className="h-5 w-6 sm:h-6 sm:w-6" />
-            </Button>
+            </div>
             
             {/* Map Icon */}
-            <Button
-              variant="ghost"
-              size="sm"
+            <div 
+              className={`h-8 w-8 sm:h-9 sm:w-9 flex items-center justify-center cursor-pointer hover:scale-110 transition-transform duration-200 active:scale-95 flex-shrink-0 rounded-lg ${
+                location.pathname.includes('/map') || 
+                location.pathname.includes('/technician/map') ||
+                location.pathname.includes('/technicien-sup/map')
+                  ? 'bg-green-600 text-white'
+                  : 'hover:bg-green-50'
+              }`}
               onClick={() => navigate(role === "technicien_sup" ? "/technicien-sup/map" : "/technician/map")}
-              className="flex items-center px-1 py-1 hover:bg-green-50 hover:text-green-700 transition-colors"
               title="Carte"
             >
               <Map className="h-5 w-6 sm:h-6 sm:w-6" />
-            </Button>
+            </div>
           </div>
 
           {/* Right: Notifications and User dropdown */}

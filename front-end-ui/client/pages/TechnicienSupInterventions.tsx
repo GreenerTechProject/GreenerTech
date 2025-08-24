@@ -72,7 +72,7 @@ export default function TechnicienSupInterventions() {
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
   const { toast } = useToast();
   
-  console.log("🔍 TechnicienSupInterventions: Component rendered", { 
+  console.log("TechnicienSupInterventions: Component rendered", { 
     userId: user?.id, 
     userRole: user?.role,
     userEmail: user?.email,
@@ -100,9 +100,9 @@ export default function TechnicienSupInterventions() {
   const [hasError, setHasError] = useState(false);
 
   useEffect(() => {
-    console.log("🔍 TechnicienSupInterventions: Initial useEffect triggered");
+    console.log("TechnicienSupInterventions: Initial useEffect triggered");
     if (!authLoading && isAuthenticated && user?.id && !hasError) {
-      console.log("🔍 TechnicienSupInterventions: User authenticated and available, loading data");
+              console.log("TechnicienSupInterventions: User authenticated and available, loading data");
       
       // Add a timeout to prevent hanging
       const timeoutId = setTimeout(() => {

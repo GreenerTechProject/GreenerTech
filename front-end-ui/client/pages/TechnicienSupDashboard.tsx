@@ -52,6 +52,15 @@ import {
   Eye,
   Activity,
   Flame,
+  Sprout,
+  Wheat,
+  BarChart,
+  ThermometerIcon,
+  Droplets as DropletsIcon,
+  Wind,
+  Calendar,
+  TrendingUp,
+  User,
 } from "lucide-react";
 import TechnicianSidebar from "../components/TechnicianSidebar";
 import InterventionForm from "../components/InterventionForm";
@@ -924,7 +933,7 @@ export default function TechnicienSupDashboard(): JSX.Element {
                       </h5>
                       {selectedSerreGuides.length === 0 ? (
                         <div className="text-center py-4 text-gray-500 bg-gray-50 rounded-lg">
-                          <div className="text-2xl mb-2">🌱</div>
+                          <div className="text-2xl mb-2"><Sprout className="h-8 w-8 mx-auto text-gray-400" /></div>
                           <div className="text-xs">Aucun guide de culture associé</div>
                         </div>
                       ) : (
@@ -975,7 +984,7 @@ export default function TechnicienSupDashboard(): JSX.Element {
                       </h5>
                       {selectedSerreBilans.length === 0 ? (
                         <div className="text-center py-4 text-gray-500 bg-gray-50 rounded-lg">
-                          <div className="text-2xl mb-2">🌾</div>
+                          <div className="text-2xl mb-2"><Wheat className="h-8 w-8 mx-auto text-gray-400" /></div>
                           <div className="text-xs">Aucun billon associé</div>
                         </div>
                       ) : (
@@ -1029,31 +1038,31 @@ export default function TechnicienSupDashboard(): JSX.Element {
                                       <div className="grid grid-cols-2 gap-2 text-xs">
                                         {typeof etat.temperature === 'number' && (
                                           <div className="flex items-center justify-between p-2 bg-purple-50 rounded-md">
-                                            <span className="text-purple-700">🌡️</span>
+                                            <ThermometerIcon className="h-4 w-4 text-purple-700" />
                                             <span className="font-semibold text-purple-900">{Number(etat.temperature).toFixed(1)}°C</span>
                                           </div>
                                         )}
                                         {typeof etat.humidite === 'number' && (
                                           <div className="flex items-center justify-between p-2 bg-purple-50 rounded-md">
-                                            <span className="text-purple-700">💧</span>
+                                            <DropletsIcon className="h-4 w-4 text-purple-700" />
                                             <span className="font-semibold text-purple-900">{Number(etat.humidite).toFixed(1)}%</span>
                                           </div>
                                         )}
                                         {typeof etat.luminosite === 'number' && (
                                           <div className="flex items-center justify-between p-2 bg-purple-50 rounded-md">
-                                            <span className="text-purple-700">☀️</span>
+                                            <Sun className="h-4 w-4 text-purple-700" />
                                             <span className="font-semibold text-purple-900">{Number(etat.luminosite).toFixed(0)} lux</span>
                                           </div>
                                         )}
                                         {typeof etat.co2 === 'number' && (
                                           <div className="flex items-center justify-between p-2 bg-purple-50 rounded-md">
-                                            <span className="text-purple-700">🌬️</span>
+                                            <Wind className="h-4 w-4 text-purple-700" />
                                             <span className="font-semibold text-purple-900">{Number(etat.co2).toFixed(0)} ppm</span>
                                           </div>
                                         )}
                                         {etat.date && (
                                           <div className="col-span-2 flex items-center justify-between p-2 bg-blue-50 rounded-md">
-                                            <span className="text-blue-700">📅</span>
+                                            <Calendar className="h-4 w-4 text-blue-700" />
                                             <span className="font-semibold text-blue-900 text-xs">
                                               {new Date(etat.date).toLocaleDateString('fr-FR')}
                                             </span>
@@ -1572,7 +1581,7 @@ export default function TechnicienSupDashboard(): JSX.Element {
                 <CardContent className="pt-0">
                 {selectedSerreGuides.length === 0 ? (
                   <div className="text-center py-6 text-gray-500">
-                    <div className="text-4xl mb-2">🌱</div>
+                    <div className="text-4xl mb-2"><Sprout className="h-12 w-12 mx-auto text-gray-400" /></div>
                     <div className="text-sm">Aucun guide associé</div>
                   </div>
                 ) : (
@@ -1632,7 +1641,7 @@ export default function TechnicienSupDashboard(): JSX.Element {
                 <CardContent className="pt-0">
                 {selectedSerreBilans.length === 0 ? (
                   <div className="text-center py-6 text-gray-500">
-                    <div className="text-4xl mb-2">📊</div>
+                    <div className="text-4xl mb-2"><BarChart className="h-12 w-12 mx-auto text-gray-400" /></div>
                     <div className="text-sm">Aucun billon</div>
                   </div>
                 ) : (
@@ -1666,7 +1675,7 @@ export default function TechnicienSupDashboard(): JSX.Element {
                                 {typeof etat.temperature === 'number' && (
                                   <div className="flex items-center justify-between p-2 bg-white rounded-md border border-gray-200">
                                     <div className="flex items-center gap-2">
-                                      <span className="text-purple-600">🌡️</span>
+                                      <ThermometerIcon className="h-4 w-4 text-purple-600" />
                                       <span className="font-medium text-gray-700">Température:</span>
                                     </div>
                                     <span className="font-semibold text-gray-900">{Number(etat.temperature).toFixed(2)}°C</span>
@@ -1675,7 +1684,7 @@ export default function TechnicienSupDashboard(): JSX.Element {
                                 {typeof etat.humidite === 'number' && (
                                   <div className="flex items-center justify-between p-2 bg-white rounded-md border border-gray-200">
                                     <div className="flex items-center gap-2">
-                                      <span className="text-purple-600">💧</span>
+                                      <DropletsIcon className="h-4 w-4 text-purple-600" />
                                       <span className="font-medium text-gray-700">Humidité:</span>
                                     </div>
                                     <span className="font-semibold text-gray-900">{Number(etat.humidite).toFixed(2)}%</span>
@@ -1684,7 +1693,7 @@ export default function TechnicienSupDashboard(): JSX.Element {
                                 {typeof etat.luminosite === 'number' && (
                                   <div className="flex items-center justify-between p-2 bg-white rounded-md border border-gray-200">
                                     <div className="flex items-center gap-2">
-                                      <span className="text-purple-600">☀️</span>
+                                      <Sun className="h-4 w-4 text-purple-600" />
                                       <span className="font-medium text-gray-700">Luminosité:</span>
                                     </div>
                                     <span className="font-semibold text-gray-900">{Number(etat.luminosite).toFixed(2)} lux</span>
@@ -1693,7 +1702,7 @@ export default function TechnicienSupDashboard(): JSX.Element {
                                 {typeof etat.co2 === 'number' && (
                                   <div className="flex items-center justify-between p-2 bg-white rounded-md border border-gray-200">
                                     <div className="flex items-center gap-2">
-                                      <span className="text-purple-600">🌬️</span>
+                                      <Wind className="h-4 w-4 text-purple-600" />
                                       <span className="font-medium text-gray-700">CO₂:</span>
                                     </div>
                                     <span className="font-semibold text-gray-900">{Number(etat.co2).toFixed(2)} ppm</span>
@@ -1702,7 +1711,7 @@ export default function TechnicienSupDashboard(): JSX.Element {
                                 {typeof etat.rendement === 'number' && (
                                   <div className="flex items-center justify-between p-2 bg-white rounded-md border border-gray-200">
                                     <div className="flex items-center gap-2">
-                                      <span className="text-purple-600">📈</span>
+                                      <TrendingUp className="h-4 w-4 text-purple-600" />
                                       <span className="font-medium text-gray-700">Rendement:</span>
                                     </div>
                                     <span className="font-semibold text-gray-900">{Number(etat.rendement).toFixed(2)} kg/m²</span>
@@ -1711,7 +1720,7 @@ export default function TechnicienSupDashboard(): JSX.Element {
                                 {etat.date && (
                                   <div className="flex items-center justify-between p-2 bg-blue-50 rounded-md border border-blue-200">
                                     <div className="flex items-center gap-2">
-                                      <span className="text-blue-600">📅</span>
+                                      <Calendar className="h-4 w-4 text-blue-600" />
                                       <span className="font-medium text-blue-800">Date d'évaluation:</span>
                                     </div>
                                     <span className="font-semibold text-blue-900">
@@ -1731,7 +1740,7 @@ export default function TechnicienSupDashboard(): JSX.Element {
                           
                           <div className="flex items-center justify-between text-xs text-gray-600">
                             <span className="flex items-center gap-1">
-                              <span>👤</span>
+                              <User className="h-4 w-4" />
                               <span className="font-medium">Créé par:</span>
                               <span>{createdBy}</span>
                             </span>
@@ -2408,25 +2417,25 @@ export default function TechnicienSupDashboard(): JSX.Element {
                                 <div className="grid grid-cols-2 gap-2 text-xs">
                                   {typeof etat.temperature === 'number' && (
                                     <div className="flex items-center justify-between p-2 bg-purple-50 rounded-md">
-                                      <span className="text-purple-700">🌡️</span>
+                                      <ThermometerIcon className="h-4 w-4 text-purple-700" />
                                       <span className="font-semibold text-purple-900">{Number(etat.temperature).toFixed(1)}°C</span>
                                     </div>
                                   )}
                                   {typeof etat.humidite === 'number' && (
                                     <div className="flex items-center justify-between p-2 bg-purple-50 rounded-md">
-                                      <span className="text-purple-700">💧</span>
+                                      <DropletsIcon className="h-4 w-4 text-purple-700" />
                                       <span className="font-semibold text-purple-900">{Number(etat.humidite).toFixed(1)}%</span>
                                     </div>
                                   )}
                                   {typeof etat.luminosite === 'number' && (
                                     <div className="flex items-center justify-between p-2 bg-purple-50 rounded-md">
-                                      <span className="text-purple-700">☀️</span>
+                                      <Sun className="h-4 w-4 text-purple-700" />
                                       <span className="font-semibold text-purple-900">{Number(etat.luminosite).toFixed(0)} lux</span>
                                     </div>
                                   )}
                                   {typeof etat.co2 === 'number' && (
                                     <div className="flex items-center justify-between p-2 bg-purple-50 rounded-md">
-                                      <span className="text-purple-700">🌬️</span>
+                                      <Wind className="h-4 w-4 text-purple-700" />
                                       <span className="font-semibold text-purple-900">{Number(etat.co2).toFixed(0)} ppm</span>
                                     </div>
                                   )}
@@ -2659,7 +2668,7 @@ export default function TechnicienSupDashboard(): JSX.Element {
                               <div className="bg-white p-3 rounded-lg border border-purple-200 shadow-sm">
                                 <div className="flex items-center gap-2">
                                   <div className="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center">
-                                    <span className="text-lg">🌡️</span>
+                                    <ThermometerIcon className="h-5 w-5 text-red-600" />
                                   </div>
                                   <div>
                                     <p className="text-xs font-medium text-gray-600">Température</p>
@@ -2673,12 +2682,12 @@ export default function TechnicienSupDashboard(): JSX.Element {
                               <div className="bg-white p-3 rounded-lg border border-purple-200 shadow-sm">
                                 <div className="flex items-center gap-2">
                                   <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                                    <span className="text-lg">💧</span>
-          </div>
+                                    <DropletsIcon className="h-5 w-5 text-blue-600" />
+                                  </div>
                                   <div>
                                     <p className="text-xs font-medium text-gray-600">Humidité</p>
                                     <p className="text-lg font-bold text-blue-600">{Number(selectedMobileBilan.etat.humidite).toFixed(1)}%</p>
-        </div>
+                                  </div>
                                 </div>
                               </div>
                             )}
@@ -2687,7 +2696,7 @@ export default function TechnicienSupDashboard(): JSX.Element {
                               <div className="bg-white p-3 rounded-lg border border-purple-200 shadow-sm">
                                 <div className="flex items-center gap-2">
                                   <div className="w-8 h-8 bg-yellow-100 rounded-full flex items-center justify-center">
-                                    <span className="text-lg">☀️</span>
+                                    <Sun className="h-5 w-5 text-yellow-600" />
                                   </div>
                                   <div>
                                     <p className="text-xs font-medium text-gray-600">Luminosité</p>
@@ -2701,8 +2710,8 @@ export default function TechnicienSupDashboard(): JSX.Element {
                               <div className="bg-white p-3 rounded-lg border border-purple-200 shadow-sm">
                                 <div className="flex items-center gap-2">
                                   <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
-                                    <span className="text-lg">🌬️</span>
-                                    </div>
+                                    <Wind className="h-5 w-5 text-green-600" />
+                                  </div>
                                   <div>
                                     <p className="text-xs font-medium text-gray-600">CO₂</p>
                                     <p className="text-lg font-bold text-green-600">{Number(selectedMobileBilan.etat.co2).toFixed(0)} ppm</p>
@@ -2716,8 +2725,8 @@ export default function TechnicienSupDashboard(): JSX.Element {
                             <div className="mt-4 bg-white p-3 rounded-lg border border-purple-200 shadow-sm">
                               <div className="flex items-center gap-2">
                                 <div className="w-8 h-8 bg-emerald-100 rounded-full flex items-center justify-center">
-                                  <span className="text-lg">📈</span>
-      </div>
+                                  <TrendingUp className="h-5 w-5 text-emerald-600" />
+                                </div>
                                 <div>
                                   <p className="text-xs font-medium text-gray-600">Rendement</p>
                                   <p className="text-lg font-bold text-emerald-600">{Number(selectedMobileBilan.etat.rendement).toFixed(2)} kg/m²</p>
@@ -2825,7 +2834,7 @@ export default function TechnicienSupDashboard(): JSX.Element {
                               <div className="bg-white p-3 rounded-lg border border-purple-200 shadow-sm">
                                 <div className="flex items-center gap-2">
                                   <div className="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center">
-                                    <span className="text-lg">🌡️</span>
+                                    <Thermometer className="h-5 w-5 text-red-600" />
                                   </div>
                                   <div>
                                     <p className="text-xs font-medium text-gray-600">Température</p>
@@ -2839,7 +2848,7 @@ export default function TechnicienSupDashboard(): JSX.Element {
                               <div className="bg-white p-3 rounded-lg border border-purple-200 shadow-sm">
                                 <div className="flex items-center gap-2">
                                   <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                                    <span className="text-lg">💧</span>
+                                    <Droplets className="w-5 h-5 text-blue-600" />
                                   </div>
                                   <div>
                                     <p className="text-xs font-medium text-gray-600">Humidité</p>
@@ -2853,7 +2862,7 @@ export default function TechnicienSupDashboard(): JSX.Element {
                               <div className="bg-white p-3 rounded-lg border border-purple-200 shadow-sm">
                                 <div className="flex items-center gap-2">
                                   <div className="w-8 h-8 bg-yellow-100 rounded-full flex items-center justify-center">
-                                    <span className="text-lg">☀️</span>
+                                    <Sun className="w-5 h-5 text-yellow-600" />
                                   </div>
                                   <div>
                                     <p className="text-xs font-medium text-gray-600">Luminosité</p>
@@ -2867,7 +2876,7 @@ export default function TechnicienSupDashboard(): JSX.Element {
                               <div className="bg-white p-3 rounded-lg border border-purple-200 shadow-sm">
                                 <div className="flex items-center gap-2">
                                   <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
-                                    <span className="text-lg">🌬️</span>
+                                    <Wind className="w-5 h-5 text-green-600" />
                                   </div>
                                   <div>
                                     <p className="text-xs font-medium text-gray-600">CO₂</p>
@@ -2882,7 +2891,7 @@ export default function TechnicienSupDashboard(): JSX.Element {
                             <div className="mt-4 bg-white p-3 rounded-lg border border-purple-200 shadow-sm">
                               <div className="flex items-center gap-2">
                                 <div className="w-8 h-8 bg-emerald-100 rounded-full flex items-center justify-center">
-                                  <span className="text-lg">📈</span>
+                                  <BarChart3 className="w-5 h-5 text-emerald-600" />
                                 </div>
                                 <div>
                                   <p className="text-xs font-medium text-gray-600">Rendement</p>
@@ -3014,7 +3023,7 @@ export default function TechnicienSupDashboard(): JSX.Element {
                       <div className="bg-white p-4 rounded-lg border border-purple-200 shadow-sm">
                         <div className="flex items-center gap-3">
                           <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
-                            <span className="text-2xl">🌡️</span>
+                            <Thermometer className="w-6 h-6 text-red-600" />
                           </div>
                           <div>
                             <p className="text-sm font-medium text-gray-600">Température</p>
@@ -3028,7 +3037,7 @@ export default function TechnicienSupDashboard(): JSX.Element {
                       <div className="bg-white p-4 rounded-lg border border-purple-200 shadow-sm">
                         <div className="flex items-center gap-3">
                           <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                            <span className="text-2xl">💧</span>
+                            <Droplets className="w-6 h-6 text-blue-600" />
                           </div>
                           <div>
                             <p className="text-sm font-medium text-gray-600">Humidité</p>
@@ -3042,7 +3051,7 @@ export default function TechnicienSupDashboard(): JSX.Element {
                       <div className="bg-white p-4 rounded-lg border border-purple-200 shadow-sm">
                         <div className="flex items-center gap-3">
                           <div className="w-10 h-10 bg-yellow-100 rounded-full flex items-center justify-center">
-                            <span className="text-2xl">☀️</span>
+                            <Sun className="w-6 h-6 text-yellow-600" />
                           </div>
                           <div>
                             <p className="text-sm font-medium text-gray-600">Luminosité</p>
@@ -3056,7 +3065,7 @@ export default function TechnicienSupDashboard(): JSX.Element {
                       <div className="bg-white p-4 rounded-lg border border-purple-200 shadow-sm">
                         <div className="flex items-center gap-3">
                           <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
-                            <span className="text-2xl">🌬️</span>
+                            <Wind className="w-6 h-6 text-green-600" />
                           </div>
                           <div>
                             <p className="text-sm font-medium text-gray-600">CO₂</p>
@@ -3071,7 +3080,7 @@ export default function TechnicienSupDashboard(): JSX.Element {
                     <div className="mt-4 bg-white p-4 rounded-lg border border-purple-200 shadow-sm">
                       <div className="flex items-center gap-3">
                         <div className="w-10 h-10 bg-emerald-100 rounded-full flex items-center justify-center">
-                          <span className="text-2xl">📈</span>
+                          <BarChart3 className="w-6 h-6 text-emerald-600" />
                         </div>
                         <div>
                           <p className="text-sm font-medium text-gray-600">Rendement</p>
@@ -3086,7 +3095,7 @@ export default function TechnicienSupDashboard(): JSX.Element {
               {/* No État Available */}
               {!selectedBilan.etat && (
                 <div className="text-center py-8 text-gray-500">
-                  <div className="text-4xl mb-2">📊</div>
+                  <BarChart3 className="w-12 h-12 mx-auto mb-2 text-gray-400" />
                   <div className="text-lg font-medium">Aucun état disponible</div>
                   <div className="text-sm">Les métriques environnementales n'ont pas encore été enregistrées pour ce bilan.</div>
                 </div>

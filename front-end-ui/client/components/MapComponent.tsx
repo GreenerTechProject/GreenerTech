@@ -680,7 +680,7 @@ export default function MapComponent({
               ></div>
               <span className="text-sm font-medium text-gray-500 uppercase tracking-wide">
                 {selectedShape.type === 'domain' ? 'Domaine' : 
-                 selectedShape.type === 'serre' ? 'Serre' : 'Bilan'}
+                 selectedShape.type === 'serre' ? 'Serre' : 'Billon'}
               </span>
             </div>
             <button
@@ -728,7 +728,7 @@ export default function MapComponent({
               onClick={() => zoomToShape(selectedShape)}
               className="w-full bg-blue-600 text-white text-sm font-medium py-2 px-3 rounded-md hover:bg-blue-700 transition-colors"
             >
-              🔍 Zoom sur la zone
+              Zoom sur la zone
             </button>
           </div>
         </div>
@@ -774,7 +774,7 @@ export default function MapComponent({
           <div className="font-medium">{hoveredShape.name}</div>
           <div className="text-gray-300">
             {hoveredShape.type === 'domain' ? 'Domaine' : 
-             hoveredShape.type === 'serre' ? 'Serre' : 'Bilan'} • 
+             hoveredShape.type === 'serre' ? 'Serre' : 'Billon'} • 
             {(hoveredShape.area / 10000).toFixed(2)} ha
           </div>
         </div>

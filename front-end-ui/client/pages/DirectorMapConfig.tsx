@@ -2307,34 +2307,28 @@ export default function DirectorMapConfig() {
                                 {editingSerreId !== serre.id && (
                                   <>
                                     <Button
-                                      variant="outline"
+                                      variant="ghost"
                                       size="sm"
                                       onClick={(e) => {
                                         e.stopPropagation();
                                         startEditingSerre(serre.id, serre.nom);
                                       }}
-                                      className="text-blue-600 hover:text-blue-700 hover:bg-blue-50 text-xs lg:text-sm px-2 lg:px-3 h-7 lg:h-8"
+                                      className="text-blue-500 hover:text-blue-700 hover:bg-blue-50 h-7 lg:h-8 w-7 lg:w-8 p-0 flex-shrink-0"
                                       title="Modifier le nom"
                                     >
-                                      <Edit3 className="h-3 w-3 lg:h-4 lg:w-4 mr-1 flex-shrink-0" />
-                                      <span className="hidden sm:inline">Modifier</span>
-                                      <span className="sm:hidden lg:hidden">Mod</span>
-                                      <span className="hidden xl:inline">Modifier</span>
+                                      <Edit3 className="h-3 w-3 lg:h-4 lg:w-4" />
                                     </Button>
                                     <Button
-                                      variant="outline"
+                                      variant="ghost"
                                       size="sm"
                                       onClick={(e) => {
                                         e.stopPropagation();
                                         startRedrawingSerre(serre.id);
                                       }}
-                                      className="text-orange-600 hover:text-orange-700 hover:bg-orange-50 text-xs lg:text-sm px-2 lg:px-3 h-7 lg:h-8"
+                                      className="text-orange-500 hover:text-orange-700 hover:bg-orange-50 h-7 lg:h-8 w-7 lg:w-8 p-0 flex-shrink-0"
                                       title="Redessiner la position"
                                     >
-                                      <RotateCcw className="h-3 w-3 lg:h-4 lg:w-4 mr-1 flex-shrink-0" />
-                                      <span className="hidden sm:inline">Redessiner</span>
-                                      <span className="sm:hidden lg:hidden">Red</span>
-                                      <span className="hidden xl:inline">Redessiner</span>
+                                      <RotateCcw className="h-3 w-3 lg:h-4 lg:w-4" />
                                     </Button>
                                   </>
                                 )}
@@ -2524,7 +2518,7 @@ export default function DirectorMapConfig() {
                           ) : (
                             <div className="bg-yellow-50 p-2 lg:p-3 rounded border border-yellow-200">
                               <p className="text-sm text-yellow-700">
-                                ⚠️ Aucun guide de culture configuré pour cette serre
+                                Aucun guide de culture configuré pour cette serre
                               </p>
                             </div>
                           )}
@@ -2611,7 +2605,7 @@ export default function DirectorMapConfig() {
                                           </div>
                                         ) : (
                                           <div className="text-xs text-red-600 bg-red-50 p-2 rounded border border-red-200">
-                                            <strong>⚠️ Guide introuvable</strong> - Les données du guide ne sont pas disponibles
+                                            <strong>Guide introuvable</strong> - Les données du guide ne sont pas disponibles
                                           </div>
                                         )}
                                       </div>
@@ -3578,7 +3572,7 @@ export default function DirectorMapConfig() {
                             ) : (
                               <div className="bg-yellow-50 p-2 rounded border border-yellow-200">
                                 <p className="text-xs text-yellow-700 mb-2">
-                                  ⚠️ Aucun guide de culture configuré pour cette serre
+                                  Aucun guide de culture configuré pour cette serre
                                 </p>
                                 <Button
                                   variant="outline"
@@ -3678,7 +3672,7 @@ export default function DirectorMapConfig() {
                                           </div>
                                         ) : (
                                           <div className="text-xs text-red-600 bg-red-50 p-2 rounded border border-red-200">
-                                            <strong>⚠️ Guide introuvable</strong> - Données non disponibles
+                                            <strong>Guide introuvable</strong> - Données non disponibles
                                           </div>
                                         )}
                                       </div>

@@ -818,7 +818,7 @@ export default function RobotControl() {
                 onCheckedChange={setIsStickyPanel}
               />
               <Label htmlFor="sticky-panel" className="text-xs">
-                📌
+                Épingler
               </Label>
             </div>
 

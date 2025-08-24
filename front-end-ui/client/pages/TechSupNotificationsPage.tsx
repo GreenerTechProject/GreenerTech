@@ -163,14 +163,14 @@ export default function TechSupNotificationsPage() {
 
   const getNotificationTypeLabel = (type: string) => {
     const typeLabels: { [key: string]: string } = {
-      'intervention': '🔧 Intervention',
-      'intervention_creee': '🆕 Intervention créée',
-      'intervention_validee': '✅ Intervention validée',
-      'success': '✅ Succès',
-      'info': 'ℹ️ Information',
-      'reminder': '⏰ Rappel',
-      'warning': '⚠️ Avertissement',
-      'error': '❌ Erreur'
+      'intervention': 'Intervention',
+      'intervention_creee': 'Intervention créée',
+      'intervention_validee': 'Intervention validée',
+      'success': 'Succès',
+      'info': 'Information',
+      'reminder': 'Rappel',
+      'warning': 'Avertissement',
+      'error': 'Erreur'
     };
     return typeLabels[type] || type;
   };

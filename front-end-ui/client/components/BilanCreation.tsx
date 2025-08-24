@@ -118,8 +118,8 @@ export default function BilanCreation({
   // Get current location when component mounts
   useEffect(() => {
     getCurrentLocation();
-    // Set default bilan name
-    setBilanName(`Bilan ${serreName} - ${new Date().toLocaleDateString()}`);
+    // Set default billon name
+    setBilanName(`Billon ${serreName} - ${new Date().toLocaleDateString()}`);
     return () => {
       if (watchIdRef.current) {
         navigator.geolocation.clearWatch(watchIdRef.current);
@@ -215,7 +215,7 @@ export default function BilanCreation({
 
     setIsTracking(true);
     setError(null);
-    setSuccess("Suivi GPS activé. Marchez dans le champ pour créer votre bilan.");
+    setSuccess("Suivi GPS activé. Marchez dans le champ pour créer votre billon.");
 
     // Start watching position
     watchIdRef.current = navigator.geolocation.watchPosition(
@@ -320,7 +320,7 @@ export default function BilanCreation({
     // Auto-stop tracking after 4 points
     if (selectedPoints.length + 1 >= 4) {
       stopTracking();
-      setSuccess("4 points sélectionnés ! Vous pouvez maintenant créer le bilan.");
+      setSuccess("4 points sélectionnés ! Vous pouvez maintenant créer le billon.");
     }
   };
 
@@ -411,7 +411,7 @@ export default function BilanCreation({
 
   const createBilan = async () => {
     if (!bilanName.trim()) {
-      setError("Veuillez entrer un nom pour le bilan");
+      setError("Veuillez entrer un nom pour le billon");
       return;
     }
 
@@ -421,7 +421,7 @@ export default function BilanCreation({
     if (creationMode === 'gps' && useCenterlineBuffer) {
       const history = locationHistoryRef.current.map(p => [p.lat, p.lng]) as [number, number][];
       if (history.length < 2) {
-        setError("Parcours insuffisant pour générer le polygone. Marchez davantage avant de créer le bilan.");
+        setError("Parcours insuffisant pour générer le polygone. Marchez davantage avant de créer le billon.");
         return;
       }
 
@@ -445,7 +445,7 @@ export default function BilanCreation({
       }
     } else if (creationMode === 'manual' || creationMode === 'rectangleCenterline') {
       if (selectedPoints.length < 3) {
-        setError("Vous devez sélectionner au moins 3 points pour créer un bilan");
+        setError("Vous devez sélectionner au moins 3 points pour créer un billon");
         return;
       }
     }
@@ -464,7 +464,7 @@ export default function BilanCreation({
       };
 
       await bilanService.createBilan(bilanData);
-      setSuccess("Bilan créé avec succès !");
+      setSuccess("Billon créé avec succès !");
       
       // Wait a moment to show success message
       setTimeout(() => {
@@ -472,7 +472,7 @@ export default function BilanCreation({
       }, 1500);
     } catch (error: any) {
       console.error('Error creating bilan:', error);
-      setError(error.message || "Erreur lors de la création du bilan");
+      setError(error.message || "Erreur lors de la création du billon");
     } finally {
       setIsCreating(false);
     }
@@ -505,7 +505,7 @@ export default function BilanCreation({
                 <div className="flex items-center space-x-2">
                   <MapPin className="h-5 w-5 text-[#B4CC5F]" />
                 <div>
-                    <h1 className="text-sm font-semibold text-gray-900">Création de Bilan GPS</h1>
+                    <h1 className="text-sm font-semibold text-gray-900">Création de Billon GPS</h1>
                     <p className="text-xs text-gray-600">{serreName}</p>
                 </div>
               </div>
@@ -584,7 +584,7 @@ export default function BilanCreation({
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-2">
                   <MapPin className="h-5 w-5 text-[#B4CC5F]" />
-                  <h3 className="font-semibold text-gray-900 text-base">Contrôles Bilan GPS</h3>
+                  <h3 className="font-semibold text-gray-900 text-base">Contrôles Billon GPS</h3>
                   <span className="text-xs text-gray-500 bg-white px-2 py-1 rounded-full">
                     {Math.round(mobilePanelHeight)}px
                   </span>
@@ -605,7 +605,7 @@ export default function BilanCreation({
               <div className="py-4 space-y-4">
                 {/* Bilan Name Input */}
                 <div className="space-y-2">
-                  <Label htmlFor="bilanName" className="text-sm font-medium text-gray-700">Nom du bilan *</Label>
+                  <Label htmlFor="bilanName" className="text-sm font-medium text-gray-700">Nom du billon *</Label>
                   <Input
                     id="bilanName"
                     value={bilanName}
@@ -659,10 +659,10 @@ export default function BilanCreation({
 
                 {/* Point Management */}
                 <div className="space-y-3">
-                  <h4 className="font-medium text-sm flex items-center gap-2 text-gray-700">
-                    <MapPin className="h-4 w-4" />
-                    Points du bilan
-                  </h4>
+                                        <h4 className="font-medium text-sm flex items-center gap-2 text-gray-700">
+                        <MapPin className="h-4 w-4" />
+                        Points du billon
+                      </h4>
                   
                   <div className="space-y-2">
                     <div className="flex items-center justify-between text-xs">
@@ -717,7 +717,7 @@ export default function BilanCreation({
                   size="sm"
                 >
                   <CheckCircle className="h-4 w-4 mr-2" />
-                  {isCreating ? "Création..." : "Créer le Bilan"}
+                  {isCreating ? "Création..." : "Créer le Billon"}
                 </Button>
 
                 {/* Error/Success Messages */}
@@ -758,7 +758,7 @@ export default function BilanCreation({
                     <div className="flex items-center gap-2 min-w-0 flex-1">
                       <MapPin className="h-4 w-4 sm:h-5 sm:w-5 text-green-600 flex-shrink-0" />
                       <div className="min-w-0 flex-1">
-                        <h3 className="font-semibold text-sm sm:text-base truncate">Contrôles Bilan GPS</h3>
+                        <h3 className="font-semibold text-sm sm:text-base truncate">Contrôles Billon GPS</h3>
                         <p className="text-xs text-gray-600 truncate">{serreName}</p>
                         <p className="text-xs text-gray-500 mt-1 hidden sm:block">Appuyez sur Échap pour fermer</p>
                     </div>
@@ -780,7 +780,7 @@ export default function BilanCreation({
                   <div className="p-3 sm:p-4 space-y-3 sm:space-y-4">
                       {/* Bilan Name Input */}
                         <div className="space-y-2">
-                      <Label htmlFor="bilanName" className="text-sm font-medium">Nom du Bilan *</Label>
+                      <Label htmlFor="bilanName" className="text-sm font-medium">Nom du Billon *</Label>
                           <Input
                             id="bilanName"
                             value={bilanName}
@@ -874,7 +874,7 @@ export default function BilanCreation({
 
                       {/* Point Management */}
                     <div className="space-y-2">
-                      <h4 className="font-medium text-sm">Points du bilan</h4>
+                      <h4 className="font-medium text-sm">Points du billon</h4>
                         
                         <div className="space-y-2">
                         <div className="flex items-center justify-between text-xs">
@@ -997,7 +997,7 @@ export default function BilanCreation({
                       size="sm"
                         >
                       <CheckCircle className="h-4 w-4 mr-2" />
-                      {isCreating ? "Création..." : "Créer le Bilan"}
+                      {isCreating ? "Création..." : "Créer le Billon"}
                         </Button>
                         
                     {/* Messages */}
@@ -1041,7 +1041,7 @@ export default function BilanCreation({
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-2">
                     <MapPin className="h-5 w-5 text-[#B4CC5F]" />
-                    <h3 className="font-semibold text-gray-900 text-base">Contrôles Bilan GPS</h3>
+                    <h3 className="font-semibold text-gray-900 text-base">Contrôles Billon GPS</h3>
                   </div>
                   <div className="flex items-center space-x-2">
                     <Badge variant={currentLocation ? "default" : "secondary"} className="text-xs bg-green-100 text-green-800">
@@ -1059,7 +1059,7 @@ export default function BilanCreation({
                 <div className="p-4 space-y-4">
                   {/* Bilan Name Input */}
                   <div className="space-y-2">
-                    <Label htmlFor="bilanNameMobile" className="text-sm font-medium text-gray-700">Nom du bilan *</Label>
+                    <Label htmlFor="bilanNameMobile" className="text-sm font-medium text-gray-700">Nom du billon *</Label>
                     <Input
                       id="bilanNameMobile"
                       value={bilanName}
@@ -1112,10 +1112,10 @@ export default function BilanCreation({
 
                   {/* Point Management */}
                   <div className="space-y-3">
-                    <h4 className="font-medium text-gray-900 text-sm flex items-center gap-2">
-                      <MapPin className="h-4 w-4 text-blue-600" />
-                      Points du bilan
-                    </h4>
+                                          <h4 className="font-medium text-gray-900 text-sm flex items-center gap-2">
+                        <MapPin className="h-4 w-4 text-blue-600" />
+                        Points du billon
+                      </h4>
                     <div className="space-y-2">
                       <div className="flex items-center justify-between text-xs">
                         <span className="text-gray-600">Points collectés:</span>
@@ -1170,7 +1170,7 @@ export default function BilanCreation({
                     disabled={!canCreateBilan}
                   >
                     <CheckCircle className="h-4 w-4 mr-2" />
-                    {isCreating ? "Création..." : "Créer le Bilan"}
+                    {isCreating ? "Création..." : "Créer le Billon"}
                   </Button>
 
                   {/* Error/Success Messages */}
@@ -1207,7 +1207,7 @@ export default function BilanCreation({
                   <div className="flex items-center space-x-2">
                     <MapPin className="h-4 w-4 text-[#B4CC5F]" />
                     <div>
-                      <h1 className="text-sm font-semibold text-gray-900">Création de Bilan</h1>
+                      <h1 className="text-sm font-semibold text-gray-900">Création de Billon</h1>
                       <p className="text-xs text-gray-600">{serreName}</p>
                     </div>
                   </div>
@@ -1244,11 +1244,11 @@ export default function BilanCreation({
       <AlertDialog open={showConfirmation} onOpenChange={setShowConfirmation}>
         <AlertDialogContent className="max-w-md mx-4">
           <AlertDialogHeader>
-            <AlertDialogTitle>Confirmer la création du bilan</AlertDialogTitle>
+            <AlertDialogTitle>Confirmer la création du billon</AlertDialogTitle>
             <AlertDialogDescription>
-              Êtes-vous sûr de vouloir créer le bilan "{bilanName}" ?
+              Êtes-vous sûr de vouloir créer le billon "{bilanName}" ?
               <br /><br />
-              <strong>Détails du bilan :</strong>
+              <strong>Détails du billon :</strong>
               <ul className="mt-2 space-y-1 text-sm">
                 <li>• Serre : {serreName}</li>
                 <li>• Points sélectionnés : {selectedPoints.length}/4</li>
@@ -1266,7 +1266,7 @@ export default function BilanCreation({
               disabled={isCreating}
               className="bg-green-600 hover:bg-green-700"
             >
-              {isCreating ? "Création..." : "Créer le Bilan"}
+              {isCreating ? "Création..." : "Créer le Billon"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

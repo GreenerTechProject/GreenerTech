@@ -68,20 +68,20 @@ class TypeTacheService {
     return colors[nom] || 'bg-gray-100 text-gray-800 border-gray-200';
   }
 
-  // Emoji icon mapping
+  // Icon mapping for Lucide React icons
   getTypeIcon(nom: string): string {
     const icons: Record<string, string> = {
-      'Préparation du Sol': '🌱',
-      'Plantation': '🌲',
-      'Palissage': '📏',
-      'Ébourgeonnage': '✂️',
-      'Effeuillage': '🍃',
-      'Éclaircissage': '🔍',
-      'Maintenance': '🔧',
-      'Réparation': '⚡',
-      'Contrôle': '📊',
+      'Préparation du Sol': 'Sprout',
+      'Plantation': 'Tree',
+      'Palissage': 'Ruler',
+      'Ébourgeonnage': 'Scissors',
+      'Effeuillage': 'Leaf',
+      'Éclaircissage': 'Search',
+      'Maintenance': 'Wrench',
+      'Réparation': 'Zap',
+      'Contrôle': 'BarChart3',
     };
-    return icons[nom] || '📋';
+    return icons[nom] || 'ClipboardList';
   }
 }
 

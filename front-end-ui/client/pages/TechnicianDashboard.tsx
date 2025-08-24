@@ -1072,7 +1072,10 @@ export default function TechnicianDashboard() {
                   
                   {/* Efficiency Insights */}
                   <div className="bg-gradient-to-br from-greener-50 to-greener-100 p-3 rounded-xl border border-greener-200">
-                    <h5 className="font-medium text-greener-800 text-sm mb-2">💡 Insight d'optimisation</h5>
+                    <h5 className="font-medium text-greener-800 text-sm mb-2">
+                      <Zap className="inline w-4 h-4 mr-1" />
+                      Insight d'optimisation
+                    </h5>
                     <div className="text-xs text-greener-700">
                       {loading ? "..." : getOptimizationSuggestion()}
                     </div>
@@ -1322,7 +1325,8 @@ export default function TechnicianDashboard() {
               <div className="relative z-10">
                 <h3 className="text-2xl font-bold mb-6 flex items-center gap-3">
                   <div className="w-3 h-3 bg-greener-400 rounded-full animate-pulse"></div>
-                  📊 Indicateurs de performance en temps réel
+                  <BarChart3 className="inline w-6 h-6 mr-2" />
+                  Indicateurs de performance en temps réel
                 </h3>
                 
                 {/* Performance Metrics Grid */}

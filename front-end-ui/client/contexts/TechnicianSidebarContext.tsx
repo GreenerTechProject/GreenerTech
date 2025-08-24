@@ -8,13 +8,13 @@ type TechnicianSidebarContextType = {
 const TechnicianSidebarContext = createContext<TechnicianSidebarContextType | undefined>(undefined);
 
 export function TechnicianSidebarProvider({ children }: { children: React.ReactNode }) {
-  const [isOpen, setIsOpen] = useState(true);
+  const [isOpen, setIsOpen] = useState(false);
 
   useEffect(() => {
     const update = () => {
-      // Open by default on desktop, closed on mobile
+      // Keep collapsed by default on desktop, closed on mobile
       if (typeof window !== "undefined") {
-        setIsOpen(window.innerWidth >= 1024);
+        setIsOpen(false);
       }
     };
 

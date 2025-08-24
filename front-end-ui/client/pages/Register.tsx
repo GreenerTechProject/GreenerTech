@@ -132,7 +132,7 @@ export default function Register() {
           />
         </div>
         <p className="text-center text-gray-600 mb-8">
-          Rejoignez la révolution verte avec GreenerTech 🌱
+          Rejoignez la révolution verte avec GreenerTech
         </p>
 
         {/* Registration Form */}

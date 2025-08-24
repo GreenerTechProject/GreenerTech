@@ -117,7 +117,7 @@ export default function NotificationsPage() {
 
   const getNotificationIcon = (type: string) => {
     if (type.includes('intervention')) {
-      return <Wrench className="h-5 w-5 text-blue-500" />;
+      return <Wrench className="h-5 w-5 text-green-500" />;
     }
     return <ClipboardList className="h-5 w-5 text-gray-500" />;
   };
@@ -147,49 +147,93 @@ export default function NotificationsPage() {
   };
 
   const getBadgeColor = (type: string) => {
-    if (type === 'intervention_creee') return "bg-yellow-100 text-yellow-800";
+    if (type === 'intervention_creee') return "bg-green-100 text-green-800";
     if (type === 'intervention_validee') return "bg-green-100 text-green-800";
     if (type === 'intervention_rejetee') return "bg-red-100 text-red-800";
-    if (type === 'compte_technicien') return "bg-blue-100 text-blue-800";
+    if (type === 'compte_technicien') return "bg-green-100 text-green-800";
     if (type === 'compte_valide') return "bg-purple-100 text-purple-800";
     return "bg-gray-100 text-gray-800";
   };
 
   const getNotificationTime = (dateString: string) => {
+    if (!dateString) return "Date inconnue";
+    
     const date = new Date(dateString);
     const now = new Date();
-    const diffInHours = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60));
     
-    if (diffInHours < 1) {
+    // Check if the date is valid
+    if (isNaN(date.getTime())) {
+      return "Date invalide";
+    }
+    
+    const diffInMs = now.getTime() - date.getTime();
+    const diffInMinutes = Math.floor(diffInMs / (1000 * 60));
+    const diffInHours = Math.floor(diffInMs / (1000 * 60 * 60));
+    const diffInDays = Math.floor(diffInMs / (1000 * 60 * 60 * 24));
+    
+    if (diffInMinutes < 1) {
       return "À l'instant";
+    } else if (diffInMinutes < 60) {
+      return `Il y a ${diffInMinutes}min`;
     } else if (diffInHours < 24) {
       return `Il y a ${diffInHours}h`;
+    } else if (diffInDays < 7) {
+      return `Il y a ${diffInDays}j`;
     } else {
+      // For older notifications, show the actual date
       return date.toLocaleDateString('fr-FR', { 
         day: '2-digit', 
-        month: '2-digit', 
-        hour: '2-digit', 
-        minute: '2-digit' 
+        month: '2-digit',
+        year: 'numeric'
       });
     }
   };
 
   const getNotificationTypeLabel = (type: string) => {
     const typeLabels: { [key: string]: string } = {
-      'intervention': '🔧 Intervention',
-      'intervention_creee': '🆕 Intervention créée',
-      'intervention_validee': '✅ Intervention validée',
-      'success': '✅ Succès',
-      'info': 'ℹ️ Information',
-      'reminder': '⏰ Rappel',
-      'warning': '⚠️ Avertissement',
-      'error': '❌ Erreur'
+      'intervention': 'Intervention',
+      'intervention_creee': 'Intervention créée',
+      'intervention_validee': 'Intervention validée',
+      'success': 'Succès',
+      'info': 'Information',
+      'reminder': 'Rappel',
+      'warning': 'Avertissement',
+      'error': 'Erreur'
     };
     return typeLabels[type] || type;
   };
 
   const formatDate = (dateString: string) => {
+    if (!dateString) return "Date inconnue";
+    
     const date = new Date(dateString);
+    
+    // Check if the date is valid
+    if (isNaN(date.getTime())) {
+      return "Date invalide";
+    }
+    
+    const now = new Date();
+    const diffInMs = now.getTime() - date.getTime();
+    const diffInDays = Math.floor(diffInMs / (1000 * 60 * 60 * 24));
+    
+    // If it's today, show time only
+    if (diffInDays === 0) {
+      return `Aujourd'hui à ${date.toLocaleTimeString('fr-FR', {
+        hour: '2-digit',
+        minute: '2-digit'
+      })}`;
+    }
+    
+    // If it's yesterday, show "Hier à HH:MM"
+    if (diffInDays === 1) {
+      return `Hier à ${date.toLocaleTimeString('fr-FR', {
+        hour: '2-digit',
+        minute: '2-digit'
+      })}`;
+    }
+    
+    // For other dates, show full date and time
     return date.toLocaleDateString('fr-FR', {
       day: '2-digit',
       month: '2-digit',
@@ -207,7 +251,7 @@ export default function NotificationsPage() {
         {/* Header */}
         <div className="mb-6">
           <div className="flex items-center gap-3 mb-2">
-            <Bell className="h-8 w-8 text-blue-600" />
+            <Bell className="h-8 w-8 text-green-600" />
             <h1 className="text-2xl font-bold text-gray-900">Notifications</h1>
           </div>
           <p className="text-gray-600">Gérez toutes vos notifications et demandes d'intervention</p>
@@ -217,8 +261,8 @@ export default function NotificationsPage() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
           <div className="bg-white rounded-lg p-4 border border-gray-200">
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-blue-100 rounded-lg">
-                <Bell className="h-5 w-5 text-blue-600" />
+              <div className="p-2 bg-green-100 rounded-lg">
+                <Bell className="h-5 w-5 text-green-600" />
               </div>
               <div>
                 <p className="text-sm text-gray-600">Total</p>
@@ -229,12 +273,12 @@ export default function NotificationsPage() {
           
           <div className="bg-white rounded-lg p-4 border border-gray-200">
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-yellow-100 rounded-lg">
-                <Circle className="h-5 w-5 text-yellow-600" />
+              <div className="p-2 bg-green-100 rounded-lg">
+                <Circle className="h-5 w-5 text-green-600" />
               </div>
               <div>
                 <p className="text-sm text-gray-600">Non lues</p>
-                <p className="text-2xl font-bold text-yellow-600">{stats.unread}</p>
+                <p className="text-2xl font-bold text-green-600">{stats.unread}</p>
               </div>
             </div>
           </div>
@@ -286,7 +330,7 @@ export default function NotificationsPage() {
         <div className="bg-white rounded-lg border border-gray-200">
           {loading ? (
             <div className="p-8 text-center">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600 mx-auto mb-4"></div>
               <p className="text-gray-500">Chargement des notifications...</p>
             </div>
           ) : filteredNotifications.length === 0 ? (
@@ -316,7 +360,7 @@ export default function NotificationsPage() {
                   className={cn(
                     "p-4 cursor-pointer transition-colors hover:bg-gray-50",
                     notification.status === 'non_vue' 
-                      ? "bg-blue-50 border-l-4 border-l-blue-500" 
+                      ? "bg-green-50 border-l-4 border-l-green-500" 
                       : "bg-white"
                   )}
                 >
@@ -339,7 +383,7 @@ export default function NotificationsPage() {
                               {getNotificationBadge(notification.type_notification)}
                             </Badge>
                             {notification.status === 'non_vue' && (
-                              <Badge variant="default" className="bg-blue-600 text-white text-xs">
+                              <Badge variant="default" className="bg-green-600 text-white text-xs">
                                 Nouveau
                               </Badge>
                             )}
@@ -354,17 +398,26 @@ export default function NotificationsPage() {
                         <div className="flex items-center gap-4 text-xs text-gray-500">
                           <div className="flex items-center gap-1">
                             <Clock className="h-3 w-3" />
-                            <span>{getNotificationTime(notification.date)}</span>
+                            <span className="font-medium">{getNotificationTime(notification.date)}</span>
                           </div>
                           <span>•</span>
-                          <span>{formatDate(notification.date)}</span>
+                          <span className="text-gray-600" title={`Créée le ${new Date(notification.date).toLocaleDateString('fr-FR', {
+                            weekday: 'long',
+                            year: 'numeric',
+                            month: 'long',
+                            day: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                          })}`}>
+                            {formatDate(notification.date)}
+                          </span>
                         </div>
                         
                         {notification.status === 'non_vue' && (
                           <Button
                             variant="ghost"
                             size="sm"
-                            className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                            className="text-green-600 hover:text-green-700 hover:bg-green-50"
                             onClick={(e) => {
                               e.stopPropagation();
                               handleNotificationClick(notification);

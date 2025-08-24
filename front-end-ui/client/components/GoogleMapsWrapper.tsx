@@ -27,7 +27,7 @@ function GoogleMapsContent({ children }: { children: React.ReactNode }) {
     return (
       <div className="flex items-center justify-center h-full min-h-[500px]">
         <div className="text-center">
-          <div className="text-red-500 text-lg mb-2">⚠️ Erreur de chargement</div>
+          <div className="text-red-500 text-lg mb-2">Erreur de chargement</div>
           <p className="text-sm text-gray-600">Impossible de charger Google Maps</p>
           <p className="text-xs text-gray-500 mt-1">{loadError.message}</p>
           <button 

@@ -162,7 +162,7 @@ export default function BilanMapComponent({
         <CardHeader className="pb-3 flex-shrink-0">
           <CardTitle className="flex items-center gap-2 text-sm sm:text-base lg:text-lg">
             <Route className="h-4 w-4 sm:h-5 sm:w-5" />
-            Carte Interactive du Bilan
+            Carte Interactive du Billon
             {isTracking && (
               <Badge variant="secondary" className="ml-2 animate-pulse text-xs sm:text-sm">
                 <Navigation className="h-3 w-3 mr-1" />
@@ -190,13 +190,13 @@ export default function BilanMapComponent({
         <CardHeader className="pb-3 flex-shrink-0">
           <CardTitle className="flex items-center gap-2 text-sm sm:text-base lg:text-lg">
             <Route className="h-4 w-4 sm:h-5 sm:w-5" />
-            Carte Interactive du Bilan
+            Carte Interactive du Billon
           </CardTitle>
         </CardHeader>
         <CardContent className="p-0 flex-1 min-h-0">
           <div className="flex items-center justify-center h-full">
             <div className="text-center">
-              <div className="text-red-500 text-base sm:text-lg mb-2">⚠️ Erreur de chargement</div>
+              <div className="text-red-500 text-base sm:text-lg mb-2">Erreur de chargement</div>
               <p className="text-xs sm:text-sm text-gray-600">Impossible de charger Google Maps</p>
               <p className="text-xs text-gray-500 mt-1">{loadError.message}</p>
               <button 
@@ -217,8 +217,8 @@ export default function BilanMapComponent({
       <CardHeader className="pb-2 sm:pb-3 flex-shrink-0">
         <CardTitle className="flex items-center gap-2 text-sm sm:text-base lg:text-lg">
           <Route className="h-4 w-4 sm:h-5 sm:w-5" />
-          <span className="hidden sm:inline">Carte Interactive du Bilan</span>
-          <span className="sm:hidden">Bilan</span>
+          <span className="hidden sm:inline">Carte Interactive du Billon</span>
+          <span className="sm:hidden">Billon</span>
           {isTracking && (
             <Badge variant="secondary" className="ml-2 animate-pulse text-xs sm:text-sm">
               <Navigation className="h-3 w-3 mr-1" />
@@ -330,7 +330,7 @@ export default function BilanMapComponent({
                   `),
                   scaledSize: new google.maps.Size(32, 32),
                 }}
-                title={`Point ${point.ordre} du bilan`}
+                title={`Point ${point.ordre} du billon`}
               />
             ))}
 
@@ -367,7 +367,7 @@ export default function BilanMapComponent({
                 </div>
                 <div className="flex items-center gap-1 sm:gap-2">
                   <div className="w-3 h-3 sm:w-4 sm:h-4 rounded-full bg-yellow-500"></div>
-                  <span className="text-gray-700 text-xs sm:text-sm">Points du bilan</span>
+                  <span className="text-gray-700 text-xs sm:text-sm">Points du billon</span>
                 </div>
                 <div className="flex items-center gap-1 sm:gap-2">
                   <div className="w-2 h-0.5 sm:w-3 sm:h-0.5 bg-blue-500"></div>

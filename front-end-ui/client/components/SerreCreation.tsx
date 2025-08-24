@@ -734,12 +734,12 @@ export default function SerreCreation({
 
               {/* Guide form validation */}
               <div className="text-xs text-gray-600 mt-2">
-                {!guideForm.nom && <p className="text-amber-600">⚠️ Nom requis</p>}
-                {!guideForm.variete && <p className="text-amber-600">⚠️ Variété requise</p>}
-                {!guideForm.rendement && <p className="text-amber-600">⚠️ Rendement requis</p>}
-                {!guideForm.nombre_de_plants && <p className="text-amber-600">⚠️ Nombre de plants requis</p>}
-                {!guideForm.date_debut_saison && <p className="text-amber-600">⚠️ Date de début requise</p>}
-                {!guideForm.date_fin_saison && <p className="text-amber-600">⚠️ Date de fin requise</p>}
+                {!guideForm.nom && <p className="text-amber-600">Nom requis</p>}
+                {!guideForm.variete && <p className="text-amber-600">Variété requise</p>}
+                {!guideForm.rendement && <p className="text-amber-600">Rendement requis</p>}
+                {!guideForm.nombre_de_plants && <p className="text-amber-600">Nombre de plants requis</p>}
+                {!guideForm.date_debut_saison && <p className="text-amber-600">Date de début requise</p>}
+                {!guideForm.date_fin_saison && <p className="text-amber-600">Date de fin requise</p>}
               </div>
             </div>
           </div>

@@ -72,7 +72,7 @@ export default function RoleSelection() {
           />
         </div>
         <p className="text-center text-gray-600 mb-8">
-          Rejoignez la révolution verte avec GreenerTech 🌱
+          Rejoignez la révolution verte avec GreenerTech
         </p>
 
         {/* Role Selection Form */}

@@ -75,7 +75,7 @@ export default function Index() {
           />
         </div>
         <p className="text-center text-gray-600 mb-8">
-          Rejoignez la révolution verte avec GreenerTech 🌱
+          Rejoignez la révolution verte avec GreenerTech
         </p>
 
         {/* Login Form */}
@@ -97,13 +97,13 @@ export default function Index() {
                 </svg>
               </div>
               <div className="ml-3">
-                <h3 className="text-sm font-medium mb-2">
-                  ⏳ COMPTE NON ACTIVÉ
-                </h3>
+                                  <h3 className="text-sm font-medium mb-2">
+                    COMPTE NON ACTIVÉ
+                  </h3>
                 <p className="text-sm">{errorMsg}</p>
                 <div className="bg-amber-100 p-3 rounded-md mt-2">
                   <p className="text-xs font-medium text-amber-800 mb-1">
-                    💡 Que faire maintenant ?
+                    Que faire maintenant ?
                   </p>
                   <ul className="text-xs text-amber-700 space-y-1">
                     <li>• Vérifiez votre email et cliquez sur le lien de confirmation</li>

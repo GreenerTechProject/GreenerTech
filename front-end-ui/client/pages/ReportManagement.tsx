@@ -272,7 +272,7 @@ export default function ReportManagement() {
       {
         id: "4",
         name: "Rapports annuels",
-        description: "Synthèses et bilans annuels",
+        description: "Synthèses et billons annuels",
         createdDate: "2024-01-01",
         reportCount: 3
       }

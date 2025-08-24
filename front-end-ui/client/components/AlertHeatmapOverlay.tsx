@@ -3,7 +3,7 @@ import { Marker, InfoWindow } from '@react-google-maps/api';
 import { Alert } from '@/types/alert';
 import { AlertService } from '@/services/alertService';
 import { bilanService, Bilan } from '@/services/bilanService';
-import { AlertTriangle, MapPin, Circle as CircleIcon, Clock, Image as ImageIcon } from 'lucide-react';
+import { AlertTriangle, MapPin, Circle as CircleIcon, Clock, Image as ImageIcon, Search, RefreshCw, Target, MapPin as MapPinIcon, Flame, AlertCircle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -153,11 +153,11 @@ export default function AlertHeatmapOverlay({
 
   // Function to create native Google Maps heatmap with custom gradient
   const createNativeHeatmap = useCallback((map: google.maps.Map, points: HeatmapPoint[]) => {
-    console.log('🔍 [AlertHeatmapOverlay] Creating heatmap with points:', points.length);
+    console.log('[AlertHeatmapOverlay] Creating heatmap with points:', points.length);
     
     // Check if visualization library is available
     if (!google.maps.visualization || !google.maps.visualization.HeatmapLayer) {
-      console.error('❌ [AlertHeatmapOverlay] Google Maps visualization library not available');
+      console.error('[AlertHeatmapOverlay] Google Maps visualization library not available');
       return;
     }
     
@@ -167,12 +167,12 @@ export default function AlertHeatmapOverlay({
     }
 
     if (points.length === 0) {
-      console.log('⚠️ [AlertHeatmapOverlay] No points to create heatmap');
+      console.log('[AlertHeatmapOverlay] No points to create heatmap');
       return;
     }
 
     try {
-      console.log('✅ [AlertHeatmapOverlay] Creating heatmap layer...');
+      console.log('[AlertHeatmapOverlay] Creating heatmap layer...');
       
       // Create heatmap data in the format expected by Google Maps
       const heatmapData = points.map(point => ({
@@ -198,7 +198,7 @@ export default function AlertHeatmapOverlay({
         dissipating: false // Disable dissipating for more consistent visibility
       });
       
-      console.log('✅ [AlertHeatmapOverlay] Heatmap created successfully');
+      console.log('[AlertHeatmapOverlay] Heatmap created successfully');
       
       // Add zoom level listener to adjust heatmap visibility
       const zoomListener = map.addListener('zoom_changed', () => {
@@ -221,18 +221,18 @@ export default function AlertHeatmapOverlay({
       setTimeout(() => {
         if (heatmapRef.current) {
           heatmapRef.current.setMap(map);
-          console.log('🔄 [AlertHeatmapOverlay] Heatmap redrawn');
+          console.log('[AlertHeatmapOverlay] Heatmap redrawn');
         }
       }, 100);
       
     } catch (error) {
-      console.error('❌ [AlertHeatmapOverlay] Heatmap creation failed:', error);
+      console.error('[AlertHeatmapOverlay] Heatmap creation failed:', error);
     }
   }, []);
 
   // Load alerts and bilans for the serre
   useEffect(() => {
-    console.log(`🚀 [AlertHeatmapOverlay] Loading data for serre ${serreId}`);
+    console.log(`[AlertHeatmapOverlay] Loading data for serre ${serreId}`);
     
     const loadSerreData = async () => {
       try {
@@ -243,7 +243,7 @@ export default function AlertHeatmapOverlay({
         let serreBilans: Bilan[] = [];
         try {
           const bilansResponse = await bilanService.getBilansBySerre(serreId);
-          console.log(`📊 [AlertHeatmapOverlay] Loaded ${Array.isArray(bilansResponse) ? bilansResponse.length : 0} bilans`);
+          console.log(`[AlertHeatmapOverlay] Loaded ${Array.isArray(bilansResponse) ? bilansResponse.length : 0} bilans`);
           
           // Ensure we have an array of bilans
           if (Array.isArray(bilansResponse)) {
@@ -254,7 +254,7 @@ export default function AlertHeatmapOverlay({
             serreBilans = [];
           }
         } catch (bilanError) {
-          console.error(`❌ [AlertHeatmapOverlay] Error loading bilans:`, bilanError);
+          console.error(`[AlertHeatmapOverlay] Error loading bilans:`, bilanError);
           serreBilans = [];
         }
         
@@ -290,9 +290,9 @@ export default function AlertHeatmapOverlay({
             }
           }
           
-          console.log(`🎯 [AlertHeatmapOverlay] Filtered to ${serreAlerts.length} alerts for this serre`);
+          console.log(`[AlertHeatmapOverlay] Filtered to ${serreAlerts.length} alerts for this serre`);
         } catch (alertError) {
-          console.error(`❌ [AlertHeatmapOverlay] Error loading alerts:`, alertError);
+          console.error(`[AlertHeatmapOverlay] Error loading alerts:`, alertError);
           serreAlerts = [];
         }
         
@@ -327,7 +327,7 @@ export default function AlertHeatmapOverlay({
                 const level = getAlertLevel(alert.status_alert);
                 const weight = getAlertWeight(alert.status_alert);
 
-                console.log(`📍 [AlertHeatmapOverlay] Processing alert ${alert.id}: level=${level}, weight=${weight}, coords=(${actualCoords.lat.toFixed(6)}, ${actualCoords.lng.toFixed(6)})`);
+                console.log(`[AlertHeatmapOverlay] Processing alert ${alert.id}: level=${level}, weight=${weight}, coords=(${actualCoords.lat.toFixed(6)}, ${actualCoords.lng.toFixed(6)})`);
 
             markers.push({
               id: alert.id,
@@ -343,17 +343,17 @@ export default function AlertHeatmapOverlay({
               weight
             });
               } else {
-                console.log(`⚠️ [AlertHeatmapOverlay] Alert ${alert.id} outside range: latDiff=${latDiff.toFixed(6)}, lngDiff=${lngDiff.toFixed(6)}`);
+                console.log(`[AlertHeatmapOverlay] Alert ${alert.id} outside range: latDiff=${latDiff.toFixed(6)}, lngDiff=${lngDiff.toFixed(6)}`);
               }
                     } catch (coordError) {
-          console.error(`❌ [AlertHeatmapOverlay] Error processing alert ${alert.id}:`, coordError);
+                        console.error(`[AlertHeatmapOverlay] Error processing alert ${alert.id}:`, coordError);
         }
           } else {
-            console.log(`⚠️ [AlertHeatmapOverlay] Alert ${alert.id} missing required properties: x1=${alert.x1}, y1=${alert.y1}, status_alert=${alert.status_alert}`);
+                          console.log(`[AlertHeatmapOverlay] Alert ${alert.id} missing required properties: x1=${alert.x1}, y1=${alert.y1}, status_alert=${alert.status_alert}`);
           }
         });
 
-        console.log(`📊 [AlertHeatmapOverlay] Processed ${markers.length} markers and ${heatmapData.length} heatmap points`);
+                  console.log(`[AlertHeatmapOverlay] Processed ${markers.length} markers and ${heatmapData.length} heatmap points`);
 
         // If no alerts with coordinates, no heatmap will be displayed
 
@@ -364,11 +364,11 @@ export default function AlertHeatmapOverlay({
         if (map && heatmapData.length > 0) {
           // Only create heatmap if we have at least 1 point to prevent full map coverage
           if (heatmapData.length >= 1) {
-            console.log(`🔥 [AlertHeatmapOverlay] Creating heatmap with ${heatmapData.length} points`);
+            console.log(`[AlertHeatmapOverlay] Creating heatmap with ${heatmapData.length} points`);
             createNativeHeatmap(map, heatmapData);
           }
         } else {
-          console.log(`⚠️ [AlertHeatmapOverlay] Cannot create heatmap: map=${!!map}, points=${heatmapData.length}`);
+          console.log(`[AlertHeatmapOverlay] Cannot create heatmap: map=${!!map}, points=${heatmapData.length}`);
         }
 
       } catch (err: any) {
@@ -386,12 +386,12 @@ export default function AlertHeatmapOverlay({
 
   // Effect to create heatmap when map becomes available
   useEffect(() => {
-    console.log(`🔄 [AlertHeatmapOverlay] Map effect triggered: map=${!!map}, points=${heatmapPoints.length}`);
+            console.log(`[AlertHeatmapOverlay] Map effect triggered: map=${!!map}, points=${heatmapPoints.length}`);
     
     if (map && heatmapPoints.length > 0) {
       // Only create heatmap if we have at least 1 point to prevent full map coverage
       if (heatmapPoints.length >= 1) {
-        console.log(`🔥 [AlertHeatmapOverlay] Creating heatmap from effect with ${heatmapPoints.length} points`);
+                  console.log(`[AlertHeatmapOverlay] Creating heatmap from effect with ${heatmapPoints.length} points`);
         // Add a small delay to ensure Google Maps API is fully loaded
         const timer = setTimeout(() => {
           createNativeHeatmap(map, heatmapPoints);
@@ -400,7 +400,7 @@ export default function AlertHeatmapOverlay({
         return () => clearTimeout(timer);
       }
     } else {
-      console.log(`⚠️ [AlertHeatmapOverlay] Map effect conditions not met: map=${!!map}, points=${heatmapPoints.length}`);
+              console.log(`[AlertHeatmapOverlay] Map effect conditions not met: map=${!!map}, points=${heatmapPoints.length}`);
     }
   }, [map, heatmapPoints, createNativeHeatmap]);
 
@@ -517,7 +517,7 @@ export default function AlertHeatmapOverlay({
             anchor: new google.maps.Point(8, 8)
           }}
           onClick={() => handleMarkerClick(marker)}
-          title={`${marker.level} - ${marker.alert.maladie} - ${marker.bilan?.nom || 'Bilan inconnu'}`}
+          title={`${marker.level} - ${marker.alert.maladie} - ${marker.bilan?.nom || 'Billon inconnu'}`}
         />
       ))}
 
@@ -562,9 +562,9 @@ export default function AlertHeatmapOverlay({
                   </Badge>
                    </div>
                    
-                {/* Bilan Name */}
+                {/* Billon Name */}
                 <div className="text-xs text-gray-600">
-                  <span className="font-medium">Bilan:</span> {selectedAlert.bilan?.nom || 'Inconnu'}
+                  <span className="font-medium">Billon:</span> {selectedAlert.bilan?.nom || 'Inconnu'}
                  </div>
                  
                  {/* Status */}

@@ -14,7 +14,13 @@ import {
   Plus,
   Filter,
   X,
-  RefreshCw
+  RefreshCw,
+  Sprout,
+  Zap,
+  Ribbon,
+  Leaf,
+  Target,
+  Wrench
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
@@ -39,16 +45,16 @@ interface InterventionType {
   id: number;
   nom: string;
   couleur: string;
-  icone: string;
+  icone: React.ComponentType<{ className?: string }>;
 }
 
 const interventionTypes: InterventionType[] = [
-  { id: 1, nom: "Préparation du Sol", couleur: "bg-green-500", icone: "🌱" },
-  { id: 2, nom: "Plantation", couleur: "bg-blue-500", icone: "🪴" },
-  { id: 3, nom: "Palissage", couleur: "bg-orange-500", icone: "⚡" },
-  { id: 4, nom: "Ébourgeonnage", couleur: "bg-purple-500", icone: "🎗️" },
-  { id: 5, nom: "Effeuillage", couleur: "bg-green-600", icone: "🍃" },
-  { id: 6, nom: "Éclaircissage", couleur: "bg-orange-600", icone: "🎯" }
+  { id: 1, nom: "Préparation du Sol", couleur: "bg-green-500", icone: Sprout },
+  { id: 2, nom: "Plantation", couleur: "bg-blue-500", icone: Sprout },
+  { id: 3, nom: "Palissage", couleur: "bg-orange-500", icone: Zap },
+  { id: 4, nom: "Ébourgeonnage", couleur: "bg-purple-500", icone: Ribbon },
+  { id: 5, nom: "Effeuillage", couleur: "bg-green-600", icone: Leaf },
+  { id: 6, nom: "Éclaircissage", couleur: "bg-orange-600", icone: Target }
 ];
 
 export default function InterventionManagement() {
@@ -85,7 +91,7 @@ export default function InterventionManagement() {
           id_serre: 1,
           serre_nom: "Serre B1",
           domaine_nom: "Domaine Sud",
-          bilan_trimestre: "Bilan Q1",
+          bilan_trimestre: "Billon Q1",
           statut: "En cours",
           actions: "Programmé",
           date_creation: "2024-01-20",
@@ -100,7 +106,7 @@ export default function InterventionManagement() {
           id_serre: 2,
           serre_nom: "Serre A2",
           domaine_nom: "Domaine Nord",
-          bilan_trimestre: "Bilan Q2",
+          bilan_trimestre: "Billon Q2",
           statut: "Terminé",
           actions: "Programmé",
           date_creation: "2024-01-22",
@@ -115,7 +121,7 @@ export default function InterventionManagement() {
           id_serre: 3,
           serre_nom: "Serre C3",
           domaine_nom: "Domaine Est",
-          bilan_trimestre: "Bilan Q3",
+          bilan_trimestre: "Billon Q3",
           statut: "En cours",
           actions: "Programmé",
           date_creation: "2024-01-24",
@@ -130,7 +136,7 @@ export default function InterventionManagement() {
           id_serre: 4,
           serre_nom: "Serre D4",
           domaine_nom: "Domaine Ouest",
-          bilan_trimestre: "Bilan Q3",
+          bilan_trimestre: "Billon Q3",
           statut: "En cours",
           actions: "Programmé",
           date_creation: "2024-01-22",
@@ -145,7 +151,7 @@ export default function InterventionManagement() {
           id_serre: 5,
           serre_nom: "Serre E5",
           domaine_nom: "Domaine Central",
-          bilan_trimestre: "Bilan Q2",
+          bilan_trimestre: "Billon Q2",
           statut: "Terminé",
           actions: "Programmé",
           date_creation: "2024-01-25",
@@ -160,7 +166,7 @@ export default function InterventionManagement() {
           id_serre: 6,
           serre_nom: "Serre F6",
           domaine_nom: "Domaine Nord",
-          bilan_trimestre: "Bilan Q4",
+          bilan_trimestre: "Billon Q4",
           statut: "En cours",
           actions: "Programmé",
           date_creation: "2024-01-28",
@@ -509,7 +515,10 @@ export default function InterventionManagement() {
                       <td className="py-3 px-4">
                         <div className="flex items-center gap-2">
                           <span className="text-lg">
-                            {interventionTypes.find(t => t.nom === intervention.type)?.icone || "🔧"}
+                            {(() => {
+                              const IconComponent = interventionTypes.find(t => t.nom === intervention.type)?.icone;
+                              return IconComponent ? <IconComponent className="h-5 w-5" /> : <Wrench className="h-5 w-5" />;
+                            })()}
                           </span>
                           {intervention.type}
                         </div>

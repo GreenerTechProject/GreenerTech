@@ -56,7 +56,7 @@ export default function InterventionForm({
   
   // Debug form data changes
   useEffect(() => {
-    console.log("📝 Form data updated:", formData);
+    console.log("Form data updated:", formData);
   }, [formData]);
 
   const [errors, setErrors] = useState<Partial<InterventionData>>({});
@@ -68,9 +68,9 @@ export default function InterventionForm({
   const [loadingTypeTaches, setLoadingTypeTaches] = useState(false);
 
   useEffect(() => {
-    console.log("🔍 useEffect triggered, isOpen:", isOpen);
+    console.log("useEffect triggered, isOpen:", isOpen);
     if (isOpen) {
-      console.log("🚀 Form opening, fetching data...");
+      console.log("Form opening, fetching data...");
       fetchSerres();
       fetchTypeTaches();
       setTimeout(() => {
@@ -80,45 +80,45 @@ export default function InterventionForm({
         }
       }, 300);
     } else {
-      console.log("🚪 Form closing, resetting data");
+      console.log("Form closing, resetting data");
     }
   }, [isOpen]);
 
   const fetchSerres = async () => {
     try {
-      console.log("🔄 Starting to fetch serres...");
+      console.log("Starting to fetch serres...");
       setLoadingSerres(true);
       
       // Try the primary method first
       let userSerres;
       try {
         userSerres = await serreService.getSerresByCurrentUser();
-        console.log("📦 Serres fetched via getSerresByCurrentUser:", userSerres);
+        console.log("Serres fetched via getSerresByCurrentUser:", userSerres);
       } catch (primaryError) {
-        console.warn("⚠️ Primary method failed, trying fallback:", primaryError);
+        console.warn("Primary method failed, trying fallback:", primaryError);
         // Fallback to getSerresByUser method
         userSerres = await serreService.getSerresByUser();
-        console.log("📦 Serres fetched via fallback getSerresByUser:", userSerres);
+        console.log("Serres fetched via fallback getSerresByUser:", userSerres);
       }
       
       if (userSerres && userSerres.length > 0) {
         setSerres(userSerres.map(serre => ({ id: serre.id, nom: serre.nom })));
-        console.log("✅ Serres state updated:", userSerres.map(serre => ({ id: serre.id, nom: serre.nom })));
+        console.log("Serres state updated:", userSerres.map(serre => ({ id: serre.id, nom: serre.nom })));
       } else {
-        console.warn("⚠️ No serres found for user");
+        console.warn("No serres found for user");
         setSerres([]);
       }
     } catch (error) {
-      console.error("❌ Error fetching serres:", error);
+      console.error("Error fetching serres:", error);
       toast({
-        title: "❌ Erreur",
+        title: "Erreur",
         description: "Impossible de charger la liste des serres.",
         variant: "destructive",
       });
       setSerres([]);
     } finally {
       setLoadingSerres(false);
-      console.log("🔓 Loading state set to false");
+      console.log("Loading state set to false");
     }
   };
 
@@ -130,7 +130,7 @@ export default function InterventionForm({
     } catch (error) {
       console.error("Error fetching type taches:", error);
       toast({
-        title: "❌ Erreur",
+        title: "Erreur",
         description: "Impossible de charger la liste des types de tâches.",
         variant: "destructive",
       });
@@ -165,19 +165,19 @@ export default function InterventionForm({
       }
     }
 
-    console.log("🔍 Form validation errors:", newErrors);
+          console.log("Form validation errors:", newErrors);
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
   const handleSubmit = async () => {
-    console.log("🚀 Submit button clicked");
-    console.log("📝 Current form data:", formData);
+          console.log("Submit button clicked");
+      console.log("Current form data:", formData);
     
     if (validateForm()) {
       setIsSubmitting(true);
       try {
-        console.log("📝 Form data before mapping:", formData);
+        console.log("Form data before mapping:", formData);
         console.log("💰 Estimated charges value:", formData.estimatedCharges);
         console.log("💰 Estimated charges type:", typeof formData.estimatedCharges);
         
@@ -189,7 +189,7 @@ export default function InterventionForm({
             totalCharges = parsed;
             console.log("💰 Parsed charges value:", parsed);
           } else {
-            console.warn("⚠️ Invalid charges value:", formData.estimatedCharges);
+            console.warn("Invalid charges value:", formData.estimatedCharges);
           }
         } else {
           console.log("💰 No charges provided, using default 0.0");
@@ -204,7 +204,7 @@ export default function InterventionForm({
           // date_fin is optional and not set initially
         };
 
-        console.log("🔄 Backend request data:", createRequest);
+        console.log("Backend request data:", createRequest);
         console.log("💰 Total charges in request:", createRequest.total_charges);
         console.log("💰 Total charges type:", typeof createRequest.total_charges);
         console.log("💰 Validated charges value:", totalCharges);
@@ -232,7 +232,7 @@ export default function InterventionForm({
         // Create intervention using the service
         const createdIntervention = await InterventionService.createIntervention(createRequest);
         
-        console.log("✅ Intervention created successfully:", createdIntervention);
+        console.log("Intervention created successfully:", createdIntervention);
         console.log("📊 Backend response data:", createdIntervention);
         console.log("💰 Total charges in response:", createdIntervention.total_charges);
         
@@ -240,7 +240,7 @@ export default function InterventionForm({
         onSubmit?.(formData);
         
         toast({
-          title: "✅ Intervention créée",
+          title: "Intervention créée",
           description: "Votre demande d'intervention a été envoyée avec succès.",
           duration: 3000,
         });
@@ -249,8 +249,8 @@ export default function InterventionForm({
           handleClose();
         }, 1500);
       } catch (error) {
-        console.error("❌ Error creating intervention:", error);
-        console.error("❌ Error details:", {
+        console.error("Error creating intervention:", error);
+        console.error("Error details:", {
           message: error instanceof Error ? error.message : 'Unknown error',
           error: error
         });
@@ -292,7 +292,7 @@ export default function InterventionForm({
   };
 
   const updateFormData = (field: keyof InterventionData, value: string) => {
-    console.log(`🔄 Updating ${field}:`, value);
+            console.log(`Updating ${field}:`, value);
     setFormData(prev => ({ ...prev, [field]: value }));
     if (errors[field]) {
       setErrors(prev => ({ ...prev, [field]: undefined }));

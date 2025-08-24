@@ -40,6 +40,9 @@ import {
   BookOpen,
   BarChart3,
   TrendingUp,
+  AlertTriangle,
+  Search,
+  Building,
 } from "lucide-react";
 import TechnicianSidebar from "../components/TechnicianSidebar";
 import InterventionForm from "../components/InterventionForm";
@@ -1003,7 +1006,7 @@ export default function TechnicianMap() {
                           </h4>
                         </div>
                         <p className="text-sm text-gray-600">
-                          Utilisez le formulaire de création de bilan qui s'affiche à droite.
+                          Utilisez le formulaire de création de billon qui s'affiche à droite.
                         </p>
                         <Button
                           onClick={() => setIsCreatingBilan(false)}
@@ -1027,7 +1030,7 @@ export default function TechnicianMap() {
                   <CardHeader className="pb-3">
                     <CardTitle className="text-lg text-greener-700 flex items-center space-x-2">
                       <MapPin className="h-5 w-5" />
-                      <span>Création de bilan</span>
+                      <span>Création de billon</span>
                     </CardTitle>
                   </CardHeader>
                   <CardContent className={isMobile ? "p-0 h-full" : ""}>
@@ -1170,7 +1173,7 @@ export default function TechnicianMap() {
                                     showAlertHeatmap ? "text-red-100" : "text-emerald-100"
                                   )} />
                                   <span className="font-medium">
-                                    {showAlertHeatmap ? '🔥 Masquer Alertes' : '🔍 Voir Carte des Alertes'}
+                                    {showAlertHeatmap ? 'Masquer Alertes' : 'Voir Carte des Alertes'}
                                   </span>
                                 </div>
                                 
@@ -1211,7 +1214,7 @@ export default function TechnicianMap() {
                                     showBillons ? "text-yellow-100" : "text-gray-100"
                                   )} />
                                   <span className="font-medium">
-                                    {showBillons ? '📊 Masquer Billons' : '📊 Voir Billons'}
+                                    {showBillons ? 'Masquer Billons' : 'Voir Billons'}
                                   </span>
                                 </div>
                                 
@@ -1252,7 +1255,7 @@ export default function TechnicianMap() {
                                     showSerreBoundaries ? "text-blue-100" : "text-gray-100"
                                   )} />
                                   <span className="font-medium">
-                                    {showSerreBoundaries ? '🏗️ Masquer Limites' : '🏗️ Voir Limites'}
+                                    {showSerreBoundaries ? 'Masquer Limites' : 'Voir Limites'}
                                   </span>
                                 </div>
                                 
@@ -1323,7 +1326,7 @@ export default function TechnicianMap() {
                           showAlertHeatmap ? "text-red-100" : "text-emerald-100"
                         )} />
                         <span className="font-semibold text-base">
-                          {showAlertHeatmap ? ' Alertes Actives - Cliquer pour Masquer' : '🔍 Activer la Carte des Alertes'}
+                          {showAlertHeatmap ? ' Alertes Actives - Cliquer pour Masquer' : 'Activer la Carte des Alertes'}
                         </span>
                       </div>
                       
@@ -1362,7 +1365,7 @@ export default function TechnicianMap() {
                           showBillons ? "text-yellow-100" : "text-gray-100"
                         )} />
                         <span className="font-semibold text-base">
-                          {showBillons ? ' Billons Visibles - Cliquer pour Masquer' : '📊 Afficher les Billons'}
+                          {showBillons ? ' Billons Visibles - Cliquer pour Masquer' : 'Afficher les Billons'}
                         </span>
                       </div>
                       
@@ -1401,7 +1404,7 @@ export default function TechnicianMap() {
                           showSerreBoundaries ? "text-blue-100" : "text-gray-100"
                         )} />
                         <span className="font-semibold text-base">
-                          {showSerreBoundaries ? ' Serre Visible - Cliquer pour Masquer' : '🏗️ Afficher les Limites'}
+                          {showSerreBoundaries ? ' Serre Visible - Cliquer pour Masquer' : 'Afficher les Limites'}
                         </span>
                       </div>
                       
@@ -2205,7 +2208,7 @@ export default function TechnicianMap() {
                             </h4>
                           </div>
                           <p className="text-xs text-gray-600">
-                            Commencez le suivi GPS et collectez les points du bilan
+                            Commencez le suivi GPS et collectez les points du billon
                           </p>
                           <Button
                             onClick={(e) => {
