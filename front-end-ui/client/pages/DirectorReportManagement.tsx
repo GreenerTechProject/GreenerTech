@@ -82,20 +82,26 @@ const DirectorReportManagement: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 p-4">
-        <div className="max-w-7xl mx-auto">
-          <div className="animate-pulse space-y-6">
-            <div className="h-8 bg-gray-200 rounded w-1/3"></div>
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-              {[...Array(5)].map((_, i) => (
-                <div key={i} className="h-24 bg-gray-200 rounded"></div>
-              ))}
-            </div>
-            <div className="h-12 bg-gray-200 rounded"></div>
-            <div className="space-y-4">
-              {[...Array(3)].map((_, i) => (
-                <div key={i} className="h-20 bg-gray-200 rounded"></div>
-              ))}
+      <div className="min-h-screen bg-gray-50">
+        <DirectorHeader isSidebarOpen={isOpen} onMenuClick={() => setIsOpen(!isOpen)} />
+        <div className="flex">
+          <DirectorSidebar isOpen={isOpen} setIsOpen={setIsOpen} />
+          <div className="flex-1 transition-all duration-300 ease-in-out">
+            <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
+              <div className="animate-pulse space-y-6">
+                <div className="h-8 bg-gray-200 rounded w-1/3"></div>
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+                  {[...Array(5)].map((_, i) => (
+                    <div key={i} className="h-24 bg-gray-200 rounded"></div>
+                  ))}
+                </div>
+                <div className="h-12 bg-gray-200 rounded"></div>
+                <div className="space-y-4">
+                  {[...Array(3)].map((_, i) => (
+                    <div key={i} className="h-20 bg-gray-200 rounded"></div>
+                  ))}
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -106,8 +112,10 @@ const DirectorReportManagement: React.FC = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       <DirectorHeader isSidebarOpen={isOpen} onMenuClick={() => setIsOpen(!isOpen)} />
-      <DirectorSidebar isOpen={isOpen} setIsOpen={setIsOpen} />
-      <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
+      <div className="flex">
+        <DirectorSidebar isOpen={isOpen} setIsOpen={setIsOpen} />
+        <div className="flex-1 transition-all duration-300 ease-in-out">
+          <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
         {/* Header */}
         <div className="mb-6 hidden sm:block">
           <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 mb-2">
@@ -218,7 +226,7 @@ const DirectorReportManagement: React.FC = () => {
         {/* Reports Section */}
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <h2 className="text-base sm:text-lg lg:text-xl font-semibold text-gray-900">
+            <h2 className="text-sm sm:text-base lg:text-lg font-semibold text-gray-900">
               Rapports de l'entreprise ({filteredReports.length})
             </h2>
             <Button className="bg-green-600 hover:bg-green-700 text-white text-xs sm:text-sm">
@@ -301,6 +309,8 @@ const DirectorReportManagement: React.FC = () => {
               </CardContent>
             </Card>
           )}
+        </div>
+          </div>
         </div>
       </div>
     </div>

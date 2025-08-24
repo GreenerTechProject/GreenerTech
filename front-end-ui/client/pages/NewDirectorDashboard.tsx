@@ -499,7 +499,7 @@ export default function DirectorDashboard() {
       <div className="flex justify-between items-center">
         <div>
           {!isMobile && <h1 className="text-2xl font-bold text-gray-900">Tableau de bord</h1>}
-          <p className="text-gray-600">Vue d'ensemble de votre entreprise</p>
+          {!isMobile && <p className="text-gray-600">Vue d'ensemble de votre entreprise</p>}
         </div>
             <div className="flex items-center space-x-4">
               {error && (

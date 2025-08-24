@@ -89,6 +89,14 @@ export default function DirectorPermissionsAssignments() {
   const [selectedSupervisor, setSelectedSupervisor] = useState<Technician | null>(null);
   const [selectedSerre, setSelectedSerre] = useState<Serre | null>(null);
   const [isAssigning, setIsAssigning] = useState(false);
+  
+  // Confirmation dialog states
+  const [isUnassignDialogOpen, setIsUnassignDialogOpen] = useState(false);
+  const [unassignTarget, setUnassignTarget] = useState<{
+    type: 'single' | 'bulk';
+    serre: Serre;
+    user?: any;
+  } | null>(null);
 
   useEffect(() => {
     if (user?.id_entreprise) {
@@ -101,12 +109,18 @@ export default function DirectorPermissionsAssignments() {
       setLoading(true);
       setError(null);
       
+      console.log('Fetching data for company:', user!.id_entreprise);
+      
       // Fetch company-scoped data
       const [techs, sups, sers] = await Promise.all([
         technicianService.getTechniciansByCompany(user!.id_entreprise),
         technicianService.getSupervisorsByCompany(user!.id_entreprise),
-        serreService.getAllSerres()
+        serreService.getAllSerresWithTechnicians()
       ]);
+      
+      console.log('Technicians:', techs);
+      console.log('Supervisors:', sups);
+      console.log('Serres with technicians:', sers);
       
       setTechnicians(techs);
       setSupervisors(sups);
@@ -193,23 +207,90 @@ export default function DirectorPermissionsAssignments() {
     if (!selectedSerre || !selectedSupervisor) return;
     
     try {
-      // This would need to be implemented in the backend
-      // For now, we'll show a success message
+      setIsAssigning(true);
+      
+      console.log('Assigning serre:', selectedSerre.id, 'to supervisor:', selectedSupervisor.id);
+      
+      // Create autorisation_serre for the supervisor
+      const result = await serreService.createAutorisationSerre({
+        id_user: Number(selectedSupervisor.id),
+        id_serre: Number(selectedSerre.id)
+      });
+      
+      console.log('Autorisation created:', result);
+      
       toast({
         title: "Succès",
         description: `Serre ${selectedSerre.nom} assignée au superviseur ${selectedSupervisor.fullName}`,
       });
       
+      // Refresh data to show the new assignment
+      await fetchData();
       setIsAssignSerreOpen(false);
       setSelectedSerre(null);
       setSelectedSupervisor(null);
       
     } catch (error: any) {
+      console.error('Error assigning serre:', error);
+      
+      let errorMessage = 'Erreur lors de l\'assignation de la serre';
+      
+      // Handle specific error types
+      if (error.status === 403) {
+        if (error.message.includes('accès')) {
+          errorMessage = 'Vous n\'avez pas accès à cette serre';
+        } else if (error.message.includes('supervisez')) {
+          errorMessage = 'Vous ne pouvez assigner que les techniciens que vous supervisez';
+        } else {
+          errorMessage = 'Accès refusé. Vérifiez vos permissions.';
+        }
+      } else if (error.status === 404) {
+        errorMessage = 'Serre ou superviseur non trouvé.';
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
       toast({
         title: "Erreur",
-        description: error.message || 'Erreur lors de l\'assignation',
+        description: errorMessage,
         variant: "destructive"
       });
+    } finally {
+      setIsAssigning(false);
+    }
+  };
+
+  const handleUnassignSerre = async (serre: Serre, supervisor: Technician) => {
+    try {
+      setIsAssigning(true);
+      
+      // Get the autorisation_serre record to delete
+      const autorisations = await serreService.getAutorisationSerre({
+        id_user: Number(supervisor.id),
+        id_serre: Number(serre.id)
+      });
+      
+      if (autorisations.length > 0) {
+        // Delete the autorisation
+        await serreService.deleteAutorisationSerre(autorisations[0].id);
+        
+        toast({
+          title: "Succès",
+          description: `Serre ${serre.nom} retirée du superviseur ${supervisor.fullName}`,
+        });
+        
+        // Refresh data
+        await fetchData();
+      }
+      
+    } catch (error: any) {
+      toast({
+        title: "Erreur",
+        description: error.message || 'Erreur lors du retrait de l\'assignation',
+        variant: "destructive"
+      });
+    } finally {
+      setIsAssigning(false);
     }
   };
 
@@ -601,13 +682,20 @@ export default function DirectorPermissionsAssignments() {
                   )}>
                     <Button 
                       onClick={handleAssignSerreToSupervisor}
-                      disabled={!selectedSerre || !selectedSupervisor}
+                      disabled={!selectedSerre || !selectedSupervisor || isAssigning}
                       className={cn(
                         "w-full",
                         isMobile ? "h-10 text-sm" : ""
                       )}
                     >
-                      Assigner
+                      {isAssigning ? (
+                        <>
+                          <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                          Assignation...
+                        </>
+                      ) : (
+                        "Assigner"
+                      )}
                     </Button>
                   </div>
                 </div>
@@ -647,21 +735,115 @@ export default function DirectorPermissionsAssignments() {
                                 "font-medium mb-1",
                                 isMobile ? "text-xs" : ""
                               )}>Techniciens assignés:</p>
-                              <ul className="space-y-1">
-                                {serre.assignedTechnicians.map((tech) => (
-                                  <li key={tech.id} className={cn(
-                                    isMobile ? "text-xs" : "text-xs"
-                                  )}>
-                                    • {tech.fullName}
-                                  </li>
-                                ))}
-                              </ul>
+                              
+                              {/* Show unassign button if serre has assigned technicians */}
+                              <div className="space-y-2">
+                                {/* Individual unassign buttons - only show for directors or if user supervises the technician */}
+                                {user?.role === 'directeur' || (
+                                  // For technicians, only show unassign buttons for technicians they supervise
+                                  serre.assignedTechnicians.filter((tech: any) => {
+                                    // Check if the current user supervises this technician
+                                    return technicians.find(t => t.id === tech.id)?.id_assigned === user?.id;
+                                  }).length > 0
+                                ) ? (
+                                  <div className="space-y-2">
+                                    {serre.assignedTechnicians.map((tech: any) => {
+                                      // For technicians, only show unassign button if they supervise this technician
+                                      const canManage = user?.role === 'directeur' || 
+                                        technicians.find(t => t.id === tech.id)?.id_assigned === user?.id;
+                                      
+                                      if (!canManage) {
+                                        return (
+                                          <div key={tech.id} className="flex items-center justify-between p-2 bg-gray-50 rounded border">
+                                            <span className={cn(
+                                              isMobile ? "text-xs" : "text-xs"
+                                            )}>
+                                              {tech.fullName || tech.name || tech.email}
+                                            </span>
+                                            <Badge variant="secondary" className="text-xs">
+                                              Non supervisé
+                                            </Badge>
+                                          </div>
+                                        );
+                                      }
+                                      
+                                      return (
+                                        <div key={tech.id} className="flex items-center justify-between p-2 bg-gray-50 rounded border">
+                                          <span className={cn(
+                                            isMobile ? "text-xs" : "text-xs"
+                                          )}>
+                                            {tech.fullName || tech.name || tech.email}
+                                          </span>
+                                          <div className="flex items-center gap-2">
+                                            {user?.role !== 'directeur' && (
+                                              <Badge variant="outline" className="text-xs text-green-700">
+                                                Supervisé
+                                              </Badge>
+                                            )}
+                                            <Button
+                                              variant="outline"
+                                              size="sm"
+                                              onClick={() => {
+                                                if (serre && tech) {
+                                                  setUnassignTarget({
+                                                    type: 'single',
+                                                    serre: serre,
+                                                    user: tech
+                                                  });
+                                                  setIsUnassignDialogOpen(true);
+                                                }
+                                              }}
+                                              disabled={isAssigning}
+                                              className="h-6 px-2 text-xs"
+                                            >
+                                              Retirer
+                                            </Button>
+                                          </div>
+                                        </div>
+                                      );
+                                    })}
+                                  </div>
+                                ) : (
+                                  <div className="text-center py-2 text-gray-500 text-xs">
+                                    {user?.role === 'technicien_superieur' 
+                                      ? "Vous ne supervisez aucun des techniciens assignés à cette serre"
+                                      : "Aucun technicien assigné"
+                                    }
+                                  </div>
+                                )}
+                                
+                                {/* Bulk unassign button - only show for directors or if user supervises multiple technicians */}
+                                {user?.role === 'directeur' && serre.assignedTechnicians.length > 1 && (
+                                  <div className="pt-2">
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() => {
+                                        if (serre) {
+                                          setUnassignTarget({
+                                            type: 'bulk',
+                                            serre: serre
+                                          });
+                                          setIsUnassignDialogOpen(true);
+                                        }
+                                      }}
+                                      disabled={isAssigning}
+                                      className={cn(
+                                        "w-full",
+                                        isMobile ? "h-10 text-sm" : ""
+                                      )}
+                                    >
+                                      Supprimer Toutes les Assignations
+                                    </Button>
+                                  </div>
+                                )}
+                              </div>
                             </div>
                           ) : (
                             <p className={cn(
                               "text-gray-500",
                               isMobile ? "text-xs" : ""
-                            )}>Aucun technicien assigné</p>
+                            )}>Aucun technicien assigné à cette serre</p>
                           )}
                         </div>
                       </Card>
@@ -752,6 +934,145 @@ export default function DirectorPermissionsAssignments() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Unassign Confirmation Dialog */}
+      {unassignTarget && (
+        <Dialog 
+          open={isUnassignDialogOpen && !!unassignTarget} 
+          onOpenChange={(open) => {
+            if (!open) {
+              setIsUnassignDialogOpen(false);
+              setUnassignTarget(null);
+            }
+          }}
+        >
+          <DialogContent className={cn(
+            "sm:max-w-md",
+            isMobile ? "w-[95vw] max-w-none mx-4" : ""
+          )}>
+            <DialogHeader>
+              <DialogTitle className={cn(
+                isMobile ? "text-lg" : ""
+              )}>
+                {unassignTarget.type === 'single' ? 'Retirer l\'assignation' : 'Supprimer toutes les assignations'}
+              </DialogTitle>
+              <DialogDescription className={cn(
+                isMobile ? "text-sm" : ""
+              )}>
+                {unassignTarget.type === 'single' 
+                  ? `Êtes-vous sûr de vouloir retirer ${unassignTarget.user?.fullName || unassignTarget.user?.name || unassignTarget.user?.email} de la serre ${unassignTarget.serre.nom} ?`
+                  : `Êtes-vous sûr de vouloir supprimer toutes les assignations pour la serre ${unassignTarget.serre.nom} ?`
+                }
+              </DialogDescription>
+            </DialogHeader>
+            
+            <div className={cn(
+              "flex justify-end space-x-2 pt-4",
+              isMobile ? "flex-col space-y-2 space-x-0" : ""
+            )}>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setIsUnassignDialogOpen(false);
+                  setUnassignTarget(null);
+                }}
+                className={cn(
+                  isMobile ? "w-full h-10 text-sm" : ""
+                )}
+              >
+                Annuler
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={async () => {
+                  if (!unassignTarget) return;
+                  
+                  try {
+                    setIsAssigning(true);
+                    
+                    if (unassignTarget.type === 'single') {
+                      // Remove single user assignment
+                      const autorisations = await serreService.getAutorisationSerre({
+                        id_user: unassignTarget.user.id,
+                        id_serre: Number(unassignTarget.serre.id)
+                      });
+                      
+                      if (autorisations.length > 0) {
+                        await serreService.deleteAutorisationSerre(autorisations[0].id);
+                        
+                        toast({
+                          title: "Succès",
+                          description: `${unassignTarget.user.fullName || unassignTarget.user.name || unassignTarget.user.email} a été retiré de la serre ${unassignTarget.serre.nom}`,
+                        });
+                      }
+                    } else {
+                      // Remove all assignments for the serre
+                      const autorisations = await serreService.getAutorisationSerre({
+                        id_serre: Number(unassignTarget.serre.id)
+                      });
+                      
+                      for (const auth of autorisations) {
+                        await serreService.deleteAutorisationSerre(auth.id);
+                      }
+                      
+                      toast({
+                        title: "Succès",
+                        description: `Toutes les assignations pour la serre ${unassignTarget.serre.nom} ont été supprimées`,
+                      });
+                    }
+                    
+                    // Refresh data
+                    await fetchData();
+                    setIsUnassignDialogOpen(false);
+                    setUnassignTarget(null);
+                    
+                  } catch (error: any) {
+                    console.error('Error unassigning:', error);
+                    
+                    let errorMessage = 'Erreur lors de la suppression de l\'assignation';
+                    
+                    // Handle specific error types
+                    if (error.status === 403) {
+                      if (error.message.includes('accès')) {
+                        errorMessage = 'Vous n\'avez pas accès à cette serre';
+                      } else if (error.message.includes('supervisez')) {
+                        errorMessage = 'Vous ne pouvez gérer que les techniciens que vous supervisez';
+                      } else {
+                        errorMessage = 'Accès refusé. Vérifiez vos permissions.';
+                      }
+                    } else if (error.status === 404) {
+                      errorMessage = 'Assignation non trouvée. Elle a peut-être déjà été supprimée.';
+                    } else if (error.message) {
+                      errorMessage = error.message;
+                    }
+                    
+                    toast({
+                      title: "Erreur",
+                      description: errorMessage,
+                      variant: "destructive"
+                    });
+                  } finally {
+                    setIsAssigning(false);
+                  }
+                }}
+                disabled={isAssigning}
+                className={cn(
+                  isMobile ? "w-full h-10 text-sm" : ""
+                )}
+              >
+                {isAssigning ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                    Suppression...
+                  </>
+                ) : (
+                  "Confirmer"
+                )}
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
     </DirectorLayout>
   );
 }

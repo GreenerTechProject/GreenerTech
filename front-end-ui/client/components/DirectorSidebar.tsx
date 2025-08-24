@@ -76,7 +76,6 @@ const navigationItems = [
 export default function DirectorSidebar({ isOpen, setIsOpen }: DirectorSidebarProps) {
   const navigate = useNavigate();
   const location = useLocation();
-  const [hoveredItem, setHoveredItem] = useState<string | null>(null);
 
   const handleNavigation = (href: string) => {
     navigate(href);
@@ -144,8 +143,6 @@ export default function DirectorSidebar({ isOpen, setIsOpen }: DirectorSidebarPr
               <div
                 key={item.id}
                 className="relative group"
-                onMouseEnter={() => setHoveredItem(item.id)}
-                onMouseLeave={() => setHoveredItem(null)}
               >
                 <button
                   onClick={() => handleNavigation(item.href)}
@@ -181,20 +178,6 @@ export default function DirectorSidebar({ isOpen, setIsOpen }: DirectorSidebarPr
                     <ChevronRight className="h-4 w-4 text-greener-600 hidden lg:block" />
                   )}
                 </button>
-
-                {/* Enhanced hover tooltip for collapsed sidebar */}
-                {hoveredItem === item.id && (
-                  <div className={cn(
-                    "absolute z-50 px-3 py-2 bg-gray-900 text-white text-sm rounded-lg shadow-lg whitespace-nowrap",
-                    "lg:left-full lg:ml-2 lg:top-1/2 lg:transform lg:-translate-y-1/2",
-                    isOpen ? "lg:hidden" : "lg:block"
-                  )}>
-                    <div className="font-medium">{item.label}</div>
-                    <div className="text-xs text-gray-300 mt-1">{item.description}</div>
-                    {/* Arrow pointing to the icon */}
-                    <div className="absolute left-0 top-1/2 transform -translate-y-1/2 -translate-x-1 w-2 h-2 bg-gray-900 rotate-45"></div>
-                  </div>
-                )}
               </div>
             );
           })}

@@ -29,8 +29,8 @@ export default function DirectorParameters() {
 
   return (
     <DirectorLayout>
-      {/* Header - Simplified and responsive */}
-      <div className="mb-6 sm:mb-8">
+      {/* Header - Hidden on mobile, visible on larger screens */}
+      <div className="hidden sm:block mb-6 sm:mb-8">
         <div className="text-center sm:text-left">
           <h1 className="text-xl sm:text-2xl font-semibold text-gray-900 mb-2">Paramètres</h1>
           <p className="text-sm text-gray-600 px-4 sm:px-0">
@@ -43,7 +43,7 @@ export default function DirectorParameters() {
       <div className="space-y-6 sm:space-y-8 px-4 sm:px-0">
         {/* Map and Robot Configuration */}
         <div>
-          <h2 className="text-lg sm:text-xl font-semibold text-gray-900 mb-4">
+          <h2 className="hidden sm:block text-lg sm:text-xl font-semibold text-gray-900 mb-4">
             Configuration Système
           </h2>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
@@ -89,7 +89,7 @@ export default function DirectorParameters() {
 
         {/* Assignments and Authorizations - Combined into one section */}
         <div>
-          <h2 className="text-lg sm:text-xl font-semibold text-gray-900 mb-4">
+          <h2 className="hidden sm:block text-lg sm:text-xl font-semibold text-gray-900 mb-4">
             Gestion des Assignations et Autorisations
           </h2>
           <div className="rounded-lg border border-greener-200 bg-white hover:bg-greener-50/30 transition-all duration-200 shadow-sm hover:shadow-md">
@@ -113,7 +113,7 @@ export default function DirectorParameters() {
 
         {/* Company Information */}
         <div>
-          <h2 className="text-lg sm:text-xl font-semibold text-gray-900 mb-4">
+          <h2 className="hidden sm:block text-lg sm:text-xl font-semibold text-gray-900 mb-4">
             Informations de l'Entreprise
           </h2>
           <div className="rounded-lg border border-greener-200 bg-white hover:bg-greener-50/30 transition-all duration-200 shadow-sm hover:shadow-md">
