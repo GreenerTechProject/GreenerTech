@@ -135,8 +135,9 @@ export default function DirectorDashboard() {
 
       const totalAlerts = (alerts as any[])?.length || 0;
       const criticalAlerts = (alerts as any[])?.filter((a: any) => {
-        // Critical severity by status_alert value 2
-        return typeof a.status_alert === 'number' && a.status_alert === 2;
+        // Critical severity by priority/status_alert value 2
+        const priority = a?.priority ?? a?.status_alert;
+        return typeof priority === 'number' && priority === 2;
       }).length || 0;
 
       const totalDomains = domains.length;
@@ -334,9 +335,13 @@ export default function DirectorDashboard() {
         });
         
         if (Array.isArray(alerts) && alerts.length > 0) {
+          // Debug: Log the first few alerts to understand the data structure
+          console.log('[DEBUG] First alert structure:', alerts[0]);
+          console.log('[DEBUG] Total alerts:', alerts.length);
+
           alerts.forEach((a: any) => {
-            // Try different possible date fields
-            const when = a?.date || a?.created_at || a?.date_creation || a?.timestamp || a?.date_alerte;
+            // Try different possible date fields - backend returns 'timestamp' for alerts
+            const when = a?.timestamp || a?.date || a?.created_at || a?.date_creation || a?.date_alerte;
             if (!when) {
               return;
             }
@@ -352,23 +357,31 @@ export default function DirectorDashboard() {
             }
             
             const key = dateObj.toISOString().slice(0, 7);
-            const sev = Number(a?.status_alert) || 0;
+            // The backend returns 'priority' instead of 'status_alert', and 'type' instead of 'maladie'
+            const sev = Number(a?.priority ?? a?.status_alert) || 0;
+            const alertType = (a?.type ?? a?.maladie ?? '').toLowerCase();
+
+            // Debug: Log classification details for first few alerts
+            if (alerts.indexOf(a) < 3) {
+              console.log(`[DEBUG] Alert ${alerts.indexOf(a) + 1}: sev=${sev}, alertType="${alertType}", priority=${a?.priority}, status_alert=${a?.status_alert}`);
+            }
             
             if (monthKeys.includes(key)) {
-              // Handle different possible severity values - now using type field as primary
-              const alertType = a?.type || '';
-              if (sev === 2 || String(sev) === '2' || alertType.includes('critique') || alertType.includes('Critique') || alertType.includes('élevée') || alertType.includes('Élevée')) {
+              // Primary classification based on priority/status_alert value
+              if (sev === 2 || String(sev) === '2') {
                 H[key] = (H[key] || 0) + 1;
-              } else if (sev === 1 || String(sev) === '1' || alertType.includes('moyenne') || alertType.includes('Moyenne') || alertType.includes('modérée') || alertType.includes('Modérée')) {
+              } else if (sev === 1 || String(sev) === '1') {
                 M[key] = (M[key] || 0) + 1;
-              } else if (sev === 0 || String(sev) === '0' || alertType.includes('faible') || alertType.includes('Faible') || alertType.includes('légère') || alertType.includes('Légère')) {
+              } else if (sev === 0 || String(sev) === '0') {
                 L[key] = (L[key] || 0) + 1;
               } else {
-                // Default classification based on alert type keywords
-                if (alertType.includes('Température') || alertType.includes('température') || alertType.includes('Humidité') || alertType.includes('humidité')) {
-                  M[key] = (M[key] || 0) + 1;
-                } else if (alertType.includes('Mildiou') || alertType.includes('mildiou') || alertType.includes('Maladie') || alertType.includes('maladie')) {
+                // Fallback classification based on alert type keywords when priority is unclear
+                if (alertType.includes('critique') || alertType.includes('élevée') || alertType.includes('dangereuse') ||
+                    alertType.includes('mildiou') || alertType.includes('maladie grave') || alertType.includes('infestation grave')) {
                   H[key] = (H[key] || 0) + 1;
+                } else if (alertType.includes('moyenne') || alertType.includes('modérée') || alertType.includes('température') ||
+                          alertType.includes('humidité') || alertType.includes('légère infestation')) {
+                  M[key] = (M[key] || 0) + 1;
                 } else {
                   L[key] = (L[key] || 0) + 1;
                 }
@@ -377,11 +390,22 @@ export default function DirectorDashboard() {
           });
         }
         
+        const lowCounts = monthKeys.map((k) => L[k] || 0);
+        const mediumCounts = monthKeys.map((k) => M[k] || 0);
+        const highCounts = monthKeys.map((k) => H[k] || 0);
+
+        // Debug: Log the final counts
+        console.log('[DEBUG] Final alert counts by month:');
+        monthLabels.forEach((label, i) => {
+          console.log(`  ${label}: Low=${lowCounts[i]}, Medium=${mediumCounts[i]}, High=${highCounts[i]}`);
+        });
+        console.log(`[DEBUG] Total: Low=${lowCounts.reduce((a,b)=>a+b,0)}, Medium=${mediumCounts.reduce((a,b)=>a+b,0)}, High=${highCounts.reduce((a,b)=>a+b,0)}`);
+        
         setAlertsMonthly({
           labels: monthLabels,
-          low: monthKeys.map((k) => L[k] || 0),
-          medium: monthKeys.map((k) => M[k] || 0),
-          high: monthKeys.map((k) => H[k] || 0),
+          low: lowCounts,
+          medium: mediumCounts,
+          high: highCounts,
         });
       } catch (error) {
         console.error('[NewDirectorDashboard] Error building alerts chart:', error);
@@ -569,148 +593,51 @@ export default function DirectorDashboard() {
           </div>
 
 
-          {/* Charts & Affiliation Row (second row after stats) */}
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-            {/* Duo Chart: Interventions (bar) + Charges (line) */}
-            <Card className="lg:col-span-3">
+          <div className="grid grid-cols-1 lg:grid-cols-6 gap-6">
+            {/* Recent Activities */}
+            <Card className="lg:col-span-2">
               <CardHeader>
                 <CardTitle className="flex items-center space-x-2">
-                  <BarChart3 className="h-5 w-5" />
-                  <span>Interventions & charges par mois</span>
+                  <Activity className="h-5 w-5" />
+                  <span>Activités récentes</span>
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="w-full h-80">
-                  {monthlyChart.labels.length > 0 ? (
-                    <Chart
-                      type="bar"
-                      data={{
-                        labels: monthlyChart.labels,
-                        datasets: [
-                          {
-                            type: "bar" as const,
-                            label: "Interventions",
-                            data: monthlyChart.interventions,
-                            backgroundColor: "rgba(34,197,94,0.35)",
-                            borderColor: "rgba(34,197,94,1)",
-                            borderWidth: 1,
-                            yAxisID: "y",
-                            borderRadius: 4,
-                          },
-                          {
-                            type: "line" as const,
-                            label: "Charges (MAD)",
-                            data: monthlyChart.charges,
-                            borderColor: "#0ea5e9",
-                            backgroundColor: "rgba(14,165,233,0.15)",
-                            fill: true,
-                            yAxisID: "y1",
-                            tension: 0.35,
-                            pointRadius: 3,
-                          },
-                        ],
-                      }}
-                      options={{
-                        maintainAspectRatio: false,
-                        responsive: true,
-                        interaction: { mode: "index", intersect: false },
-                        plugins: {
-                          legend: { position: "top" as const },
-                          title: { display: false, text: "" },
-                          tooltip: {
-                            callbacks: {
-                              label: (ctx) => {
-                                const label = ctx.dataset.label || "";
-                                const value = Number(ctx.parsed.y || 0);
-                                if (label.includes("Charges")) {
-                                  return `${label}: MAD ${value.toLocaleString("fr-MA")}`;
-                                }
-                                return `${label}: ${value.toLocaleString("fr-FR")}`;
-                              },
-                            },
-                          },
-                        },
-                        scales: {
-                          y: {
-                            position: "left",
-                            title: { display: true, text: "Interventions" },
-                            grid: { drawOnChartArea: true },
-                          },
-                          y1: {
-                            position: "right",
-                            title: { display: true, text: "Charges (MAD)" },
-                            grid: { drawOnChartArea: false },
-                          },
-                          x: {
-                            ticks: { maxRotation: 0, autoSkip: true },
-                          },
-                        },
-                      }}
-                    />
-                  ) : (
-                    <div className="h-full flex items-center justify-center text-gray-500">
-                      Aucune donnée disponible
+                {recentActivities.length > 0 ? (
+                  <div className="space-y-4">
+                    {recentActivities.map((activity) => {
+                      const ActivityIcon = getActivityIcon(activity.type);
+                      return (
+                        <div key={activity.id} className="flex items-start space-x-3 p-3 hover:bg-gray-50 rounded-lg">
+                          <div className={cn(
+                            "p-2 rounded-full",
+                            activity.status === "warning" ? "bg-yellow-100" :
+                            activity.status === "success" ? "bg-green-100" : "bg-blue-100"
+                          )}>
+                            <ActivityIcon className={cn(
+                              "h-4 w-4",
+                              activity.status === "warning" ? "text-yellow-600" :
+                              activity.status === "success" ? "text-green-600" : "text-blue-600"
+                            )} />
                     </div>
-                  )}
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-gray-900">{activity.message}</p>
+                            <p className="text-xs text-gray-500">{activity.time}</p>
                 </div>
-              </CardContent>
-            </Card>
-
-            {/* Demandes d'affiliation (aligned even if empty) */}
-            <Card className="lg:col-span-1">
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2">
-                  <UserCheck className="h-5 w-5" />
-                  <span>Demandes d'affiliation</span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="min-h-[20rem] flex flex-col items-center justify-center text-center">
-                  <div className="text-4xl font-bold text-gray-900">{pendingAffiliations}</div>
-                  <div className="mt-2 text-sm text-gray-600">en attente de validation</div>
-                  <Button onClick={() => navigate("/director/affiliations")} className="mt-6" variant="outline">
-                    Gérer les affiliations
-                  </Button>
                 </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          
-            {/* Alerts by month & Recent Reports Row */}
-            <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-              {/* Recent Reports */}
-            <Card className="lg:col-span-1">
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2">
-                  <FileText className="h-5 w-5" />
-                  <span>Rapports récents</span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="min-h-[24rem] flex flex-col">
-                  {recentReports.length > 0 ? (
-                    <div className="space-y-3">
-                      {recentReports.map((r) => (
-                        <div key={r.id} className="p-3 border border-gray-200 rounded-lg">
-                          <div className="text-sm font-medium text-gray-900 truncate">Rapport #{r.id} {r.serre ? `• ${r.serre}` : ''}</div>
-                          <div className="text-xs text-gray-500">{r.date ? new Date(r.date).toLocaleDateString('fr-FR') : '—'}</div>
-                          {r.lien_pdf && (
-                            <div className="mt-2">
-                              <Button size="sm" variant="outline" onClick={() => ReportService.downloadReport(r.lien_pdf!, `rapport_${r.id}.pdf`)}>Télécharger</Button>
-                            </div>
-                          )}
-                        </div>
-                      ))}
+                      );
+                    })}
                     </div>
                   ) : (
-                    <div className="flex-1 flex items-center justify-center text-gray-500 text-sm">Aucun rapport récent</div>
-                  )}
+                  <div className="text-center py-8 text-gray-500">
+                    <Activity className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                    <p>Aucune activité récente</p>
                 </div>
+                )}
               </CardContent>
             </Card>
             {/* Alerts by month (stacked bar) */}
-            <Card className="lg:col-span-3">
+          <Card className="lg:col-span-2">
               <CardHeader>
                 <CardTitle className="flex items-center space-x-2">
                   <AlertTriangle className="h-5 w-5" />
@@ -797,55 +724,153 @@ export default function DirectorDashboard() {
                 </div>
               </CardContent>
             </Card>
+                          {/* Recent Reports */}
+            <Card className="lg:col-span-2">
+              <CardHeader>
+                <CardTitle className="flex items-center space-x-2">
+                  <FileText className="h-5 w-5" />
+                  <span>Rapports récents</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="min-h-[24rem] flex flex-col">
+                  {recentReports.length > 0 ? (
+                    <div className="space-y-3">
+                      {recentReports.map((r) => (
+                        <div key={r.id} className="p-3 border border-gray-200 rounded-lg">
+                          <div className="text-sm font-medium text-gray-900 truncate">Rapport #{r.id} {r.serre ? `• ${r.serre}` : ''}</div>
+                          <div className="text-xs text-gray-500">{r.date ? new Date(r.date).toLocaleDateString('fr-FR') : '—'}</div>
+                          {r.lien_pdf && (
+                            <div className="mt-2">
+                              <Button size="sm" variant="outline" onClick={() => ReportService.downloadReport(r.lien_pdf!, `rapport_${r.id}.pdf`)}>Télécharger</Button>
+                          </div>
+                          )}
+                          </div>
+                      ))}
+                        </div>
+                  ) : (
+                    <div className="flex-1 flex items-center justify-center text-gray-500 text-sm">Aucun rapport récent</div>
+                  )}
+                  </div>
+              </CardContent>
+            </Card>
+          </div>
+          {/* Charts & Affiliation Row (second row after stats) */}
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+            {/* Duo Chart: Interventions (bar) + Charges (line) */}
+            <Card className="lg:col-span-3">
+              <CardHeader>
+                <CardTitle className="flex items-center space-x-2">
+                  <BarChart3 className="h-5 w-5" />
+                  <span>Interventions & charges par mois</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="w-full h-80">
+                  {monthlyChart.labels.length > 0 ? (
+                    <Chart
+                      type="bar"
+                      data={{
+                        labels: monthlyChart.labels,
+                        datasets: [
+                          {
+                            type: "bar" as const,
+                            label: "Interventions",
+                            data: monthlyChart.interventions,
+                            backgroundColor: "rgba(34,197,94,0.35)",
+                            borderColor: "rgba(34,197,94,1)",
+                            borderWidth: 1,
+                            yAxisID: "y",
+                            borderRadius: 4,
+                          },
+                          {
+                            type: "line" as const,
+                            label: "Charges (MAD)",
+                            data: monthlyChart.charges,
+                            borderColor: "#0ea5e9",
+                            backgroundColor: "rgba(14,165,233,0.15)",
+                            fill: true,
+                            yAxisID: "y1",
+                            tension: 0.35,
+                            pointRadius: 3,
+                          },
+                        ],
+                      }}
+                      options={{
+                        maintainAspectRatio: false,
+                        responsive: true,
+                        interaction: { mode: "index", intersect: false },
+                        plugins: {
+                          legend: { position: "top" as const },
+                          title: { display: false, text: "" },
+                          tooltip: {
+                            callbacks: {
+                              label: (ctx) => {
+                                const label = ctx.dataset.label || "";
+                                const value = Number(ctx.parsed.y || 0);
+                                if (label.includes("Charges")) {
+                                  return `${label}: MAD ${value.toLocaleString("fr-MA")}`;
+                                }
+                                return `${label}: ${value.toLocaleString("fr-FR")}`;
+                              },
+                            },
+                          },
+                        },
+                        scales: {
+                          y: {
+                            position: "left",
+                            title: { display: true, text: "Interventions" },
+                            grid: { drawOnChartArea: true },
+                          },
+                          y1: {
+                            position: "right",
+                            title: { display: true, text: "Charges (MAD)" },
+                            grid: { drawOnChartArea: false },
+                          },
+                          x: {
+                            ticks: { maxRotation: 0, autoSkip: true },
+                          },
+                        },
+                      }}
+                    />
+                  ) : (
+                    <div className="h-full flex items-center justify-center text-gray-500">
+                      Aucune donnée disponible
+                  </div>
+                )}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Demandes d'affiliation (aligned even if empty) */}
+            <Card className="lg:col-span-1">
+              <CardHeader>
+                <CardTitle className="flex items-center space-x-2">
+                  <UserCheck className="h-5 w-5" />
+                  <span>Demandes d'affiliation</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="min-h-[20rem] flex flex-col items-center justify-center text-center">
+                  <div className="text-4xl font-bold text-gray-900">{pendingAffiliations}</div>
+                  <div className="mt-2 text-sm text-gray-600">en attente de validation</div>
+                  <Button onClick={() => navigate("/director/affiliations")} className="mt-6" variant="outline">
+                    Gérer les affiliations
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          
+            {/* Alerts by month & Recent Reports Row */}
+            <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+
 
             
           </div>
 
 
-          <div className="grid grid-cols-1 lg:grid-cols-1 gap-6">
-            {/* Recent Activities */}
-            <Card className="lg:col-span-2">
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2">
-                  <Activity className="h-5 w-5" />
-                  <span>Activités récentes</span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                {recentActivities.length > 0 ? (
-                  <div className="space-y-4">
-                    {recentActivities.map((activity) => {
-                      const ActivityIcon = getActivityIcon(activity.type);
-                      return (
-                        <div key={activity.id} className="flex items-start space-x-3 p-3 hover:bg-gray-50 rounded-lg">
-                          <div className={cn(
-                            "p-2 rounded-full",
-                            activity.status === "warning" ? "bg-yellow-100" :
-                            activity.status === "success" ? "bg-green-100" : "bg-blue-100"
-                          )}>
-                            <ActivityIcon className={cn(
-                              "h-4 w-4",
-                              activity.status === "warning" ? "text-yellow-600" :
-                              activity.status === "success" ? "text-green-600" : "text-blue-600"
-                            )} />
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium text-gray-900">{activity.message}</p>
-                            <p className="text-xs text-gray-500">{activity.time}</p>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                ) : (
-                  <div className="text-center py-8 text-gray-500">
-                    <Activity className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-                    <p>Aucune activité récente</p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </div>
 
 
       </DirectorLayout>

@@ -115,7 +115,7 @@ export default function DirectorProfile() {
   const fetchDirectorEnterprises = async (directorId: number) => {
     try {
       setLoadingDirectorEnterprises(true);
-      const enterprises = await companyService.getEnterprisesByDirector(directorId);
+      const enterprises = await companyService.getCompaniesByDirector();
       setDirectorEnterprises(enterprises);
     } catch (error) {
       console.error("Error fetching director enterprises:", error);

@@ -35,6 +35,12 @@ interface ExtendedSerre {
 
 interface DomainWithSerres extends DomainWithSerresAndBilans {
   serres: ExtendedSerre[];
+  // Add missing properties that are used in the code
+  path?: { lat: number; lng: number; ordre: number }[];
+  name?: string;
+  area?: number;
+  nom: string;
+  id_entreprise: number;
 }
 
 // Interface for enriched company data with guide culture information
@@ -43,6 +49,12 @@ interface EnrichedCompanyData extends CompanyMapData {
     serres: (any & {
       guideData?: any;
     })[];
+    // Add missing properties
+    path?: { lat: number; lng: number; ordre: number }[];
+    name?: string;
+    area?: number;
+    nom: string;
+    id_entreprise: number;
   })[];
 }
 
@@ -60,14 +72,14 @@ export default function DirectorMapConfig() {
   const [newDomainName, setNewDomainName] = useState("");
   const [newSerreName, setNewSerreName] = useState("");
   const [pendingShape, setPendingShape] = useState<DrawnShape | null>(null);
-  const [selectedDomainId, setSelectedDomainId] = useState<string | null>(null);
+  const [selectedDomainId, setSelectedDomainId] = useState<number | null>(null);
   const [selectedSerreId, setSelectedSerreId] = useState<string | null>(null);
   const [showHelp, setShowHelp] = useState(false);
   const [activeTab, setActiveTab] = useState<"domains" | "serres" | "guides">("domains");
   const [showSerres, setShowSerres] = useState(true);
   
   // New state for editing
-  const [editingDomainId, setEditingDomainId] = useState<string | null>(null);
+  const [editingDomainId, setEditingDomainId] = useState<number | null>(null);
   const [editingSerreId, setEditingSerreId] = useState<string | null>(null);
   const [editingDomainName, setEditingDomainName] = useState("");
   const [editingSerreName, setEditingSerreName] = useState("");
@@ -75,7 +87,7 @@ export default function DirectorMapConfig() {
   const [isUpdatingSerre, setIsUpdatingSerre] = useState(false);
   const [isRedrawingDomain, setIsRedrawingDomain] = useState(false);
   const [isRedrawingSerre, setIsRedrawingSerre] = useState(false);
-  const [redrawTargetId, setRedrawTargetId] = useState<string | null>(null);
+  const [redrawTargetId, setRedrawTargetId] = useState<number | string | null>(null);
   const [redrawTargetType, setRedrawTargetType] = useState<"domain" | "serre" | null>(null);
   
   // Guide culture form state
@@ -300,8 +312,9 @@ export default function DirectorMapConfig() {
       
       if (response.id || response.domainId) {
         const newDomain: DomainWithSerres = {
-          id: response.id || response.domainId || `domain-${Date.now()}`,
+          id: parseInt(response.id?.toString() || response.domainId?.toString() || Date.now().toString()),
           name: newDomainName.trim(),
+          nom: newDomainName.trim(),
           area: pendingShape.area,
           center: {
             lat: pendingShape.center.lat(),
@@ -312,7 +325,7 @@ export default function DirectorMapConfig() {
             lng: point.lng(),
             ordre: 0
           })),
-          companyId: user.id_entreprise.toString(),
+          id_entreprise: user.id_entreprise,
           serres: []
         };
 
@@ -566,7 +579,7 @@ export default function DirectorMapConfig() {
       // Create serre first
       const serreRequest = {
         nom: newSerreName.trim(),
-        id_domaine: parseInt(selectedDomainId),
+        id_domaine: selectedDomainId!,
         position: pendingShape.path.map(point => ({
           latitude: point.lat(),
           longitude: point.lng(),
@@ -612,7 +625,7 @@ export default function DirectorMapConfig() {
             id: serreId,
             nom: newSerreName.trim(),
             surface: pendingShape.area,
-            domainId: selectedDomainId,
+            domainId: selectedDomainId!.toString(),
             position: pendingShape.path,
             center: pendingShape.center,
             bilans: [],
@@ -710,7 +723,7 @@ export default function DirectorMapConfig() {
 
 
 
-  const handleDeleteDomain = async (domainId: string) => {
+  const handleDeleteDomain = async (domainId: number) => {
     try {
       setIsLoading(true);
       // Call backend to delete the domain
@@ -749,7 +762,7 @@ export default function DirectorMapConfig() {
     }
   };
 
-  const handleDeleteSerre = async (serreId: string, domainId: string) => {
+  const handleDeleteSerre = async (serreId: string, domainId: number) => {
     try {
       setIsLoading(true);
       await serreService.deleteSerre(serreId, domainId);
@@ -787,7 +800,7 @@ export default function DirectorMapConfig() {
     }
   };
 
-  const handleDomainSelect = (domainId: string) => {
+  const handleDomainSelect = (domainId: number) => {
     setSelectedDomainId(domainId === selectedDomainId ? null : domainId);
     // When selecting a domain, switch to serres tab to show serres from that domain
     if (domainId !== selectedDomainId) {
@@ -981,7 +994,7 @@ export default function DirectorMapConfig() {
     isRedrawingDomain ? "domain" : isRedrawingSerre ? "serre" : null;
 
   // New functions for editing domains and serres
-  const startEditingDomain = (domainId: string, currentName: string) => {
+  const startEditingDomain = (domainId: number, currentName: string) => {
     setEditingDomainId(domainId);
     setEditingDomainName(currentName);
   };
@@ -998,7 +1011,7 @@ export default function DirectorMapConfig() {
     setEditingSerreName("");
   };
 
-  const handleUpdateDomain = async (domainId: string) => {
+  const handleUpdateDomain = async (domainId: number) => {
     if (!editingDomainName.trim()) {
       toast({
         title: "Nom requis",
@@ -1010,7 +1023,7 @@ export default function DirectorMapConfig() {
 
     try {
       setIsUpdatingDomain(true);
-      
+
       const domain = companyData?.domains.find(d => d.id === domainId);
       if (!domain) {
         throw new Error("Domaine introuvable");
@@ -1020,7 +1033,7 @@ export default function DirectorMapConfig() {
         name: editingDomainName.trim()
       };
 
-      await domainService.updateDomain(domainId, updateData);
+      await domainService.updateDomain(domainId.toString(), updateData);
 
       // Update local state
       setCompanyData(prev => prev ? {
@@ -1064,7 +1077,7 @@ export default function DirectorMapConfig() {
       setIsUpdatingSerre(true);
       
       // Find the serre and its domain
-      let domainId: string | null = null;
+      let domainId: number | null = null;
       const serre = companyData?.domains
         .find(d => {
           const foundSerre = d.serres.find(s => s.id === serreId);
@@ -1083,7 +1096,7 @@ export default function DirectorMapConfig() {
         nom: editingSerreName.trim()
       };
 
-      await serreService.updateSerre(serreId, updateData, domainId);
+      await serreService.updateSerre(serreId, updateData, domainId.toString());
 
       // Update local state
       setCompanyData(prev => prev ? {
@@ -1116,7 +1129,7 @@ export default function DirectorMapConfig() {
     }
   };
 
-  const startRedrawingDomain = (domainId: string) => {
+  const startRedrawingDomain = (domainId: number) => {
     setIsRedrawingDomain(true);
     setRedrawTargetId(domainId);
     setRedrawTargetType("domain");
@@ -1193,7 +1206,7 @@ export default function DirectorMapConfig() {
 
       } else if (redrawTargetType === "serre") {
         // Find the serre and its domain
-        let domainId: string | null = null;
+        let domainId: number | null = null;
         const serre = companyData?.domains
           .find(d => {
             const foundSerre = d.serres.find(s => s.id === redrawTargetId);
@@ -1219,7 +1232,7 @@ export default function DirectorMapConfig() {
           }))
         };
 
-        await serreService.updateSerre(redrawTargetId, updateData, domainId);
+        await serreService.updateSerre(redrawTargetId.toString(), updateData, domainId.toString());
 
         // Update local state
         setCompanyData(prev => prev ? {
@@ -1523,7 +1536,7 @@ export default function DirectorMapConfig() {
             <div className="flex items-center justify-between mb-2 lg:mb-4">
               <h1 className="text-base lg:text-2xl font-bold text-gray-900 truncate">
                 <span className="hidden xl:inline">Configuration de la Carte</span>
-                <span className="xl:hidden">Config</span>
+                <span className="xl:hidden">Configuration de la carte</span>
               </h1>
               <Button
                 variant="outline"
@@ -1577,8 +1590,6 @@ export default function DirectorMapConfig() {
                     <EyeOff className="h-3 w-3 lg:h-4 lg:w-4 flex-shrink-0" />
                   )}
                   <span className="hidden sm:inline">Serres</span>
-                  <span className="sm:hidden lg:hidden">Serres</span>
-                  <span className="hidden xl:inline">Serres</span>
                 </div>
               </Button>
             </div>
@@ -2041,8 +2052,6 @@ export default function DirectorMapConfig() {
               }`}
             >
               <Building2 className="h-3 w-3 lg:h-4 lg:w-4 inline mr-1 lg:mr-2" />
-              <span className="hidden sm:inline">Domaines</span>
-              <span className="sm:hidden lg:hidden">Dom</span>
               <span className="hidden xl:inline">Domaines ({companyData?.domains.length || 0})</span>
             </button>
             <button
@@ -2057,8 +2066,6 @@ export default function DirectorMapConfig() {
               }`}
             >
               <Leaf className="h-3 w-3 lg:h-4 lg:w-4 inline mr-1 lg:mr-2" />
-              <span className="hidden sm:inline">Serres</span>
-              <span className="sm:hidden lg:hidden">Ser</span>
               <span className="hidden xl:inline">Serres ({selectedDomainId ? selectedDomain?.serres.length || 0 : companyData?.domains.reduce((acc, d) => acc + d.serres.length, 0) || 0})</span>
             </button>
 
@@ -2074,8 +2081,6 @@ export default function DirectorMapConfig() {
               }`}
             >
               <BookOpen className="h-3 w-3 lg:h-4 lg:w-4 inline mr-1 lg:mr-2" />
-              <span className="hidden sm:inline">Guides</span>
-              <span className="sm:hidden lg:hidden">Gui</span>
               <span className="hidden xl:inline">Guides ({selectedSerreId ? 1 : companyData?.domains.reduce((acc, d) => acc + d.serres.filter(s => s.guideId).length, 0) || 0})</span>
             </button>
           </div>
@@ -2344,9 +2349,6 @@ export default function DirectorMapConfig() {
                                       className="text-green-600 hover:text-green-700 hover:bg-green-50 text-xs lg:text-sm px-2 lg:px-3 h-7 lg:h-8"
                                     >
                                       <BookOpen className="h-3 w-3 lg:h-4 lg:w-4 mr-1 flex-shrink-0" />
-                                      <span className="hidden sm:inline">Voir Guide</span>
-                                      <span className="sm:hidden lg:hidden">Guide</span>
-                                      <span className="hidden xl:inline">Voir Guide</span>
                                     </Button>
                                     <Button
                                       variant="outline"
@@ -2359,10 +2361,7 @@ export default function DirectorMapConfig() {
                                       title="Modifier le guide de culture"
                                     >
                                       <Edit3 className="h-3 w-3 lg:h-4 lg:w-4 mr-1 flex-shrink-0" />
-                                      <span className="hidden sm:inline">Modifier Guide</span>
-                                      <span className="sm:hidden lg:hidden">Mod Guide</span>
-                                      <span className="hidden xl:inline">Modifier Guide</span>
-                                    </Button>
+                                      </Button>
                                     <Button
                                       variant="outline"
                                       size="sm"
@@ -2381,8 +2380,7 @@ export default function DirectorMapConfig() {
                                       ) : (
                                         <Trash2 className="h-3 w-3 lg:h-4 lg:w-4 mr-1 flex-shrink-0" />
                                       )}
-                                      <span className="hidden sm:inline">Supprimer Guide</span>
-                                      <span className="sm:hidden lg:hidden">Supp Guide</span>
+  
                                       <span className="hidden xl:inline">Supprimer Guide</span>
                                     </Button>
                                   </>
@@ -3261,199 +3259,234 @@ export default function DirectorMapConfig() {
                     </p>
                   ) : !selectedDomainId ? (
                     <div className="text-center py-4">
-                      <p className="text-xs text-gray-500">Sélectionnez un domaine pour voir ses serres</p>
+                      <div className="mb-4">
+                        <Building2 className="h-12 w-12 text-gray-300 mx-auto mb-2" />
+                        <p className="text-sm text-gray-500 mb-2">Sélectionnez un domaine pour voir ses serres</p>
+                        <p className="text-xs text-gray-400">Cliquez sur un domaine dans l'onglet "Domaines" pour filtrer les serres</p>
+                      </div>
                     </div>
                   ) : (
-                    <div className="space-y-2">
+                    <div className="space-y-3">
+                      {/* Show domain filter info */}
+                      <div className="p-2 lg:p-3 bg-blue-50 border border-blue-200 rounded-lg mb-3">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center space-x-2 min-w-0 flex-1">
+                            <Building2 className="h-4 w-4 text-blue-600 flex-shrink-0" />
+                            <span className="text-xs lg:text-sm font-medium text-blue-900 truncate">
+                              Serres du domaine: {companyData.domains.find(d => d.id === selectedDomainId)?.name}
+                            </span>
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setSelectedDomainId(null)}
+                            className="text-blue-600 hover:text-blue-700 hover:bg-blue-100 h-6 w-6 lg:h-8 lg:w-8 p-0 flex-shrink-0 ml-2"
+                          >
+                            <X className="h-3 w-3 lg:h-4 lg:w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                      
+                      {/* Show serres from selected domain only */}
                       {companyData.domains
                         .find(domain => domain.id === selectedDomainId)
-                        ?.serres.slice(0, 3).map((serre) => (
-                          <div
+                        ?.serres.map((serre) => (
+                          <Card
                             key={serre.id}
-                            className={`p-2 rounded border transition-colors ${
-                              selectedSerreId === serre.id ? 'ring-2 ring-[#FF6B6B] bg-red-50' : 'hover:bg-gray-50'
+                            className={`cursor-pointer transition-colors hover:bg-gray-50 ${
+                              selectedSerreId === serre.id ? 'ring-2 ring-[#FF6B6B] bg-red-50' : ''
                             }`}
+                            onClick={() => handleSerreSelect(serre.id)}
                           >
-                            <div className="flex items-center justify-between">
-                              <div 
-                                className="flex items-center space-x-2 cursor-pointer flex-1"
-                                onClick={() => handleSerreSelect(serre.id)}
-                              >
-                                <Leaf className="h-3 w-3 text-[#FF6B6B]" />
-                                {editingSerreId === serre.id ? (
-                                  <div className="flex items-center space-x-1">
-                                    <Input
-                                      value={editingSerreName}
-                                      onChange={(e) => setEditingSerreName(e.target.value)}
-                                      className="h-6 text-xs w-20"
-                                      autoFocus
-                                    />
-                                    <Button
-                                      size="sm"
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        handleUpdateSerre(serre.id);
-                                      }}
-                                      disabled={isUpdatingSerre}
-                                      className="h-6 px-1 text-xs"
-                                    >
-                                      {isUpdatingSerre ? <Loader2 className="h-3 w-3 animate-spin" /> : <Save className="h-3 w-3" />}
-                                    </Button>
-                                    <Button
-                                      variant="outline"
-                                      size="sm"
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        cancelEditing();
-                                      }}
-                                      className="h-6 px-1 text-xs"
-                                    >
-                                      <X className="h-3 w-3" />
-                                    </Button>
-                                  </div>
-                                ) : (
-                                  <span className="text-xs font-medium">{serre.nom}</span>
-                                )}
-                              </div>
-                              <div className="flex items-center space-x-1">
-                                <div className="text-xs text-gray-500 mr-2">
-                                  {(serre.surface / 10000).toFixed(1)} ha
-                                  {serre.guideId && (
-                                    <span className="ml-1 text-green-600">• Guide</span>
-                                  )}
-                                </div>
-                                {editingSerreId !== serre.id && (
-                                  <>
-                                    <Button
-                                      variant="ghost"
-                                      size="sm"
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        startEditingSerre(serre.id, serre.nom);
-                                      }}
-                                      className="h-6 w-6 p-0 text-blue-500 hover:text-blue-700 hover:bg-blue-50"
-                                      title="Modifier le nom"
-                                    >
-                                      <Edit3 className="h-3 w-3" />
-                                    </Button>
-                                    <Button
-                                      variant="ghost"
-                                      size="sm"
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        startRedrawingSerre(serre.id);
-                                      }}
-                                      className="h-6 w-6 p-0 text-orange-500 hover:text-orange-700 hover:bg-orange-50"
-                                      title="Redessiner la position"
-                                    >
-                                      <RotateCcw className="h-3 w-3" />
-                                    </Button>
-                                    {serre.guideId ? (
-                                      <>
+                            <CardContent className="p-3 lg:p-4">
+                              <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-3">
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center space-x-2 mb-2">
+                                    <Leaf className="h-4 w-4 text-[#FF6B6B] flex-shrink-0" />
+                                    {editingSerreId === serre.id ? (
+                                      <div className="flex items-center space-x-2 min-w-0 flex-1">
+                                        <Input
+                                          value={editingSerreName}
+                                          onChange={(e) => setEditingSerreName(e.target.value)}
+                                          className="h-8 text-sm min-w-0 flex-1"
+                                          autoFocus
+                                        />
                                         <Button
-                                          variant="ghost"
                                           size="sm"
                                           onClick={(e) => {
                                             e.stopPropagation();
-                                            handleSerreSelect(serre.id);
-                                            setActiveTab("guides");
+                                            handleUpdateSerre(serre.id);
                                           }}
-                                          className="h-6 w-6 p-0 text-green-500 hover:text-green-700 hover:bg-green-50"
-                                          title="Voir le guide de culture"
+                                          disabled={isUpdatingSerre}
+                                          className="h-8 px-2 flex-shrink-0"
                                         >
-                                          <BookOpen className="h-3 w-3" />
+                                          {isUpdatingSerre ? <Loader2 className="h-3 w-3 animate-spin" /> : <Save className="h-3 w-3" />}
                                         </Button>
                                         <Button
-                                          variant="ghost"
+                                          variant="outline"
                                           size="sm"
                                           onClick={(e) => {
                                             e.stopPropagation();
-                                            startEditingGuide(serre);
+                                            cancelEditing();
                                           }}
-                                          className="h-6 w-6 p-0 text-purple-500 hover:text-purple-700 hover:bg-purple-50"
-                                          title="Modifier le guide de culture"
+                                          className="h-8 px-2 flex-shrink-0"
                                         >
-                                          <Edit3 className="h-3 w-3" />
+                                          <X className="h-3 w-3" />
                                         </Button>
-                                        <Button
-                                          variant="ghost"
-                                          size="sm"
-                                          onClick={(e) => {
-                                            e.stopPropagation();
-                                            if (confirm(`Êtes-vous sûr de vouloir supprimer le guide de culture de la serre "${serre.nom}" ?`)) {
-                                              handleDeleteGuide(serre.guideId, serre.id);
-                                            }
-                                          }}
-                                          disabled={isDeletingGuide && deletingGuideId === serre.guideId}
-                                          className="h-6 w-6 p-0 text-red-500 hover:text-red-700 hover:bg-red-50"
-                                          title="Supprimer le guide de culture"
-                                        >
-                                          {isDeletingGuide && deletingGuideId === serre.guideId ? (
-                                            <Loader2 className="h-3 w-3 animate-spin" />
-                                          ) : (
-                                            <Trash2 className="h-3 w-3" />
-                                          )}
-                                        </Button>
-                                      </>
+                                      </div>
                                     ) : (
+                                      <h4 className="font-medium text-gray-900 truncate">{serre.nom}</h4>
+                                    )}
+                                  </div>
+                                  <div className="text-sm text-gray-600 space-y-1">
+                                    <div className="truncate">
+                                      Surface: {(serre.surface / 10000).toFixed(2)} hectares
+                                      {serre.guideId && (
+                                        <span className="ml-2 text-green-600 text-xs">• Guide configuré</span>
+                                      )}
+                                    </div>
+                                    <div className="flex items-center space-x-2">
+                                      <Building2 className="h-3 w-3 text-green-500 flex-shrink-0" />
+                                      <span className="text-xs text-gray-500 truncate">{companyData.domains.find(d => d.id === selectedDomainId)?.name}</span>
+                                    </div>
+                                    <div className="flex items-center space-x-2">
+                                      <BookOpen className="h-3 w-3 text-purple-500 flex-shrink-0" />
+                                      <span className="text-xs text-gray-500 truncate">
+                                        {serre.guideId ? 'Guide de culture configuré' : 'Aucun guide de culture'}
+                                      </span>
+                                    </div>
+                                  </div>
+                                </div>
+                                <div className="flex flex-wrap items-center gap-1 lg:gap-2 lg:flex-shrink-0">
+                                  {editingSerreId !== serre.id && (
+                                    <>
                                       <Button
                                         variant="ghost"
                                         size="sm"
                                         onClick={(e) => {
                                           e.stopPropagation();
-                                          startCreatingGuideForExistingSerre(serre);
+                                          startEditingSerre(serre.id, serre.nom);
                                         }}
-                                        className="h-6 w-6 p-0 text-blue-500 hover:text-blue-700 hover:bg-blue-50"
-                                        title="Créer un guide de culture"
+                                        className="text-blue-500 hover:text-blue-700 hover:bg-blue-50 h-7 lg:h-8 w-7 lg:w-8 p-0 flex-shrink-0"
+                                        title="Modifier le nom"
                                       >
-                                        <Plus className="h-3 w-3" />
+                                        <Edit3 className="h-3 w-3 lg:h-4 lg:w-4" />
                                       </Button>
-                                    )}
-                                  </>
-                                )}
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleDeleteSerre(serre.id, selectedDomainId);
-                                  }}
-                                  className="h-6 w-6 p-0 text-red-500 hover:text-red-700 hover:bg-red-50"
-                                  title="Supprimer la serre"
-                                >
-                                  <Trash2 className="h-3 w-3" />
-                                </Button>
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          startRedrawingSerre(serre.id);
+                                        }}
+                                        className="text-orange-500 hover:text-orange-700 hover:bg-orange-50 h-7 lg:h-8 w-7 lg:w-8 p-0 flex-shrink-0"
+                                        title="Redessiner la position"
+                                      >
+                                        <RotateCcw className="h-3 w-3 lg:h-4 lg:w-4" />
+                                      </Button>
+                                    </>
+                                  )}
+                                  {serre.guideId ? (
+                                    <>
+                                      <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          handleSerreSelect(serre.id);
+                                        }}
+                                        className="text-green-600 hover:text-green-700 hover:bg-green-50 text-xs lg:text-sm px-2 lg:px-3 h-7 lg:h-8"
+                                      >
+                                        <BookOpen className="h-3 w-3 lg:h-4 lg:w-4 mr-1 flex-shrink-0" />                                      </Button>
+                                      <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          startEditingGuide(serre);
+                                        }}
+                                        className="text-purple-600 hover:text-purple-700 hover:bg-purple-50 text-xs lg:text-sm px-2 lg:px-3 h-7 lg:h-8"
+                                        title="Modifier le guide de culture"
+                                      >
+                                        <Edit3 className="h-3 w-3 lg:h-4 lg:w-4 mr-1 flex-shrink-0" />
+                                        <span className="hidden sm:inline">Modifier Guide</span>
+                                        <span className="sm:hidden lg:hidden">Mod Guide</span>
+                                        <span className="hidden xl:inline">Modifier Guide</span>
+                                      </Button>
+                                      <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          if (confirm(`Êtes-vous sûr de vouloir supprimer le guide de culture de la serre "${serre.nom}" ?`)) {
+                                            handleDeleteGuide(serre.guideId, serre.id);
+                                          }
+                                        }}
+                                        disabled={isDeletingGuide && deletingGuideId === serre.guideId}
+                                        className="text-red-600 hover:text-red-700 hover:bg-red-50 text-xs lg:text-sm px-2 lg:px-3 h-7 lg:h-8"
+                                        title="Supprimer le guide de culture"
+                                      >
+                                        {isDeletingGuide && deletingGuideId === serre.guideId ? (
+                                          <Loader2 className="h-3 w-3 lg:h-4 lg:w-4 mr-1 animate-spin flex-shrink-0" />
+                                        ) : (
+                                          <Trash2 className="h-3 w-3 lg:h-4 lg:w-4 mr-1 flex-shrink-0" />
+                                        )}
+                                        <span className="hidden sm:inline">Supprimer Guide</span>
+                                        <span className="sm:hidden lg:hidden">Supp Guide</span>
+                                        <span className="hidden xl:inline">Supprimer Guide</span>
+                                      </Button>
+                                    </>
+                                  ) : (
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        startCreatingGuideForExistingSerre(serre);
+                                      }}
+                                      className="text-blue-600 hover:text-blue-700 hover:bg-blue-50 text-xs lg:text-sm px-2 lg:px-3 h-7 lg:h-8"
+                                      title="Créer un guide de culture"
+                                    >
+                                      <Plus className="h-3 w-3 lg:h-4 lg:w-4 mr-1 flex-shrink-0" />
+                                      <span className="hidden sm:inline">Créer Guide</span>
+                                      <span className="sm:hidden lg:hidden">Créer</span>
+                                      <span className="hidden xl:inline">Créer Guide</span>
+                                    </Button>
+                                  )}
+                                </div>
                               </div>
-                            </div>
-                          </div>
+                            </CardContent>
+                          </Card>
                         ))}
                     </div>
                   )}
                 </div>
               ) : activeTab === "guides" ? (
-                <div className="p-3">
+                <div className="p-2 lg:p-4">
                   {/* Header with refresh button */}
-                  <div className="flex items-center justify-between mb-3">
-                    <h3 className="text-sm font-medium text-gray-900">Guides de Culture</h3>
+                  <div className="flex items-center justify-between mb-3 lg:mb-4">
+                    <h3 className="text-base lg:text-lg font-medium text-gray-900">Guides de Culture</h3>
                     <Button
                       variant="outline"
                       size="sm"
                       onClick={refreshGuideData}
                       disabled={isLoading}
-                      className="text-purple-600 hover:text-purple-700 hover:bg-purple-50 text-xs"
+                      className="text-purple-600 hover:text-purple-700 hover:bg-purple-50 text-xs lg:text-sm h-7 lg:h-8"
                     >
-                      <Loader2 className={`h-3 w-3 mr-1 ${isLoading ? 'animate-spin' : ''}`} />
-                      Actualiser
+                      <Loader2 className={`h-3 w-3 lg:h-4 lg:w-4 mr-1 lg:mr-2 flex-shrink-0 ${isLoading ? 'animate-spin' : ''}`} />
+                      <span className="hidden sm:inline">Actualiser Guides</span>
+                      <span className="sm:hidden lg:hidden">Actualiser</span>
+                      <span className="hidden xl:inline">Actualiser Guides</span>
                     </Button>
                   </div>
                   
                   {/* Success Banner for newly created guide */}
                   {showGuideSuccess && (
-                    <div className="mb-3 p-2 bg-green-50 border border-green-200 rounded-lg">
+                    <div className="mb-3 lg:mb-4 p-2 lg:p-3 bg-green-50 border border-green-200 rounded-lg">
                       <div className="flex items-center space-x-2">
-                        <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                        <span className="text-xs text-green-700 font-medium">
-                          ✅ Guide de culture créé avec succès !
+                        <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse flex-shrink-0"></div>
+                        <span className="text-xs lg:text-sm text-green-700 font-medium">
+                          ✅ Guide de culture créé avec succès ! Il est maintenant visible dans la liste ci-dessous.
                         </span>
                       </div>
                     </div>
@@ -3461,16 +3494,16 @@ export default function DirectorMapConfig() {
                   
                   {/* Show guide for selected serre if one is selected */}
                   {selectedSerreId ? (
-                    <div className="mb-3">
+                    <div className="mb-3 lg:mb-4">
                       {(() => {
                         const selectedSerre = companyData?.domains
                           .flatMap(d => d.serres)
                           .find(s => s.id === selectedSerreId);
-                        
+                      
                         if (!selectedSerre) {
                           return (
-                            <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
-                              <p className="text-xs text-red-600">Serre sélectionnée introuvable</p>
+                            <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+                              <p className="text-sm text-red-600">Serre sélectionnée introuvable</p>
                             </div>
                           );
                         }
@@ -3478,115 +3511,65 @@ export default function DirectorMapConfig() {
                         const domain = companyData?.domains.find(d => d.serres.some(s => s.id === selectedSerreId));
                         
                         return (
-                          <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                            <div className="flex items-center justify-between mb-2">
+                          <div className="p-3 lg:p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                            <div className="flex items-center justify-between mb-3">
                               <div className="flex items-center space-x-2 min-w-0 flex-1">
-                                <Leaf className="h-3 w-3 text-blue-600 flex-shrink-0" />
-                                <span className="text-xs font-medium text-blue-900 truncate">
-                                  Guide pour: {selectedSerre.nom}
+                                <Leaf className="h-4 w-4 text-blue-600 flex-shrink-0" />
+                                <span className="text-sm font-medium text-blue-900 truncate">
+                                  Guide de culture pour: {selectedSerre.nom}
                                 </span>
                               </div>
                               <Button
                                 variant="ghost"
                                 size="sm"
                                 onClick={() => setSelectedSerreId(null)}
-                                className="text-blue-600 hover:text-blue-700 hover:bg-blue-100 h-5 w-5 p-0 flex-shrink-0 ml-2"
+                                className="text-blue-600 hover:text-blue-700 hover:bg-blue-100 h-6 w-6 lg:h-8 lg:w-8 p-0 flex-shrink-0 ml-2"
                               >
-                                <X className="h-3 w-3" />
+                                <X className="h-3 w-3 lg:h-4 lg:w-4" />
                               </Button>
                             </div>
                             <div className="text-xs text-blue-700 mb-2 truncate">
-                              Domaine: {domain?.name} • Surface: {(selectedSerre.surface / 10000).toFixed(2)} ha
+                              Domaine: {domain?.name} • Surface: {(selectedSerre.surface / 10000).toFixed(2)} hectares
                             </div>
                             
                             {selectedSerre.guideData ? (
-                              <div className="bg-white p-2 rounded border border-blue-200">
-                                <div className="grid grid-cols-1 gap-1 text-xs">
+                              <div className="bg-white p-2 lg:p-3 rounded border border-blue-200">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 lg:gap-3 text-sm">
                                   <div className="truncate">
-                                    <strong className="text-blue-700">Nom:</strong>
-                                    <span className="ml-1 text-gray-700 truncate">{selectedSerre.guideData.nom}</span>
+                                    <strong className="text-blue-700">Nom du guide:</strong>
+                                    <span className="ml-2 text-gray-700 truncate">{selectedSerre.guideData.nom}</span>
                                   </div>
                                   <div className="truncate">
                                     <strong className="text-blue-700">Variété:</strong>
-                                    <span className="ml-1 text-gray-700 truncate">{selectedSerre.guideData.variete}</span>
+                                    <span className="ml-2 text-gray-700 truncate">{selectedSerre.guideData.variete}</span>
                                   </div>
                                   <div className="truncate">
                                     <strong className="text-blue-700">Rendement:</strong>
-                                    <span className="ml-1 text-gray-700 truncate">{selectedSerre.guideData.rendement} kg/m²</span>
+                                    <span className="ml-2 text-gray-700 truncate">{selectedSerre.guideData.rendement} kg/m²</span>
                                   </div>
                                   <div className="truncate">
-                                    <strong className="text-blue-700">Plants:</strong>
-                                    <span className="ml-1 text-gray-700 truncate">{selectedSerre.guideData.nombre_de_plants}</span>
+                                    <strong className="text-blue-700">Nombre de plants:</strong>
+                                    <span className="ml-2 text-gray-700 truncate">{selectedSerre.guideData.nombre_de_plants}</span>
                                   </div>
                                   <div className="truncate">
                                     <strong className="text-blue-700">Début saison:</strong>
-                                    <span className="ml-1 text-gray-700 truncate">
+                                    <span className="ml-2 text-gray-700 truncate">
                                       {selectedSerre.guideData.date_debut_saison ? new Date(selectedSerre.guideData.date_debut_saison).toLocaleDateString('fr-FR') : 'Non spécifiée'}
                                     </span>
                                   </div>
                                   <div className="truncate">
                                     <strong className="text-blue-700">Fin saison:</strong>
-                                    <span className="ml-1 text-gray-700 truncate">
+                                    <span className="ml-2 text-gray-700 truncate">
                                       {selectedSerre.guideData.date_fin_saison ? new Date(selectedSerre.guideData.date_fin_saison).toLocaleDateString('fr-FR') : 'Non spécifiée'}
                                     </span>
                                   </div>
                                 </div>
-                                
-                                {/* Guide Management Buttons for Mobile */}
-                                <div className="flex flex-wrap gap-2 mt-3">
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      startEditingGuide(selectedSerre);
-                                    }}
-                                    className="text-purple-600 hover:text-purple-700 hover:bg-purple-50 text-xs flex-1"
-                                    title="Modifier le guide de culture"
-                                  >
-                                    <Edit3 className="h-3 w-3 mr-1 flex-shrink-0" />
-                                    Modifier
-                                  </Button>
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      if (confirm(`Êtes-vous sûr de vouloir supprimer le guide de culture de la serre "${selectedSerre.nom}" ?`)) {
-                                        handleDeleteGuide(selectedSerre.guideId, selectedSerre.id);
-                                      }
-                                    }}
-                                    disabled={isDeletingGuide && deletingGuideId === selectedSerre.guideId}
-                                    className="text-red-600 hover:text-red-700 hover:bg-red-50 text-xs flex-1"
-                                    title="Supprimer le guide de culture"
-                                  >
-                                    {isDeletingGuide && deletingGuideId === selectedSerre.guideId ? (
-                                      <Loader2 className="h-3 w-3 mr-1 animate-spin flex-shrink-0" />
-                                    ) : (
-                                      <Trash2 className="h-3 w-3 mr-1 flex-shrink-0" />
-                                    )}
-                                    Supprimer
-                                  </Button>
-                                </div>
                               </div>
                             ) : (
-                              <div className="bg-yellow-50 p-2 rounded border border-yellow-200">
-                                <p className="text-xs text-yellow-700 mb-2">
+                              <div className="bg-yellow-50 p-2 lg:p-3 rounded border border-yellow-200">
+                                <p className="text-sm text-yellow-700">
                                   Aucun guide de culture configuré pour cette serre
                                 </p>
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    startCreatingGuideForExistingSerre(selectedSerre);
-                                  }}
-                                  className="text-blue-600 hover:text-blue-700 hover:bg-blue-50 text-xs w-full"
-                                  title="Créer un guide de culture"
-                                >
-                                  <Plus className="h-3 w-3 mr-1 flex-shrink-0" />
-                                  Créer Guide
-                                </Button>
                               </div>
                             )}
                           </div>
@@ -3594,11 +3577,11 @@ export default function DirectorMapConfig() {
                       })()}
                     </div>
                   ) : (
-                    <div className="text-center py-4">
-                      <div className="mb-3">
-                        <BookOpen className="h-8 w-8 text-gray-300 mx-auto mb-2" />
-                        <p className="text-xs text-gray-500 mb-1">Sélectionnez une serre pour voir son guide de culture</p>
-                        <p className="text-xs text-gray-400">Cliquez sur une serre dans l'onglet "Serres"</p>
+                    <div className="text-center py-8">
+                      <div className="mb-4">
+                        <BookOpen className="h-12 w-12 text-gray-300 mx-auto mb-2" />
+                        <p className="text-sm text-gray-500 mb-2">Sélectionnez une serre pour voir son guide de culture</p>
+                        <p className="text-xs text-gray-400">Cliquez sur une serre dans l'onglet "Serres" pour afficher son guide</p>
                       </div>
                     </div>
                   )}
@@ -3607,84 +3590,80 @@ export default function DirectorMapConfig() {
                   {!selectedSerreId && (
                     <>
                       {!companyData || companyData.domains.reduce((acc, d) => acc + d.serres.filter(s => s.guideId).length, 0) === 0 ? (
-                        <p className="text-xs text-gray-500 text-center py-4">
-                          Aucun guide de culture configuré. Créez des serres et configurez leurs guides.
+                        <p className="text-sm text-gray-500 text-center py-8">
+                          Aucun guide de culture configuré. Créez des serres et configurez leurs guides de culture.
                         </p>
                       ) : (
-                        <div className="space-y-2">
+                        <div className="space-y-3">
                           {companyData.domains.map((domain) => 
                             (domain.serres as (any & { guideData?: any })[])
                               .filter(serre => serre.guideId)
-                              .slice(0, 3)
                               .map((serre) => (
-                                <div
+                                <Card
                                   key={`guide-${serre.id}`}
-                                  className={`p-2 rounded border transition-colors hover:bg-gray-50 cursor-pointer ${
+                                  className={`cursor-pointer transition-colors hover:bg-gray-50 ${
                                     serre.guideId === newlyCreatedSerreId ? 'ring-2 ring-purple-400 bg-purple-50' : ''
                                   }`}
                                   onClick={() => handleSerreSelect(serre.id)}
                                 >
-                                  <div className="flex items-start justify-between">
-                                    <div className="flex-1 min-w-0">
-                                      <div className="flex items-center space-x-2 mb-1">
-                                        <BookOpen className="h-3 w-3 text-[#9C27B0] flex-shrink-0" />
-                                        <h4 className="text-xs font-medium text-gray-900 truncate">Guide - {serre.nom}</h4>
-                                      </div>
-                                      <div className="text-xs text-gray-600 space-y-1">
-                                        <div className="flex items-center space-x-2">
-                                          <Leaf className="h-2 w-2 text-red-500 flex-shrink-0" />
-                                          <span className="text-xs text-gray-500 truncate">{serre.nom}</span>
+                                  <CardContent className="p-3 lg:p-4">
+                                    <div className="flex items-start justify-between">
+                                      <div className="flex-1 min-w-0">
+                                        <div className="flex items-center space-x-2 mb-2">
+                                          <BookOpen className="h-4 w-4 text-[#9C27B0] flex-shrink-0" />
+                                          <h4 className="font-medium text-gray-900 truncate">Guide de culture - {serre.nom}</h4>
                                         </div>
-                                        <div className="flex items-center space-x-2">
-                                          <Building2 className="h-2 w-2 text-green-500 flex-shrink-0" />
-                                          <span className="text-xs text-gray-500 truncate">{domain.name}</span>
-                                        </div>
-                                        
-                                        {/* Display actual guide culture data */}
-                                        {serre.guideData ? (
-                                          <div className="space-y-1 mt-2 p-2 bg-purple-50 rounded border border-purple-200">
-                                            <div className="grid grid-cols-1 gap-1 text-xs">
-                                              <div className="truncate">
-                                                <strong className="text-purple-700">Variété:</strong>
-                                                <span className="ml-1 text-gray-600 truncate">{serre.guideData.variete || 'Non spécifiée'}</span>
-                                              </div>
-                                              <div className="truncate">
-                                                <strong className="text-purple-700">Rendement:</strong>
-                                                <span className="ml-1 text-gray-600 truncate">{serre.guideData.rendement || 0} kg/m²</span>
-                                              </div>
-                                              <div className="truncate">
-                                                <strong className="text-purple-700">Plants:</strong>
-                                                <span className="ml-1 text-gray-600 truncate">{serre.guideData.nombre_de_plants || 0}</span>
-                                              </div>
-                                              <div className="truncate">
-                                                <strong className="text-purple-700">Début saison:</strong>
-                                                <span className="ml-1 text-gray-600 truncate">
-                                                  {serre.guideData.date_debut_saison ? new Date(serre.guideData.date_debut_saison).toLocaleDateString('fr-FR') : 'Non spécifiée'}
-                                                </span>
-                                              </div>
-                                              <div className="truncate">
-                                                <strong className="text-purple-700">Fin saison:</strong>
-                                                <span className="ml-1 text-gray-600 truncate">
-                                                  {serre.guideData.date_fin_saison ? new Date(serre.guideData.date_fin_saison).toLocaleDateString('fr-FR') : 'Non spécifiée'}
-                                                </span>
+                                        <div className="text-sm text-gray-600 space-y-1">
+                                          <div className="flex items-center space-x-2">
+                                            <Leaf className="h-3 w-3 text-red-500 flex-shrink-0" />
+                                            <span className="text-xs text-gray-500 truncate">{serre.nom}</span>
+                                          </div>
+                                          <div className="flex items-center space-x-2">
+                                            <Building2 className="h-3 w-3 text-green-500 flex-shrink-0" />
+                                            <span className="text-xs text-gray-500 truncate">{domain.name}</span>
+                                          </div>
+                                          
+                                          {/* Display actual guide culture data */}
+                                          {serre.guideData ? (
+                                            <div className="space-y-2 mt-2 p-2 lg:p-3 bg-purple-50 rounded border border-purple-200">
+                                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-1 lg:gap-2 text-xs">
+                                                <div className="truncate">
+                                                  <strong className="text-purple-700">Variété:</strong>
+                                                  <span className="ml-1 text-gray-600 truncate">{serre.guideData.variete || 'Non spécifiée'}</span>
+                                                </div>
+                                                <div className="truncate">
+                                                  <strong className="text-purple-700">Rendement:</strong>
+                                                  <span className="ml-1 text-gray-600 truncate">{serre.guideData.rendement || 0} kg/m²</span>
+                                                </div>
+                                                <div className="truncate">
+                                                  <strong className="text-purple-700">Plants:</strong>
+                                                  <span className="ml-1 text-gray-600 truncate">{serre.guideData.nombre_de_plants || 0}</span>
+                                                </div>
+                                                <div className="truncate">
+                                                  <strong className="text-purple-700">Début saison:</strong>
+                                                  <span className="ml-1 text-gray-600 truncate">
+                                                    {serre.guideData.date_debut_saison ? new Date(serre.guideData.date_debut_saison).toLocaleDateString('fr-FR') : 'Non spécifiée'}
+                                                  </span>
+                                                </div>
+                                                <div className="truncate">
+                                                  <strong className="text-purple-700">Fin saison:</strong>
+                                                  <span className="ml-1 text-gray-600 truncate">
+                                                    {serre.guideData.date_fin_saison ? new Date(serre.guideData.date_fin_saison).toLocaleDateString('fr-FR') : 'Non spécifiée'}
+                                                  </span>
+                                                </div>
                                               </div>
                                             </div>
-                                          </div>
-                                        ) : (
-                                          <div className="text-xs text-red-600 bg-red-50 p-2 rounded border border-red-200">
-                                            <strong>Guide introuvable</strong> - Données non disponibles
-                                          </div>
-                                        )}
+                                          ) : (
+                                            <div className="text-xs text-red-600 bg-red-50 p-2 rounded border border-red-200">
+                                              <strong>Guide introuvable</strong> - Les données du guide ne sont pas disponibles
+                                            </div>
+                                          )}
+                                        </div>
                                       </div>
                                     </div>
-                                  </div>
-                                </div>
+                                  </CardContent>
+                                </Card>
                               ))
-                          )}
-                          {companyData.domains.reduce((acc, d) => acc + d.serres.filter(s => s.guideId).length, 0) > 3 && (
-                            <p className="text-xs text-gray-500 text-center py-2">
-                              +{companyData.domains.reduce((acc, d) => acc + d.serres.filter(s => s.guideId).length, 0) - 3} autres guides
-                            </p>
                           )}
                         </div>
                       )}
@@ -3705,7 +3684,7 @@ export default function DirectorMapConfig() {
               onShapeComplete={handleShapeComplete}
               existingShapes={allShapes}
               drawingMode={currentDrawingMode}
-              selectedDomainId={selectedDomainId}
+              selectedDomainId={selectedDomainId?.toString()}
               className="w-full h-full"
               onShapeClick={(shape) => {
                 console.log('Shape clicked:', shape);
