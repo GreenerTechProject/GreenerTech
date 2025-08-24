@@ -201,10 +201,10 @@ export default function InterventionRequestDetails() {
           Retour aux notifications
         </Button>
         
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">
+        <h1 className="text-3xl font-bold text-gray-900 mb-2 hidden md:block">
           Demande d'intervention #{intervention.id}
         </h1>
-        <p className="text-gray-600">
+        <p className="text-gray-600 hidden md:block">
           Détails de la demande d'intervention
         </p>
       </div>

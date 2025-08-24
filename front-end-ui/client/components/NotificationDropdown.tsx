@@ -114,17 +114,32 @@ export default function NotificationDropdown({
   };
 
   const formatTimestamp = (dateString: string) => {
+    if (!dateString) return "Date inconnue";
+    
     const date = new Date(dateString);
     const now = new Date();
-    const diffInHours = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60));
     
-    if (diffInHours < 1) return "il y a quelques minutes";
-    if (diffInHours === 1) return "il y a 1h";
-    if (diffInHours < 24) return `il y a ${diffInHours}h`;
+    // Check if the date is valid
+    if (isNaN(date.getTime())) {
+      return "Date invalide";
+    }
     
-    const diffInDays = Math.floor(diffInHours / 24);
-    if (diffInDays === 1) return "il y a 1 jour";
-    return `il y a ${diffInDays} jours`;
+    const diffInMs = now.getTime() - date.getTime();
+    const diffInMinutes = Math.floor(diffInMs / (1000 * 60));
+    const diffInHours = Math.floor(diffInMs / (1000 * 60 * 60));
+    const diffInDays = Math.floor(diffInMs / (1000 * 60 * 60 * 24));
+    
+    if (diffInMinutes < 1) return "À l'instant";
+    if (diffInMinutes < 60) return `Il y a ${diffInMinutes}min`;
+    if (diffInHours < 24) return `Il y a ${diffInHours}h`;
+    if (diffInDays < 7) return `Il y a ${diffInDays}j`;
+    
+    // For older notifications, show the actual date
+    return date.toLocaleDateString('fr-FR', { 
+      day: '2-digit', 
+      month: '2-digit',
+      year: 'numeric'
+    });
   };
 
   if (!isOpen) return null;
