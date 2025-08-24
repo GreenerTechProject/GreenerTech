@@ -183,7 +183,7 @@ export default function TechnicienSupTeamManagement(): JSX.Element {
   return (
     <div className="p-4 space-y-4">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
+        <div className="hidden lg:block">
           <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Gestion de l'Équipe</h1>
           <p className="text-sm text-gray-600">Techniciens sous votre supervision</p>
         </div>
@@ -195,14 +195,14 @@ export default function TechnicienSupTeamManagement(): JSX.Element {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+      <div className="grid grid-cols-3 gap-2 sm:gap-3 lg:gap-4">
         <Card className="bg-green-50 border-green-200">
-          <CardContent className="pt-4 pb-3">
+          <CardContent className="pt-3 pb-2 sm:pt-4 sm:pb-3">
             <div className="flex items-center space-x-2">
-              <UserCheck className="h-4 w-4 text-green-600" />
+              <UserCheck className="h-3 w-3 sm:h-4 sm:w-4 text-green-600" />
               <div>
                 <p className="text-xs font-medium text-green-700">Actifs</p>
-                <p className="text-lg sm:text-xl font-bold text-green-600">
+                <p className="text-base sm:text-lg lg:text-xl font-bold text-green-600">
                   {technicians.filter(t => t.status === 'active').length}
                 </p>
               </div>
@@ -211,12 +211,12 @@ export default function TechnicienSupTeamManagement(): JSX.Element {
         </Card>
         
         <Card className="bg-yellow-50 border-yellow-200">
-          <CardContent className="pt-4 pb-3">
+          <CardContent className="pt-3 pb-2 sm:pt-4 sm:pb-3">
             <div className="flex items-center space-x-2">
-              <Clock className="h-4 w-4 text-yellow-600" />
+              <Clock className="h-3 w-3 sm:h-4 sm:w-4 text-yellow-600" />
               <div>
                 <p className="text-xs font-medium text-yellow-700">En attente</p>
-                <p className="text-lg sm:text-xl font-bold text-yellow-600">
+                <p className="text-base sm:text-lg lg:text-xl font-bold text-yellow-600">
                   {technicians.filter(t => t.status === 'pending').length}
                 </p>
               </div>
@@ -224,27 +224,13 @@ export default function TechnicienSupTeamManagement(): JSX.Element {
           </CardContent>
         </Card>
         
-        <Card className="bg-red-50 border-red-200">
-          <CardContent className="pt-4 pb-3">
-            <div className="flex items-center space-x-2">
-              <UserX className="h-4 w-4 text-red-600" />
-              <div>
-                <p className="text-xs font-medium text-red-700">Inactifs</p>
-                <p className="text-lg sm:text-xl font-bold text-red-600">
-                  {technicians.filter(t => t.status === 'inactive').length}
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        
         <Card className="bg-blue-50 border-blue-200">
-          <CardContent className="pt-4 pb-3">
+          <CardContent className="pt-3 pb-2 sm:pt-4 sm:pb-3">
             <div className="flex items-center space-x-2">
-              <MapPin className="h-4 w-4 text-blue-600" />
+              <MapPin className="h-3 w-3 sm:h-4 sm:w-4 text-blue-600" />
               <div>
                 <p className="text-xs font-medium text-blue-700">Total Serres</p>
-                <p className="text-lg sm:text-xl font-bold text-blue-600">
+                <p className="text-base sm:text-lg lg:text-xl font-bold text-blue-600">
                   {technicians.reduce((total, tech) => total + tech.assignedSerres.length, 0)}
                 </p>
               </div>
@@ -255,8 +241,8 @@ export default function TechnicienSupTeamManagement(): JSX.Element {
 
       <Card>
         <CardContent className="pt-4 pb-4">
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            <div className="relative">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            <div className="relative sm:col-span-1">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
               <Input
                 placeholder="Rechercher..."
@@ -266,7 +252,7 @@ export default function TechnicienSupTeamManagement(): JSX.Element {
               />
             </div>
             
-            <div>
+            <div className="sm:col-span-1">
               <select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
@@ -279,7 +265,7 @@ export default function TechnicienSupTeamManagement(): JSX.Element {
               </select>
             </div>
             
-            <div className="text-xs text-gray-500 flex items-center justify-center sm:justify-start">
+            <div className="text-xs text-gray-500 flex items-center justify-center sm:col-span-2 lg:col-span-1 lg:justify-start">
               <Filter className="h-4 w-4 mr-2" />
               {filteredTechnicians.length} résultat{filteredTechnicians.length !== 1 ? 's' : ''}
             </div>
@@ -295,177 +281,182 @@ export default function TechnicienSupTeamManagement(): JSX.Element {
               <p>Aucun technicien trouvé</p>
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="text-xs">Technicien</TableHead>
-                    <TableHead className="text-xs hidden sm:table-cell">Contact</TableHead>
-                    <TableHead className="text-xs">Statut</TableHead>
-                    <TableHead className="text-xs hidden lg:table-cell">Serres</TableHead>
-                    <TableHead className="text-xs hidden md:table-cell">Interventions</TableHead>
-                    <TableHead className="text-xs hidden lg:table-cell">Dernière Modif.</TableHead>
-                    <TableHead className="text-xs">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredTechnicians.map((technician) => (
-                    <TableRow key={technician.id}>
-                      <TableCell>
-                        <div className="flex items-center space-x-2">
-                          <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                            <span className="text-blue-600 font-semibold text-sm">
-                              {technician.fullName.charAt(0).toUpperCase()}
-                            </span>
-                          </div>
-                          <div className="min-w-0">
-                            <div className="font-medium text-gray-900 text-sm truncate">
-                              {technician.fullName}
-                            </div>
-                            <div className="text-xs text-gray-500">
-                              ID: {technician.id}
-                            </div>
-                          </div>
-                        </div>
-                      </TableCell>
-                      
-                      <TableCell className="hidden sm:table-cell">
-                        <div className="space-y-1">
-                          <div className="flex items-center space-x-2">
-                            <Mail className="h-3 w-3 text-gray-400" />
-                            <span className="text-xs truncate max-w-32">{technician.email}</span>
-                          </div>
-                          {technician.telephone && (
+            <div className="overflow-x-auto -mx-4 sm:mx-0">
+              <div className="min-w-full inline-block align-middle">
+                <div className="overflow-hidden">
+                  <Table className="min-w-full">
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="text-xs px-2 sm:px-4">Technicien</TableHead>
+                        <TableHead className="text-xs hidden sm:table-cell px-2 sm:px-4">Contact</TableHead>
+                        <TableHead className="text-xs px-2 sm:px-4">Statut</TableHead>
+                        <TableHead className="text-xs hidden lg:table-cell px-2 sm:px-4">Serres</TableHead>
+                        <TableHead className="text-xs hidden md:table-cell px-2 sm:px-4">Interventions</TableHead>
+                        <TableHead className="text-xs hidden lg:table-cell px-2 sm:px-4">Dernière Modif.</TableHead>
+                        <TableHead className="text-xs px-2 sm:px-4">Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {filteredTechnicians.map((technician) => (
+                        <TableRow key={technician.id}>
+                          <TableCell className="px-2 sm:px-4">
                             <div className="flex items-center space-x-2">
-                              <Phone className="h-3 w-3 text-gray-400" />
-                              <span className="text-xs">{technician.telephone}</span>
+                              <div className="w-6 h-6 sm:w-8 sm:h-8 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
+                                <span className="text-blue-600 font-semibold text-xs sm:text-sm">
+                                  {technician.fullName.charAt(0).toUpperCase()}
+                                </span>
+                              </div>
+                              <div className="min-w-0 flex-1">
+                                <div className="font-medium text-gray-900 text-xs sm:text-sm truncate">
+                                  {technician.fullName}
+                                </div>
+                                <div className="text-xs text-gray-500">
+                                  ID: {technician.id}
+                                </div>
+                              </div>
                             </div>
-                          )}
-                        </div>
-                      </TableCell>
-                      
-                      <TableCell>
-                        <div className="flex items-center space-x-2">
-                          {getStatusIcon(technician.status)}
-                          <span className="text-xs">
-                            {technician.status === 'active' ? 'Actif' : 
-                             technician.status === 'pending' ? 'En attente' : 'Inactif'}
-                          </span>
-                        </div>
-                      </TableCell>
-                      
-                      <TableCell className="hidden lg:table-cell">
-                        <div className="space-y-1">
-                          {technician.assignedSerres.length > 0 ? (
-                            <div className="flex flex-wrap gap-1">
-                              {technician.assignedSerres.slice(0, 2).map((serre, index) => (
-                                <Badge key={index} variant="outline" className="text-xs">
-                                  {serre}
-                                </Badge>
-                              ))}
-                              {technician.assignedSerres.length > 2 && (
-                                <Badge variant="outline" className="text-xs">
-                                  +{technician.assignedSerres.length - 2}
-                                </Badge>
+                          </TableCell>
+                          
+                          <TableCell className="hidden sm:table-cell px-2 sm:px-4">
+                            <div className="space-y-1">
+                              <div className="flex items-center space-x-2">
+                                <Mail className="h-3 w-3 text-gray-400" />
+                                <span className="text-xs truncate max-w-24 sm:max-w-32">{technician.email}</span>
+                              </div>
+                              {technician.telephone && (
+                                <div className="flex items-center space-x-2">
+                                  <Phone className="h-3 w-3 text-gray-400" />
+                                  <span className="text-xs">{technician.telephone}</span>
+                                </div>
                               )}
                             </div>
-                          ) : (
-                            <span className="text-xs text-gray-500">Aucune</span>
-                          )}
-                        </div>
-                      </TableCell>
-                      
-                      <TableCell className="hidden md:table-cell">
-                        <div className="space-y-1">
-                          <div className="flex items-center space-x-2">
-                            <CheckCircle className="h-3 w-3 text-green-600" />
-                            <span className="text-xs">
-                              {technician.interventionStats.completed}
-                            </span>
-                          </div>
-                          <div className="flex items-center space-x-2">
-                            <Clock className="h-3 w-3 text-yellow-600" />
-                            <span className="text-xs">
-                              {technician.interventionStats.inProgress}
-                            </span>
-                          </div>
-                        </div>
-                      </TableCell>
-                      
-                      <TableCell className="hidden lg:table-cell">
-                        <div className="text-xs text-gray-500">
-                          {technician.updated_at ? (
-                            new Date(technician.updated_at).toLocaleDateString('fr-FR')
-                          ) : (
-                            'Jamais'
-                          )}
-                        </div>
-                      </TableCell>
-                      
-                      <TableCell>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setSelectedTechnician(technician)}
-                          className="text-xs px-2 py-1"
-                        >
-                          <Eye className="h-3 w-3 mr-1" />
-                          Détails
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                          </TableCell>
+                          
+                          <TableCell className="px-2 sm:px-4">
+                            <div className="flex items-center space-x-2">
+                              {getStatusIcon(technician.status)}
+                              <span className="text-xs">
+                                {technician.status === 'active' ? 'Actif' : 
+                                 technician.status === 'pending' ? 'En attente' : 'Inactif'}
+                              </span>
+                            </div>
+                          </TableCell>
+                          
+                          <TableCell className="hidden lg:table-cell px-2 sm:px-4">
+                            <div className="space-y-1">
+                              {technician.assignedSerres.length > 0 ? (
+                                <div className="flex flex-wrap gap-1">
+                                  {technician.assignedSerres.slice(0, 2).map((serre, index) => (
+                                    <Badge key={index} variant="outline" className="text-xs">
+                                      {serre}
+                                    </Badge>
+                                  ))}
+                                  {technician.assignedSerres.length > 2 && (
+                                    <Badge variant="outline" className="text-xs">
+                                      +{technician.assignedSerres.length - 2}
+                                    </Badge>
+                                  )}
+                                </div>
+                              ) : (
+                                <span className="text-xs text-gray-500">Aucune</span>
+                              )}
+                            </div>
+                          </TableCell>
+                          
+                          <TableCell className="hidden md:table-cell px-2 sm:px-4">
+                            <div className="space-y-1">
+                              <div className="flex items-center space-x-2">
+                                <CheckCircle className="h-3 w-3 text-green-600" />
+                                <span className="text-xs">
+                                  {technician.interventionStats.completed}
+                                </span>
+                              </div>
+                              <div className="flex items-center space-x-2">
+                                <Clock className="h-3 w-3 text-yellow-600" />
+                                <span className="text-xs">
+                                  {technician.interventionStats.inProgress}
+                                </span>
+                              </div>
+                            </div>
+                          </TableCell>
+                          
+                          <TableCell className="hidden lg:table-cell px-2 sm:px-4">
+                            <div className="text-xs text-gray-500">
+                              {technician.updated_at ? (
+                                new Date(technician.updated_at).toLocaleDateString('fr-FR')
+                              ) : (
+                                'Jamais'
+                              )}
+                            </div>
+                          </TableCell>
+                          
+                          <TableCell className="px-2 sm:px-4">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setSelectedTechnician(technician)}
+                              className="text-xs px-2 py-1 h-7 sm:h-8"
+                            >
+                              <Eye className="h-3 w-3 mr-1" />
+                              <span className="hidden sm:inline">Détails</span>
+                              <span className="sm:hidden">Voir</span>
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              </div>
             </div>
           )}
         </CardContent>
       </Card>
 
       <Dialog open={!!selectedTechnician} onOpenChange={() => setSelectedTechnician(null)}>
-        <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="w-[95vw] max-w-2xl max-h-[90vh] overflow-y-auto mx-2 sm:mx-auto">
           <DialogHeader>
-            <DialogTitle>Détails du Technicien</DialogTitle>
-            <DialogDescription>
+            <DialogTitle className="text-lg sm:text-xl">Détails du Technicien</DialogTitle>
+            <DialogDescription className="text-sm">
               Informations détaillées et statistiques du technicien
             </DialogDescription>
           </DialogHeader>
           
           {selectedTechnician && (
-            <div className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-4 sm:space-y-6">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                 <Card>
                   <CardHeader className="pb-3">
-                    <CardTitle className="text-lg">Informations Personnelles</CardTitle>
+                    <CardTitle className="text-base sm:text-lg">Informations Personnelles</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-3">
                     <div className="flex items-center space-x-3">
-                      <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
-                        <span className="text-blue-600 font-semibold text-lg">
+                      <div className="w-10 h-10 sm:w-12 sm:h-12 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
+                        <span className="text-blue-600 font-semibold text-base sm:text-lg">
                           {selectedTechnician.fullName.charAt(0).toUpperCase()}
                         </span>
                       </div>
-                      <div>
-                        <h3 className="font-semibold text-gray-900">{selectedTechnician.fullName}</h3>
-                        <p className="text-sm text-gray-500">ID: {selectedTechnician.id}</p>
+                      <div className="min-w-0 flex-1">
+                        <h3 className="font-semibold text-gray-900 text-sm sm:text-base">{selectedTechnician.fullName}</h3>
+                        <p className="text-xs sm:text-sm text-gray-500">ID: {selectedTechnician.id}</p>
                       </div>
                     </div>
                     
                     <div className="space-y-2">
                       <div className="flex items-center space-x-2">
-                        <Mail className="h-4 w-4 text-gray-400" />
-                        <span className="text-sm">{selectedTechnician.email}</span>
+                        <Mail className="h-4 w-4 text-gray-400 flex-shrink-0" />
+                        <span className="text-xs sm:text-sm break-all">{selectedTechnician.email}</span>
                       </div>
                       {selectedTechnician.telephone && (
                         <div className="flex items-center space-x-2">
-                          <Phone className="h-4 w-4 text-gray-400" />
-                          <span className="text-sm">{selectedTechnician.telephone}</span>
+                          <Phone className="h-4 w-4 text-gray-400 flex-shrink-0" />
+                          <span className="text-xs sm:text-sm">{selectedTechnician.telephone}</span>
                         </div>
                       )}
                       {selectedTechnician.birthday && (
                         <div className="flex items-center space-x-2">
-                          <Calendar className="h-4 w-4 text-gray-400" />
-                          <span className="text-sm">
+                          <Calendar className="h-4 w-4 text-gray-400 flex-shrink-0" />
+                          <span className="text-xs sm:text-sm">
                             {new Date(selectedTechnician.birthday).toLocaleDateString('fr-FR')}
                           </span>
                         </div>
@@ -476,12 +467,12 @@ export default function TechnicienSupTeamManagement(): JSX.Element {
 
                 <Card>
                   <CardHeader className="pb-3">
-                    <CardTitle className="text-lg">Statut et Validation</CardTitle>
+                    <CardTitle className="text-base sm:text-lg">Statut et Validation</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-3">
                     <div className="flex items-center space-x-2">
                       {getStatusIcon(selectedTechnician.status)}
-                      <span className="font-medium">
+                      <span className="font-medium text-sm sm:text-base">
                         {selectedTechnician.status === 'active' ? 'Actif' : 
                          selectedTechnician.status === 'pending' ? 'En attente' : 'Inactif'}
                       </span>
@@ -489,20 +480,20 @@ export default function TechnicienSupTeamManagement(): JSX.Element {
                     
                     <div className="space-y-2">
                       <div className="flex items-center justify-between">
-                        <span className="text-sm text-gray-600">Validation Directeur:</span>
-                        <Badge variant={selectedTechnician.directeur_valide ? "default" : "secondary"}>
+                        <span className="text-xs sm:text-sm text-gray-600">Validation Directeur:</span>
+                        <Badge variant={selectedTechnician.directeur_valide ? "default" : "secondary"} className="text-xs">
                           {selectedTechnician.directeur_valide ? "Validé" : "Non validé"}
                         </Badge>
                       </div>
                       <div className="flex items-center justify-between">
-                        <span className="text-sm text-gray-600">Email Validé:</span>
-                        <Badge variant={selectedTechnician.email_valide ? "default" : "secondary"}>
+                        <span className="text-xs sm:text-sm text-gray-600">Email Validé:</span>
+                        <Badge variant={selectedTechnician.email_valide ? "default" : "secondary"} className="text-xs">
                           {selectedTechnician.email_valide ? "Validé" : "Non validé"}
                         </Badge>
                       </div>
                       <div className="flex items-center justify-between">
-                        <span className="text-sm text-gray-600">Configuration:</span>
-                        <Badge variant={selectedTechnician.setup_completed ? "default" : "secondary"}>
+                        <span className="text-xs sm:text-sm text-gray-600">Configuration:</span>
+                        <Badge variant={selectedTechnician.setup_completed ? "default" : "secondary"} className="text-xs">
                           {selectedTechnician.setup_completed ? "Terminée" : "En cours"}
                         </Badge>
                       </div>
@@ -513,52 +504,52 @@ export default function TechnicienSupTeamManagement(): JSX.Element {
 
               <Card>
                 <CardHeader className="pb-3">
-                  <CardTitle className="text-lg">Serres Assignées</CardTitle>
+                  <CardTitle className="text-base sm:text-lg">Serres Assignées</CardTitle>
                 </CardHeader>
                 <CardContent>
                   {selectedTechnician.assignedSerres.length > 0 ? (
                     <div className="flex flex-wrap gap-2">
                       {selectedTechnician.assignedSerres.map((serre, index) => (
-                        <Badge key={index} variant="outline" className="text-sm">
+                        <Badge key={index} variant="outline" className="text-xs sm:text-sm">
                           {serre}
                         </Badge>
                       ))}
                     </div>
                   ) : (
-                    <p className="text-gray-500 text-sm">Aucune serre assignée</p>
+                    <p className="text-gray-500 text-xs sm:text-sm">Aucune serre assignée</p>
                   )}
                 </CardContent>
               </Card>
 
               <Card>
                 <CardHeader className="pb-3">
-                  <CardTitle className="text-lg">Statistiques des Interventions</CardTitle>
+                  <CardTitle className="text-base sm:text-lg">Statistiques des Interventions</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
                     <div className="text-center">
-                      <div className="text-2xl font-bold text-blue-600">
+                      <div className="text-xl sm:text-2xl font-bold text-blue-600">
                         {selectedTechnician.interventionStats.total}
                       </div>
-                      <div className="text-sm text-gray-600">Total</div>
+                      <div className="text-xs sm:text-sm text-gray-600">Total</div>
                     </div>
                     <div className="text-center">
-                      <div className="text-2xl font-bold text-green-600">
+                      <div className="text-xl sm:text-2xl font-bold text-green-600">
                         {selectedTechnician.interventionStats.completed}
                       </div>
-                      <div className="text-sm text-gray-600">Terminées</div>
+                      <div className="text-xs sm:text-sm text-gray-600">Terminées</div>
                     </div>
                     <div className="text-center">
-                      <div className="text-2xl font-bold text-yellow-600">
+                      <div className="text-xl sm:text-2xl font-bold text-yellow-600">
                         {selectedTechnician.interventionStats.inProgress}
                       </div>
-                      <div className="text-sm text-gray-600">En cours</div>
+                      <div className="text-xs sm:text-sm text-gray-600">En cours</div>
                     </div>
                     <div className="text-center">
-                      <div className="text-2xl font-bold text-orange-600">
+                      <div className="text-xl sm:text-2xl font-bold text-orange-600">
                         {selectedTechnician.interventionStats.pending}
                       </div>
-                      <div className="text-sm text-gray-600">En attente</div>
+                      <div className="text-xs sm:text-sm text-gray-600">En attente</div>
                     </div>
                   </div>
                 </CardContent>

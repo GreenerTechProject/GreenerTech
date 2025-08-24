@@ -150,17 +150,17 @@ export default function TechnicienSupAuthorizations(): JSX.Element {
   }
 
   return (
-    <div className="p-4 space-y-6">
+    <div className="p-2 sm:p-4 space-y-4 sm:space-y-6">
       <Card>
-        <CardHeader>
+        <CardHeader className="pb-3 sm:pb-4">
           <CardTitle className="text-sm font-medium">Créer une autorisation</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-            <div>
-              <Label>Serre</Label>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+            <div className="space-y-2">
+              <Label className="text-sm">Serre</Label>
               <Select value={selectedSerreId} onValueChange={setSelectedSerreId}>
-                <SelectTrigger className="mt-1">
+                <SelectTrigger className="mt-1 w-full">
                   <SelectValue placeholder="Choisir une serre" />
                 </SelectTrigger>
                 <SelectContent>
@@ -173,10 +173,10 @@ export default function TechnicienSupAuthorizations(): JSX.Element {
               </Select>
             </div>
 
-            <div>
-              <Label>Technicien</Label>
+            <div className="space-y-2">
+              <Label className="text-sm">Technicien</Label>
               <Select value={selectedTechnicianId} onValueChange={setSelectedTechnicianId}>
-                <SelectTrigger className="mt-1">
+                <SelectTrigger className="mt-1 w-full">
                   <SelectValue placeholder="Choisir un technicien" />
                 </SelectTrigger>
                 <SelectContent>
@@ -189,7 +189,7 @@ export default function TechnicienSupAuthorizations(): JSX.Element {
               </Select>
             </div>
 
-            <div className="flex items-end">
+            <div className="flex items-end sm:col-span-2 lg:col-span-1">
               <Button onClick={handleCreateAuthorization} disabled={actionLoading} className="w-full">
                 Donner l'accès
               </Button>
@@ -199,17 +199,73 @@ export default function TechnicienSupAuthorizations(): JSX.Element {
       </Card>
 
       <Card>
-        <CardHeader>
+        <CardHeader className="pb-3 sm:pb-4">
           <CardTitle className="text-sm font-medium">Autorisations par serre</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="overflow-x-auto">
+          {/* Mobile view - Card layout */}
+          <div className="block sm:hidden space-y-4">
+            {serres.map((s: any) => {
+              const sid = typeof s.id === 'string' ? parseInt(s.id, 10) : s.id;
+              const list = (authBySerreId[sid] || []).filter((a) => {
+                const tech = technicians.find((t) => String(t.id) === String(a.id_user));
+                return tech && String(tech.id_assigned) === String(user?.id);
+              });
+              const techMap: Record<string, string> = {};
+              technicians.forEach((t) => { techMap[String(t.id)] = t.fullName || t.email; });
+              
+              return (
+                <div key={String(s.id)} className="border rounded-lg p-4 space-y-3">
+                  <div className="font-medium text-gray-900">{s.nom}</div>
+                  <div className="space-y-2">
+                    <div className="text-sm text-gray-600">Techniciens autorisés:</div>
+                    {list.length === 0 ? (
+                      <span className="text-xs text-gray-500">Aucun technicien sous votre supervision n'a accès</span>
+                    ) : (
+                      <div className="flex flex-wrap gap-2">
+                        {list.map((a) => (
+                          <Badge key={a.id} variant="outline" className="text-xs">
+                            {techMap[String(a.id_user)] || `Technicien ${a.id_user}`}
+                          </Badge>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  {list.length > 0 && (
+                    <div className="space-y-2">
+                      <div className="text-sm text-gray-600">Actions:</div>
+                      <div className="flex flex-col gap-2">
+                        {list.map((a) => (
+                          <Button 
+                            key={a.id} 
+                            variant="outline" 
+                            size="sm" 
+                            disabled={actionLoading} 
+                            onClick={() => handleDeleteAuthorization(sid, a)}
+                            className="w-full justify-center"
+                          >
+                            Retirer accès
+                          </Button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+            {serres.length === 0 && (
+              <div className="text-center text-sm text-gray-500 py-8">Aucune serre assignée</div>
+            )}
+          </div>
+
+          {/* Desktop view - Table layout */}
+          <div className="hidden sm:block overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Serre</TableHead>
-                  <TableHead>Techniciens autorisés</TableHead>
-                  <TableHead>Actions</TableHead>
+                  <TableHead className="w-1/4">Serre</TableHead>
+                  <TableHead className="w-1/2">Techniciens autorisés</TableHead>
+                  <TableHead className="w-1/4">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>

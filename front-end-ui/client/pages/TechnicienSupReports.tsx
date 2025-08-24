@@ -28,10 +28,12 @@ import {
 import ReportService, { ApiReport } from "../services/reportService";
 import { serreService } from "../services/serreService";
 import { useNavigate } from "react-router-dom";
+import { useIsMobile } from "../hooks/use-mobile";
 
 export default function TechnicienSupReports() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
   const [reports, setReports] = useState<ApiReport[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -144,55 +146,56 @@ export default function TechnicienSupReports() {
 
   return (
     <div className="min-h-screen bg-white dark:bg-gray-900">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+      <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8 py-4 sm:py-6 lg:py-8">
 
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+        {/* Statistics Cards - Mobile Responsive Grid */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6 mb-6 sm:mb-8">
           <Card className="hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
-            <CardContent className="p-6">
+            <CardContent className="p-3 sm:p-4 lg:p-6">
               <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground mb-1">Total Rapports</p>
-                  <p className="text-3xl font-bold text-[#B4CC5F]">
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs sm:text-sm font-medium text-muted-foreground mb-1">Total Rapports</p>
+                  <p className="text-xl sm:text-2xl lg:text-3xl font-bold text-[#B4CC5F]">
                     {reports.length}
                   </p>
-                  <p className="text-xs text-muted-foreground mt-1">Tous les rapports</p>
+                  <p className="text-xs text-muted-foreground mt-1 hidden sm:block">Tous les rapports</p>
                 </div>
-                <div className="h-12 w-12 rounded-xl bg-[#B4CC5F] flex items-center justify-center shadow-lg hover:shadow-xl transition-shadow duration-300">
-                  <FileText className="h-7 w-7 text-white" />
+                <div className="h-8 w-8 sm:h-10 sm:w-10 lg:h-12 lg:w-12 rounded-xl bg-[#B4CC5F] flex items-center justify-center shadow-lg hover:shadow-xl transition-shadow duration-300 flex-shrink-0">
+                  <FileText className="h-4 w-4 sm:h-5 sm:w-5 lg:h-7 lg:w-7 text-white" />
                 </div>
               </div>
             </CardContent>
           </Card>
           
           <Card className="hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
-            <CardContent className="p-6">
+            <CardContent className="p-3 sm:p-4 lg:p-6">
               <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground mb-1">Serres Assignées</p>
-                  <p className="text-3xl font-bold text-blue-600">
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs sm:text-sm font-medium text-muted-foreground mb-1">Serres Assignées</p>
+                  <p className="text-xl sm:text-2xl lg:text-3xl font-bold text-blue-600">
                     {availableSerres.length}
                   </p>
                   {availableSerres.length === 0 ? (
-                    <p className="text-xs text-red-500 mt-1">
+                    <p className="text-xs text-red-500 mt-1 hidden sm:block">
                       Aucune serre assignée
                     </p>
                   ) : (
-                    <p className="text-xs text-muted-foreground mt-1">Serres disponibles</p>
+                    <p className="text-xs text-muted-foreground mt-1 hidden sm:block">Serres disponibles</p>
                   )}
                 </div>
-                <div className="h-12 w-12 rounded-xl bg-blue-600 flex items-center justify-center shadow-lg hover:shadow-xl transition-shadow duration-300">
-                  <BarChart3 className="h-7 w-7 text-white" />
+                <div className="h-8 w-8 sm:h-10 sm:w-10 lg:h-12 lg:w-12 rounded-xl bg-blue-600 flex items-center justify-center shadow-lg hover:shadow-xl transition-shadow duration-300 flex-shrink-0">
+                  <BarChart3 className="h-4 w-4 sm:h-5 sm:w-5 lg:h-7 lg:w-7 text-white" />
                 </div>
               </div>
             </CardContent>
           </Card>
 
           <Card className="hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
-            <CardContent className="p-6">
+            <CardContent className="p-3 sm:p-4 lg:p-6">
               <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground mb-1">Ce Mois</p>
-                  <p className="text-3xl font-bold text-[#B4CC5F]">
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs sm:text-sm font-medium text-muted-foreground mb-1">Ce Mois</p>
+                  <p className="text-xl sm:text-2xl lg:text-3xl font-bold text-[#B4CC5F]">
                     {reports.filter(r => {
                       if (!r.date) return false;
                       const reportDate = new Date(r.date);
@@ -200,45 +203,46 @@ export default function TechnicienSupReports() {
                       return reportDate.getMonth() === now.getMonth() && reportDate.getFullYear() === now.getFullYear();
                     }).length}
                   </p>
-                  <p className="text-xs text-muted-foreground mt-1">Rapports du mois</p>
+                  <p className="text-xs text-muted-foreground mt-1 hidden sm:block">Rapports du mois</p>
                 </div>
-                <div className="h-12 w-12 rounded-xl bg-[#B4CC5F] flex items-center justify-center shadow-lg hover:shadow-xl transition-shadow duration-300">
-                  <Calendar className="h-7 w-7 text-white" />
+                <div className="h-8 w-8 sm:h-10 sm:w-10 lg:h-12 lg:w-12 rounded-xl bg-[#B4CC5F] flex items-center justify-center shadow-lg hover:shadow-xl transition-shadow duration-300 flex-shrink-0">
+                  <Calendar className="h-4 w-4 sm:h-5 sm:w-5 lg:h-7 lg:w-7 text-white" />
                 </div>
               </div>
             </CardContent>
           </Card>
 
           <Card className="hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
-            <CardContent className="p-6">
+            <CardContent className="p-3 sm:p-4 lg:p-6">
               <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground mb-1">Avec PDF</p>
-                  <p className="text-3xl font-bold text-purple-600">
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs sm:text-sm font-medium text-muted-foreground mb-1">Avec PDF</p>
+                  <p className="text-xl sm:text-2xl lg:text-3xl font-bold text-purple-600">
                     {reports.filter(r => r.lien_pdf).length}
                   </p>
-                  <p className="text-xs text-muted-foreground mt-1">Rapports téléchargeables</p>
+                  <p className="text-xs text-muted-foreground mt-1 hidden sm:block">Rapports téléchargeables</p>
                 </div>
-                <div className="h-12 w-12 rounded-xl bg-purple-600 flex items-center justify-center shadow-lg hover:shadow-xl transition-shadow duration-300">
-                  <Download className="h-7 w-7 text-white" />
+                <div className="h-8 w-8 sm:h-10 sm:w-10 lg:h-12 lg:w-12 rounded-xl bg-purple-600 flex items-center justify-center shadow-lg hover:shadow-xl transition-shadow duration-300 flex-shrink-0">
+                  <Download className="h-4 w-4 sm:h-5 sm:w-5 lg:h-7 lg:w-7 text-white" />
                 </div>
               </div>
             </CardContent>
           </Card>
         </div>
 
-        <Card className="mb-8 hover:shadow-md transition-shadow duration-300">
-          <CardHeader className="pb-4">
-            <CardTitle className="flex items-center space-x-2 text-lg">
-              <div className="h-8 w-8 rounded-lg bg-[#B4CC5F] flex items-center justify-center">
-                <Filter className="h-5 w-5 text-white" />
+        {/* Filters and Search - Mobile Responsive */}
+        <Card className="mb-6 sm:mb-8 hover:shadow-md transition-shadow duration-300">
+          <CardHeader className="pb-3 sm:pb-4">
+            <CardTitle className="flex items-center space-x-2 text-base sm:text-lg">
+              <div className="h-6 w-6 sm:h-8 sm:w-8 rounded-lg bg-[#B4CC5F] flex items-center justify-center">
+                <Filter className="h-3 w-3 sm:h-5 sm:w-5 text-white" />
               </div>
               <span>Filtres et Recherche</span>
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="sm:col-span-2 lg:col-span-1">
                 <Label htmlFor="search" className="text-sm font-medium text-foreground">Rechercher</Label>
                 <div className="relative mt-1">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -270,14 +274,15 @@ export default function TechnicienSupReports() {
                 </Select>
               </div>
 
-              <div className="flex items-end">
+              <div className="flex items-end sm:col-span-2 lg:col-span-1">
                 <Button 
                   onClick={handleGenerateReport}
                   disabled={availableSerres.length === 0}
                   className="w-full bg-[#B4CC5F] hover:bg-[#9BB84F] text-white font-medium disabled:bg-gray-400 disabled:cursor-not-allowed transition-all duration-200 hover:scale-105 active:scale-95 shadow-lg hover:shadow-xl"
                 >
                   <Plus className="h-4 w-4 mr-2" />
-                  Générer un rapport
+                  <span className="hidden sm:inline">Générer un rapport</span>
+                  <span className="sm:hidden">Générer</span>
                 </Button>
                 {availableSerres.length === 0 && (
                   <p className="text-xs text-red-500 mt-1 text-center font-medium">
@@ -289,33 +294,34 @@ export default function TechnicienSupReports() {
           </CardContent>
         </Card>
 
+        {/* Reports List - Mobile Responsive */}
         <Card className="hover:shadow-md transition-shadow duration-300">
-          <CardHeader className="pb-4">
-            <CardTitle className="flex items-center space-x-2 text-lg">
-              <div className="h-8 w-8 rounded-lg bg-[#B4CC5F] flex items-center justify-center">
-                <FileText className="h-5 w-5 text-white" />
+          <CardHeader className="pb-3 sm:pb-4">
+            <CardTitle className="flex items-center space-x-2 text-base sm:text-lg">
+              <div className="h-6 w-6 sm:h-8 sm:w-8 rounded-lg bg-[#B4CC5F] flex items-center justify-center">
+                <FileText className="h-3 w-3 sm:h-5 sm:w-5 text-white" />
               </div>
               <span>Rapports ({filteredReports.length})</span>
             </CardTitle>
           </CardHeader>
           <CardContent>
             {availableSerres.length === 0 ? (
-              <div className="text-center py-12 text-muted-foreground">
-                <div className="h-20 w-20 rounded-full bg-red-100 mx-auto mb-4 flex items-center justify-center">
-                  <Calendar className="h-10 w-10 text-red-500" />
+              <div className="text-center py-8 sm:py-12 text-muted-foreground">
+                <div className="h-16 w-16 sm:h-20 sm:w-20 rounded-full bg-red-100 mx-auto mb-4 flex items-center justify-center">
+                  <Calendar className="h-8 w-8 sm:h-10 sm:w-10 text-red-500" />
                 </div>
-                <h3 className="text-xl font-semibold mb-2 text-foreground">Aucune serre assignée</h3>
-                <p className="text-sm mb-4 text-muted-foreground max-w-md mx-auto">
+                <h3 className="text-lg sm:text-xl font-semibold mb-2 text-foreground">Aucune serre assignée</h3>
+                <p className="text-sm mb-4 text-muted-foreground max-w-md mx-auto px-4">
                   Vous n'avez pas encore de serres assignées. Contactez votre directeur pour obtenir des autorisations.
                 </p>
               </div>
             ) : filteredReports.length === 0 ? (
-              <div className="text-center py-12 text-muted-foreground">
-                <div className="h-20 w-20 rounded-full bg-[#B4CC5F]/20 mx-auto mb-4 flex items-center justify-center">
-                  <FileText className="h-10 w-10 text-[#B4CC5F]" />
+              <div className="text-center py-8 sm:py-12 text-muted-foreground">
+                <div className="h-16 w-16 sm:h-20 sm:w-20 rounded-full bg-[#B4CC5F]/20 mx-auto mb-4 flex items-center justify-center">
+                  <FileText className="h-8 w-8 sm:h-10 sm:w-10 text-[#B4CC5F]" />
                 </div>
-                <h3 className="text-xl font-semibold mb-2 text-foreground">Aucun rapport trouvé</h3>
-                <p className="text-sm mb-4 text-muted-foreground max-w-md mx-auto">
+                <h3 className="text-lg sm:text-xl font-semibold mb-2 text-foreground">Aucun rapport trouvé</h3>
+                <p className="text-sm mb-4 text-muted-foreground max-w-md mx-auto px-4">
                   {reports.length === 0 
                     ? availableSerres && availableSerres.length > 0
                       ? "Vous n'avez pas encore de rapports pour vos serres assignées"
@@ -329,72 +335,73 @@ export default function TechnicienSupReports() {
                     className="bg-[#B4CC5F] hover:bg-[#9BB84F] transition-all duration-200 hover:scale-105 active:scale-95 shadow-lg hover:shadow-xl"
                   >
                     <Plus className="h-4 w-4 mr-2" />
-                    Créer votre premier rapport
+                    <span className="hidden sm:inline">Créer votre premier rapport</span>
+                    <span className="sm:hidden">Créer rapport</span>
                   </Button>
                 )}
               </div>
             ) : (
-              <div className="space-y-4">
+              <div className="space-y-3 sm:space-y-4">
                 {filteredReports.map((report) => {
                   const statusBadge = getStatusBadge(report.date);
                   return (
                     <div
                       key={report.id}
-                      className="flex items-start space-x-4 p-6 border rounded-lg hover:bg-muted hover:shadow-md transition-all duration-300 hover:-translate-y-1 border-border"
+                      className="flex flex-col sm:flex-row sm:items-start space-y-3 sm:space-y-0 sm:space-x-4 p-4 sm:p-6 border rounded-lg hover:bg-muted hover:shadow-md transition-all duration-300 hover:-translate-y-1 border-border"
                     >
-                      <div className="flex-shrink-0">
-                        <div className="h-12 w-12 rounded-xl bg-[#B4CC5F] flex items-center justify-center shadow-lg hover:shadow-xl transition-shadow duration-300">
-                          <FileText className="h-7 w-7 text-white" />
+                      <div className="flex-shrink-0 flex justify-center sm:justify-start">
+                        <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-xl bg-[#B4CC5F] flex items-center justify-center shadow-lg hover:shadow-xl transition-shadow duration-300">
+                          <FileText className="h-5 w-5 sm:h-7 sm:w-7 text-white" />
                         </div>
                       </div>
                       
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-start justify-between">
+                        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between space-y-3 sm:space-y-0">
                           <div className="flex-1">
-                            <h3 className="text-lg font-medium text-foreground mb-2">
+                            <h3 className="text-base sm:text-lg font-medium text-foreground mb-2 text-center sm:text-left">
                               {report.description || `Rapport ${report.id}`}
                             </h3>
                             
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-3">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-4 mb-3">
                               <div className="flex items-center space-x-2">
-                                <span className="text-sm font-medium text-muted-foreground">Serre:</span>
-                                <span className="text-sm text-foreground">{report.serre || `Serre ${report.serre_id}`}</span>
+                                <span className="text-xs sm:text-sm font-medium text-muted-foreground">Serre:</span>
+                                <span className="text-xs sm:text-sm text-foreground truncate">{report.serre || `Serre ${report.serre_id}`}</span>
                               </div>
                               
                               {report.domaine && (
                                 <div className="flex items-center space-x-2">
-                                  <span className="text-sm font-medium text-muted-foreground">Domaine:</span>
-                                  <span className="text-sm text-foreground">{report.domaine}</span>
+                                  <span className="text-xs sm:text-sm font-medium text-muted-foreground">Domaine:</span>
+                                  <span className="text-xs sm:text-sm text-foreground truncate">{report.domaine}</span>
                                 </div>
                               )}
                               
                               {report.entreprise && (
-                                <div className="flex items-center space-x-2">
-                                  <span className="text-sm font-medium text-muted-foreground">Entreprise:</span>
-                                  <span className="text-sm text-foreground">{report.entreprise}</span>
+                                <div className="flex items-center space-x-2 sm:col-span-2 lg:col-span-1">
+                                  <span className="text-xs sm:text-sm font-medium text-muted-foreground">Entreprise:</span>
+                                  <span className="text-xs sm:text-sm text-foreground truncate">{report.entreprise}</span>
                                 </div>
                               )}
                             </div>
                             
                             {report.bilans && report.bilans.length > 0 && (
                               <div className="mb-3">
-                                <span className="text-sm font-medium text-muted-foreground">Bilans: </span>
-                                <span className="text-sm text-foreground">{report.bilans.join(", ")}</span>
+                                <span className="text-xs sm:text-sm font-medium text-muted-foreground">Bilans: </span>
+                                <span className="text-xs sm:text-sm text-foreground">{report.bilans.join(", ")}</span>
                               </div>
                             )}
                             
                             {report.date && (
-                              <div className="flex items-center space-x-2 text-sm text-muted-foreground">
-                                <Calendar className="h-4 w-4" />
+                              <div className="flex items-center justify-center sm:justify-start space-x-2 text-xs sm:text-sm text-muted-foreground">
+                                <Calendar className="h-3 w-3 sm:h-4 sm:w-4" />
                                 <span>Créé le {new Date(report.date).toLocaleDateString("fr-FR")}</span>
                               </div>
                             )}
                           </div>
                           
-                          <div className="flex flex-col items-end space-y-3">
+                          <div className="flex flex-col items-center sm:items-end space-y-3">
                             <Badge
                               variant="outline"
-                              className={statusBadge.color}
+                              className={`${statusBadge.color} text-xs sm:text-sm`}
                             >
                               {statusBadge.label}
                             </Badge>
@@ -404,10 +411,11 @@ export default function TechnicienSupReports() {
                                 variant="outline"
                                 size="sm"
                                 onClick={() => handleDownloadReport(report)}
-                                className="h-8 border-[#B4CC5F] text-[#B4CC5F] hover:bg-[#B4CC5F] hover:text-white transition-all duration-200 hover:scale-105 active:scale-95"
+                                className="h-8 border-[#B4CC5F] text-[#B4CC5F] hover:bg-[#B4CC5F] hover:text-white transition-all duration-200 hover:scale-105 active:scale-95 w-full sm:w-auto"
                               >
                                 <Download className="h-3 w-3 mr-1" />
-                                Télécharger
+                                <span className="hidden sm:inline">Télécharger</span>
+                                <span className="sm:hidden">PDF</span>
                               </Button>
                             )}
                           </div>
