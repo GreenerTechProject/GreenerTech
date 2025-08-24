@@ -52,7 +52,7 @@ export default function TechnicianSidebar({
         id: "accueil",
         label: "Accueil",
         icon: <Home className="h-5 w-5" />,
-        path: isSuperiorTechnician ? "/technicien-sup/home" : "/technician/dashboard",
+        path: isSuperiorTechnician ? "/technicien-sup" : "/technician/dashboard",
       },
       {
         id: "carte",
