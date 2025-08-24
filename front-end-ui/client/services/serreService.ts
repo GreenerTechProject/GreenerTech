@@ -1,6 +1,16 @@
 import axios from "axios";
 import { tokenManager } from "./authService";
-import { ExtendedSerre } from "@shared/api";
+
+// Define interface that matches the backend model
+export interface Serre {
+  id: number;
+  nom: string;
+  id_domaine: number;
+  surface?: number;
+  center_lat?: number;
+  center_lng?: number;
+  id_group_cor: number;
+}
 
 export interface CreateSerreRequest {
   nom: string;
@@ -437,9 +447,9 @@ export const serreService = {
     }
   },
 
-  getSerresByDomain: async (domainId: string): Promise<ExtendedSerre[]> => {
+  getSerresByDomain: async (domainId: string): Promise<Serre[]> => {
     try {
-      const response = await axios.get<{ success: boolean; serres: ExtendedSerre[] }>(
+      const response = await axios.get<{ success: boolean; serres: Serre[] }>(
         `${API_BASE_URL}/domaine/${domainId}/serres`,
         createAuthenticatedRequest(),
       );
@@ -461,9 +471,9 @@ export const serreService = {
     }
   },
 
-  getAllSerres: async (): Promise<ExtendedSerre[]> => {
+  getAllSerres: async (): Promise<Serre[]> => {
     try {
-        const response = await axios.get<ExtendedSerre[]>(
+        const response = await axios.get<Serre[]>(
             `${API_BASE_URL}/serre`,
             createAuthenticatedRequest()
         );

@@ -4,8 +4,10 @@ import { tokenManager } from "./authService";
 export interface Company {
   id: number;
   nom: string;
+  status_juridique?: string;
   adresse?: string;
-  telephone?: string;
+  cie?: string;
+  id_fiscale?: string;
   email?: string;
   created_at?: string;
   updated_at?: string;
@@ -55,8 +57,16 @@ export const companyService = {
 
   getCompanyById: async (id: number): Promise<Company> => {
     try {
-      const response = await axios.get(`${API_BASE_URL}/entreprise/${id}`, createAuthenticatedRequest());
-      return response.data;
+      // Use the existing backend endpoint: GET /api/entreprise
+      // The backend automatically gets the company associated with the current user
+      const response = await axios.get(`${API_BASE_URL}/entreprise`, createAuthenticatedRequest());
+      // Since the backend returns an array, find the company with matching ID
+      const companies = response.data || [];
+      const company = companies.find((c: Company) => c.id === id);
+      if (!company) {
+        throw { message: "Entreprise non trouvée", status: 404 } as ApiError;
+      }
+      return company;
     } catch (error: any) {
       const errorMessage = error.response?.data?.message || "Erreur lors de la récupération de l'entreprise";
       throw { message: errorMessage, status: error.response?.status || 500 } as ApiError;
@@ -65,7 +75,7 @@ export const companyService = {
 
   getCompaniesByDirector: async (): Promise<Company[]> => {
     try {
-      const response = await axios.get(`${API_BASE_URL}/entreprise/director`, createAuthenticatedRequest());
+      const response = await axios.get(`${API_BASE_URL}/entreprise`, createAuthenticatedRequest());
       return response.data || [];
     } catch (error: any) {
       const errorMessage = error.response?.data?.message || "Erreur lors de la récupération des entreprises du directeur";
@@ -85,7 +95,9 @@ export const companyService = {
 
   updateCompany: async (id: number, companyData: UpdateCompanyRequest): Promise<Company> => {
     try {
-      const response = await axios.put(`${API_BASE_URL}/entreprise/${id}`, companyData, createAuthenticatedRequest());
+      // Use the existing backend endpoint: PUT /api/entreprise
+      // The backend automatically gets the company associated with the current user
+      const response = await axios.put(`${API_BASE_URL}/entreprise`, companyData, createAuthenticatedRequest());
       return response.data;
     } catch (error: any) {
       const errorMessage = error.response?.data?.message || "Erreur lors de la mise à jour de l'entreprise";
@@ -95,7 +107,9 @@ export const companyService = {
 
   deleteCompany: async (id: number): Promise<{ message: string }> => {
     try {
-      const response = await axios.delete(`${API_BASE_URL}/entreprise/${id}`, createAuthenticatedRequest());
+      // Use the existing backend endpoint: DELETE /api/entreprise
+      // The backend automatically deletes the company associated with the current user
+      const response = await axios.delete(`${API_BASE_URL}/entreprise`, createAuthenticatedRequest());
       return response.data;
     } catch (error: any) {
       const errorMessage = error.response?.data?.message || "Erreur lors de la suppression de l'entreprise";

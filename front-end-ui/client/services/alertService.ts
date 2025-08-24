@@ -119,7 +119,7 @@ export const AlertService = {
 
   getAlertsByEnterprise: async (enterpriseId: number): Promise<Alert[]> => {
     try {
-      const response = await axios.get(`${API_BASE_URL}/alerte/enterprise/${enterpriseId}`, createAuthenticatedRequest());
+      const response = await axios.get(`${API_BASE_URL}/alerte/entreprise/${enterpriseId}`, createAuthenticatedRequest());
       return response.data || [];
     } catch (error: any) {
       const errorMessage = error.response?.data?.message || "Erreur lors de la récupération des alertes par entreprise";

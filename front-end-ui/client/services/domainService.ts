@@ -2,17 +2,16 @@ import axios from "axios";
 import { tokenManager } from "./authService";
 
 export interface Domain {
-  id: string;
-  name: string;
-  area: number;
-  center: { lat: number; lng: number };
-  path: { lat: number; lng: number }[];
-  companyId?: string;
+  id: number;
+  nom: string;
+  surface?: number;
+  center?: { lat: number; lng: number };
+  id_entreprise: number;
 }
 
 export interface CreateDomainRequest {
-  name: string;
-  area: number;
+  nom: string;
+  surface: number;
   center: { lat: number; lng: number };
   path: { lat: number; lng: number }[];
   companyId: string;
