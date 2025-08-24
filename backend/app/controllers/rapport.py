@@ -320,11 +320,13 @@ def get_rapports_by_director_entreprise(current_user):
                 s.nom AS serre_nom,
                 s.id AS serre_id,
                 d.nom AS domaine_nom,
-                e.nom AS entreprise_nom
+                e.nom AS entreprise_nom,
+                u.name AS user_nom
             FROM rapport r
             JOIN serres s ON r.id_serre = s.id
             JOIN domaines d ON s.id_domaine = d.id
             JOIN entreprises e ON d.id_entreprise = e.id
+            JOIN users u ON r.user_id = u.id
             WHERE e.id_user = :user_id
             ORDER BY r.date DESC
         """
@@ -344,10 +346,11 @@ def get_rapports_by_director_entreprise(current_user):
                 "date": row["date"].isoformat() if row["date"] else None,
                 "description": row["description"],
                 "lien_pdf": row["lien_pdf"],
-                "serre": row["serre_nom"],
+                "serre_nom": row["serre_nom"],
                 "serre_id": row["serre_id"],
-                "domaine": row["domaine_nom"],
-                "entreprise": row["entreprise_nom"],
+                "domaine_nom": row["domaine_nom"],
+                "entreprise_nom": row["entreprise_nom"],
+                "user_nom": row["user_nom"],
                 "bilans": bilan_names,
             })
 

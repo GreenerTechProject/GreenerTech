@@ -199,6 +199,11 @@ def get_alertes_by_entreprise(current_user, entreprise_id):
                     domaine = next((d for d in domaines if d.id == serre.id_domaine), None)
                     if domaine:
                         enhanced_alerte = alerte.to_dict()
+                        # Add domain and serre names as direct properties to match frontend expectations
+                        enhanced_alerte['domaine_nom'] = domaine.nom
+                        enhanced_alerte['serre_nom'] = serre.nom
+                        enhanced_alerte['id_domaine'] = domaine.id
+                        enhanced_alerte['id_serre'] = serre.id
                         enhanced_alerte['location'] = {
                             'domaine': domaine.nom,
                             'serre': serre.nom,

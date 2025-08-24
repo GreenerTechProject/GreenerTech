@@ -414,11 +414,12 @@ def register_technicien():
         if not data.get('name') and not (data.get('firstName') and data.get('lastName')):
             return jsonify({"error": "Nom et prénom sont requis"}), 400
 
-        # For pre-registered users, we can derive id_entreprise from their assigned director
-        if not data.get('id_entreprise') and not data.get('id_assigned'):
-            return jsonify({"error": "Sélection d'entreprise requise"}), 400
-
         email = data.get('email')
+        existing_user = User.query.filter_by(email=email).first()
+
+        # For pre-registered users, we can derive id_entreprise from their assigned director
+        if not data.get('id_entreprise') and not data.get('id_assigned') and not existing_user:
+            return jsonify({"error": "Sélection d'entreprise requise"}), 400
         role = data.get('role')
         name = data.get('name') or f"{data.get('firstName', '')} {data.get('lastName', '')}".strip()
         password = generate_password_hash(data.get('password'))
@@ -452,8 +453,6 @@ def register_technicien():
 
         if role not in ["technicien", "technicien_superieur"]:
             return jsonify({"message": "Rôle invalide. Choisir 'technicien' ou 'technicien_superieur'"}), 400
-
-        existing_user = User.query.filter_by(email=email).first()
 
         if existing_user:
             # Update User
