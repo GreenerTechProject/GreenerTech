@@ -104,7 +104,10 @@ export default function FinalOverview({
 }: FinalOverviewProps) {
   const [selectedItem, setSelectedItem] = useState<SelectedItem>(null);
   const [map, setMap] = useState<google.maps.Map | null>(null);
+  const [leftPanelWidth, setLeftPanelWidth] = useState(33); // percentage
+  const [isResizing, setIsResizing] = useState(false);
   const mapRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   // Calculate statistics
   const totalDomains = domains.length;
@@ -242,10 +245,51 @@ export default function FinalOverview({
     }));
   };
 
+  // Handle resize functionality
+  const handleMouseDown = (e: React.MouseEvent) => {
+    setIsResizing(true);
+    e.preventDefault();
+  };
+
+  const handleMouseMove = (e: MouseEvent) => {
+    if (!isResizing || !containerRef.current) return;
+
+    const containerRect = containerRef.current.getBoundingClientRect();
+    const newWidth = ((e.clientX - containerRect.left) / containerRect.width) * 100;
+
+    // Constrain width between 20% and 70%
+    const constrainedWidth = Math.max(20, Math.min(70, newWidth));
+    setLeftPanelWidth(constrainedWidth);
+  };
+
+  const handleMouseUp = () => {
+    setIsResizing(false);
+  };
+
+  // Add global mouse event listeners
+  useEffect(() => {
+    if (isResizing) {
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+      document.body.style.cursor = 'col-resize';
+      document.body.style.userSelect = 'none';
+
+      return () => {
+        document.removeEventListener('mousemove', handleMouseMove);
+        document.removeEventListener('mouseup', handleMouseUp);
+        document.body.style.cursor = '';
+        document.body.style.userSelect = '';
+      };
+    }
+  }, [isResizing]);
+
   return (
-    <div className="h-screen flex">
+    <div ref={containerRef} className="h-screen flex">
       {/* Left Sidebar */}
-      <div className="w-1/3 bg-white border-r flex flex-col">
+      <div
+        className="bg-white border-r flex flex-col"
+        style={{ width: `${leftPanelWidth}%` }}
+      >
         <div className="p-6 border-b">
           <div className="flex items-center mb-4">
             <Button variant="ghost" size="sm" onClick={onBack} className="mr-2">
@@ -278,11 +322,11 @@ export default function FinalOverview({
 
           {/* Statistics Grid */}
           <div className="grid grid-cols-2 gap-3 mb-4">
-            <div className="p-3 bg-blue-50 rounded-lg text-center">
-              <div className="text-lg font-bold text-blue-600">
+            <div className="p-3 bg-green-50 rounded-lg text-center">
+              <div className="text-lg font-bold text-[#2E7D32]">
                 {domains.length}
               </div>
-              <div className="text-xs text-blue-600">Domaines</div>
+              <div className="text-xs text-[#2E7D32]">Domaines</div>
               <div className="text-xs text-gray-500">
                 {(totalDomainArea / 10000).toFixed(1)} ha
               </div>
@@ -346,7 +390,7 @@ export default function FinalOverview({
                           <span className="font-medium">{domain.name}</span>
                           {selectedItem?.type === "domain" &&
                             selectedItem.id === domain.id && (
-                              <Eye className="h-4 w-4 text-blue-500" />
+                              <Eye className="h-4 w-4 text-[#2E7D32]" />
                             )}
                         </div>
                         <Badge variant="outline">
@@ -376,7 +420,7 @@ export default function FinalOverview({
                                 <span className="text-sm">{serre.nom}</span>
                                 {selectedItem?.type === "serre" &&
                                   selectedItem.id === serre.id && (
-                                    <Eye className="h-3 w-3 text-blue-500" />
+                                    <Eye className="h-3 w-3 text-[#2E7D32]" />
                                   )}
                               </div>
                               <div className="flex items-center space-x-2">
@@ -407,7 +451,7 @@ export default function FinalOverview({
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <Users className="h-5 w-5 text-blue-600" />
+                  <Users className="h-5 w-5 text-[#2E7D32]" />
                   Techniciens ({totalTechnicians})
                 </CardTitle>
               </CardHeader>
@@ -416,14 +460,14 @@ export default function FinalOverview({
                   {/* Supervisors */}
                   <div>
                     <h4 className="font-medium text-gray-900 mb-3 flex items-center gap-2">
-                      <UserCheck className="h-4 w-4 text-blue-600" />
+                      <UserCheck className="h-4 w-4 text-[#2E7D32]" />
                       Techniciens Supérieurs ({totalSupervisors})
                     </h4>
                     <div className="space-y-2">
                       {technicians
                         .filter((tech) => tech.role === "technicien_superieur")
                         .map((tech) => (
-                          <div key={tech.id} className="flex items-center justify-between p-2 bg-blue-50 rounded">
+                          <div key={tech.id} className="flex items-center justify-between p-2 bg-green-50 rounded">
                             <div>
                               <p className="font-medium text-sm">{tech.fullName}</p>
                               <p className="text-xs text-gray-600">{tech.email}</p>
@@ -588,6 +632,20 @@ export default function FinalOverview({
         </div>
       </div>
 
+      {/* Resize Handle */}
+      <div
+        className={`w-1 bg-gray-300 hover:bg-gray-400 cursor-col-resize transition-colors relative group ${
+          isResizing ? 'bg-gray-500' : ''
+        }`}
+        onMouseDown={handleMouseDown}
+        style={{ flexShrink: 0 }}
+      >
+        {/* Visual indicator */}
+        <div className="absolute inset-0 flex items-center justify-center">
+          <div className="w-0.5 h-8 bg-gray-400 group-hover:bg-gray-600 rounded-full"></div>
+        </div>
+      </div>
+
       {/* Right Panel - Map */}
       <div className="flex-1 relative">
         <GoogleMapsWrapper>
@@ -638,11 +696,11 @@ export default function FinalOverview({
                       <div>Surface: {serre.surface.toFixed(0)} m²</div>
                       <div>Rendement: {serre.yield} kg/m²</div>
                       {technician && (
-                        <div className="mt-2 p-2 bg-blue-50 rounded">
-                          <div className="font-medium text-blue-900">
+                        <div className="mt-2 p-2 bg-green-50 rounded">
+                          <div className="font-medium text-[#2E7D32]">
                             Assigné à:
                           </div>
-                          <div className="text-blue-700">
+                          <div className="text-[#2E7D32]">
                             {technician.fullName}
                           </div>
                         </div>

@@ -8,6 +8,7 @@ import { Separator } from "@/components/ui/separator";
 import { MapPin, Plus, Trash2, GripVertical } from "lucide-react";
 import GoogleMapsWrapper from "./GoogleMapsWrapper";
 import MapComponent, { DrawnShape } from "./MapComponent";
+import LogoutWithWarning from "./LogoutWithWarning";
 
 // Local interface that's compatible with both Google Maps and plain objects
 interface LocalDrawnShape {
@@ -62,7 +63,6 @@ export default function DomainCreation({
   const [isDragging, setIsDragging] = useState(false);
 
   const handleShapeComplete = (shape: DrawnShape) => {
-    console.log("handleShapeComplete called with shape:", shape);
     // Convert Google Maps shape to local shape
     const localShape: LocalDrawnShape = {
       id: shape.id,
@@ -74,7 +74,6 @@ export default function DomainCreation({
       color: shape.color,
       domainId: shape.domainId,
     };
-    console.log("Setting pending shape to:", localShape);
     setPendingShape(localShape);
     setIsDrawing(false);
   };
@@ -202,22 +201,21 @@ export default function DomainCreation({
         onMouseDown={handleMouseDown}
       >
         <div className="p-6 border-b">
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">
-            Créer vos domaines
-          </h2>
-          <p className="text-gray-600 text-sm">
-            Dessinez vos domaines agricoles sur la carte. Chaque domaine peut
-            contenir plusieurs serres.
-          </p>
+          <div className="flex justify-between items-center mb-4">
+            <div>
+              <h2 className="text-2xl font-bold text-gray-900 mb-2">
+                Créer vos domaines
+              </h2>
+              <p className="text-gray-600 text-sm">
+                Dessinez vos domaines agricoles sur la carte. Chaque domaine peut
+                contenir plusieurs serres.
+              </p>
+            </div>
+            <LogoutWithWarning variant="outline" size="sm" />
+          </div>
         </div>
 
         <div className="flex-1 overflow-y-auto p-6">
-          {/* Debug Info */}
-          <div className="mb-4 p-3 bg-gray-100 rounded text-xs">
-            <div>Debug - isDrawing: {isDrawing.toString()}</div>
-            <div>Debug - pendingShape: {pendingShape ? 'exists' : 'null'}</div>
-            <div>Debug - newDomainName: "{newDomainName}"</div>
-          </div>
 
           {/* Drawing Controls */}
           <Card className="mb-6">
@@ -226,37 +224,15 @@ export default function DomainCreation({
             </CardHeader>
             <CardContent className="space-y-4">
               {!isDrawing && !pendingShape && (
-                <div className="space-y-2">
-                  <Button onClick={startDrawing} className="w-full">
-                    <Plus className="mr-2 h-4 w-4" />
-                    Dessiner un domaine
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    onClick={() => {
-                      console.log("Test button clicked - setting pending shape manually");
-                      const testShape: LocalDrawnShape = {
-                        id: "test-" + Date.now(),
-                        type: "domain",
-                        name: "Test Domain",
-                        path: [],
-                        area: 10000,
-                        center: { lat: 33.9716, lng: -6.8498 },
-                        color: "#2E7D32"
-                      };
-                      console.log("Setting test shape:", testShape);
-                      setPendingShape(testShape);
-                    }}
-                    className="w-full text-xs"
-                  >
-                    🧪 Test: Simuler un domaine dessiné
-                  </Button>
-                </div>
+                <Button onClick={startDrawing} className="w-full">
+                  <Plus className="mr-2 h-4 w-4" />
+                  Dessiner un domaine
+                </Button>
               )}
 
               {isDrawing && (
                 <div className="space-y-3">
-                  <div className="text-sm text-blue-600 bg-blue-50 p-3 rounded-md">
+                  <div className="text-sm text-[#2E7D32] bg-green-50 p-3 rounded-md">
                     Cliquez sur la carte pour dessiner les contours de votre
                     domaine
                   </div>
@@ -360,7 +336,7 @@ export default function DomainCreation({
                         </Button>
                       </div>
                       {selectedDomainId === domain.id && (
-                        <div className="mt-2 text-sm text-blue-600">
+                        <div className="mt-2 text-sm text-[#2E7D32]">
                           ✓ Sélectionné - Vous pouvez maintenant créer des
                           serres dans ce domaine
                         </div>

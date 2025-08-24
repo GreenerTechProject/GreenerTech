@@ -6,12 +6,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Separator } from "@/components/ui/separator";
-import { 
-  ArrowLeft, 
-  SkipForward, 
-  ArrowRight, 
-  Search, 
-  Users, 
+import {
+  ArrowLeft,
+  SkipForward,
+  ArrowRight,
+  Search,
+  Users,
   UserCheck,
   UserPlus,
   GripVertical,
@@ -21,9 +21,14 @@ import {
   Maximize2,
   Trash2,
   Loader2,
+  Check,
+  X,
+  Move,
+  Target,
 } from "lucide-react";
 import { technicianService, Technician } from "@/services/technicianService";
 import { assignmentService } from "@/services/assignmentService";
+import LogoutWithWarning from "./LogoutWithWarning";
 
 interface TechnicianHierarchyProps {
   technicians: Technician[];
@@ -50,6 +55,8 @@ export default function TechnicianHierarchy({
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isUpdatingAssignment, setIsUpdatingAssignment] = useState<string | null>(null);
+  const [draggedTechnician, setDraggedTechnician] = useState<Technician | null>(null);
+  const [dragOverSupervisor, setDragOverSupervisor] = useState<string | null>(null);
   const [forceUpdate, setForceUpdate] = useState(0); // Force re-render
 
   // Get window width safely
@@ -275,6 +282,149 @@ export default function TechnicianHierarchy({
     setIsFullscreen(prev => !prev);
   }, []);
 
+  // Drag and Drop Handlers
+  const handleDragStart = useCallback((e: React.DragEvent, technician: Technician) => {
+    setDraggedTechnician(technician);
+    e.dataTransfer.effectAllowed = 'move';
+  }, []);
+
+  const handleDragOver = useCallback((e: React.DragEvent, supervisorId: string) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    setDragOverSupervisor(supervisorId);
+  }, []);
+
+  const handleDragLeave = useCallback((e: React.DragEvent) => {
+    // Only clear drag over if we're leaving the supervisor area completely
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = e.clientX;
+    const y = e.clientY;
+
+    if (x < rect.left || x > rect.right || y < rect.top || y > rect.bottom) {
+      setDragOverSupervisor(null);
+    }
+  }, []);
+
+  const handleDrop = useCallback(async (e: React.DragEvent, supervisorId: string) => {
+    e.preventDefault();
+    setDragOverSupervisor(null);
+
+    if (!draggedTechnician) return;
+
+    // Don't allow assigning to the same supervisor
+    if (draggedTechnician.id_assigned === supervisorId) {
+      setDraggedTechnician(null);
+      return;
+    }
+
+    try {
+      if (companyId) {
+        setIsUpdatingAssignment(draggedTechnician.id.toString());
+
+        // Assign technician to new supervisor
+        await assignmentService.assignTechnicianToSupervisor(
+          parseInt(draggedTechnician.id.toString()),
+          parseInt(supervisorId)
+        );
+
+        // Update local state
+        const newAllTechnicians = allTechnicians.map(tech => {
+          if (tech.id.toString() === draggedTechnician.id.toString()) {
+            return { ...tech, id_assigned: supervisorId };
+          }
+          return tech;
+        });
+
+        const newUpdatedTechnicians = updatedTechnicians.map(tech => {
+          if (tech.id.toString() === draggedTechnician.id.toString()) {
+            return { ...tech, id_assigned: supervisorId };
+          }
+          return tech;
+        });
+
+        setAllTechnicians(newAllTechnicians);
+        setUpdatedTechnicians(newUpdatedTechnicians);
+      } else {
+        // Update local state only
+        const newAllTechnicians = allTechnicians.map(tech => {
+          if (tech.id.toString() === draggedTechnician.id.toString()) {
+            return { ...tech, id_assigned: supervisorId };
+          }
+          return tech;
+        });
+
+        const newUpdatedTechnicians = updatedTechnicians.map(tech => {
+          if (tech.id.toString() === draggedTechnician.id.toString()) {
+            return { ...tech, id_assigned: supervisorId };
+          }
+          return tech;
+        });
+
+        setAllTechnicians(newAllTechnicians);
+        setUpdatedTechnicians(newUpdatedTechnicians);
+      }
+    } catch (error) {
+      console.error('Error assigning technician:', error);
+    } finally {
+      setDraggedTechnician(null);
+      setIsUpdatingAssignment(null);
+    }
+  }, [draggedTechnician, companyId, allTechnicians, updatedTechnicians]);
+
+  const handleUnassign = useCallback(async (technician: Technician) => {
+    try {
+      if (companyId) {
+        setIsUpdatingAssignment(technician.id.toString());
+
+        // Unassign technician by setting supervisor_id to 0
+        await assignmentService.assignTechnicianToSupervisor(
+          parseInt(technician.id.toString()),
+          0
+        );
+
+        // Update local state
+        const newAllTechnicians = allTechnicians.map(tech => {
+          if (tech.id.toString() === technician.id.toString()) {
+            return { ...tech, id_assigned: null };
+          }
+          return tech;
+        });
+
+        const newUpdatedTechnicians = updatedTechnicians.map(tech => {
+          if (tech.id.toString() === technician.id.toString()) {
+            return { ...tech, id_assigned: null };
+          }
+          return tech;
+        });
+
+        setAllTechnicians(newAllTechnicians);
+        setUpdatedTechnicians(newUpdatedTechnicians);
+      } else {
+        // Update local state only
+        const newAllTechnicians = allTechnicians.map(tech => {
+          if (tech.id.toString() === technician.id.toString()) {
+            return { ...tech, id_assigned: null };
+          }
+          return tech;
+        });
+
+        const newUpdatedTechnicians = updatedTechnicians.map(tech => {
+          if (tech.id.toString() === technician.id.toString()) {
+            return { ...tech, id_assigned: null };
+          }
+          return tech;
+        });
+
+        setAllTechnicians(newAllTechnicians);
+        setUpdatedTechnicians(newUpdatedTechnicians);
+      }
+    } catch (error) {
+      console.error('Error unassigning technician:', error);
+    } finally {
+      setIsUpdatingAssignment(null);
+    }
+  }, [companyId, allTechnicians, updatedTechnicians]);
+
   const filteredSupervisors = useMemo(() => {
     if (!searchTerm.trim()) return supervisors;
     
@@ -351,6 +501,7 @@ export default function TechnicianHierarchy({
         </div>
 
         <div className="flex items-center space-x-2">
+          <LogoutWithWarning variant="outline" size="sm" />
           <Button
             variant="outline"
             size="sm"
@@ -429,9 +580,20 @@ export default function TechnicianHierarchy({
               {filteredSupervisors.map((supervisor) => {
                 const assignedTechs = getTechniciansForSupervisor(supervisor.id.toString());
                 const isExpanded = expandedSupervisors.has(supervisor.id.toString());
-                
+                const isDragOver = dragOverSupervisor === supervisor.id.toString();
+
                 return (
-                  <Card key={supervisor.id} className="border border-gray-200">
+                  <Card
+                    key={supervisor.id}
+                    className={`border-2 transition-all duration-200 ${
+                      isDragOver
+                        ? 'border-greener-400 bg-greener-50 shadow-lg'
+                        : 'border-gray-200 hover:border-greener-200'
+                    }`}
+                    onDragOver={(e) => handleDragOver(e, supervisor.id.toString())}
+                    onDragLeave={handleDragLeave}
+                    onDrop={(e) => handleDrop(e, supervisor.id.toString())}
+                  >
                     <CardHeader className="pb-3">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center space-x-3">
@@ -445,7 +607,7 @@ export default function TechnicianHierarchy({
                             <p className="text-sm text-gray-600">{supervisor.email}</p>
                           </div>
                         </div>
-                        
+
                         <div className="flex items-center space-x-2">
                           <Badge variant="secondary" className="bg-greener-100 text-greener-800">
                             {assignedTechs.length} technicien(s)
@@ -464,6 +626,17 @@ export default function TechnicianHierarchy({
                           </Button>
                         </div>
                       </div>
+
+                      {isDragOver && (
+                        <div className="mt-2 p-3 bg-greener-100 rounded-lg border-2 border-dashed border-greener-300">
+                          <div className="flex items-center justify-center space-x-2">
+                            <Target className="h-4 w-4 text-greener-600" />
+                            <span className="text-sm font-medium text-greener-800">
+                              Déposez le technicien ici pour l'assigner
+                            </span>
+                          </div>
+                        </div>
+                      )}
                     </CardHeader>
 
                     {isExpanded && (
@@ -473,11 +646,20 @@ export default function TechnicianHierarchy({
                             assignedTechs.map((tech) => (
                               <div
                                 key={tech.id}
-                                className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+                                className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200 hover:border-greener-200 transition-colors group"
+                                draggable
+                                onDragStart={(e) => handleDragStart(e, tech)}
+                                style={{
+                                  opacity: draggedTechnician?.id === tech.id ? 0.5 : 1,
+                                  cursor: draggedTechnician?.id === tech.id ? 'grabbing' : 'grab'
+                                }}
                               >
                                 <div className="flex items-center space-x-3">
-                                  <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                                    <Users className="h-4 w-4 text-blue-600" />
+                                  <div className="flex items-center space-x-2">
+                                    <GripVertical className="h-4 w-4 text-gray-400 group-hover:text-greener-600 transition-colors" />
+                                    <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+                                      <Users className="h-4 w-4 text-[#2E7D32]" />
+                                    </div>
                                   </div>
                                   <div>
                                     <p className="text-sm font-medium text-gray-900">
@@ -486,14 +668,21 @@ export default function TechnicianHierarchy({
                                     <p className="text-xs text-gray-600">{tech.email}</p>
                                   </div>
                                 </div>
-                                
-                                <Checkbox
-                                  checked={true}
-                                  onCheckedChange={(checked) => 
-                                    handleAssignmentChange(tech.id.toString(), supervisor.id.toString(), !!checked)
-                                  }
-                                  disabled={isUpdatingAssignment === tech.id.toString()}
-                                />
+
+                                <div className="flex items-center space-x-2">
+                                  <span className="text-xs bg-greener-100 text-greener-800 px-2 py-1 rounded">
+                                    Assigné
+                                  </span>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => handleUnassign(tech)}
+                                    disabled={isUpdatingAssignment === tech.id.toString()}
+                                    className="p-1 h-8 w-8 text-red-500 hover:text-red-700 hover:bg-red-50"
+                                  >
+                                    <X className="h-4 w-4" />
+                                  </Button>
+                                </div>
                               </div>
                             ))
                           ) : (
@@ -515,20 +704,53 @@ export default function TechnicianHierarchy({
               <div className="mt-6">
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-lg font-semibold text-gray-900 flex items-center">
-                    <UserPlus className="h-5 w-5 mr-2 text-blue-600" />
+                    <UserPlus className="h-5 w-5 mr-2 text-[#2E7D32]" />
                     Techniciens non assignés ({filteredUnassignedTechs.length})
                   </h3>
+                </div>
+
+                {/* Drop zone for unassigning */}
+                <div
+                  className={`mb-4 p-4 border-2 border-dashed rounded-lg transition-all duration-200 ${
+                    dragOverSupervisor === 'unassigned'
+                      ? 'border-red-400 bg-red-50'
+                      : 'border-gray-300 hover:border-red-300'
+                  }`}
+                  onDragOver={(e) => handleDragOver(e, 'unassigned')}
+                  onDragLeave={handleDragLeave}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    setDragOverSupervisor(null);
+                    if (draggedTechnician && draggedTechnician.id_assigned) {
+                      handleUnassign(draggedTechnician);
+                    }
+                    setDraggedTechnician(null);
+                  }}
+                >
+                  <div className="flex items-center justify-center space-x-2 text-gray-600">
+                    <Trash2 className="h-4 w-4" />
+                    <span className="text-sm">Zone de désassignation - Déposez ici pour retirer</span>
+                  </div>
                 </div>
 
                 <div className="space-y-2">
                   {filteredUnassignedTechs.map((tech) => (
                     <div
                       key={tech.id}
-                      className="flex items-center justify-between p-3 bg-blue-50 rounded-lg border border-blue-200"
+                      className="flex items-center justify-between p-3 bg-green-50 rounded-lg border border-green-200 hover:border-greener-200 transition-colors group"
+                      draggable
+                      onDragStart={(e) => handleDragStart(e, tech)}
+                      style={{
+                        opacity: draggedTechnician?.id === tech.id ? 0.5 : 1,
+                        cursor: draggedTechnician?.id === tech.id ? 'grabbing' : 'grab'
+                      }}
                     >
                       <div className="flex items-center space-x-3">
-                        <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                          <Users className="h-4 w-4 text-blue-600" />
+                        <div className="flex items-center space-x-2">
+                          <GripVertical className="h-4 w-4 text-gray-400 group-hover:text-greener-600 transition-colors" />
+                          <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+                            <Users className="h-4 w-4 text-[#2E7D32]" />
+                          </div>
                         </div>
                         <div>
                           <p className="text-sm font-medium text-gray-900">
@@ -537,9 +759,9 @@ export default function TechnicianHierarchy({
                           <p className="text-xs text-gray-600">{tech.email}</p>
                         </div>
                       </div>
-                      
+
                       <div className="flex items-center space-x-2">
-                        <span className="text-xs text-blue-600 bg-blue-100 px-2 py-1 rounded">
+                        <span className="text-xs text-[#2E7D32] bg-green-100 px-2 py-1 rounded">
                           Non assigné
                         </span>
                       </div>
@@ -595,7 +817,7 @@ export default function TechnicianHierarchy({
                                 key={tech.id}
                                 className="flex items-center space-x-2 text-sm text-gray-600"
                               >
-                                <div className="w-2 h-2 bg-blue-400 rounded-full"></div>
+                                <div className="w-2 h-2 bg-[#2E7D32] rounded-full"></div>
                                 <span>{tech.fullName}</span>
                                 <span className="text-gray-400">•</span>
                                 <span className="text-xs">{tech.email}</span>
@@ -616,7 +838,7 @@ export default function TechnicianHierarchy({
               {/* Unassigned Technicians Preview */}
               <div className="space-y-4">
                 <h4 className="text-md font-medium text-gray-700 flex items-center">
-                  <UserPlus className="h-4 w-4 mr-2 text-blue-600" />
+                  <UserPlus className="h-4 w-4 mr-2 text-[#2E7D32]" />
                   Techniciens non assignés
                 </h4>
                 
@@ -626,7 +848,7 @@ export default function TechnicianHierarchy({
                       <span className="font-medium text-gray-900">
                         Techniciens sans superviseur
                       </span>
-                      <Badge variant="secondary" className="bg-blue-100 text-blue-800">
+                      <Badge variant="secondary" className="bg-green-100 text-[#2E7D32]">
                         {getUnassignedPreviewData().totalUnassigned}
                       </Badge>
                     </div>
@@ -658,15 +880,17 @@ export default function TechnicianHierarchy({
             </div>
 
             {/* Instructions */}
-            <div className="mt-8 p-4 bg-blue-50 rounded-lg border border-blue-200">
-              <h4 className="font-medium text-blue-900 mb-2">
-                Instructions
+            <div className="mt-8 p-4 bg-green-50 rounded-lg border border-green-200">
+              <h4 className="font-medium text-[#2E7D32] mb-2">
+                Instructions - Glissez et déposez
               </h4>
-              <ul className="text-sm text-blue-800 space-y-1">
-                <li>• Cliquez sur les superviseurs pour voir leurs équipes</li>
-                <li>• Utilisez les cases à cocher pour assigner/désassigner des techniciens</li>
-                <li>• Les techniciens non assignés apparaissent dans la section bleue</li>
-                <li>• Utilisez la barre de recherche pour filtrer les résultats</li>
+              <ul className="text-sm text-[#2E7D32] space-y-1">
+                <li>• <strong>Glissez-déposez:</strong> Saisissez un technicien par son icône de poignée et déposez-le sur un superviseur</li>
+                <li>• <strong>Zone de désassignation:</strong> Déposez un technicien dans la zone rouge pour le désassigner</li>
+                <li>• <strong>Cliquez pour développer:</strong> Cliquez sur les superviseurs pour voir leurs équipes</li>
+                <li>• <strong>Bouton X:</strong> Cliquez sur le X rouge pour désassigner rapidement un technicien</li>
+                <li>• <strong>Techniciens non assignés:</strong> Apparaissent en vert - vous pouvez les assigner par glisser-déposer</li>
+                <li>• <strong>Barre de recherche:</strong> Filtrez les superviseurs et techniciens par nom ou email</li>
               </ul>
             </div>
           </div>

@@ -20,6 +20,7 @@ import {
   Maximize2
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import LogoutWithWarning from "./LogoutWithWarning";
 
 interface Domain {
   id: string;
@@ -215,8 +216,9 @@ export default function SerreAssignment({
               </p>
             </div>
             <div className="flex items-center gap-2">
-              <Button 
-                variant="outline" 
+              <LogoutWithWarning variant="outline" size="sm" />
+              <Button
+                variant="outline"
                 onClick={() => setIsFullscreen(!isFullscreen)}
                 size="sm"
                 className="hidden lg:flex"
@@ -369,7 +371,7 @@ export default function SerreAssignment({
               <Button
                 variant="outline"
                 onClick={handleSkip}
-                className="flex items-center gap-2 flex-1 lg:flex-none bg-blue-50 border-blue-200 text-blue-700 hover:bg-blue-100"
+                className="flex items-center gap-2 flex-1 lg:flex-none bg-green-50 border-green-200 text-[#2E7D32] hover:bg-green-100"
                 size="sm"
               >
                 <SkipForward className="h-4 w-4" />

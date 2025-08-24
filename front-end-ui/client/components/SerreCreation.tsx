@@ -28,6 +28,7 @@ import { ExtendedSerre, ExtendedGuideDeCulture } from "@shared/api";
 import { guideService } from "@/services/guideService";
 import { useToast } from "@/hooks/use-toast";
 import { serreService } from "@/services/serreService";
+import LogoutWithWarning from "./LogoutWithWarning";
 
 interface Domain {
   id: string;
@@ -48,19 +49,7 @@ interface SerreCreationProps {
 
 const GOOGLE_MAPS_API_KEY = getGoogleMapsAPIKey();
 
-const cropVarieties = [
-  { value: "tomate", label: "Tomate" },
-  { value: "concombre", label: "Concombre" },
-  { value: "poivron", label: "Poivron" },
-  { value: "aubergine", label: "Aubergine" },
-  { value: "courgette", label: "Courgette" },
-  { value: "laitue", label: "Laitue" },
-  { value: "radis", label: "Radis" },
-  { value: "epinard", label: "Épinard" },
-  { value: "basilic", label: "Basilic" },
-  { value: "persil", label: "Persil" },
-  { value: "autre", label: "Autre" },
-];
+
 
 export default function SerreCreation({
   domains,
@@ -92,9 +81,40 @@ export default function SerreCreation({
   const [showCreateGuide, setShowCreateGuide] = useState(false);
   const [isCreatingGuide, setIsCreatingGuide] = useState(false);
   const [isSavingSerre, setIsSavingSerre] = useState(false);
+  const [leftPanelWidth, setLeftPanelWidth] = useState(500);
+  const [isDragging, setIsDragging] = useState(false);
   const { toast } = useToast();
 
   const activeDomain = currentDomains.find((d) => d.id === activeDomainId);
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    setIsDragging(true);
+    e.preventDefault();
+  };
+
+  const handleMouseMove = (e: MouseEvent) => {
+    if (isDragging) {
+      const newWidth = e.clientX;
+      if (newWidth > 300 && newWidth < 1000) {
+        setLeftPanelWidth(newWidth);
+      }
+    }
+  };
+
+  const handleMouseUp = () => {
+    setIsDragging(false);
+  };
+
+  useEffect(() => {
+    if (isDragging) {
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+      return () => {
+        document.removeEventListener('mousemove', handleMouseMove);
+        document.removeEventListener('mouseup', handleMouseUp);
+      };
+    }
+  }, [isDragging]);
 
   useEffect(() => {
     const loadGuides = async () => {
@@ -357,7 +377,10 @@ export default function SerreCreation({
   return (
     <div className="h-screen flex">
       {/* Left Panel */}
-      <div className="w-1/3 bg-white border-r flex flex-col">
+      <div
+        className="bg-white border-r flex flex-col overflow-hidden relative"
+        style={{ width: `${leftPanelWidth}px`, minWidth: '300px', maxWidth: '800px' }}
+      >
         {/* Header */}
         <div className="p-6 border-b">
           <div className="flex items-center justify-between">
@@ -367,10 +390,13 @@ export default function SerreCreation({
                 Créez des serres pour vos domaines
               </p>
             </div>
-            <Button variant="outline" onClick={onBack}>
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Retour
-            </Button>
+            <div className="flex items-center space-x-2">
+              <Button variant="outline" onClick={onBack}>
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Retour
+              </Button>
+              <LogoutWithWarning variant="outline" size="sm" />
+            </div>
           </div>
         </div>
 
@@ -561,6 +587,13 @@ export default function SerreCreation({
             </Button>
           </div>
         </div>
+
+        {/* Resize Handle */}
+        <div
+          className="absolute right-0 top-0 bottom-0 w-1 bg-gray-300 cursor-col-resize hover:bg-gray-400 transition-colors z-10"
+          onMouseDown={handleMouseDown}
+          title="Redimensionner le panneau"
+        />
       </div>
 
       {/* Right Panel - Map */}
@@ -596,23 +629,14 @@ export default function SerreCreation({
 
               <div>
                 <Label htmlFor="guide-variete">Variété</Label>
-                <Select
+                <Input
+                  id="guide-variete"
                   value={guideForm.variete}
-                  onValueChange={(value) =>
-                    setGuideForm((prev) => ({ ...prev, variete: value }))
+                  onChange={(e) =>
+                    setGuideForm((prev) => ({ ...prev, variete: e.target.value }))
                   }
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Choisir une variété" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {cropVarieties.map((variety) => (
-                      <SelectItem key={variety.value} value={variety.value}>
-                        {variety.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                  placeholder="Ex: Tomate cerise, Concombre long..."
+                />
               </div>
 
               <div className="grid grid-cols-2 gap-4">

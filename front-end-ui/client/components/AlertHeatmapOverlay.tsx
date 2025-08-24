@@ -440,7 +440,7 @@ export default function AlertHeatmapOverlay({
   // Show loading state
   if (loading) {
     return (
-      <div className="absolute top-4 left-4 z-30 bg-white/90 backdrop-blur-sm rounded-lg shadow-lg border border-gray-200 p-3">
+      <div className="absolute top-4 left-4 z-[5] bg-white/90 backdrop-blur-sm rounded-lg shadow-lg border border-gray-200 p-3">
         <div className="flex items-center space-x-2">
           <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-red-500"></div>
           <span className="text-sm text-red-600 font-medium">Chargement de la carte de chaleur...</span>
@@ -452,7 +452,7 @@ export default function AlertHeatmapOverlay({
   // Show error state
   if (error) {
     return (
-      <div className="absolute top-4 left-4 z-30 bg-white/90 backdrop-blur-sm rounded-lg shadow-lg border border-red-200 p-3">
+      <div className="absolute top-4 left-4 z-[5] bg-white/90 backdrop-blur-sm rounded-lg shadow-lg border border-red-200 p-3">
         <div className="flex items-center space-x-2">
           <AlertTriangle className="h-4 w-4 text-red-500" />
           <span className="text-sm text-red-600 font-medium">Erreur: {error}</span>
@@ -467,10 +467,10 @@ export default function AlertHeatmapOverlay({
   // Show no alerts state
   if (alerts.length === 0) {
     return (
-      <div className="absolute top-4 left-4 z-30 bg-white/90 backdrop-blur-sm rounded-lg shadow-lg border border-green-200 p-3">
+      <div className="absolute top-4 left-4 z-[5] bg-white/90 backdrop-blur-sm rounded-lg shadow-lg border border-green-200 p-3">
         <div className="flex items-center space-x-2">
           <CircleIcon className="h-4 w-4 text-green-500" />
-          <span className="text-sm text-green-600 font-medium">Aucune alerte détectée pour {serreName}</span>
+          <div className="text-sm text-green-600 font-medium">Aucune alerte détectée pour {serreName}</div>
         </div>
         <div className="mt-2 text-xs text-green-600">
           La carte de chaleur sera affichée une fois des alertes détectées.
