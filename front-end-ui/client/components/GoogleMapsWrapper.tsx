@@ -14,12 +14,16 @@ const libraries: ("drawing" | "geometry" | "places" | "visualization")[] = [
 ];
 
 function GoogleMapsContent({ children }: { children: React.ReactNode }) {
+  console.log('[GoogleMapsWrapper] API Key:', GOOGLE_MAPS_CONFIG.API_KEY);
+  console.log('[GoogleMapsWrapper] Libraries:', libraries);
+  
   const { isLoaded, loadError } = useLoadScript({
     googleMapsApiKey: GOOGLE_MAPS_CONFIG.API_KEY,
     libraries,
   });
 
   if (loadError) {
+    console.error('[GoogleMapsWrapper] Load error:', loadError);
     return (
       <div className="flex items-center justify-center h-full min-h-[500px]">
         <div className="text-center">
@@ -38,6 +42,7 @@ function GoogleMapsContent({ children }: { children: React.ReactNode }) {
   }
 
   if (!isLoaded) {
+    console.log('[GoogleMapsWrapper] Still loading...');
     return (
       <div className="flex items-center justify-center h-full min-h-[500px]">
         <div className="text-center">
@@ -47,6 +52,8 @@ function GoogleMapsContent({ children }: { children: React.ReactNode }) {
       </div>
     );
   }
+  
+  console.log('[GoogleMapsWrapper] Successfully loaded!');
 
   return <>{children}</>;
 }

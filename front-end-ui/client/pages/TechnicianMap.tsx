@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useAuth } from "../contexts/AuthContext";
 import GoogleMapsWrapper from "../components/GoogleMapsWrapper";
-import { GoogleMap, Marker, InfoWindow } from "@react-google-maps/api";
+import { GoogleMap, Marker, InfoWindow, Polygon } from "@react-google-maps/api";
 import PageHeader from "../components/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -87,6 +87,14 @@ interface Serre {
     variete: string;
     rendement: number;
   };
+  position?: Array<{
+    point_x?: number;
+    point_y?: number;
+    lat?: number;
+    lng?: number;
+    latitude?: number;
+    longitude?: number;
+  }>;
 }
 
 interface Zone {
@@ -133,11 +141,16 @@ export default function TechnicianMap() {
   const [isLoadingEtatBilans, setIsLoadingEtatBilans] = useState(false);
   const [bilanQRCodes, setBilanQRCodes] = useState<{ [bilanId: number]: Blob | 'loading' }>({});
 
+  // Billon visualization state
+  const [isBilanDetailsOpen, setIsBilanDetailsOpen] = useState(false);
+  const [selectedBilanDetails, setSelectedBilanDetails] = useState<{ bilan: Bilan, etat?: EtatBilan } | null>(null);
+  const [map, setMap] = useState<google.maps.Map | null>(null);
+
   // Mobile responsive state
   const [isMobilePanelOpen, setIsMobilePanelOpen] = useState(false);
   const [activeMobileTab, setActiveMobileTab] = useState<'serres' | 'bilan' | 'details' | 'guides' | 'etat' | 'alerts'>('serres');
   
-  // Mobile panel resizing state
+  // Mobile panel resizing state - simplified
   const [mobilePanelHeight, setMobilePanelHeight] = useState(70); // Default 70vh
   const [isMobilePanelResizing, setIsMobilePanelResizing] = useState(false);
   const [mobilePanelStartY, setMobilePanelStartY] = useState(0);
@@ -145,6 +158,8 @@ export default function TechnicianMap() {
 
   // Alert heatmap state
   const [showAlertHeatmap, setShowAlertHeatmap] = useState(true);
+  const [showBillons, setShowBillons] = useState(true);
+  const [showSerreBoundaries, setShowSerreBoundaries] = useState(true);
 
   // Left panel resizing and search state
   const [leftPanelWidth, setLeftPanelWidth] = useState(() => {
@@ -212,6 +227,7 @@ export default function TechnicianMap() {
             lastUpdate: new Date(),
             billonCount,
             cultureGuide,
+            position: serre.position || [], // Add serre boundary coordinates
           };
         }));
         
@@ -353,6 +369,14 @@ export default function TechnicianMap() {
     }
   };
 
+  const toggleBillons = () => {
+    setShowBillons(!showBillons);
+  };
+
+  const toggleSerreBoundaries = () => {
+    setShowSerreBoundaries(!showSerreBoundaries);
+  };
+
   // Load guides for selected serre
   const loadGuidesForSerre = async (serreId: number) => {
     try {
@@ -414,7 +438,7 @@ export default function TechnicianMap() {
     loadEtatBilanForBilan(bilan.id);
   };
 
-  // Handle QR code generation for specific bilan
+  // Handle QR code generation for specific bilan - simplified
   const handleGenerateQRCodeForBilan = async (bilan: Bilan) => {
     try {
       // Show loading state
@@ -435,12 +459,7 @@ export default function TechnicianMap() {
       // Auto-expand mobile panel to show QR code if on mobile
       if (isMobile) {
         setIsMobilePanelOpen(true);
-        // Auto-adjust panel height to accommodate QR code display
-        const currentHeight = mobilePanelHeight;
-        if (currentHeight < 60) {
-          setMobilePanelHeight(75); // Set to 75% for better QR code visibility
-        }
-        // Switch to bilan tab to show the QR code
+        setMobilePanelHeight(85); // Simple height for QR viewing
         setActiveMobileTab('bilan');
       }
 
@@ -699,16 +718,14 @@ export default function TechnicianMap() {
     }
   };
 
-  // Handle QR code view and download for mobile
+  // Handle QR code view and download for mobile - simplified
   const handleViewQRCode = (bilanId: number) => {
     const qrCode = bilanQRCodes[bilanId];
     if (qrCode && qrCode !== 'loading') {
       if (isMobile) {
         // On mobile, expand the panel and switch to bilan tab for better viewing
         setIsMobilePanelOpen(true);
-        if (mobilePanelHeight < 85) {
-          setMobilePanelHeight(90); // Expand panel for QR viewing
-        }
+        setMobilePanelHeight(85); // Simple height for QR viewing
         setActiveMobileTab('bilan');
       } else {
         // Desktop behavior - open in new tab
@@ -733,7 +750,7 @@ export default function TechnicianMap() {
     }
   };
 
-  // Enhanced Mobile panel resizing handlers - allows stretching as much as needed
+  // Simplified Mobile panel resizing handlers - no complex snapping
   const handleMobilePanelMouseDown = (e: React.TouchEvent | React.MouseEvent) => {
     setIsMobilePanelResizing(true);
     const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
@@ -751,8 +768,8 @@ export default function TechnicianMap() {
     const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
     const deltaY = mobilePanelStartY - clientY;
     
-    // Allow stretching from 15% to 98% of screen height for maximum flexibility
-    const newHeight = Math.max(15, Math.min(98, mobilePanelStartHeight + (deltaY / window.innerHeight) * 100));
+    // Simple linear resizing from 20% to 95% of screen height
+    const newHeight = Math.max(20, Math.min(95, mobilePanelStartHeight + (deltaY / window.innerHeight) * 100));
     setMobilePanelHeight(newHeight);
   };
 
@@ -763,19 +780,7 @@ export default function TechnicianMap() {
     document.body.style.cursor = '';
     document.body.style.userSelect = '';
     
-    // Snap to common heights for better UX but allow custom heights
-    const currentHeight = mobilePanelHeight;
-    if (currentHeight < 25) {
-      setMobilePanelHeight(20); // Very compact view
-    } else if (currentHeight < 45) {
-      setMobilePanelHeight(40); // Compact view
-    } else if (currentHeight < 65) {
-      setMobilePanelHeight(60); // Medium view
-    } else if (currentHeight < 85) {
-      setMobilePanelHeight(80); // Large view
-    } else {
-      setMobilePanelHeight(95); // Almost full view
-    }
+    // No complex snapping - just keep the current height
   };
 
   // Add touch and mouse event listeners for mobile panel resizing
@@ -800,52 +805,14 @@ export default function TechnicianMap() {
     };
   }, [isMobilePanelResizing]);
 
-  // Smart panel height adjustment for content viewing
+  // Smart panel height adjustment for content viewing - simplified
   const adjustPanelForContent = (contentType: 'qr' | 'default') => {
-    if (isMobile) {
-      if (contentType === 'qr') {
-        if (mobilePanelHeight < 80) {
-          setMobilePanelHeight(85); // Optimal height for QR code viewing
-        }
-      }
+    if (isMobile && contentType === 'qr' && mobilePanelHeight < 80) {
+      setMobilePanelHeight(85); // Simple adjustment for QR viewing
     }
   };
 
-  // Add keyboard shortcuts for mobile panel resizing
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (!isMobile) return;
-      
-      if (e.key === 'ArrowUp' && (e.ctrlKey || e.metaKey)) {
-        e.preventDefault();
-        setMobilePanelHeight(prev => Math.min(98, prev + 5));
-      } else if (e.key === 'ArrowDown' && (e.ctrlKey || e.metaKey)) {
-        e.preventDefault();
-        setMobilePanelHeight(prev => Math.max(15, prev - 5));
-      } else if (e.key === '0' && (e.ctrlKey || e.metaKey)) {
-        e.preventDefault();
-        setMobilePanelHeight(70); // Reset to default
-      } else if (e.key === '1' && (e.ctrlKey || e.metaKey)) {
-        e.preventDefault();
-        setMobilePanelHeight(20); // Very compact
-      } else if (e.key === '2' && (e.ctrlKey || e.metaKey)) {
-        e.preventDefault();
-        setMobilePanelHeight(40); // Compact
-      } else if (e.key === '3' && (e.ctrlKey || e.metaKey)) {
-        e.preventDefault();
-        setMobilePanelHeight(60); // Medium
-      } else if (e.key === '4' && (e.ctrlKey || e.metaKey)) {
-        e.preventDefault();
-        setMobilePanelHeight(80); // Large
-      } else if (e.key === '5' && (e.ctrlKey || e.metaKey)) {
-        e.preventDefault();
-        setMobilePanelHeight(95); // Almost full
-      }
-    };
-
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [isMobile]);
+  // Remove keyboard shortcuts for mobile panel resizing - simplified approach
 
   return (
     <div className={cn(
@@ -1216,6 +1183,88 @@ export default function TechnicianMap() {
                                 )} />
                               </Button>
                             </div>
+                            
+                            <div className="flex space-x-2 mt-2">
+                              <Button
+                                onClick={toggleBillons}
+                                size="sm"
+                                className={cn(
+                                  "flex-1 transition-all duration-300 ease-in-out relative overflow-hidden group",
+                                  showBillons
+                                    ? "bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700 text-white shadow-lg shadow-yellow-500/25 border-0"
+                                    : "bg-gradient-to-r from-gray-500 to-gray-600 hover:from-gray-600 hover:to-gray-700 text-white shadow-lg shadow-yellow-500/25 border-0"
+                                )}
+                              >
+                                {/* Animated background effect */}
+                                <div className={cn(
+                                  "absolute inset-0 bg-gradient-to-r from-white/20 to-transparent transform transition-transform duration-500",
+                                  showBillons ? "translate-x-full" : "-translate-x-full"
+                                )} />
+                                
+                                {/* Icon with animation */}
+                                <div className={cn(
+                                  "flex items-center justify-center transition-all duration-300",
+                                  showBillons ? "scale-110" : "scale-100"
+                                )}>
+                                  <BarChart3 className={cn(
+                                    "h-4 w-4 mr-2 transition-all duration-300",
+                                    showBillons ? "text-yellow-100" : "text-gray-100"
+                                  )} />
+                                  <span className="font-medium">
+                                    {showBillons ? '📊 Masquer Billons' : '📊 Voir Billons'}
+                                  </span>
+                                </div>
+                                
+                                {/* Status indicator */}
+                                <div className={cn(
+                                  "absolute top-1 right-1 w-2 h-2 rounded-full transition-all duration-300",
+                                  showBillons 
+                                    ? "bg-yellow-200 animate-pulse" 
+                                    : "bg-gray-200"
+                                )} />
+                              </Button>
+                            </div>
+                            
+                            <div className="flex space-x-2 mt-2">
+                              <Button
+                                onClick={toggleSerreBoundaries}
+                                size="sm"
+                                className={cn(
+                                  "flex-1 transition-all duration-300 ease-in-out relative overflow-hidden group",
+                                  showSerreBoundaries
+                                    ? "bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white shadow-lg shadow-blue-500/25 border-0"
+                                    : "bg-gradient-to-r from-gray-500 to-gray-600 hover:from-gray-600 hover:to-gray-700 text-white shadow-lg shadow-blue-500/25 border-0"
+                                )}
+                              >
+                                {/* Animated background effect */}
+                                <div className={cn(
+                                  "absolute inset-0 bg-gradient-to-r from-white/20 to-transparent transform transition-transform duration-500",
+                                  showSerreBoundaries ? "translate-x-full" : "-translate-x-full"
+                                )} />
+                                
+                                {/* Icon with animation */}
+                                <div className={cn(
+                                  "flex items-center justify-center transition-all duration-300",
+                                  showSerreBoundaries ? "scale-110" : "scale-100"
+                                )}>
+                                  <MapPin className={cn(
+                                    "h-4 w-4 mr-2 transition-all duration-300",
+                                    showSerreBoundaries ? "text-blue-100" : "text-gray-100"
+                                  )} />
+                                  <span className="font-medium">
+                                    {showSerreBoundaries ? '🏗️ Masquer Limites' : '🏗️ Voir Limites'}
+                                  </span>
+                                </div>
+                                
+                                {/* Status indicator */}
+                                <div className={cn(
+                                  "absolute top-1 right-1 w-2 h-2 rounded-full transition-all duration-300",
+                                  showSerreBoundaries 
+                                    ? "bg-blue-200 animate-pulse" 
+                                    : "bg-gray-200"
+                                )} />
+                              </Button>
+                            </div>
                           </div>
                         )}
                       </CardContent>
@@ -1248,7 +1297,7 @@ export default function TechnicianMap() {
                   </div>
                   
                   {/* Main Alert Heatmap Toggle */}
-                  <div className="mt-4">
+                  <div className="mt-4 space-y-3">
                     <Button
                       onClick={toggleAlertHeatmap}
                       className={cn(
@@ -1284,6 +1333,84 @@ export default function TechnicianMap() {
                         showAlertHeatmap 
                           ? "bg-red-200 animate-pulse" 
                           : "bg-emerald-200"
+                      )} />
+                    </Button>
+
+                    {/* Billon Toggle Button */}
+                    <Button
+                      onClick={toggleBillons}
+                      className={cn(
+                        "w-full transition-all duration-300 ease-in-out relative overflow-hidden group shadow-lg py-3",
+                        showBillons
+                          ? "bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700 text-white shadow-yellow-500/25 border-0"
+                          : "bg-gradient-to-r from-gray-500 to-gray-600 hover:from-gray-600 hover:to-gray-700 text-white shadow-gray-500/25 border-0"
+                      )}
+                    >
+                      {/* Animated background effect */}
+                      <div className={cn(
+                        "absolute inset-0 bg-gradient-to-r from-white/20 to-transparent transform transition-transform duration-500",
+                        showBillons ? "translate-x-full" : "-translate-x-full"
+                      )} />
+                      
+                      {/* Icon with animation */}
+                      <div className={cn(
+                        "flex items-center justify-center transition-all duration-300",
+                        showBillons ? "scale-110" : "scale-100"
+                      )}>
+                        <BarChart3 className={cn(
+                          "h-5 w-5 mr-3 transition-all duration-300",
+                          showBillons ? "text-yellow-100" : "text-gray-100"
+                        )} />
+                        <span className="font-semibold text-base">
+                          {showBillons ? ' Billons Visibles - Cliquer pour Masquer' : '📊 Afficher les Billons'}
+                        </span>
+                      </div>
+                      
+                      {/* Status indicator */}
+                      <div className={cn(
+                        "absolute top-2 right-2 w-3 h-3 rounded-full transition-all duration-300",
+                        showBillons 
+                          ? "bg-yellow-200 animate-pulse" 
+                          : "bg-gray-200"
+                      )} />
+                    </Button>
+
+                    {/* Serre Boundary Toggle Button */}
+                    <Button
+                      onClick={toggleSerreBoundaries}
+                      className={cn(
+                        "w-full transition-all duration-300 ease-in-out relative overflow-hidden group shadow-lg py-3",
+                        showSerreBoundaries
+                          ? "bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white shadow-blue-500/25 border-0"
+                          : "bg-gradient-to-r from-gray-500 to-gray-600 hover:from-gray-600 hover:to-gray-700 text-white shadow-gray-500/25 border-0"
+                      )}
+                    >
+                      {/* Animated background effect */}
+                      <div className={cn(
+                        "absolute inset-0 bg-gradient-to-r from-white/20 to-transparent transform transition-transform duration-500",
+                        showSerreBoundaries ? "translate-x-full" : "-translate-x-full"
+                      )} />
+                      
+                      {/* Icon with animation */}
+                      <div className={cn(
+                        "flex items-center justify-center transition-all duration-300",
+                        showSerreBoundaries ? "scale-110" : "scale-100"
+                      )}>
+                        <MapPin className={cn(
+                          "h-5 w-5 mr-3 transition-all duration-300",
+                          showSerreBoundaries ? "text-blue-100" : "text-gray-100"
+                        )} />
+                        <span className="font-semibold text-base">
+                          {showSerreBoundaries ? ' Serre Visible - Cliquer pour Masquer' : '🏗️ Afficher les Limites'}
+                        </span>
+                      </div>
+                      
+                      {/* Status indicator */}
+                      <div className={cn(
+                        "absolute top-2 right-2 w-3 h-3 rounded-full transition-all duration-300",
+                        showSerreBoundaries 
+                          ? "bg-blue-200 animate-pulse" 
+                          : "bg-gray-200"
                       )} />
                     </Button>
                   </div>
@@ -1506,7 +1633,7 @@ export default function TechnicianMap() {
                                       className="flex-1 border-greener-600 text-greener-600 hover:bg-greener-50 hover:border-greener-700 text-xs transition-all duration-200 hover:scale-105 hover:shadow-md"
                                     >
                                       <svg className="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3h10a3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                                       </svg>
                                       Télécharger
                                     </Button>
@@ -1679,6 +1806,57 @@ export default function TechnicianMap() {
               </>
             )}
             
+            {/* Map Legend */}
+            <div className="absolute top-4 left-4 z-10 bg-white/90 backdrop-blur-sm rounded-lg shadow-lg border border-gray-200 p-3">
+              <div className="space-y-2 text-xs">
+                <div className="flex items-center space-x-2">
+                  <button
+                    onClick={toggleSerreBoundaries}
+                    className={`flex items-center space-x-2 transition-colors ${
+                      showSerreBoundaries ? 'opacity-100' : 'opacity-50'
+                    }`}
+                  >
+                    <div className={`w-4 h-4 rounded-full ${
+                      showSerreBoundaries ? 'bg-blue-500' : 'bg-gray-400'
+                    }`}></div>
+                    <span className={`${
+                      showSerreBoundaries ? 'text-gray-700' : 'text-gray-500'
+                    }`}>Serre</span>
+                  </button>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <button
+                    onClick={toggleBillons}
+                    className={`flex items-center space-x-2 transition-colors ${
+                      showBillons ? 'opacity-100' : 'opacity-50'
+                    }`}
+                  >
+                    <div className={`w-4 h-4 rounded-full ${
+                      showBillons ? 'bg-yellow-500' : 'bg-gray-400'
+                    }`}></div>
+                    <span className={`${
+                      showBillons ? 'text-gray-700' : 'text-gray-500'
+                    }`}>Billons</span>
+                  </button>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <button
+                    onClick={toggleAlertHeatmap}
+                    className={`flex items-center space-x-2 transition-colors ${
+                      showAlertHeatmap ? 'opacity-100' : 'opacity-50'
+                    }`}
+                  >
+                    <div className={`w-4 h-4 rounded-full ${
+                      showAlertHeatmap ? 'bg-red-500' : 'bg-gray-400'
+                    }`}></div>
+                    <span className={`${
+                      showAlertHeatmap ? 'text-gray-700' : 'text-gray-500'
+                    }`}>Alertes</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+
             <GoogleMapsWrapper>
               <GoogleMap
                 mapContainerStyle={{
@@ -1689,6 +1867,7 @@ export default function TechnicianMap() {
                 zoom={15}
                 onLoad={(map) => {
                   if (map) {
+                    setMap(map);
                     smoothZoomToLocation(map, selectedSerre.location, 16);
                   }
                 }}
@@ -1788,6 +1967,7 @@ export default function TechnicianMap() {
                     serreId={parseInt(selectedSerre.id)}
                     serreName={selectedSerre.nom}
                     serreLocation={selectedSerre.location}
+                    map={map}
                     onAlertClick={handleAlertClick}
                     onInterventionClick={(alert) => {
                       setIsInterventionFormOpen(true);
@@ -1795,6 +1975,101 @@ export default function TechnicianMap() {
                     }}
                   />
                 )}
+
+                {/* Serre Boundary Polygons */}
+                {showSerreBoundaries && selectedSerre && selectedSerre.position && Array.isArray(selectedSerre.position) && selectedSerre.position.length >= 3 && (
+                  <Polygon
+                    key={`serre-${selectedSerre.id}`}
+                    path={selectedSerre.position.map((p: any) => ({
+                      lat: p.point_x || p.lat || p.latitude,
+                      lng: p.point_y || p.lng || p.longitude
+                    })) as google.maps.LatLngLiteral[]}
+                    options={{
+                      strokeColor: '#3B82F6',
+                      strokeOpacity: 1,
+                      strokeWeight: 3,
+                      fillColor: '#3B82F6',
+                      fillOpacity: 0.1,
+                      clickable: true,
+                    }}
+                    onClick={() => {
+                      // Show serre info when clicking on boundary
+                      if (map) {
+                        map.panTo(selectedSerre.location);
+                        map.setZoom(16);
+                      }
+                    }}
+                    onMouseOver={() => {
+                      // Show tooltip on hover
+                      if (map) {
+                        map.setOptions({ draggableCursor: 'pointer' });
+                      }
+                    }}
+                    onMouseOut={() => {
+                      // Reset cursor on mouse out
+                      if (map) {
+                        map.setOptions({ draggableCursor: 'grab' });
+                      }
+                    }}
+                  />
+                )}
+
+                {/* Billon Polygons */}
+                {showBillons && bilans.map((bilan) => {
+                  if (!bilan.position || !Array.isArray(bilan.position) || bilan.position.length < 3) {
+                    return null;
+                  }
+                  
+                  const polygonPath = bilan.position.map((p: any) => ({
+                    lat: p.point_x || p.lat || p.latitude,
+                    lng: p.point_y || p.lng || p.longitude
+                  }));
+                  
+                  return (
+                    <Polygon
+                      key={`bilan-${bilan.id}`}
+                      path={polygonPath as google.maps.LatLngLiteral[]}
+                      options={{
+                        strokeColor: '#FFD700',
+                        strokeOpacity: 1,
+                        strokeWeight: 2,
+                        fillColor: '#FFD700',
+                        fillOpacity: 0.2,
+                        clickable: true,
+                      }}
+                      onClick={() => {
+                        setSelectedBilanDetails({ 
+                          bilan, 
+                          etat: etatBilans.find(etat => etat.id_bilan === bilan.id) 
+                        });
+                        setIsBilanDetailsOpen(true);
+                        
+                        // Zoom to the billon location on the map
+                        if (map && bilan.position && Array.isArray(bilan.position) && bilan.position.length > 0) {
+                          const center = bilan.position[0];
+                          const position = {
+                            lat: center.point_x || center.lat || center.latitude,
+                            lng: center.point_y || center.lng || center.longitude
+                          };
+                          map.panTo(position);
+                          map.setZoom(18);
+                        }
+                      }}
+                      onMouseOver={() => {
+                        // Show tooltip on hover
+                        if (map) {
+                          map.setOptions({ draggableCursor: 'pointer' });
+                        }
+                      }}
+                      onMouseOut={() => {
+                        // Reset cursor on mouse out
+                        if (map) {
+                          map.setOptions({ draggableCursor: 'grab' });
+                        }
+                      }}
+                    />
+                  );
+                })}
 
               </GoogleMap>
             </GoogleMapsWrapper>
@@ -1849,52 +2124,44 @@ export default function TechnicianMap() {
             )}
             style={{ 
               height: `${mobilePanelHeight}vh`,
-              maxHeight: "98vh",
-              minHeight: "15vh" // Allow very compact view for maximum flexibility
+              maxHeight: "95vh",
+              minHeight: "20vh" // Simple minimum height
             }}
           >
-            {/* Enhanced Resizable Panel Handle */}
+            {/* Simple Resizable Panel Handle */}
             <div 
               className={cn(
-                "flex justify-center mb-2 cursor-ns-resize touch-none transition-all duration-200",
+                "flex justify-center mb-3 cursor-ns-resize touch-none transition-all duration-200",
                 isMobilePanelResizing && "scale-110"
               )}
               onTouchStart={handleMobilePanelMouseDown}
               onMouseDown={handleMobilePanelMouseDown}
             >
               <div className={cn(
-                "w-20 h-2 rounded-full shadow-sm transition-all duration-200",
+                "w-16 h-1.5 rounded-full shadow-sm transition-all duration-200",
                 isMobilePanelResizing 
                   ? "bg-blue-500 shadow-lg shadow-blue-500/50" 
                   : "bg-gray-400 hover:bg-gray-500"
               )}></div>
             </div>
 
-            {/* Panel Height Indicator with Better UX */}
-            <div className="text-center mb-3">
+            {/* Simple Panel Height Indicator */}
+            <div className="text-center mb-4">
               <div className={cn(
-                "inline-flex items-center space-x-2 px-3 py-1 rounded-full transition-all duration-200",
+                "inline-flex items-center space-x-2 px-3 py-1.5 rounded-full transition-all duration-200",
                 isMobilePanelResizing
                   ? "bg-blue-100 text-blue-700 border border-blue-200"
                   : "bg-gray-100 text-gray-600"
               )}>
                 <span className="text-xs font-medium">
-                  {Math.round(mobilePanelHeight)}% de l'écran
+                  Glissez pour redimensionner
                 </span>
                 <div className={cn(
                   "w-2 h-2 rounded-full transition-colors",
                   isMobilePanelResizing ? "bg-blue-400" : "bg-gray-400"
                 )}></div>
               </div>
-              {/* QR Code Viewing Hint */}
-              {activeMobileTab === 'bilan' && Object.values(bilanQRCodes).some(qr => qr && qr !== 'loading') && (
-                <div className="mt-2 text-xs text-greener-600 bg-greener-50 px-2 py-1 rounded-md border border-greener-200">
-                  <svg className="h-3 w-3 inline mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
-                  </svg>
-                  Glissez pour étendre le panneau et mieux voir le QR code
-                </div>
-              )}
+
             </div>
 
             {/* Mobile Tabs */}
@@ -1923,7 +2190,7 @@ export default function TechnicianMap() {
             </div>
 
             {/* Mobile Tab Content */}
-            <div className="space-y-4 max-h-[45vh] overflow-y-auto pb-4">
+            <div className="space-y-4 overflow-y-auto pb-4 px-4">
               {activeMobileTab === 'serres' && (
                 <div className="space-y-3">
                   {/* Quick Bilan Creation for Selected Serre */}
@@ -2454,18 +2721,7 @@ export default function TechnicianMap() {
           </div>
         )}
 
-        {/* Alert Heatmap Status Indicator */}
-        {showAlertHeatmap && (
-          <div className="fixed bottom-6 right-6 z-30 lg:z-30">
-            <div className="bg-gradient-to-r from-red-500 to-red-600 text-white px-4 py-3 rounded-full shadow-2xl shadow-red-500/25 border-2 border-red-300 animate-pulse">
-              <div className="flex items-center space-x-2">
-                <div className="w-2 h-2 bg-red-200 rounded-full animate-ping" />
-                <span className="text-sm font-medium">Alertes Actives</span>
-                <Thermometer className="h-4 w-4 text-red-100" />
-              </div>
-            </div>
-          </div>
-        )}
+
 
         {/* Mobile Serre Selection Notification */}
         {selectedSerre && (
@@ -2547,6 +2803,92 @@ export default function TechnicianMap() {
                         : "bg-emerald-200"
                     )} />
                   </Button>
+                  
+                  {/* Billon Toggle Button */}
+                  <Button
+                    onClick={() => {
+                      toggleBillons();
+                      setIsMobilePanelOpen(false);
+                    }}
+                    size="sm"
+                    className={cn(
+                      "flex-1 transition-all duration-300 ease-in-out relative overflow-hidden group",
+                      showBillons
+                        ? "bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700 text-white shadow-lg shadow-yellow-500/25 border-0"
+                        : "bg-gradient-to-r from-gray-500 to-gray-600 hover:from-gray-600 hover:to-gray-700 text-white shadow-lg shadow-gray-500/25 border-0"
+                    )}
+                  >
+                    {/* Animated background effect */}
+                    <div className={cn(
+                      "absolute inset-0 bg-gradient-to-r from-white/20 to-transparent transform transition-transform duration-500",
+                      showBillons ? "translate-x-full" : "-translate-x-full"
+                    )} />
+                    
+                    {/* Icon with animation */}
+                    <div className={cn(
+                      "flex items-center justify-center transition-all duration-300",
+                      showBillons ? "scale-110" : "scale-100"
+                    )}>
+                      <BarChart3 className={cn(
+                        "h-4 w-4 mr-2 transition-all duration-300",
+                        showBillons ? "text-yellow-100" : "text-gray-100"
+                      )} />
+                      <span className="font-medium">
+                        {showBillons ? 'Masquer' : 'Voir'} Billons
+                      </span>
+                    </div>
+                    
+                    {/* Status indicator */}
+                    <div className={cn(
+                      "absolute top-1 right-1 w-2 h-2 rounded-full transition-all duration-300",
+                      showBillons 
+                        ? "bg-yellow-200 animate-pulse" 
+                        : "bg-gray-200"
+                    )} />
+                  </Button>
+                  
+                  {/* Serre Boundary Toggle Button */}
+                  <Button
+                    onClick={() => {
+                      toggleSerreBoundaries();
+                      setIsMobilePanelOpen(false);
+                    }}
+                    size="sm"
+                    className={cn(
+                      "flex-1 transition-all duration-300 ease-in-out relative overflow-hidden group",
+                      showSerreBoundaries
+                        ? "bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white shadow-lg shadow-blue-500/25 border-0"
+                        : "bg-gradient-to-r from-gray-500 to-gray-600 hover:from-gray-600 hover:to-gray-700 text-white shadow-lg shadow-blue-500/25 border-0"
+                    )}
+                  >
+                    {/* Animated background effect */}
+                    <div className={cn(
+                      "absolute inset-0 bg-gradient-to-r from-white/20 to-transparent transform transition-transform duration-500",
+                      showSerreBoundaries ? "translate-x-full" : "-translate-x-full"
+                    )} />
+                    
+                    {/* Icon with animation */}
+                    <div className={cn(
+                      "flex items-center justify-center transition-all duration-300",
+                      showSerreBoundaries ? "scale-110" : "scale-100"
+                    )}>
+                      <MapPin className={cn(
+                        "h-4 w-4 mr-2 transition-all duration-300",
+                        showSerreBoundaries ? "text-blue-100" : "text-gray-100"
+                      )} />
+                      <span className="font-medium">
+                        {showSerreBoundaries ? 'Masquer' : 'Voir'} Limites
+                      </span>
+                    </div>
+                    
+                    {/* Status indicator */}
+                    <div className={cn(
+                      "absolute top-1 right-1 w-2 h-2 rounded-full transition-all duration-300",
+                      showSerreBoundaries 
+                        ? "bg-blue-200 animate-pulse" 
+                        : "bg-gray-200"
+                    )} />
+                  </Button>
                 </div>
               </div>
             </CardContent>
@@ -2560,6 +2902,105 @@ export default function TechnicianMap() {
         onClose={() => setIsInterventionFormOpen(false)}
         onSubmit={handleInterventionSubmit}
       />
+
+      {/* Billon Details Modal */}
+      {isBilanDetailsOpen && selectedBilanDetails && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto">
+            {/* Header */}
+            <div className="bg-gradient-to-r from-green-50 to-emerald-50 px-6 py-4 border-b border-green-100 rounded-t-xl">
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-bold text-gray-900">
+                  Détails du Billon
+                </h3>
+                <button
+                  onClick={() => setIsBilanDetailsOpen(false)}
+                  className="text-gray-400 hover:text-gray-600 transition-colors"
+                >
+                  <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            {/* Content */}
+            <div className="px-6 py-4 space-y-4">
+              {/* Billon Info */}
+              <div className="space-y-3">
+                <h4 className="font-semibold text-gray-900">{selectedBilanDetails.bilan.nom}</h4>
+                <div className="grid grid-cols-2 gap-3 text-sm">
+                  <div>
+                    <p className="text-gray-500">Surface</p>
+                    <p className="font-medium text-gray-900">
+                      {selectedBilanDetails.bilan.surface || 'Non calculée'} m²
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-gray-500">Points GPS</p>
+                    <p className="font-medium text-gray-900">
+                      {selectedBilanDetails.bilan.position?.length || 0}/4
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Etat Bilan Info */}
+              {selectedBilanDetails.etat && (
+                <div className="space-y-3 pt-3 border-t border-gray-100">
+                  <h5 className="font-medium text-gray-900">État du Billon</h5>
+                  <div className="grid grid-cols-2 gap-3 text-sm">
+                    <div>
+                      <p className="text-gray-500">Tomates saines</p>
+                      <p className="font-medium text-green-600">
+                        {selectedBilanDetails.etat.nombre_tomates_non_maladies}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-gray-500">Tomates malades</p>
+                      <p className="font-medium text-red-600">
+                        {selectedBilanDetails.etat.nombre_tomates_maladies}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-gray-500">Température</p>
+                      <p className="font-medium text-gray-900">
+                        {selectedBilanDetails.etat.temperature}°C
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-gray-500">Humidité</p>
+                      <p className="font-medium text-gray-900">
+                        {selectedBilanDetails.etat.humidite}%
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Actions */}
+              <div className="flex space-x-3 pt-4 border-t border-gray-100">
+                <Button
+                  onClick={() => {
+                    setIsBilanDetailsOpen(false);
+                    // You can add navigation to bilan details page here
+                  }}
+                  className="flex-1 bg-green-600 hover:bg-green-700 text-white"
+                >
+                  Voir plus de détails
+                </Button>
+                <Button
+                  onClick={() => setIsBilanDetailsOpen(false)}
+                  variant="outline"
+                  className="flex-1"
+                >
+                  Fermer
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

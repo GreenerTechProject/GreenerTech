@@ -1,9 +1,9 @@
-import React, { useEffect, useState, useCallback } from 'react';
-import { Marker, InfoWindow, HeatmapLayer } from '@react-google-maps/api';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
+import { Marker, InfoWindow } from '@react-google-maps/api';
 import { Alert } from '@/types/alert';
 import { AlertService } from '@/services/alertService';
 import { bilanService, Bilan } from '@/services/bilanService';
-import { AlertTriangle, MapPin, Circle, Clock } from 'lucide-react';
+import { AlertTriangle, MapPin, Circle as CircleIcon, Clock, Image as ImageIcon } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -12,6 +12,7 @@ interface AlertHeatmapOverlayProps {
   serreId: number;
   serreName: string;
   serreLocation: { lat: number; lng: number };
+  map?: google.maps.Map | null;
   onAlertClick?: (alert: Alert) => void;
   onInterventionClick?: (alert: Alert) => void;
 }
@@ -22,6 +23,7 @@ interface AlertMarker {
   alert: Alert;
   bilan: Bilan | null;
   weight: number;
+  level: 'Faible' | 'Moyenne' | 'Dangereux';
 }
 
 interface HeatmapPoint {
@@ -33,9 +35,21 @@ export default function AlertHeatmapOverlay({
   serreId,
   serreName,
   serreLocation,
+  map,
   onAlertClick,
   onInterventionClick
 }: AlertHeatmapOverlayProps) {
+  console.log('AlertHeatmapOverlay rendered with props:', {
+    serreId,
+    serreName,
+    serreLocation,
+    map: !!map,
+    onAlertClick: !!onAlertClick,
+    onInterventionClick: !!onInterventionClick
+  });
+  
+  // This component creates a modern heatmap overlay for alerts in a selected serre
+  // Optimized for clarity over satellite/terrain backgrounds with custom gradient colors
   const [alerts, setAlerts] = useState<Alert[]>([]);
   const [bilans, setBilans] = useState<Bilan[]>([]);
   const [alertMarkers, setAlertMarkers] = useState<AlertMarker[]>([]);
@@ -44,7 +58,81 @@ export default function AlertHeatmapOverlay({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Ref for the native heatmap
+  const heatmapRef = useRef<google.maps.visualization.HeatmapLayer | null>(null);
+  const mapRef = useRef<google.maps.Map | null>(null);
 
+  // Modern alert level mapping based on status_alerte field
+  const getAlertLevel = (statusAlerte: number): 'Faible' | 'Moyenne' | 'Dangereux' => {
+    switch (statusAlerte) {
+      case 0:
+        return 'Faible';
+      case 1:
+        return 'Moyenne';
+      case 2:
+        return 'Dangereux';
+      default:
+        return 'Faible'; // Fallback to low priority
+    }
+  };
+
+  // Get weight based on alert level for heatmap intensity
+  const getAlertWeight = (statusAlerte: number): number => {
+    switch (statusAlerte) {
+      case 0: // Faible
+        return 1; // Low weight for subtle visibility
+      case 1: // Moyenne
+        return 3; // Medium weight for moderate visibility
+      case 2: // Dangereux
+        return 12; // Very high weight for critical alerts - maximum emphasis
+      default:
+        return 1;
+    }
+  };
+
+  // Get color by alert level for markers and fallback visualization
+  const getAlertLevelColor = (statusAlerte: number): string => {
+    switch (statusAlerte) {
+      case 0: // Faible
+        return '#32CD32'; // Light green
+      case 1: // Moyenne
+        return '#FFA500'; // Orange
+      case 2: // Dangereux
+        return '#DC143C'; // Crimson
+      default:
+        return '#32CD32';
+    }
+  };
+
+  // Get background color for alert level badges
+  const getAlertLevelBgColor = (statusAlerte: number): string => {
+    switch (statusAlerte) {
+      case 0: // Faible
+        return 'bg-green-100 text-green-800 border-green-200';
+      case 1: // Moyenne
+        return 'bg-orange-100 text-orange-800 border-orange-200';
+      case 2: // Dangereux
+        return 'bg-red-100 text-red-800 border-red-200';
+      default:
+        return 'bg-green-100 text-green-800 border-green-200';
+    }
+  };
+
+  // Utility function to format date
+  const formatDate = (dateString: string): string => {
+    try {
+      const date = new Date(dateString);
+      return date.toLocaleDateString('fr-FR', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    } catch (error) {
+      return dateString;
+    }
+  };
 
   // Function to convert normalized coordinates (0-1) to actual map coordinates
   const convertNormalizedToMapCoordinates = (normalizedX: number, normalizedY: number) => {
@@ -60,65 +148,228 @@ export default function AlertHeatmapOverlay({
     const actualLat = minLat + (normalizedY * (maxLat - minLat));
     const actualLng = minLng + (normalizedX * (maxLng - minLng));
     
-    
-    
     return { lat: actualLat, lng: actualLng };
   };
 
+  // Function to create native Google Maps heatmap with custom gradient
+  const createNativeHeatmap = useCallback((map: google.maps.Map, points: HeatmapPoint[]) => {
+    console.log('🔍 [AlertHeatmapOverlay] Creating heatmap with points:', points.length);
+    
+    // Check if visualization library is available
+    if (!google.maps.visualization || !google.maps.visualization.HeatmapLayer) {
+      console.error('❌ [AlertHeatmapOverlay] Google Maps visualization library not available');
+      return;
+    }
+    
+    // Clean up existing heatmap
+    if (heatmapRef.current) {
+      heatmapRef.current.setMap(null);
+    }
+
+    if (points.length === 0) {
+      console.log('⚠️ [AlertHeatmapOverlay] No points to create heatmap');
+      return;
+    }
+
+    try {
+      console.log('✅ [AlertHeatmapOverlay] Creating heatmap layer...');
+      
+      // Create heatmap data in the format expected by Google Maps
+      const heatmapData = points.map(point => ({
+        location: point.location,
+        weight: point.weight
+      }));
+
+      // Create the heatmap layer with enhanced visibility settings
+      const heatmap = new google.maps.visualization.HeatmapLayer({
+        data: heatmapData,
+        map: map,
+        radius: 200, // Increased radius for better visibility
+        opacity: 0.95, // Higher opacity for better visibility over satellite
+        maxIntensity: 15, // Increased max intensity to accommodate higher dangerous alert weights
+        gradient: [
+          'rgba(0, 0, 0, 0)',              // No data = transparent
+          'rgba(50, 205, 50, 0.6)',        // Faible (status 0) - more visible green
+          'rgba(255, 165, 0, 1.0)',        // Moyenne (status 1) - fully visible orange
+          'rgba(220, 20, 60, 1.0)',        // Dangereux (status 2) - very visible crimson
+          'rgba(220, 20, 60, 1.0)',        // Dangereux (status 2) - extra emphasis
+          'rgba(139, 0, 0, 1.0)'           // Dangereux (status 2) - dark red for maximum visibility
+        ],
+        dissipating: false // Disable dissipating for more consistent visibility
+      });
+      
+      console.log('✅ [AlertHeatmapOverlay] Heatmap created successfully');
+      
+      // Add zoom level listener to adjust heatmap visibility
+      const zoomListener = map.addListener('zoom_changed', () => {
+        const currentZoom = map.getZoom();
+        if (currentZoom && currentZoom < 14) {
+          // At low zoom levels, reduce opacity but keep it visible
+          heatmap.setOptions({ opacity: 0.6 });
+        } else {
+          // At higher zoom levels, show full opacity for satellite clarity
+          heatmap.setOptions({ opacity: 0.95 });
+        }
+      });
+      
+      // Store the listener for cleanup
+      (heatmap as any).zoomListener = zoomListener;
+      
+      heatmapRef.current = heatmap;
+      
+      // Force a redraw to ensure visibility
+      setTimeout(() => {
+        if (heatmapRef.current) {
+          heatmapRef.current.setMap(map);
+          console.log('🔄 [AlertHeatmapOverlay] Heatmap redrawn');
+        }
+      }, 100);
+      
+    } catch (error) {
+      console.error('❌ [AlertHeatmapOverlay] Heatmap creation failed:', error);
+    }
+  }, []);
+
   // Load alerts and bilans for the serre
   useEffect(() => {
+    console.log(`🚀 [AlertHeatmapOverlay] Loading data for serre ${serreId}`);
+    
     const loadSerreData = async () => {
       try {
         setLoading(true);
         setError(null);
 
         // Load bilans for the serre
-        const serreBilans = await bilanService.getBilansBySerre(serreId);
+        let serreBilans: Bilan[] = [];
+        try {
+          const bilansResponse = await bilanService.getBilansBySerre(serreId);
+          console.log(`📊 [AlertHeatmapOverlay] Loaded ${Array.isArray(bilansResponse) ? bilansResponse.length : 0} bilans`);
+          
+          // Ensure we have an array of bilans
+          if (Array.isArray(bilansResponse)) {
+            serreBilans = bilansResponse;
+          } else if (bilansResponse && typeof bilansResponse === 'object' && 'bilans' in bilansResponse && Array.isArray((bilansResponse as any).bilans)) {
+            serreBilans = (bilansResponse as any).bilans;
+          } else {
+            serreBilans = [];
+          }
+        } catch (bilanError) {
+          console.error(`❌ [AlertHeatmapOverlay] Error loading bilans:`, bilanError);
+          serreBilans = [];
+        }
+        
         setBilans(serreBilans);
 
         // Load alerts for the serre (filter by bilan IDs)
-        const allAlerts = await AlertService.getAllAlerts(1, 1000);
-        const serreAlerts = allAlerts.alerts.filter(alert => 
-          serreBilans.some(bilan => bilan.id === alert.id_bilan)
-        );
+        let allAlerts;
+        let serreAlerts: Alert[] = [];
+        
+        try {
+          allAlerts = await AlertService.getAllAlerts(1, 1000);
+          console.log(`🚨 [AlertHeatmapOverlay] Loaded ${allAlerts?.alerts?.length || 0} total alerts`);
+          
+          // Check if the response has the expected structure
+          if (allAlerts && allAlerts.alerts && Array.isArray(allAlerts.alerts)) {
+            if (serreBilans.length > 0) {
+              serreAlerts = allAlerts.alerts.filter(alert => 
+                serreBilans.some(bilan => bilan.id === alert.id_bilan)
+              );
+            } else {
+              serreAlerts = allAlerts.alerts;
+            }
+          } else {
+            // Try alternative approach - maybe the response is directly an array
+            if (Array.isArray(allAlerts)) {
+              if (serreBilans.length > 0) {
+                serreAlerts = allAlerts.filter(alert => 
+                  serreBilans.some(bilan => bilan.id === alert.id_bilan)
+                );
+              } else {
+                serreAlerts = allAlerts;
+              }
+            }
+          }
+          
+          console.log(`🎯 [AlertHeatmapOverlay] Filtered to ${serreAlerts.length} alerts for this serre`);
+        } catch (alertError) {
+          console.error(`❌ [AlertHeatmapOverlay] Error loading alerts:`, alertError);
+          serreAlerts = [];
+        }
+        
         setAlerts(serreAlerts);
 
-        // Create alert markers and heatmap points
+        // Create alert markers and heatmap points with modern alert level mapping
         const markers: AlertMarker[] = [];
         const heatmapData: HeatmapPoint[] = [];
 
         serreAlerts.forEach(alert => {
+          // Ensure alert has required properties
+          if (!alert || typeof alert !== 'object') {
+            return;
+          }
+          
           const bilan = serreBilans.find(b => b.id === alert.id_bilan);
-          if (alert.x1 && alert.y1) {
-
-            
+          if (alert.x1 && alert.y1 && alert.status_alert !== undefined) {
+            try {
             // Convert normalized coordinates to actual map coordinates
             const actualCoords = convertNormalizedToMapCoordinates(alert.x1, alert.y1);
             const position = new google.maps.LatLng(actualCoords.lat, actualCoords.lng);
-
             
-            const weight = AlertService.getAlertLevel(alert.status_alert) === 'High' ? 3 : 
-                          AlertService.getAlertLevel(alert.status_alert) === 'Medium' ? 2 : 1;
+              // Validate that coordinates are within reasonable bounds (within ~2km of serre center)
+              const serreLat = serreLocation.lat;
+              const serreLng = serreLocation.lng;
+              const latDiff = Math.abs(actualCoords.lat - serreLat);
+              const lngDiff = Math.abs(actualCoords.lng - serreLng);
+              
+              // Only include alerts within ~2km radius (approximately 0.02 degrees) for better heatmap coverage
+              if (latDiff < 0.02 && lngDiff < 0.02) {
+                // Use modern alert level mapping
+                const level = getAlertLevel(alert.status_alert);
+                const weight = getAlertWeight(alert.status_alert);
+
+                console.log(`📍 [AlertHeatmapOverlay] Processing alert ${alert.id}: level=${level}, weight=${weight}, coords=(${actualCoords.lat.toFixed(6)}, ${actualCoords.lng.toFixed(6)})`);
 
             markers.push({
               id: alert.id,
               position,
               alert,
               bilan,
-              weight
+                  weight,
+                  level
             });
 
             heatmapData.push({
               location: position,
               weight
             });
+              } else {
+                console.log(`⚠️ [AlertHeatmapOverlay] Alert ${alert.id} outside range: latDiff=${latDiff.toFixed(6)}, lngDiff=${lngDiff.toFixed(6)}`);
+              }
+                    } catch (coordError) {
+          console.error(`❌ [AlertHeatmapOverlay] Error processing alert ${alert.id}:`, coordError);
+        }
+          } else {
+            console.log(`⚠️ [AlertHeatmapOverlay] Alert ${alert.id} missing required properties: x1=${alert.x1}, y1=${alert.y1}, status_alert=${alert.status_alert}`);
           }
         });
+
+        console.log(`📊 [AlertHeatmapOverlay] Processed ${markers.length} markers and ${heatmapData.length} heatmap points`);
+
+        // If no alerts with coordinates, no heatmap will be displayed
 
         setAlertMarkers(markers);
         setHeatmapPoints(heatmapData);
 
-
+        // Create native heatmap if map is available and we have enough data points
+        if (map && heatmapData.length > 0) {
+          // Only create heatmap if we have at least 1 point to prevent full map coverage
+          if (heatmapData.length >= 1) {
+            console.log(`🔥 [AlertHeatmapOverlay] Creating heatmap with ${heatmapData.length} points`);
+            createNativeHeatmap(map, heatmapData);
+          }
+        } else {
+          console.log(`⚠️ [AlertHeatmapOverlay] Cannot create heatmap: map=${!!map}, points=${heatmapData.length}`);
+        }
 
       } catch (err: any) {
         console.error('Error loading serre data:', err);
@@ -131,7 +382,40 @@ export default function AlertHeatmapOverlay({
     if (serreId) {
       loadSerreData();
     }
-  }, [serreId]);
+  }, [serreId, createNativeHeatmap]);
+
+  // Effect to create heatmap when map becomes available
+  useEffect(() => {
+    console.log(`🔄 [AlertHeatmapOverlay] Map effect triggered: map=${!!map}, points=${heatmapPoints.length}`);
+    
+    if (map && heatmapPoints.length > 0) {
+      // Only create heatmap if we have at least 1 point to prevent full map coverage
+      if (heatmapPoints.length >= 1) {
+        console.log(`🔥 [AlertHeatmapOverlay] Creating heatmap from effect with ${heatmapPoints.length} points`);
+        // Add a small delay to ensure Google Maps API is fully loaded
+        const timer = setTimeout(() => {
+          createNativeHeatmap(map, heatmapPoints);
+        }, 500);
+        
+        return () => clearTimeout(timer);
+      }
+    } else {
+      console.log(`⚠️ [AlertHeatmapOverlay] Map effect conditions not met: map=${!!map}, points=${heatmapPoints.length}`);
+    }
+  }, [map, heatmapPoints, createNativeHeatmap]);
+
+  // Cleanup heatmap on unmount
+  useEffect(() => {
+    return () => {
+      if (heatmapRef.current) {
+        // Remove zoom listener if it exists
+        if ((heatmapRef.current as any).zoomListener) {
+          google.maps.event.removeListener((heatmapRef.current as any).zoomListener);
+        }
+        heatmapRef.current.setMap(null);
+      }
+    };
+  }, []);
 
   const handleMarkerClick = useCallback((marker: AlertMarker) => {
     setSelectedAlert(marker);
@@ -153,373 +437,158 @@ export default function AlertHeatmapOverlay({
     }
   }, [onInterventionClick]);
 
-  const getAlertLevelColor = (statusAlert: number) => {
-    const level = AlertService.getAlertLevel(statusAlert);
-    switch (level) {
-      case 'High':
-        return 'bg-red-500';
-      case 'Medium':
-        return 'bg-orange-500';
-      case 'Low':
-        return 'bg-yellow-500';
-      default:
-        return 'bg-gray-500';
-    }
-  };
-
-  const getAlertLevelText = (statusAlert: number) => {
-    const level = AlertService.getAlertLevel(statusAlert);
-    switch (level) {
-      case 'High':
-        return 'Élevé';
-      case 'Medium':
-        return 'Moyen';
-      case 'Low':
-        return 'Faible';
-      default:
-        return 'Inconnu';
-    }
-  };
-
-  // Get intuitive danger level colors for heatmap
-  const getDangerLevelColor = (statusAlert: number) => {
-    const level = AlertService.getAlertLevel(statusAlert);
-    switch (level) {
-      case 'High':
-        return '#dc2626'; // Deep crimson red
-      case 'Medium':
-        return '#f59e0b'; // Amber orange
-      case 'Low':
-        return '#10b981'; // Emerald green
-      default:
-        return '#6b7280'; // Gray
-    }
-  };
-
   // Show loading state
   if (loading) {
-    return null; // Don't render anything while loading
+    return (
+      <div className="absolute top-4 left-4 z-30 bg-white/90 backdrop-blur-sm rounded-lg shadow-lg border border-gray-200 p-3">
+        <div className="flex items-center space-x-2">
+          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-red-500"></div>
+          <span className="text-sm text-red-600 font-medium">Chargement de la carte de chaleur...</span>
+        </div>
+      </div>
+    );
   }
 
   // Show error state
   if (error) {
-    return null; // Don't render anything on error
+    return (
+      <div className="absolute top-4 left-4 z-30 bg-white/90 backdrop-blur-sm rounded-lg shadow-lg border border-red-200 p-3">
+        <div className="flex items-center space-x-2">
+          <AlertTriangle className="h-4 w-4 text-red-500" />
+          <span className="text-sm text-red-600 font-medium">Erreur: {error}</span>
+        </div>
+        <div className="mt-2 text-xs text-red-500">
+          La carte de chaleur ne peut pas être affichée. Vérifiez votre connexion et réessayez.
+        </div>
+      </div>
+    );
+  }
+
+  // Show no alerts state
+  if (alerts.length === 0) {
+    return (
+      <div className="absolute top-4 left-4 z-30 bg-white/90 backdrop-blur-sm rounded-lg shadow-lg border border-green-200 p-3">
+        <div className="flex items-center space-x-2">
+          <CircleIcon className="h-4 w-4 text-green-500" />
+          <span className="text-sm text-green-600 font-medium">Aucune alerte détectée pour {serreName}</span>
+        </div>
+        <div className="mt-2 text-xs text-green-600">
+          La carte de chaleur sera affichée une fois des alertes détectées.
+        </div>
+      </div>
+    );
   }
 
   return (
     <>
-      {/* Alert markers - Modern Style with Intuitive Colors */}
+
+
+      {/* Modern Alert Markers - Clickable with Color Coding */}
       {alertMarkers.map((marker) => (
-        <>
-  
-          <Marker
-            key={marker.id}
-            position={marker.position}
-            icon={{
-              url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
-                <svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <defs>
-                    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
-                      <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
-                      <feMerge> 
-                        <feMergeNode in="coloredBlur"/>
-                        <feMergeNode in="SourceGraphic"/>
-                      </feMerge>
-                    </filter>
-                    <radialGradient id="markerGradient" cx="50%" cy="50%" r="50%">
-                      <stop offset="0%" stop-color="${getDangerLevelColor(marker.alert.status_alert)}" stop-opacity="0.9"/>
-                      <stop offset="70%" stop-color="${getDangerLevelColor(marker.alert.status_alert)}" stop-opacity="0.7"/>
-                      <stop offset="100%" stop-color="${getDangerLevelColor(marker.alert.status_alert)}" stop-opacity="0.4"/>
-                    </radialGradient>
-                  </defs>
-                  <circle cx="14" cy="14" r="12" fill="url(#markerGradient)" stroke="${getDangerLevelColor(marker.alert.status_alert)}" stroke-width="2" filter="url(#glow)"/>
-                  <path d="M14 8v8M14 16v-2" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                </svg>
-              `),
-              scaledSize: new google.maps.Size(28, 28),
-              anchor: new google.maps.Point(14, 14)
-            }}
-            onClick={() => handleMarkerClick(marker)}
-            title={`${marker.alert.maladie} - ${marker.bilan?.nom || 'Bilan inconnu'}`}
-          />
-        </>
+        <Marker
+          key={marker.id}
+          position={marker.position}
+          icon={{
+            url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                  <radialGradient id="markerGradient-${marker.id}" cx="50%" cy="50%" r="50%">
+                    <stop offset="0%" stop-color="${getAlertLevelColor(marker.alert.status_alert)}" stop-opacity="0.9"/>
+                    <stop offset="70%" stop-color="${getAlertLevelColor(marker.alert.status_alert)}" stop-opacity="0.7"/>
+                    <stop offset="100%" stop-color="${getAlertLevelColor(marker.alert.status_alert)}" stop-opacity="0.4"/>
+                  </radialGradient>
+                  ${marker.alert.status_alert === 2 ? `
+                  <filter id="glow-${marker.id}" x="-50%" y="-50%" width="200%" height="200%">
+                    <feGaussianBlur stdDeviation="2.5" result="coloredBlur"/>
+                    <feMerge> 
+                      <feMergeNode in="coloredBlur"/>
+                      <feMergeNode in="SourceGraphic"/>
+                    </feMerge>
+                  </filter>
+                  ` : ''}
+                </defs>
+                <circle cx="8" cy="8" r="6" fill="url(#markerGradient-${marker.id})" stroke="${getAlertLevelColor(marker.alert.status_alert)}" stroke-width="${marker.alert.status_alert === 2 ? '2.5' : '1.5'}" ${marker.alert.status_alert === 2 ? 'filter="url(#glow-' + marker.id + ')"' : ''}/>
+                <circle cx="8" cy="8" r="2.5" fill="white" opacity="0.9"/>
+                ${marker.alert.status_alert === 2 ? '<circle cx="8" cy="8" r="11" fill="none" stroke="rgba(220, 20, 60, 0.5)" stroke-width="1.5" stroke-dasharray="3,2"/>' : ''}
+                ${marker.alert.status_alert === 2 ? '<circle cx="8" cy="8" r="14" fill="none" stroke="rgba(139, 0, 0, 0.4)" stroke-width="1" stroke-dasharray="1,1"/>' : ''}
+              </svg>
+            `),
+            scaledSize: new google.maps.Size(16, 16),
+            anchor: new google.maps.Point(8, 8)
+          }}
+          onClick={() => handleMarkerClick(marker)}
+          title={`${marker.level} - ${marker.alert.maladie} - ${marker.bilan?.nom || 'Bilan inconnu'}`}
+        />
       ))}
 
-      {/* Primary Alert Heatmap - Intuitive Danger Levels */}
-      {heatmapPoints.length > 0 && (
-        <>
+      {/* Clean Heatmap Only - No Fallback Circles */}
+      {/* The native Google Maps heatmap layer provides the visualization */}
 
-          <HeatmapLayer
-            data={heatmapPoints}
-            options={{
-              radius: 100,
-              opacity: 0.85,
-              gradient: [
-                'rgba(16, 185, 129, 0)',      // Transparent emerald green
-                'rgba(16, 185, 129, 0.2)',    // Faint emerald green
-                'rgba(34, 197, 94, 0.4)',     // Green
-                'rgba(59, 130, 246, 0.6)',    // Blue
-                'rgba(245, 158, 11, 0.8)',    // Amber orange
-                'rgba(220, 38, 38, 1)'        // Deep crimson red
-              ]
-            }}
-          />
-        </>
-      )}
-
-      {/* Alert Level-Specific Heatmaps for Better Visibility */}
-      {heatmapPoints.length > 0 && (
-        <>
-          {/* Low Level Alerts - Green to Cyan */}
-          <HeatmapLayer
-            data={heatmapPoints.filter(point => point.weight === 1)}
-            options={{
-              radius: 80,
-              opacity: 0.9,
-              gradient: [
-                'rgba(16, 185, 129, 0)',      // Transparent
-                'rgba(16, 185, 129, 0.3)',    // Emerald green
-                'rgba(34, 197, 94, 0.6)',     // Green
-                'rgba(6, 182, 212, 1)'        // Cyan
-              ]
-            }}
-          />
-          
-          {/* Medium Level Alerts - Yellow to Orange */}
-          <HeatmapLayer
-            data={heatmapPoints.filter(point => point.weight === 2)}
-            options={{
-              radius: 90,
-              opacity: 0.9,
-              gradient: [
-                'rgba(245, 158, 11, 0)',      // Transparent
-                'rgba(245, 158, 11, 0.4)',    // Amber
-                'rgba(251, 146, 60, 0.7)',    // Orange
-                'rgba(249, 115, 22, 1)'       // Deep orange
-              ]
-            }}
-          />
-          
-          {/* High Level Alerts - Red to Deep Crimson */}
-          <HeatmapLayer
-            data={heatmapPoints.filter(point => point.weight === 3)}
-            options={{
-              radius: 110,
-              opacity: 0.95,
-              gradient: [
-                'rgba(239, 68, 68, 0)',       // Transparent
-                'rgba(239, 68, 68, 0.5)',     // Red
-                'rgba(220, 38, 38, 0.8)',     // Deep red
-                'rgba(185, 28, 28, 1)'        // Deep crimson
-              ]
-            }}
-          />
-        </>
-      )}
-
-      {/* Test heatmap with intuitive danger levels at serre center for debugging */}
-      {process.env.NODE_ENV === 'development' && (
-        <>
-
-          
-          {/* Test 1: Green to Cyan - Low Level Style */}
-          <HeatmapLayer
-            data={[
-              new google.maps.LatLng(serreLocation.lat, serreLocation.lng)
-            ]}
-            options={{
-              radius: 250,
-              opacity: 0.9,
-              gradient: [
-                'rgba(16, 185, 129, 0)',      // Transparent
-                'rgba(16, 185, 129, 0.3)',    // Emerald green
-                'rgba(6, 182, 212, 0.7)',     // Cyan
-                'rgba(6, 182, 212, 1)'        // Bright cyan
-              ]
-            }}
-          />
-          
-          {/* Test 2: Yellow to Orange - Medium Level Style */}
-          <HeatmapLayer
-            data={[
-              {
-                location: new google.maps.LatLng(serreLocation.lat, serreLocation.lng),
-                weight: 10
-              }
-            ]}
-            options={{
-              radius: 200,
-              opacity: 0.9,
-              gradient: [
-                'rgba(245, 158, 11, 0)',      // Transparent
-                'rgba(245, 158, 11, 0.4)',    // Amber
-                'rgba(249, 115, 22, 0.8)',    // Deep orange
-                'rgba(249, 115, 22, 1)'       // Bright orange
-              ]
-            }}
-          />
-          
-          {/* Test 3: Red to Deep Crimson - High Level Style */}
-          <HeatmapLayer
-            data={[
-              new google.maps.LatLng(serreLocation.lat, serreLocation.lng),
-              new google.maps.LatLng(serreLocation.lat + 0.001, serreLocation.lng),
-              new google.maps.LatLng(serreLocation.lat, serreLocation.lng + 0.001)
-            ]}
-            options={{
-              radius: 150,
-              opacity: 0.9,
-              gradient: [
-                'rgba(239, 68, 68, 0)',       // Transparent
-                'rgba(239, 68, 68, 0.5)',     // Red
-                'rgba(185, 28, 28, 0.8)',     // Deep crimson
-                'rgba(185, 28, 28, 1)'        // Bright deep crimson
-              ]
-            }}
-          />
-          
-          {/* Test Marker - Modern style marker for debugging */}
-          <Marker
-            position={new google.maps.LatLng(serreLocation.lat, serreLocation.lng)}
-            title="Test Marker - Serre Center (Intuitive Danger Levels)"
-            icon={{
-              url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
-                <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <defs>
-                    <radialGradient id="testGradient" cx="50%" cy="50%" r="50%">
-                      <stop offset="0%" stop-color="#10b981" stop-opacity="0.8"/>
-                      <stop offset="50%" stop-color="#f59e0b" stop-opacity="0.6"/>
-                      <stop offset="100%" stop-color="#dc2626" stop-opacity="0.4"/>
-                    </radialGradient>
-                  </defs>
-                  <circle cx="16" cy="16" r="14" fill="url(#testGradient)" stroke="#dc2626" stroke-width="3"/>
-                  <text x="16" y="20" text-anchor="middle" fill="white" font-size="12" font-weight="bold">T</text>
-                </svg>
-              `),
-              scaledSize: new google.maps.Size(32, 32),
-              anchor: new google.maps.Point(16, 16)
-            }}
-          />
-        </>
-      )}
-
-                           {/* Info window for selected alert */}
-        {selectedAlert && (
-          <InfoWindow
-            position={selectedAlert.position}
-            onCloseClick={handleInfoWindowClose}
-          >
-            <div className="p-0 min-w-[240px] max-w-[260px]">
-              {/* Compact Card Container */}
-              <div className="bg-white rounded-lg shadow-lg border border-gray-100 overflow-hidden">
-                 {/* Header with Two-Column Layout */}
-                 <div className="px-3 py-2 border-b border-gray-200">
-                   <div className="flex items-center justify-between">
-                     {/* Left: Alert Type */}
-                     <div className="flex-1 min-w-0">
-                       <h3 className="font-bold text-gray-900 text-sm truncate">
-                         {selectedAlert.alert.maladie}
-                       </h3>
-                     </div>
-                     
-                     {/* Right: Status/Severity Badge */}
-                     <div className="flex-shrink-0 ml-2">
-                       <div className={cn(
-                         "px-2 py-1 rounded-full text-xs font-semibold text-white",
-                         getAlertLevelColor(selectedAlert.alert.status_alert) === 'bg-red-500' && "bg-red-500",
-                         getAlertLevelColor(selectedAlert.alert.status_alert) === 'bg-orange-500' && "bg-orange-500",
-                         getAlertLevelColor(selectedAlert.alert.status_alert) === 'bg-yellow-500' && "bg-yellow-500"
-                       )}>
-                         {getAlertLevelText(selectedAlert.alert.status_alert)}
-                       </div>
-                     </div>
+      {/* Compact Info Window for Selected Alert */}
+      {selectedAlert && (
+        <InfoWindow
+          position={selectedAlert.position}
+          onCloseClick={handleInfoWindowClose}
+        >
+          <div className="p-0 min-w-[200px] max-w-[220px]">
+            {/* Compact Card Container */}
+            <div className="bg-white rounded-lg shadow-lg border border-gray-200 overflow-hidden">
+              {/* Alert Image - First thing you see */}
+              {selectedAlert.alert.lien_image && (
+                <div className="w-full">
+                  <img 
+                    src={selectedAlert.alert.lien_image} 
+                    alt="Alerte"
+                    className="w-full h-24 object-cover"
+                  />
+                </div>
+              )}
+              
+              {/* Compact Content */}
+              <div className="p-3 space-y-2">
+                {/* Alert Type & Level Badge */}
+                 <div className="flex items-center justify-between">
+                  <h3 className="font-bold text-gray-900 text-sm truncate flex-1">
+                       {selectedAlert.alert.maladie}
+                     </h3>
+                  <Badge 
+                    variant="outline" 
+                    className={cn(
+                      "px-2 py-0.5 text-xs font-semibold border ml-2 flex-shrink-0",
+                      getAlertLevelBgColor(selectedAlert.alert.status_alert)
+                    )}
+                  >
+                    {selectedAlert.level}
+                  </Badge>
                    </div>
+                   
+                {/* Bilan Name */}
+                <div className="text-xs text-gray-600">
+                  <span className="font-medium">Bilan:</span> {selectedAlert.bilan?.nom || 'Inconnu'}
                  </div>
                  
-                 {/* Compact Content with Professional Icons */}
-                 <div className="p-3 space-y-0">
-                   {/* Bilan Information */}
-                   <div className="flex items-center space-x-3 py-2">
-                     <MapPin className="w-4 h-4 text-blue-600 flex-shrink-0" />
-                     <span className="text-xs font-medium text-gray-600 w-16">Bilan:</span>
-                     <span className="text-xs text-gray-900 truncate flex-1">
-                       {selectedAlert.bilan?.nom || 'Inconnu'}
-                     </span>
-                   </div>
-                   
-                   {/* Divider */}
-                   <div className="border-t border-gray-100 mx-2"></div>
-                   
-                   {/* Alert Level */}
-                   <div className="flex items-center space-x-3 py-2">
-                     <AlertTriangle className="w-4 h-4 text-orange-600 flex-shrink-0" />
-                     <span className="text-xs font-medium text-gray-600 w-16">Niveau:</span>
-                     <span className="text-xs text-gray-900">
-                       {getAlertLevelText(selectedAlert.alert.status_alert)}
-                     </span>
-                   </div>
-                   
-                   {/* Divider */}
-                   <div className="border-t border-gray-100 mx-2"></div>
-                   
-                   {/* Status */}
-                   <div className="flex items-center space-x-3 py-2">
-                     <Circle className={cn(
-                       "w-4 h-4 flex-shrink-0",
-                       selectedAlert.alert.status === 'résolue' 
-                         ? "text-green-600 fill-green-600"
-                         : "text-red-600 fill-red-600"
-                     )} />
-                     <span className="text-xs font-medium text-gray-600 w-16">Statut:</span>
-                     <div className={cn(
-                       "px-2 py-0.5 rounded-full text-xs font-semibold",
-                       selectedAlert.alert.status === 'résolue' 
-                         ? "bg-green-100 text-green-800 border border-green-200"
-                         : "bg-red-100 text-red-800 border border-red-200"
-                     )}>
-                       {selectedAlert.alert.status === 'résolue' ? 'Résolue' : 'Non Résolue'}
-                     </div>
-                   </div>
-                   
-                   {/* Divider */}
-                   <div className="border-t border-gray-100 mx-2"></div>
-                   
-                   {/* Detection Time */}
-                   <div className="flex items-center space-x-3 py-2">
-                     <Clock className="w-4 h-4 text-purple-600 flex-shrink-0" />
-                     <span className="text-xs font-medium text-gray-600 w-16">Détecté:</span>
-                     <span className="text-xs text-gray-900">
-                       {AlertService.formatDate(selectedAlert.alert.date)}
-                     </span>
-                   </div>
+                 {/* Status */}
+                <div className="text-xs text-gray-600">
+                  <span className="font-medium">Statut:</span> 
+                  <span className={cn(
+                    "ml-1 px-1.5 py-0.5 rounded text-xs font-medium",
+                     selectedAlert.alert.status === 'résolue' 
+                      ? "bg-green-100 text-green-800"
+                      : "bg-red-100 text-red-800"
+                   )}>
+                     {selectedAlert.alert.status === 'résolue' ? 'Résolue' : 'Non Résolue'}
+                   </span>
+               </div>
+               
+                {/* Date */}
+                <div className="text-xs text-gray-600">
+                  <span className="text-sm font-medium">Détecté:</span> {formatDate(selectedAlert.alert.date)}
                  </div>
-                 
-                 {/* Compact Action Buttons */}
-                 <div className="px-2 py-2 border-t border-gray-200">
-                   <div className="flex space-x-2">
-                     <Button
-                       size="sm"
-                       variant="outline"
-                       className="flex-1 h-7 border-orange-500 text-orange-600 hover:bg-orange-50 hover:border-orange-600 transition-all duration-200 font-medium text-xs px-2"
-                       onClick={() => handleInterventionClick(selectedAlert.alert)}
-                     >
-                       <AlertTriangle className="h-3 w-3 mr-1" />
-                       Intervention
-                     </Button>
-                     <Button
-                       size="sm"
-                       className="flex-1 h-7 bg-[#B4CC5F] hover:bg-[#B4CC5F]/90 transition-all duration-200 font-medium shadow-sm text-xs px-2"
-                       onClick={() => handleAlertClick(selectedAlert.alert)}
-                     >
-                       <MapPin className="h-3 w-3 mr-1" />
-                       Voir détails
-                     </Button>
-                   </div>
-                 </div>
-              </div>
+               </div>
             </div>
-          </InfoWindow>
-        )}
+          </div>
+        </InfoWindow>
+      )}
     </>
   );
 }

@@ -58,7 +58,6 @@ interface MapComponentProps {
 const mapContainerStyle = {
   width: "100%",
   height: "100%",
-  minHeight: "400px",
   minWidth: "300px",
 };
 
@@ -524,17 +523,17 @@ export default function MapComponent({
   console.log("MapComponent - selectedDomainId:", selectedDomainId);
 
   return (
-    <div className={`relative w-full h-full min-h-[400px] ${className}`}>
+    <div className={`relative w-full h-full ${className}`}>
       {/* Search Controls */}
-      <div className="absolute top-4 left-4 z-10 flex gap-2">
-        <form onSubmit={handleSearchSubmit} className="flex gap-2">
+      <div className="absolute top-4 left-4 z-10 flex gap-1 sm:gap-2 max-w-[calc(100%-7rem)] sm:max-w-[calc(100%-8rem)]">
+        <form onSubmit={handleSearchSubmit} className="flex gap-1 sm:gap-2 flex-1 min-w-0">
           <Input
             ref={searchInputRef}
             type="text"
             placeholder="Search for a location..."
-            className="w-64 bg-white shadow-lg"
+            className="w-full min-w-0 bg-white shadow-lg text-sm sm:text-base"
           />
-          <Button type="submit" size="sm" variant="default">
+          <Button type="submit" size="sm" variant="default" className="flex-shrink-0 px-1.5 sm:px-3">
             <Search className="h-4 w-4" />
           </Button>
         </form>
@@ -543,7 +542,7 @@ export default function MapComponent({
           size="sm"
           variant="outline"
           onClick={goToCurrentLocation}
-          className="bg-white shadow-lg"
+          className="bg-white shadow-lg flex-shrink-0 px-1.5 sm:px-3"
         >
           <MapPin className="h-4 w-4" />
         </Button>
