@@ -181,7 +181,7 @@ const TechHeader: React.FC<TechHeaderProps> = ({ role, onMenuClick, isSidebarOpe
     <header className="bg-white border-b shadow-sm sticky top-0 z-10">
       <div className="max-w-screen-2xl mx-auto px-3 sm:px-4 lg:px-6">
         {/* Mobile-first responsive grid */}
-        <div className="grid grid-cols-3 items-center py-2 sm:py-3 min-h-[44px] sm:min-h-[48px] md:min-h-[52px] lg:min-h-[56px]">
+        <div className="grid grid-cols-2 md:grid-cols-3 items-center py-2 sm:py-3 min-h-[44px] sm:min-h-[48px] md:min-h-[52px] lg:min-h-[56px]">
           {/* Left: Logo */}
           <div className="justify-self-start flex items-center gap-2">
             {/* Hamburger menu button for mobile */}
@@ -200,11 +200,21 @@ const TechHeader: React.FC<TechHeaderProps> = ({ role, onMenuClick, isSidebarOpe
                 )}
               </Button>
             )}
-            {/* Logo - using GreenerTech-Logo4T.png for both mobile and desktop */}
+            {/* Logo - using different logos for mobile and desktop */}
+            <img 
+              src="/GreenerTech-logo2.jpg" 
+              alt="GreenerTech"
+              className="h-10 w-auto object-contain cursor-pointer md:hidden"
+              title="Accueil"
+              role="button"
+              tabIndex={0}
+              onClick={() => navigate(role === "technicien_sup" ? "/technicien-sup" : "/technician/dashboard")}
+              onKeyDown={(e) => e.key === 'Enter' && navigate(role === "technicien_sup" ? "/technicien-sup" : "/technician/dashboard")}
+            />
             <img 
               src="/GreenerTech-Logo4T.png" 
               alt="GreenerTech"
-              className="h-8 w-auto object-contain cursor-pointer"
+              className="h-8 w-auto object-contain cursor-pointer hidden md:block"
               title="Accueil"
               role="button"
               tabIndex={0}
@@ -213,8 +223,8 @@ const TechHeader: React.FC<TechHeaderProps> = ({ role, onMenuClick, isSidebarOpe
             />
           </div>
 
-          {/* Center: Navigation Icons */}
-          <div className="justify-self-center flex items-center gap-1">
+          {/* Center: Navigation Icons - Hidden on mobile */}
+          <div className="justify-self-center hidden md:flex items-center gap-1 col-span-2 md:col-span-1">
             {/* Home Icon */}
             <div 
               className={`h-8 w-8 sm:h-9 sm:w-9 flex items-center justify-center cursor-pointer hover:scale-110 transition-transform duration-200 active:scale-95 flex-shrink-0 rounded-lg ${

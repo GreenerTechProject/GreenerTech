@@ -38,13 +38,8 @@ import {
   SkipForward,
   UserCheck,
   ArrowRight,
-  Search,
-  GripVertical,
-  Maximize2,
-  Minimize2,
-  ChevronDown,
-  ChevronRight,
 } from "lucide-react";
+import LogoutWithWarning from "./LogoutWithWarning";
 import DomainCreation from "./DomainCreation";
 import SerreCreation from "./SerreCreation";
 import TechnicianCreation from "./TechnicianCreation";
@@ -120,11 +115,6 @@ export default function CompanySetupWizard({
   const [technicians, setTechnicians] = useState<Technician[]>([]);
   const [serreAssignments, setSerreAssignments] = useState<SerreAssignment[]>([]);
   const [skippedSteps, setSkippedSteps] = useState<Set<WizardStep>>(new Set());
-  const [leftPanelWidth, setLeftPanelWidth] = useState(500);
-  const [isDragging, setIsDragging] = useState(false);
-  const [isFullscreen, setIsFullscreen] = useState(false);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [isLeftPanelCollapsed, setIsLeftPanelCollapsed] = useState(false);
   
   const isMobile = useIsMobile();
 
@@ -264,35 +254,9 @@ export default function CompanySetupWizard({
     setCurrentStep("company");
   };
 
-  const handleMouseDown = (e: React.MouseEvent) => {
-    if (isMobile) return;
-    setIsDragging(true);
-    e.preventDefault();
-  };
 
-  const handleMouseMove = (e: MouseEvent) => {
-    if (isDragging && !isMobile) {
-      const newWidth = e.clientX;
-      if (newWidth > 250 && newWidth < 1200) {
-        setLeftPanelWidth(newWidth);
-      }
-    }
-  };
 
-  const handleMouseUp = () => {
-    setIsDragging(false);
-  };
 
-  useEffect(() => {
-    if (isDragging && !isMobile) {
-      document.addEventListener('mousemove', handleMouseMove);
-      document.addEventListener('mouseup', handleMouseUp);
-      return () => {
-        document.removeEventListener('mousemove', handleMouseMove);
-        document.removeEventListener('mouseup', handleMouseUp);
-      };
-    }
-  }, [isDragging, isMobile]);
 
   const legalStatusOptions = [
     { value: "sarl", label: "SARL (Société à Responsabilité Limitée)" },
@@ -390,9 +354,12 @@ export default function CompanySetupWizard({
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
         <Card className="w-full max-w-4xl">
           <CardHeader className="text-center">
-            <CardTitle className="text-2xl font-bold text-gray-900">
-              Configuration de votre entreprise
-            </CardTitle>
+            <div className="flex justify-between items-center mb-4">
+              <CardTitle className="text-2xl font-bold text-gray-900">
+                Configuration de votre entreprise
+              </CardTitle>
+              <LogoutWithWarning variant="outline" size="sm" />
+            </div>
             <CardDescription className="text-gray-600">
               Étape 1 sur 7 : Informations de base de votre entreprise
             </CardDescription>
@@ -420,9 +387,9 @@ export default function CompanySetupWizard({
                         <div
                           className={`flex items-center justify-center w-10 h-10 rounded-full border-2 ${
                             status === "completed"
-                              ? "bg-greener-600 border-greener-600 text-white"
+                              ? "bg-[#2E7D32] border-[#2E7D32] text-white"
                               : status === "current"
-                                ? "bg-blue-500 border-blue-500 text-white"
+                                ? "bg-[#2E7D32] border-[#2E7D32] text-white"
                                 : status === "skipped"
                                   ? "bg-gray-200 border-gray-300 text-gray-500"
                                   : "bg-gray-100 border-gray-300 text-gray-400"
@@ -551,7 +518,7 @@ export default function CompanySetupWizard({
                   )}
                 />
 
-                <Button type="submit" className="w-full" disabled={isSubmitting}>
+                <Button type="submit" className="w-full bg-[#2E7D32] hover:bg-[#276A2B] text-white" disabled={isSubmitting}>
                   {isSubmitting ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -571,294 +538,46 @@ export default function CompanySetupWizard({
 
   if (currentStep === "domains") {
     return (
-      <div className="h-screen flex flex-col lg:flex-row bg-gray-50">
-        {/* Mobile Header with Toggle */}
-        <div className="lg:hidden p-4 bg-white border-b">
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-gray-900">Création de Domaines</h2>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setIsLeftPanelCollapsed(!isLeftPanelCollapsed)}
-            >
-              {isLeftPanelCollapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-            </Button>
-          </div>
-        </div>
-
-        {/* Left Panel - Mobile Responsive */}
-        <div className={`lg:hidden ${isLeftPanelCollapsed ? 'hidden' : 'block'} bg-white border-b`}>
-          <div className="p-4">
-            <div className="relative mb-4">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <Input
-                placeholder="Rechercher dans les domaines..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-            <div className="space-y-2">
-              {domains.map((domain) => (
-                <div key={domain.id} className="p-3 border rounded-lg">
-                  <h4 className="font-medium text-sm">{domain.name}</h4>
-                  <p className="text-xs text-gray-600">Domaine</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {/* Desktop Left Panel - Draggable and Resizable */}
-        <div className="hidden lg:block bg-white border-r border-gray-200 overflow-y-auto relative"
-             style={{ width: `${leftPanelWidth}px`, minWidth: '300px', maxWidth: '800px' }}>
-          <div className="p-4">
-            <div className="relative mb-4">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <Input
-                placeholder="Rechercher dans les domaines..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-            <div className="space-y-2">
-              {domains.map((domain) => (
-                <div key={domain.id} className="p-3 border rounded-lg">
-                  <h4 className="font-medium text-sm">{domain.name}</h4>
-                  <p className="text-xs text-gray-600">Domaine</p>
-                </div>
-              ))}
-            </div>
-          </div>
-          
-          {/* Resize Handle */}
-          <div
-            className="absolute right-0 top-0 bottom-0 w-1 bg-gray-300 cursor-col-resize hover:bg-gray-400 transition-colors"
-            onMouseDown={handleMouseDown}
-          />
-        </div>
-
-        {/* Main Content */}
-        <div className="flex-1">
-          <DomainCreation
-            onContinue={handleDomainsComplete}
-            onBack={handleBackToCompany}
-            initialDomains={domains}
-          />
-        </div>
+      <div className="h-screen bg-gray-50">
+        {/* Main Content - Full Screen Domain Creation */}
+        <DomainCreation
+          onContinue={handleDomainsComplete}
+          onBack={handleBackToCompany}
+          initialDomains={domains}
+        />
       </div>
     );
   }
 
   if (currentStep === "serres") {
     return (
-      <div className="h-screen flex flex-col lg:flex-row bg-gray-50">
-        {/* Mobile Header with Toggle */}
-        <div className="lg:hidden p-4 bg-white border-b">
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-gray-900">Création de Serres</h2>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setIsLeftPanelCollapsed(!isLeftPanelCollapsed)}
-            >
-              {isLeftPanelCollapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-            </Button>
-          </div>
-        </div>
-
-        {/* Left Panel - Mobile Responsive */}
-        <div className={`lg:hidden ${isLeftPanelCollapsed ? 'hidden' : 'block'} bg-white border-b`}>
-          <div className="p-4">
-            <div className="relative mb-4">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <Input
-                placeholder="Rechercher dans les serres..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-            <div className="space-y-2">
-              {domains.flatMap(d => d.serres).map((serre) => (
-                <div key={serre.id} className="p-3 border rounded-lg">
-                  <h4 className="font-medium text-sm">{serre.nom}</h4>
-                  <p className="text-xs text-gray-600">Serre</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {/* Desktop Left Panel - Draggable and Resizable */}
-        <div className="hidden lg:block bg-white border-r border-gray-200 overflow-y-auto relative"
-             style={{ width: `${leftPanelWidth}px`, minWidth: '300px', maxWidth: '800px' }}>
-          <div className="p-4">
-            <div className="relative mb-4">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <Input
-                placeholder="Rechercher dans les serres..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-            <div className="space-y-2">
-              {domains.flatMap(d => d.serres).map((serre) => (
-                <div key={serre.id} className="p-3 border rounded-lg">
-                  <h4 className="font-medium text-sm">{serre.nom}</h4>
-                  <p className="text-xs text-gray-600">Serre</p>
-                </div>
-              ))}
-            </div>
-          </div>
-          
-          {/* Resize Handle */}
-          <div
-            className="absolute right-0 top-0 bottom-0 w-1 bg-gray-300 cursor-col-resize hover:bg-gray-400 transition-colors"
-            onMouseDown={handleMouseDown}
-          />
-        </div>
-
-        {/* Main Content */}
-        <div className="flex-1">
+      <div className="h-screen bg-gray-50">
           <SerreCreation
             domains={domains}
             onComplete={handleSerresComplete}
             onBack={handleBackToDomains}
             setupMode={true}
           />
-        </div>
       </div>
     );
   }
 
   if (currentStep === "technicians") {
     return (
-      <div className="h-screen flex flex-col lg:flex-row bg-gray-50">
-        {/* Mobile Header with Toggle */}
-        <div className="lg:hidden p-4 bg-white border-b">
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-gray-900">Création de Techniciens</h2>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setIsLeftPanelCollapsed(!isLeftPanelCollapsed)}
-            >
-              {isLeftPanelCollapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-            </Button>
-          </div>
-        </div>
-
-        {/* Left Panel - Mobile Responsive */}
-        <div className={`lg:hidden ${isLeftPanelCollapsed ? 'hidden' : 'block'} bg-white border-b`}>
-          <div className="p-4">
-            <div className="relative mb-4">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <Input
-                placeholder="Rechercher dans les techniciens..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-            <div className="space-y-2">
-              {technicians.map((tech) => (
-                <div key={tech.id} className="p-3 border rounded-lg">
-                  <h4 className="font-medium text-sm">{tech.fullName}</h4>
-                  <p className="text-xs text-gray-600">{tech.role}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {/* Desktop Left Panel - Draggable and Resizable */}
-        <div className="hidden lg:block bg-white border-r border-gray-200 overflow-y-auto relative"
-             style={{ width: `${leftPanelWidth}px`, minWidth: '300px', maxWidth: '800px' }}>
-          <div className="p-4">
-            <div className="relative mb-4">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <Input
-                placeholder="Rechercher dans les techniciens..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-            <div className="space-y-2">
-              {technicians.map((tech) => (
-                <div key={tech.id} className="p-3 border rounded-lg">
-                  <h4 className="font-medium text-sm">{tech.fullName}</h4>
-                  <p className="text-xs text-gray-600">{tech.role}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-          
-          {/* Resize Handle */}
-          <div
-            className="absolute right-0 top-0 bottom-0 w-1 bg-gray-300 cursor-col-resize hover:bg-gray-400 transition-colors"
-            onMouseDown={handleMouseDown}
-          />
-        </div>
-
-        {/* Main Content */}
-        <div className="flex-1">
+      <div className="h-screen bg-gray-50">
           <TechnicianCreation
             domains={domains}
             onContinue={handleTechniciansComplete}
             onBack={handleBackToSerres}
             initialTechnicians={technicians}
           />
-        </div>
       </div>
     );
   }
 
   if (currentStep === "serreAssignment") {
     return (
-      <div className="h-screen flex flex-col lg:flex-row bg-gray-50">
-        {/* Mobile Header with Toggle */}
-        <div className="lg:hidden p-4 bg-white border-b">
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-gray-900">Assignation des Serres</h2>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setIsLeftPanelCollapsed(!isLeftPanelCollapsed)}
-            >
-              {isLeftPanelCollapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-            </Button>
-          </div>
-        </div>
-
-        {/* Left Panel - Mobile Responsive */}
-        <div className={`lg:hidden ${isLeftPanelCollapsed ? 'hidden' : 'block'} bg-white border-b`}>
-          <div className="p-4">
-            <div className="relative mb-4">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <Input
-                placeholder="Rechercher dans les assignments..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-            <div className="space-y-2">
-              {serreAssignments.map((assignment) => (
-                <div key={assignment.serreId} className="p-3 border rounded-lg">
-                  <h4 className="font-medium text-sm">Serre {assignment.serreId}</h4>
-                  <p className="text-xs text-gray-600">{assignment.supervisorIds.length} superviseur(s)</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {/* Main Content */}
-        <div className="flex-1">
+      <div className="h-screen bg-gray-50">
           <SerreAssignment
             technicians={technicians}
             domains={domains}
@@ -867,53 +586,13 @@ export default function CompanySetupWizard({
             onSkip={() => handleSerreAssignmentComplete([], true)}
             initialAssignments={serreAssignments}
           />
-        </div>
       </div>
     );
   }
 
   if (currentStep === "technicianHierarchy") {
     return (
-      <div className="h-screen flex flex-col lg:flex-row bg-gray-50">
-        {/* Mobile Header with Toggle */}
-        <div className="lg:hidden p-4 bg-white border-b">
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-gray-900">Hiérarchie des Techniciens</h2>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setIsLeftPanelCollapsed(!isLeftPanelCollapsed)}
-            >
-              {isLeftPanelCollapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-            </Button>
-          </div>
-        </div>
-
-        {/* Left Panel - Mobile Responsive */}
-        <div className={`lg:hidden ${isLeftPanelCollapsed ? 'hidden' : 'block'} bg-white border-b`}>
-          <div className="p-4">
-            <div className="relative mb-4">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <Input
-                placeholder="Rechercher des techniciens ou superviseurs..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-            <div className="space-y-2">
-              {technicians.filter(t => t.role === "technicien_superieur").map((sup) => (
-                <div key={sup.id} className="p-3 border rounded-lg">
-                  <h4 className="font-medium text-sm">{sup.fullName}</h4>
-                  <p className="text-xs text-gray-600">Superviseur</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {/* Main Content */}
-        <div className="flex-1">
+      <div className="h-screen bg-gray-50">
           <TechnicianHierarchy
             technicians={technicians as any}
             onComplete={(t) => handleTechnicianHierarchyComplete(t as any)}
@@ -921,59 +600,13 @@ export default function CompanySetupWizard({
             onSkip={() => handleTechnicianHierarchyComplete(technicians, true)}
             companyId={companyInfo?.cie ? parseInt(companyInfo.cie) : undefined}
           />
-        </div>
       </div>
     );
   }
 
   if (currentStep === "overview") {
     return (
-      <div className="h-screen flex flex-col lg:flex-row bg-gray-50">
-        {/* Mobile Header with Toggle */}
-        <div className="lg:hidden p-4 bg-white border-b">
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-gray-900">Aperçu Final</h2>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setIsLeftPanelCollapsed(!isLeftPanelCollapsed)}
-            >
-              {isLeftPanelCollapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-            </Button>
-          </div>
-        </div>
-
-        {/* Left Panel - Mobile Responsive */}
-        <div className={`lg:hidden ${isLeftPanelCollapsed ? 'hidden' : 'block'} bg-white border-b`}>
-          <div className="p-4">
-            <div className="relative mb-4">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <Input
-                placeholder="Rechercher dans l'aperçu..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-            <div className="space-y-2">
-              <div className="p-3 border rounded-lg">
-                <h4 className="font-medium text-sm">Entreprise</h4>
-                <p className="text-xs text-gray-600">{companyInfo?.nom}</p>
-              </div>
-              <div className="p-3 border rounded-lg">
-                <h4 className="font-medium text-sm">Domaines</h4>
-                <p className="text-xs text-gray-600">{domains.length} domaine(s)</p>
-              </div>
-              <div className="p-3 border rounded-lg">
-                <h4 className="font-medium text-sm">Techniciens</h4>
-                <p className="text-xs text-gray-600">{technicians.length} technicien(s)</p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Main Content */}
-        <div className="flex-1">
+      <div className="h-screen bg-gray-50">
           <FinalOverview
             companyInfo={{
               companyName: companyInfo!.nom,
@@ -989,7 +622,6 @@ export default function CompanySetupWizard({
             onBack={handleBackToTechnicianHierarchy}
             isSubmitting={isSubmitting}
           />
-        </div>
       </div>
     );
   }

@@ -28,9 +28,9 @@ export default function LandingPage() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#D6E2CC] via-[#FCFEFF] to-[#D6E2CC]">
+    <div className="min-h-screen bg-gradient-to-br from-[#EAF4E1] via-[#FCFEFF] to-[#EAF4E1]">
       {/* Navigation */}
-      <nav className="bg-white/80 backdrop-blur-md border-b border-green-100 sticky top-0 z-50">
+      <nav className="bg-white/80 backdrop-blur-md border-b border-greener-100 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-3">
             {/* Logo */}
@@ -49,7 +49,7 @@ export default function LandingPage() {
                 }}
               />
               <span
-                className="text-lg sm:text-xl font-bold text-green-600 hidden"
+                className="text-lg sm:text-xl font-bold text-greener-600 hidden"
                 style={{ display: 'none' }}
               >
                 Greener Tech
@@ -58,20 +58,20 @@ export default function LandingPage() {
 
             {/* Desktop Navigation Links */}
             <div className="hidden md:flex items-center space-x-8">
-              <a href="#features" className="text-gray-700 hover:text-green-600 transition-colors">Fonctionnalités</a>
-              <a href="#about" className="text-gray-700 hover:text-green-600 transition-colors">À propos</a>
-              <a href="#contact" className="text-gray-700 hover:text-green-600 transition-colors">Contact</a>
+              <a href="#features" className="text-gray-700 hover:text-greener-600 transition-colors">Fonctionnalités</a>
+              <a href="#about" className="text-gray-700 hover:text-greener-600 transition-colors">À propos</a>
+              <a href="#contact" className="text-gray-700 hover:text-greener-600 transition-colors">Contact</a>
             </div>
 
             {/* Desktop Auth Buttons */}
             <div className="hidden md:flex items-center space-x-4">
               <Link to="/login">
-                <Button variant="ghost" className="text-green-600 hover:text-green-700 hover:bg-green-50">
+                <Button variant="ghost" className="text-greener-600 hover:text-greener-700 hover:bg-greener-50">
                   Se connecter
                 </Button>
               </Link>
               <Link to="/role-selection">
-                <Button className="bg-green-600 hover:bg-green-700 text-white">
+                <Button className="bg-greener-600 hover:bg-greener-700 text-white">
                   Commencer
                 </Button>
               </Link>
@@ -92,37 +92,37 @@ export default function LandingPage() {
 
           {/* Mobile Menu */}
           {isMobileMenuOpen && (
-            <div className="md:hidden bg-white/95 backdrop-blur-md rounded-lg mt-4 p-4 border border-green-100">
+            <div className="md:hidden bg-white/95 backdrop-blur-md rounded-lg mt-4 p-4 border border-greener-100">
               <div className="flex flex-col space-y-4">
                 <a
                   href="#features"
-                  className="text-gray-700 hover:text-green-600 transition-colors py-2"
+                  className="text-gray-700 hover:text-greener-600 transition-colors py-2"
                   onClick={() => setIsMobileMenuOpen(false)}
                 >
                   Fonctionnalités
                 </a>
                 <a
                   href="#about"
-                  className="text-gray-700 hover:text-green-600 transition-colors py-2"
+                  className="text-gray-700 hover:text-greener-600 transition-colors py-2"
                   onClick={() => setIsMobileMenuOpen(false)}
                 >
                   À propos
                 </a>
                 <a
                   href="#contact"
-                  className="text-gray-700 hover:text-green-600 transition-colors py-2"
+                  className="text-gray-700 hover:text-greener-600 transition-colors py-2"
                   onClick={() => setIsMobileMenuOpen(false)}
                 >
                   Contact
                 </a>
-                <div className="border-t border-green-100 pt-4 space-y-3">
+                <div className="border-t border-greener-100 pt-4 space-y-3">
                   <Link to="/login" onClick={() => setIsMobileMenuOpen(false)}>
-                    <Button variant="ghost" className="w-full text-green-600 hover:text-green-700 hover:bg-green-50">
+                    <Button variant="ghost" className="w-full text-greener-600 hover:text-greener-700 hover:bg-greener-50">
                       Se connecter
                     </Button>
                   </Link>
                   <Link to="/role-selection" onClick={() => setIsMobileMenuOpen(false)}>
-                    <Button className="w-full bg-green-600 hover:bg-green-700 text-white">
+                    <Button className="w-full bg-greener-600 hover:bg-greener-700 text-white">
                       Commencer
                     </Button>
                   </Link>
@@ -151,7 +151,7 @@ export default function LandingPage() {
               {/* CTA Buttons */}
               <div className="flex flex-col sm:flex-row gap-4">
                 <Link to="/role-selection">
-                  <Button size="lg" className="w-full sm:w-auto bg-green-600 hover:bg-green-700 text-white px-6 sm:px-8 py-3 sm:py-4 text-base sm:text-lg">
+                  <Button size="lg" className="w-full sm:w-auto bg-greener-600 hover:bg-greener-700 text-white px-6 sm:px-8 py-3 sm:py-4 text-base sm:text-lg">
                     Commencer gratuitement
                     <ArrowRight className="ml-2 h-4 w-4 sm:h-5 sm:w-5" />
                   </Button>
@@ -175,10 +175,10 @@ export default function LandingPage() {
                 />
               </div>
               {/* Floating Stats Card */}
-              <div className="absolute -bottom-4 sm:-bottom-6 -left-4 sm:-left-6 bg-white rounded-lg sm:rounded-xl shadow-lg p-4 sm:p-6 border border-green-100">
+              <div className="absolute -bottom-4 sm:-bottom-6 -left-4 sm:-left-6 bg-white rounded-lg sm:rounded-xl shadow-lg p-4 sm:p-6 border border-greener-100">
                 <div className="flex items-center space-x-2 sm:space-x-3">
-                  <div className="w-10 h-10 sm:w-12 sm:h-12 bg-green-100 rounded-full flex items-center justify-center">
-                    <TrendingUp className="h-5 w-5 sm:h-6 sm:w-6 text-green-600" />
+                  <div className="w-10 h-10 sm:w-12 sm:h-12 bg-greener-100 rounded-full flex items-center justify-center">
+                    <TrendingUp className="h-5 w-5 sm:h-6 sm:w-6 text-greener-600" />
                   </div>
                   <div>
                     <div className="text-xl sm:text-2xl font-bold text-gray-900">+45%</div>
@@ -206,8 +206,8 @@ export default function LandingPage() {
 
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
             {/* Feature 1 */}
-            <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-xl sm:rounded-2xl p-6 sm:p-8 border border-green-200">
-              <div className="w-14 h-14 sm:w-16 sm:h-16 bg-green-600 rounded-xl flex items-center justify-center mb-4 sm:mb-6">
+            <div className="bg-gradient-to-br from-greener-50 to-greener-100 rounded-xl sm:rounded-2xl p-6 sm:p-8 border border-greener-200">
+              <div className="w-14 h-14 sm:w-16 sm:h-16 bg-greener-600 rounded-xl flex items-center justify-center mb-4 sm:mb-6">
                 <Leaf className="h-7 w-7 sm:h-8 sm:w-8 text-white" />
               </div>
               <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-3 sm:mb-4">
@@ -293,24 +293,24 @@ export default function LandingPage() {
       </section>
 
       {/* Stats Section */}
-      <section className="py-16 sm:py-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-r from-green-600 to-green-700">
+      <section className="py-16 sm:py-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-r from-greener-600 to-greener-700">
         <div className="max-w-7xl mx-auto">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6 sm:gap-8 text-center">
             <div className="space-y-2">
               <div className="text-3xl sm:text-4xl font-bold text-white">1000+</div>
-              <div className="text-sm sm:text-base text-green-100">Agriculteurs actifs</div>
+              <div className="text-sm sm:text-base text-greener-100">Agriculteurs actifs</div>
             </div>
             <div className="space-y-2">
               <div className="text-3xl sm:text-4xl font-bold text-white">50,000+</div>
-              <div className="text-sm sm:text-base text-green-100">Serres surveillées</div>
+              <div className="text-sm sm:text-base text-greener-100">Serres surveillées</div>
             </div>
             <div className="space-y-2">
               <div className="text-3xl sm:text-4xl font-bold text-white">99.9%</div>
-              <div className="text-sm sm:text-base text-green-100">Temps de disponibilité</div>
+              <div className="text-sm sm:text-base text-greener-100">Temps de disponibilité</div>
             </div>
             <div className="space-y-2">
               <div className="text-3xl sm:text-4xl font-bold text-white">+45%</div>
-              <div className="text-sm sm:text-base text-green-100">Rendement moyen</div>
+              <div className="text-sm sm:text-base text-greener-100">Rendement moyen</div>
             </div>
           </div>
         </div>
@@ -332,7 +332,7 @@ export default function LandingPage() {
           <div className="grid md:grid-cols-3 gap-8">
             {/* Step 1 */}
             <div className="text-center">
-              <div className="w-16 h-16 sm:w-20 sm:h-20 bg-green-600 rounded-full flex items-center justify-center mx-auto mb-4 sm:mb-6">
+              <div className="w-16 h-16 sm:w-20 sm:h-20 bg-greener-600 rounded-full flex items-center justify-center mx-auto mb-4 sm:mb-6">
                 <span className="text-2xl sm:text-3xl font-bold text-white">1</span>
               </div>
               <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-3 sm:mb-4">
@@ -346,7 +346,7 @@ export default function LandingPage() {
 
             {/* Step 2 */}
             <div className="text-center">
-              <div className="w-16 h-16 sm:w-20 sm:h-20 bg-green-600 rounded-full flex items-center justify-center mx-auto mb-4 sm:mb-6">
+              <div className="w-16 h-16 sm:w-20 sm:h-20 bg-greener-600 rounded-full flex items-center justify-center mx-auto mb-4 sm:mb-6">
                 <span className="text-2xl sm:text-3xl font-bold text-white">2</span>
               </div>
               <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-3 sm:mb-4">
@@ -360,7 +360,7 @@ export default function LandingPage() {
 
             {/* Step 3 */}
             <div className="text-center">
-              <div className="w-16 h-16 sm:w-20 sm:h-20 bg-green-600 rounded-full flex items-center justify-center mx-auto mb-4 sm:mb-6">
+              <div className="w-16 h-16 sm:w-20 sm:h-20 bg-greener-600 rounded-full flex items-center justify-center mx-auto mb-4 sm:mb-6">
                 <span className="text-2xl sm:text-3xl font-bold text-white">3</span>
               </div>
               <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-3 sm:mb-4">
@@ -375,7 +375,7 @@ export default function LandingPage() {
 
           <div className="text-center mt-12">
             <Link to="/role-selection">
-              <Button size="lg" className="w-full sm:w-auto bg-green-600 hover:bg-green-700 text-white px-6 sm:px-8 py-3 sm:py-4 text-base sm:text-lg">
+              <Button size="lg" className="w-full sm:w-auto bg-greener-600 hover:bg-greener-700 text-white px-6 sm:px-8 py-3 sm:py-4 text-base sm:text-lg">
                 Commencer maintenant
                 <ArrowRight className="ml-2 h-4 w-4 sm:h-5 sm:w-5" />
               </Button>
@@ -400,7 +400,7 @@ export default function LandingPage() {
           <div className="grid grid-cols-3 md:grid-cols-9 gap-4 sm:gap-6">
             {/* Team Member 1 */}
             <div className="text-center">
-              <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4">
+              <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-greener-400 to-greener-600 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4">
                 <Users className="h-8 w-8 sm:h-10 sm:w-10 text-white" />
               </div>
               <h4 className="text-sm sm:text-base font-semibold text-gray-900">CEO</h4>
@@ -483,24 +483,24 @@ export default function LandingPage() {
       </section>
 
       {/* CTA Section */}
-      <section className="py-16 sm:py-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-r from-green-600 to-green-700">
+      <section className="py-16 sm:py-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-r from-greener-600 to-greener-700">
         <div className="max-w-4xl mx-auto text-center">
           <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4 sm:mb-6">
             Prêt à révolutionner votre agriculture ?
           </h2>
-          <p className="text-lg sm:text-xl text-green-100 mb-6 sm:mb-8">
+          <p className="text-lg sm:text-xl text-greener-100 mb-6 sm:mb-8">
             Rejoignez des milliers d'agriculteurs qui ont déjà transformé
             leurs exploitations avec Greener Tech.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link to="/role-selection">
-              <Button size="lg" className="w-full sm:w-auto bg-white text-green-600 hover:bg-gray-100 px-6 sm:px-8 py-3 sm:py-4 text-base sm:text-lg">
+              <Button size="lg" className="w-full sm:w-auto bg-white text-greener-600 hover:bg-gray-100 px-6 sm:px-8 py-3 sm:py-4 text-base sm:text-lg">
                 Commencer gratuitement
                 <ArrowRight className="ml-2 h-4 w-4 sm:h-5 sm:w-5" />
               </Button>
             </Link>
             <Link to="/login">
-              <Button size="lg" variant="outline" className="w-full sm:w-auto border-white text-white hover:bg-white hover:text-green-600 px-6 sm:px-8 py-3 sm:py-4 text-base sm:text-lg">
+              <Button size="lg" variant="outline" className="w-full sm:w-auto border-white text-white hover:bg-white hover:text-greener-600 px-6 sm:px-8 py-3 sm:py-4 text-base sm:text-lg">
                 Se connecter
               </Button>
             </Link>
@@ -529,8 +529,8 @@ export default function LandingPage() {
               </h3>
               <div className="space-y-4">
                 <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
-                    <MapPin className="h-5 w-5 text-green-600" />
+                  <div className="w-10 h-10 bg-greener-100 rounded-full flex items-center justify-center">
+                    <MapPin className="h-5 w-5 text-greener-600" />
                   </div>
                   <div>
                     <p className="font-medium text-gray-900">Adresse</p>
@@ -538,8 +538,8 @@ export default function LandingPage() {
                   </div>
                 </div>
                 <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
-                    <Users className="h-5 w-5 text-green-600" />
+                  <div className="w-10 h-10 bg-greener-100 rounded-full flex items-center justify-center">
+                    <Users className="h-5 w-5 text-greener-600" />
                   </div>
                   <div>
                     <p className="font-medium text-gray-900">Support</p>
@@ -547,8 +547,8 @@ export default function LandingPage() {
                   </div>
                 </div>
                 <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
-                    <Clock className="h-5 w-5 text-green-600" />
+                  <div className="w-10 h-10 bg-greener-100 rounded-full flex items-center justify-center">
+                    <Clock className="h-5 w-5 text-greener-600" />
                   </div>
                   <div>
                     <p className="font-medium text-gray-900">Horaires</p>
@@ -568,24 +568,24 @@ export default function LandingPage() {
                   <input
                     type="text"
                     placeholder="Votre nom"
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#8FB344] focus:border-transparent"
                   />
                 </div>
                 <div>
                   <input
                     type="email"
                     placeholder="Votre email"
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#8FB344] focus:border-transparent"
                   />
                 </div>
                 <div>
                   <textarea
                     placeholder="Votre message"
                     rows={4}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent resize-none"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#8FB344] focus:border-transparent resize-none"
                   ></textarea>
                 </div>
-                <Button className="w-full bg-green-600 hover:bg-green-700 text-white">
+                <Button className="w-full bg-greener-600 hover:bg-greener-700 text-white">
                   Envoyer le message
                 </Button>
               </div>
