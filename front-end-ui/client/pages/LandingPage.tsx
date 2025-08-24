@@ -1,13 +1,13 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { 
-  Leaf, 
-  Shield, 
-  TrendingUp, 
-  Users, 
-  MapPin, 
-  Clock, 
+import {
+  Leaf,
+  Shield,
+  TrendingUp,
+  Users,
+  MapPin,
+  Clock,
   CheckCircle,
   ArrowRight,
   Play,
@@ -18,9 +18,9 @@ import {
 
 export default function LandingPage() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  
+
   console.log("LandingPage component is rendering!");
-  
+
   // Add useEffect to log when component mounts
   React.useEffect(() => {
     console.log("LandingPage component mounted!");
@@ -42,10 +42,13 @@ export default function LandingPage() {
                 onError={(e) => {
                   // Fallback if logo doesn't load
                   e.currentTarget.style.display = 'none';
-                  e.currentTarget.nextSibling.style.display = 'block';
+                  const nextSibling = e.currentTarget.nextElementSibling as HTMLElement;
+                  if (nextSibling) {
+                    nextSibling.style.display = 'block';
+                  }
                 }}
               />
-              <span 
+              <span
                 className="text-lg sm:text-xl font-bold text-green-600 hidden"
                 style={{ display: 'none' }}
               >
@@ -91,22 +94,22 @@ export default function LandingPage() {
           {isMobileMenuOpen && (
             <div className="md:hidden bg-white/95 backdrop-blur-md rounded-lg mt-4 p-4 border border-green-100">
               <div className="flex flex-col space-y-4">
-                <a 
-                  href="#features" 
+                <a
+                  href="#features"
                   className="text-gray-700 hover:text-green-600 transition-colors py-2"
                   onClick={() => setIsMobileMenuOpen(false)}
                 >
                   Fonctionnalités
                 </a>
-                <a 
-                  href="#about" 
+                <a
+                  href="#about"
                   className="text-gray-700 hover:text-green-600 transition-colors py-2"
                   onClick={() => setIsMobileMenuOpen(false)}
                 >
                   À propos
                 </a>
-                <a 
-                  href="#contact" 
+                <a
+                  href="#contact"
                   className="text-gray-700 hover:text-green-600 transition-colors py-2"
                   onClick={() => setIsMobileMenuOpen(false)}
                 >
@@ -133,20 +136,15 @@ export default function LandingPage() {
       {/* Hero Section */}
       <section className="relative py-12 sm:py-16 lg:py-20 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto">
-          <div className="grid lg:grid-cols-2 gap-8 lg:gap-12 items-center">
+          <div className="grid lg:grid-cols-2 gap-8 lg:gap-20 items-center">
             {/* Hero Content */}
-            <div className="space-y-6 sm:space-y-8 order-2 lg:order-1">
+            <div className="space-y-6 sm:space-y-8 order-2 lg:order-1 lg:pr-12">
               <div className="space-y-4">
                 <h1 className="text-3xl sm:text-4xl lg:text-5xl xl:text-6xl font-bold text-gray-900 leading-tight">
-                  L'avenir de l'
-                  <span className="text-green-600">agriculture</span>
-                  <br />
-                  est intelligent
+                  Parce qu'aucune récolte n'est trop petite pour être protégée
                 </h1>
                 <p className="text-lg sm:text-xl text-gray-600 leading-relaxed">
-                  Greener Tech révolutionne la gestion agricole avec des solutions IoT avancées, 
-                  de l'intelligence artificielle et une surveillance en temps réel pour optimiser 
-                  vos cultures et maximiser vos rendements.
+                  Un robot intelligent et une plateforme simple pour aider les agriculteurs marocains à surveiller leurs serres, réduire les pertes, et maximiser leurs récoltes.
                 </p>
               </div>
 
@@ -158,35 +156,22 @@ export default function LandingPage() {
                     <ArrowRight className="ml-2 h-4 w-4 sm:h-5 sm:w-5" />
                   </Button>
                 </Link>
-                <Button size="lg" variant="outline" className="w-full sm:w-auto border-green-600 text-green-600 hover:bg-green-50 px-6 sm:px-8 py-3 sm:py-4 text-base sm:text-lg">
-                  <Play className="mr-2 h-4 w-4 sm:h-5 sm:w-5" />
-                  Voir la démo
-                </Button>
               </div>
 
-              {/* Trust Indicators */}
-              <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-4 sm:space-y-0 sm:space-x-6 pt-4">
-                <div className="flex items-center space-x-2">
-                  <div className="flex">
-                    {[1, 2, 3, 4, 5].map((star) => (
-                      <Star key={star} className="h-4 w-4 sm:h-5 sm:w-5 text-yellow-400 fill-current" />
-                    ))}
-                  </div>
-                  <span className="text-sm text-gray-600">4.9/5</span>
-                </div>
-                <div className="text-sm text-gray-600">
-                  <span className="font-semibold">1000+</span> agriculteurs satisfaits
-                </div>
-              </div>
+
             </div>
 
             {/* Hero Image */}
-            <div className="relative order-1 lg:order-2">
-              <div className="relative z-10">
+            <div className="relative order-1 lg:order-2 lg:pl-8">
+              <div className="relative">
                 <img
-                  src="https://images.unsplash.com/photo-1574943320219-553eb213f72f?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80"
-                  alt="Smart Agriculture Technology"
-                  className="rounded-xl sm:rounded-2xl shadow-xl sm:shadow-2xl w-full h-[300px] sm:h-[400px] lg:h-[500px] object-cover"
+                  src="https://images.unsplash.com/photo-1560493676-04071c5f467b?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80"
+                  alt="Agriculturalist using digital technology in farming"
+                  className="rounded-xl sm:rounded-2xl shadow-xl sm:shadow-2xl w-full h-[300px] sm:h-[400px] lg:h-[500px] object-cover max-w-none"
+                  onError={(e) => {
+                    // Fallback to another reliable image if the first one fails
+                    e.currentTarget.src = "https://images.unsplash.com/photo-1581578731548-c64695cc6952?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80";
+                  }}
                 />
               </div>
               {/* Floating Stats Card */}
@@ -214,7 +199,7 @@ export default function LandingPage() {
               Fonctionnalités principales
             </h2>
             <p className="text-lg sm:text-xl text-gray-600 max-w-3xl mx-auto px-4">
-              Découvrez comment Greener Tech transforme votre approche de l'agriculture 
+              Découvrez comment Greener Tech transforme votre approche de l'agriculture
               avec des outils intelligents et des insights en temps réel.
             </p>
           </div>
@@ -229,7 +214,7 @@ export default function LandingPage() {
                 Surveillance intelligente
               </h3>
               <p className="text-gray-600 leading-relaxed text-sm sm:text-base">
-                Surveillez vos cultures en temps réel avec des capteurs IoT avancés 
+                Surveillez vos cultures en temps réel avec des capteurs IoT avancés
                 et des analyses prédictives pour optimiser la croissance.
               </p>
             </div>
@@ -243,7 +228,7 @@ export default function LandingPage() {
                 Gestion des alertes
               </h3>
               <p className="text-gray-600 leading-relaxed text-sm sm:text-base">
-                Recevez des notifications instantanées sur les conditions critiques 
+                Recevez des notifications instantanées sur les conditions critiques
                 et gérez les interventions avec notre système d'alerte intelligent.
               </p>
             </div>
@@ -257,7 +242,7 @@ export default function LandingPage() {
                 Rapports détaillés
               </h3>
               <p className="text-gray-600 leading-relaxed text-sm sm:text-base">
-                Analysez les performances de vos cultures avec des rapports 
+                Analysez les performances de vos cultures avec des rapports
                 détaillés et des graphiques interactifs pour prendre des décisions éclairées.
               </p>
             </div>
@@ -271,7 +256,7 @@ export default function LandingPage() {
                 Gestion d'équipe
               </h3>
               <p className="text-gray-600 leading-relaxed text-sm sm:text-base">
-                Coordonnez votre équipe technique avec des outils de gestion 
+                Coordonnez votre équipe technique avec des outils de gestion
                 avancés et un système de suivi des interventions en temps réel.
               </p>
             </div>
@@ -285,7 +270,7 @@ export default function LandingPage() {
                 Cartographie avancée
               </h3>
               <p className="text-gray-600 leading-relaxed text-sm sm:text-base">
-                Visualisez vos domaines agricoles avec des cartes interactives 
+                Visualisez vos domaines agricoles avec des cartes interactives
                 et gérez vos serres avec précision géographique.
               </p>
             </div>
@@ -299,7 +284,7 @@ export default function LandingPage() {
                 Surveillance 24/7
               </h3>
               <p className="text-gray-600 leading-relaxed text-sm sm:text-base">
-                Bénéficiez d'une surveillance continue de vos cultures avec 
+                Bénéficiez d'une surveillance continue de vos cultures avec
                 des alertes automatiques et une intervention rapide en cas de besoin.
               </p>
             </div>
@@ -339,7 +324,7 @@ export default function LandingPage() {
               Comment ça marche ?
             </h2>
             <p className="text-lg sm:text-xl text-gray-600 max-w-3xl mx-auto px-4">
-              En seulement 3 étapes simples, transformez votre exploitation agricole 
+              En seulement 3 étapes simples, transformez votre exploitation agricole
               avec la technologie intelligente de Greener Tech.
             </p>
           </div>
@@ -354,7 +339,7 @@ export default function LandingPage() {
                 Créez votre compte
               </h3>
               <p className="text-gray-600 text-sm sm:text-base">
-                Inscrivez-vous en tant que directeur d'entreprise et configurez 
+                Inscrivez-vous en tant que directeur d'entreprise et configurez
                 votre profil en quelques minutes.
               </p>
             </div>
@@ -368,7 +353,7 @@ export default function LandingPage() {
                 Configurez votre entreprise
               </h3>
               <p className="text-gray-600 text-sm sm:text-base">
-                Ajoutez vos domaines agricoles, serres et équipe technique 
+                Ajoutez vos domaines agricoles, serres et équipe technique
                 pour commencer la surveillance.
               </p>
             </div>
@@ -382,7 +367,7 @@ export default function LandingPage() {
                 Commencez à surveiller
               </h3>
               <p className="text-gray-600 text-sm sm:text-base">
-                Accédez à vos tableaux de bord en temps réel et recevez 
+                Accédez à vos tableaux de bord en temps réel et recevez
                 des alertes intelligentes pour optimiser vos cultures.
               </p>
             </div>
@@ -407,7 +392,7 @@ export default function LandingPage() {
               À propos de Greener Tech
             </h2>
             <p className="text-lg sm:text-xl text-gray-600 max-w-3xl mx-auto px-4">
-              Une équipe passionnée de 9 experts dédiés à révolutionner l'agriculture 
+              Une équipe passionnée de 9 experts dédiés à révolutionner l'agriculture
               avec des solutions technologiques innovantes et durables.
             </p>
           </div>
@@ -504,7 +489,7 @@ export default function LandingPage() {
             Prêt à révolutionner votre agriculture ?
           </h2>
           <p className="text-lg sm:text-xl text-green-100 mb-6 sm:mb-8">
-            Rejoignez des milliers d'agriculteurs qui ont déjà transformé 
+            Rejoignez des milliers d'agriculteurs qui ont déjà transformé
             leurs exploitations avec Greener Tech.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -531,7 +516,7 @@ export default function LandingPage() {
               Contactez-nous
             </h2>
             <p className="text-lg sm:text-xl text-gray-600 max-w-2xl mx-auto px-4">
-              Avez-vous des questions ? Notre équipe est là pour vous aider 
+              Avez-vous des questions ? Notre équipe est là pour vous aider
               à transformer votre agriculture.
             </p>
           </div>
@@ -623,7 +608,7 @@ export default function LandingPage() {
                 />
               </div>
               <p className="text-gray-400 text-sm sm:text-base">
-                L'avenir de l'agriculture est intelligent. 
+                L'avenir de l'agriculture est intelligent.
                 Rejoignez la révolution technologique agricole.
               </p>
             </div>
