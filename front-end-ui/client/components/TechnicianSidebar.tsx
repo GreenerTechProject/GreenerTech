@@ -107,7 +107,7 @@ export default function TechnicianSidebar({
         id: "robot-control",
         label: "Contrôle Robot",
         icon: <Bot className="h-5 w-5" />,
-        path: "/technician/technician/robot-control",
+        path: "/technician/robot-control",
     });
     }
     return items;
