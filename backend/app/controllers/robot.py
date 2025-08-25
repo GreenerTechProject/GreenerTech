@@ -62,16 +62,15 @@ def get_robot(current_user, robot_id):
 
 @token_required
 @role_required("directeur", "technicien_superieur")
-def update_robot(current_user, robot_id):
-    robot = Robot.query.get(robot_id)
+def update_robot(current_user):
+    data = request.get_json()
+    referance = data.get('referance')
+    robot = Robot.query.filter_by(referance=referance).first()
     if not robot:
         return jsonify({"status": "error", "message": "Robot introuvable"}), 404
-
-    # Check if user has access to this robot (same company)
-    if current_user.id_entreprise and robot.id_entreprise != current_user.id_entreprise:
-        return jsonify({"status": "error", "message": "Accès non autorisé à ce robot"}), 403
-
-    data = request.get_json()
+#     # Check if user has access to this robot (same company)
+#     if current_user.id_entreprise and robot.id_entreprise != current_user.id_entreprise:
+#         return jsonify({"status": "error", "message": "Accès non autorisé à ce robot"}), 403
     try:
         robot.nom = data.get('nom', robot.nom)
         robot.referance = data.get('referance', robot.referance)
