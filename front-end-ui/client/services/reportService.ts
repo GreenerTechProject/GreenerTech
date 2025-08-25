@@ -79,7 +79,7 @@ export class ReportService {
   static async getReportsByUser(): Promise<ApiReport[]> {
     try {
       const response = await axios.get<ApiReport[]>(
-        `${API_BASE_URL}/rapport`,
+        `${API_BASE_URL}/rapports/user`,
         createAuthenticatedRequest()
       );
       return response.data;

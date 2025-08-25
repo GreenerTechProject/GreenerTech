@@ -268,13 +268,13 @@ export default function TechnicianMap() {
     loadAssignedSerres();
   }, [user]);
 
-  // Load bilans and guides for selected serre
+  // Load billons and guides for selected serre
   useEffect(() => {
     if (selectedSerre) {
       loadBilansForSerre(parseInt(selectedSerre.id));
       loadGuidesForSerre(parseInt(selectedSerre.id));
     } else {
-      setBilans([]); // Reset bilans when no serre is selected
+      setBilans([]); // Reset billons when no serre is selected
       setGuides([]); // Reset guides when no serre is selected
     }
   }, [selectedSerre]);
@@ -303,7 +303,7 @@ export default function TechnicianMap() {
   const handleBilanCreated = async () => {
     if (selectedSerre) {
       await loadBilansForSerre(parseInt(selectedSerre.id));
-      // Also refresh guides when a new bilan is created
+      // Also refresh guides when a new billon is created
       await loadGuidesForSerre(parseInt(selectedSerre.id));
       // Refresh serre data to update billon count
       await refreshSerreData();
@@ -429,7 +429,7 @@ export default function TechnicianMap() {
     }
   };
 
-  // Load etat de bilan for selected bilan
+  // Load etat de billon for selected billon
   const loadEtatBilanForBilan = async (bilanId: number) => {
     try {
       setIsLoadingEtatBilans(true);
@@ -451,13 +451,13 @@ export default function TechnicianMap() {
     }
   };
 
-  // Handle bilan selection
+  // Handle billon selection
   const handleBilanSelect = (bilan: Bilan) => {
     setSelectedBilan(bilan);
     loadEtatBilanForBilan(bilan.id);
   };
 
-  // Handle QR code generation for specific bilan - simplified
+  // Handle QR code generation for specific billon - simplified
   const handleGenerateQRCodeForBilan = async (bilan: Bilan) => {
     try {
       // Show loading state
@@ -466,7 +466,7 @@ export default function TechnicianMap() {
         [bilan.id]: 'loading' as any
       }));
 
-      // Generate QR code using the bilan service
+      // Generate QR code using the billon service
       const qrCodeBlob = await bilanService.generateBilanQRCode(bilan.id);
 
       // Store the QR code in state
@@ -493,7 +493,7 @@ export default function TechnicianMap() {
     }
   };
 
-  // Handle checking etat bilan for specific bilan with transition
+  // Handle checking etat billon for specific billon with transition
   const handleCheckEtatBilanForBilan = (bilan: Bilan) => {
     // First select the bilan
     handleBilanSelect(bilan);
@@ -560,12 +560,12 @@ export default function TechnicianMap() {
       guide.variete.toLowerCase().includes(lowerQuery)
     );
 
-    // Search in bilans
+    // Search in billons
     const matchingBilans = bilans.filter(bilan => 
       bilan.nom.toLowerCase().includes(lowerQuery)
     );
 
-    // Search in etat bilans
+    // Search in etat billons
     const matchingEtatBilans = etatBilans.filter(etat => 
       etat.rendement?.toString().includes(lowerQuery) ||
       etat.temperature?.toString().includes(lowerQuery)
@@ -713,7 +713,7 @@ export default function TechnicianMap() {
     0,
   );
 
-  // Handle viewing QR code for specific bilan
+  // Handle viewing QR code for specific billon
   const handleViewQRCodeForBilan = (bilan: Bilan) => {
     const qrCodeBlob = bilanQRCodes[bilan.id];
     if (qrCodeBlob && qrCodeBlob !== 'loading') {
@@ -723,14 +723,14 @@ export default function TechnicianMap() {
     }
   };
 
-  // Handle downloading QR code for specific bilan
+  // Handle downloading QR code for specific billon
   const handleDownloadQRCodeForBilan = (bilan: Bilan) => {
     const qrCodeBlob = bilanQRCodes[bilan.id];
     if (qrCodeBlob && qrCodeBlob !== 'loading') {
       const url = URL.createObjectURL(qrCodeBlob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `bilan_${bilan.nom}_qrcode.png`;
+      a.download = `billon_${bilan.nom}_qrcode.png`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -943,7 +943,7 @@ export default function TechnicianMap() {
             <div className="relative">
               <input
                 type="text"
-                placeholder="Rechercher serres, guides, bilans..."
+                placeholder="Rechercher serres, guides, billons..."
                 value={searchQuery}
                 onChange={(e) => handleSearchChange(e.target.value)}
                 className="w-full px-3 py-2 pl-10 pr-20 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -1032,7 +1032,7 @@ export default function TechnicianMap() {
                 {/* Bilans Results */}
                 {searchResults.bilans.length > 0 && (
                   <div className="space-y-2">
-                    <h4 className="text-xs font-medium text-blue-800">Bilans ({searchResults.bilans.length})</h4>
+                    <h4 className="text-xs font-medium text-blue-800">Billons ({searchResults.bilans.length})</h4>
                     {searchResults.bilans.map(bilan => (
                       <div 
                         key={bilan.id}
@@ -1078,7 +1078,7 @@ export default function TechnicianMap() {
                         <div className="flex flex-col items-center space-y-2">
                           <Sprout className="h-6 w-6" />
                           <span className="text-sm font-medium">
-                          Créer un nouveau bilan
+                          Créer un nouveau billon
                           </span>
                           <span className="text-xs text-gray-500">
                           {selectedSerre ? `pour ${selectedSerre.nom}` : "Sélectionnez une serre d'abord"}
@@ -1222,7 +1222,7 @@ export default function TechnicianMap() {
                                 className="flex-1 bg-[#B4CC5F] hover:bg-[#B4CC5F]/90 text-white"
                               >
                                 <Sprout className="h-4 w-4 mr-2" />
-                                Créer bilan
+                                Créer billon
                               </Button>
                               <Button
                                 onClick={() => setIsInterventionFormOpen(true)}
@@ -1647,13 +1647,13 @@ export default function TechnicianMap() {
                   {isLoadingBilans ? (
                     <div className="text-center py-4 text-gray-500">
                       <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500 mx-auto mb-2"></div>
-                      <p className="text-sm">Chargement des bilans...</p>
+                      <p className="text-sm">Chargement des billons...</p>
                     </div>
                   ) : bilans.length === 0 ? (
                     <div className="text-center py-4 text-gray-500">
                       <FileText className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                      <p className="text-sm">Aucun bilan disponible pour cette serre</p>
-                      <p className="text-xs text-gray-400 mt-1">Créez un nouveau bilan pour commencer</p>
+                      <p className="text-sm">Aucun billon disponible pour cette serre</p>
+                      <p className="text-xs text-gray-400 mt-1">Créez un nouveau billon pour commencer</p>
                     </div>
                   ) : (
                     <div className="space-y-3">
@@ -2386,7 +2386,7 @@ export default function TechnicianMap() {
                           <div className="flex items-center justify-center space-x-2">
                             <Sprout className="h-5 w-5 text-[#B4CC5F]" />
                             <h4 className="font-semibold text-[#B4CC5F]">
-                              Créer un bilan pour {selectedSerre.nom}
+                              Créer un billon pour {selectedSerre.nom}
                             </h4>
                           </div>
                           <p className="text-xs text-gray-600">
@@ -2578,7 +2578,7 @@ export default function TechnicianMap() {
                           size="sm"
                         >
                           <Sprout className="h-4 w-4 mr-2" />
-                          Créer un bilan
+                          Créer un billon
                         </Button>
                       </CardContent>
                     </Card>

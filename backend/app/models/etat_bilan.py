@@ -38,22 +38,22 @@ class Etat_bilan(db.Model):
             "nombre_tomates_non_maladies": self.nombre_tomates_non_maladies,
             "nombre_malade1": self.nombre_malade1,
             "nombre_malade2": self.nombre_malade2,
-            
-            "mean_temperature": self.temperature,
-            "mean_humidite": self.humidite,
-            "mean_luminosite": self.luminosite,
-            "mean_co2": self.co2,
-            
-            "max_temperature": self.temperature,
-            "max_humidite": self.humidite,
-            "max_luminosite": self.luminosite,
-            "max_co2": self.co2,
-            
-            "min_temperature": self.temperature,
-            "min_humidite": self.humidite,
-            "min_luminosite": self.luminosite,
-            "min_co2": self.co2,
-            
+
+            "mean_temperature": self.mean_temperature,
+            "mean_humidite": self.mean_humidite,
+            "mean_luminosite": self.mean_luminosite,
+            "mean_co2": self.mean_co2,
+
+            "max_temperature": self.max_temperature,
+            "max_humidite": self.max_humidite,
+            "max_luminosite": self.max_luminosite,
+            "max_co2": self.max_co2,
+
+            "min_temperature": self.min_temperature,
+            "min_humidite": self.min_humidite,
+            "min_luminosite": self.min_luminosite,
+            "min_co2": self.min_co2,
+
             #"rendement": self.rendement,
             "date": self.date.isoformat() if self.date else None
         }

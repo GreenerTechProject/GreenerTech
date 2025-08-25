@@ -211,10 +211,10 @@ const TechHeader: React.FC<TechHeaderProps> = ({ role, onMenuClick, isSidebarOpe
               onClick={() => navigate(role === "technicien_sup" ? "/technicien-sup" : "/technician/dashboard")}
               onKeyDown={(e) => e.key === 'Enter' && navigate(role === "technicien_sup" ? "/technicien-sup" : "/technician/dashboard")}
             />
-            <img 
-              src="/GreenerTech-Logo4T.png" 
+            <img
+              src="/GreenerTech-Logo4T.png"
               alt="GreenerTech"
-              className="h-8 w-auto object-contain cursor-pointer hidden md:block"
+              className="h-6 w-auto object-contain cursor-pointer hidden md:block"
               title="Accueil"
               role="button"
               tabIndex={0}
