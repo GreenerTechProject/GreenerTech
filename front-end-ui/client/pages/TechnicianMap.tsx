@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { useAuth } from "../contexts/AuthContext";
 import GoogleMapsWrapper from "../components/GoogleMapsWrapper";
-import { GoogleMap, Marker, InfoWindow, Polygon } from "@react-google-maps/api";
+import { GoogleMap, Marker, InfoWindow, Polygon, useLoadScript } from "@react-google-maps/api";
+import { GOOGLE_MAPS_CONFIG } from "../config/maps";
 import PageHeader from "../components/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -167,6 +168,12 @@ export default function TechnicianMap() {
 
   // Legend expansion state for mobile
   const [isLegendExpanded, setIsLegendExpanded] = useState(false);
+
+  // Google Maps loading hook
+  const { isLoaded, loadError } = useLoadScript({
+    googleMapsApiKey: GOOGLE_MAPS_CONFIG.API_KEY,
+    libraries: GOOGLE_MAPS_CONFIG.LIBRARIES as ("drawing" | "geometry" | "places" | "visualization")[],
+  });
 
   // Alert heatmap state
   const [showAlertHeatmap, setShowAlertHeatmap] = useState(true);
@@ -863,6 +870,36 @@ export default function TechnicianMap() {
   };
 
   // Remove keyboard shortcuts for mobile panel resizing - simplified approach
+
+  // Handle Google Maps loading states
+  if (loadError) {
+    return (
+      <div className="flex items-center justify-center h-full min-h-[500px]">
+        <div className="text-center">
+          <div className="text-red-500 text-lg mb-2">Erreur de chargement</div>
+          <p className="text-sm text-gray-600">Impossible de charger Google Maps</p>
+          <p className="text-xs text-gray-500 mt-1">{loadError.message}</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="mt-3 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+          >
+            Réessayer
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isLoaded) {
+    return (
+      <div className="flex items-center justify-center h-full min-h-[500px]">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-sm text-gray-600">Chargement de Google Maps...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={cn(
@@ -2028,7 +2065,7 @@ export default function TechnicianMap() {
                     gestureHandling: "greedy", // Better mobile gesture handling
                     zoomControl: true, // Show only zoom controls on mobile
                     zoomControlOptions: {
-                      position: google.maps.ControlPosition.RIGHT_BOTTOM
+                      position: window.google?.maps?.ControlPosition?.RIGHT_BOTTOM || 6
                     }
                   })
                 }}

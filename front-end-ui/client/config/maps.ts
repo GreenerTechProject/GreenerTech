@@ -3,7 +3,7 @@ export const GOOGLE_MAPS_CONFIG = {
   API_KEY:
     import.meta.env.VITE_GOOGLE_MAPS_API_KEY ||
     "AIzaSyDIMjgMvOn5EZyUi8bu5898F7nhyw-XAaw",
-  LIBRARIES: ["drawing", "geometry", "places", "visualization"] as const,
+  LIBRARIES: ["drawing", "geometry", "places", "visualization"],
   DEFAULT_CENTER: { lat: 33.9716, lng: -6.8498 }, // Morocco center
   DEFAULT_ZOOM: 15,
   MAP_OPTIONS: {
