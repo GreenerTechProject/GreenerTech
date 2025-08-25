@@ -22,15 +22,11 @@ import {
   Minimize,
   Camera,
   Bot,
-  ChevronUp,
-  ChevronDown,
-  X,
-  QrCode,
-  Activity,
+  ZoomIn,
+  ZoomOut,
+  Download,
   Eye,
   EyeOff,
-  GripVertical,
-  Settings,
   Move
 } from 'lucide-react';
 
@@ -78,34 +74,14 @@ export default function RobotControl() {
   const [selectedRobot, setSelectedRobot] = useState<string>('1');
   const [isFullScreen, setIsFullScreen] = useState<boolean>(false);
   const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
+  const [isAIDetectionEnabled, setIsAIDetectionEnabled] = useState<boolean>(false);
+  const [videoZoom, setVideoZoom] = useState<number>(1);
+  const [videoPosition, setVideoPosition] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
+  
+  // New state for robots
   const [robots, setRobots] = useState<Robot[]>([]);
   const [isLoadingRobots, setIsLoadingRobots] = useState<boolean>(false);
   const [robotsError, setRobotsError] = useState<string | null>(null);
-  const [pressedButton, setPressedButton] = useState<string | null>(null);
-  
-  // Enhanced UI states for flexible layout
-  const [isCompactMode, setIsCompactMode] = useState<boolean>(false);
-  const [showControlPanel, setShowControlPanel] = useState<boolean>(true);
-  const [showSensorPanel, setShowSensorPanel] = useState<boolean>(true);
-  const [showQRPanel, setShowQRPanel] = useState<boolean>(true);
-  const [showSettingsPanel, setShowSettingsPanel] = useState<boolean>(false);
-  
-  // Draggable panel positions
-  const [controlPanelPos, setControlPanelPos] = useState<PanelPosition>({ x: 20, y: 100 });
-  const [sensorPanelPos, setSensorPanelPos] = useState<PanelPosition>({ x: 20, y: 300 });
-  const [qrPanelPos, setQrPanelPos] = useState<PanelPosition>({ x: window.innerWidth - 320, y: 100 });
-  const [settingsPanelPos, setSettingsPanelPos] = useState<PanelPosition>({ x: window.innerWidth - 320, y: 400 });
-  
-  // Panel states
-  const [isDragging, setIsDragging] = useState<string | null>(null);
-  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
-  const [panelSizes, setPanelSizes] = useState({
-    control: { width: 280, height: 200 },
-    sensor: { width: 280, height: 150 },
-    qr: { width: 300, height: 200 },
-    settings: { width: 300, height: 250 }
-  });
-
   // WebSocket references
   const qrWsRef = useRef<WebSocket | null>(null);
   const controlWsRef = useRef<WebSocket | null>(null);
@@ -121,7 +97,7 @@ export default function RobotControl() {
       setRobots(fetchedRobots);
       
       if (fetchedRobots.length > 0 && !selectedRobot) {
-        setSelectedRobot(fetchedRobots[0].id.toString());
+        setSelectedRobot(fetchedRobots[0].referance.toString());
       }
     } catch (error: any) {
       console.error('Failed to fetch robots:', error);
@@ -293,15 +269,75 @@ export default function RobotControl() {
     }
   };
 
+  // Toggle AI detection
+  const toggleAIDetection = () => {
+    const newState = !isAIDetectionEnabled;
+    setIsAIDetectionEnabled(newState);
+    sendCommand(newState ? 'ENABLE_AI' : 'DISABLE_AI');
+  };
+
+  // Zoom controls
+  const zoomIn = () => {
+    setVideoZoom(prev => Math.min(prev + 0.25, 3));
+  };
+
+  const zoomOut = () => {
+    setVideoZoom(prev => Math.max(prev - 0.25, 0.5));
+  };
+
+  const resetZoom = () => {
+    setVideoZoom(1);
+    setVideoPosition({ x: 0, y: 0 });
+  };
+
+  // Capture image from video
+  const captureImage = () => {
+    if (videoRef.current) {
+      const video = videoRef.current;
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+
+      if (ctx) {
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        ctx.drawImage(video, 0, 0);
+
+        // Create download link
+        canvas.toBlob((blob) => {
+          if (blob) {
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `robot-${selectedRobot}-camera-${selectedCamera}-${new Date().toISOString().replace(/[:.]/g, '-')}.jpg`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+          }
+        }, 'image/jpeg', 0.9);
+      }
+    }
+  };
+
   // Refresh connections
   const refreshConnections = async () => {
     setIsRefreshing(true);
 
-    if (pcRef.current) pcRef.current.close();
-    if (qrWsRef.current) qrWsRef.current.close();
-    if (controlWsRef.current) controlWsRef.current.close();
-    if (sensorWsRef.current) sensorWsRef.current.close();
+    // Close existing connections
+    if (pcRef.current) {
+      pcRef.current.close();
+    }
+    if (qrWsRef.current) {
+      qrWsRef.current.close();
+    }
+    if (controlWsRef.current) {
+      controlWsRef.current.close();
+    }
+    if (sensorWsRef.current) {
+      sensorWsRef.current.close();
+    }
 
+    // Reset connection status
     setConnectionStatus({
       video: false,
       qr: false,
@@ -335,7 +371,16 @@ export default function RobotControl() {
   // Handle robot selection change
   const handleRobotChange = (robot: string) => {
     setSelectedRobot(robot);
+    // Send robot selection command
+    //sendCommand('SELECT_ROBOT');
   };
+
+  // Update selected robot when robots are loaded
+  useEffect(() => {
+    if (robots.length > 0 && !robots.find(r => r.referance.toString() === selectedRobot)) {
+      setSelectedRobot(robots[0].referance.toString());
+    }
+  }, [robots, selectedRobot]);
 
   // Handle button press/release
   const handleButtonDown = (mode: string) => {
@@ -344,10 +389,11 @@ export default function RobotControl() {
     sendCommand(mode);
   };
 
-  const handleButtonUp = () => {
-    console.log("Sending mode: STOP");
-    setPressedButton(null);
-    sendCommand("STOP");
+  const handleButtonUp = (mode?: string) => {
+    if (!mode || !["PAUSE_MISSION", "PLAY_MISSION"].includes(mode)) {
+      console.log("Sending mode: STOP");
+      sendCommand("STOP");
+    }
   };
 
   // Enhanced QR data display - extract and show bilan name
@@ -396,123 +442,79 @@ export default function RobotControl() {
     mode: string; 
     children: React.ReactNode; 
     className?: string;
-    size?: 'sm' | 'md' | 'lg';
-  }> = ({ mode, children, className = "", size = 'md' }) => {
-    const sizeClasses = {
-      sm: 'w-10 h-10 p-1.5',
-      md: 'w-12 h-12 p-2',
-      lg: 'w-14 h-14 p-2.5'
-    };
+  }> = ({ mode, children, className = "" }) => (
+    <Button
+	onMouseDown={() => {
+      setIsMouseDown(true);
+      handleButtonDown(mode);
+    }}
+	onMouseUp={() => {
+      setIsMouseDown(false);
+      handleButtonUp(mode);
+    }}
+	onMouseLeave={() => {
+      if (isMouseDown) {
+        setIsMouseDown(false);
+        handleButtonUp(mode);
+      }
+    }}
+	className={`w-full ${className} ${pressedButton === mode ? "ring-4 ring-yellow-300" : ""}`}
+	variant="outline"
+    >
+	{children}
+    </Button>
+  );
 
-    const iconSizes = {
-      sm: 'h-4 w-4',
-      md: 'h-5 w-5',
-      lg: 'h-6 w-6'
-    };
 
+  // Render QR data recursively
+  const renderQRValue = (key: string, value: any, depth = 0): React.ReactNode => {
+    if (typeof value === "object" && value !== null) {
+      if (Array.isArray(value)) {
+        return (
+          <div className={`ml-${depth * 2}`} key={key}>
+            <div className="font-medium">{key}:</div>
+            {value.map((item, index) => (
+              <div key={index} className="ml-4">
+                {typeof item === "object" ? 
+                  renderQRValue(`Item ${index + 1}`, item, depth + 1) : 
+                  <div>�� {item}</div>
+                }
+              </div>
+            ))}
+          </div>
+        );
+      } else {
+        return (
+          <div className={`ml-${depth * 2}`} key={key}>
+            <div className="font-medium">{key}:</div>
+            <div className="ml-4">
+              {Object.entries(value).map(([k, v]) => renderQRValue(k, v, depth + 1))}
+            </div>
+          </div>
+        );
+      }
+    }
     return (
-      <Button
-        onTouchStart={(e) => {
-          e.preventDefault();
-          handleButtonDown(mode);
-        }}
-        onTouchEnd={(e) => {
-          e.preventDefault();
-          handleButtonUp();
-        }}
-        onMouseDown={() => handleButtonDown(mode)}
-        onMouseUp={() => handleButtonUp()}
-        onMouseLeave={() => {
-          if (pressedButton === mode) {
-            handleButtonUp();
-          }
-        }}
-        className={`${className} ${sizeClasses[size]} ${pressedButton === mode ? "ring-2 ring-white/70 scale-95" : ""} transition-all duration-150 touch-manipulation select-none text-xs shadow-lg`}
-        variant="outline"
-      >
-        {children}
-      </Button>
+      <div className={`ml-${depth * 2}`} key={key}>
+        <span className="font-medium">{key}:</span> {String(value)}
+      </div>
     );
   };
 
-  // Draggable panel component
-  const DraggablePanel: React.FC<{
-    id: string;
-    title: string;
-    children: React.ReactNode;
-    position: PanelPosition;
-    onPositionChange: (pos: PanelPosition) => void;
-    size: { width: number; height: number };
-    onSizeChange?: (size: { width: number; height: number }) => void;
-    isVisible: boolean;
-    onToggle: () => void;
-    onClose: () => void;
-    className?: string;
-  }> = ({ 
-    id, 
-    title, 
-    children, 
-    position, 
-    onPositionChange, 
-    size, 
-    onSizeChange,
-    isVisible, 
-    onToggle, 
-    onClose, 
-    className = "" 
-  }) => {
-    const panelRef = useRef<HTMLDivElement>(null);
-    const [isResizing, setIsResizing] = useState(false);
-    const [resizeStart, setResizeStart] = useState({ x: 0, y: 0, width: 0, height: 0 });
+  // Initialize connections on component mount
+  useEffect(() => {
+	
+	
+	updateSelectedFromUrl();
+	
+    fetchRobots(); // Add this line
+	
+    startWebRTC(selectedRobot, selectedCamera);
+    initializeWebSockets(selectedRobot, selectedCamera);
 
-    const handleMouseDown = (e: React.MouseEvent, action: 'drag' | 'resize') => {
-      e.preventDefault();
-      if (action === 'drag') {
-        setIsDragging(id);
-        setDragOffset({
-          x: e.clientX - position.x,
-          y: e.clientY - position.y
-        });
-      } else if (action === 'resize' && onSizeChange) {
-        setIsResizing(true);
-        setResizeStart({
-          x: e.clientX,
-          y: e.clientY,
-          width: size.width,
-          height: size.height
-        });
-      }
-    };
-
-    const handleMouseMove = (e: MouseEvent) => {
-      if (isDragging === id) {
-        const newX = e.clientX - dragOffset.x;
-        const newY = e.clientY - dragOffset.y;
-        
-        // Keep panel within viewport bounds
-        const maxX = window.innerWidth - size.width;
-        const maxY = window.innerHeight - size.height;
-        
-        onPositionChange({
-          x: Math.max(0, Math.min(newX, maxX)),
-          y: Math.max(0, Math.min(newY, maxY)),
-          width: size.width,
-          height: size.height
-        });
-      } else if (isResizing && onSizeChange) {
-        const deltaX = e.clientX - resizeStart.x;
-        const deltaY = e.clientY - resizeStart.y;
-        
-        const newWidth = Math.max(200, resizeStart.width + deltaX);
-        const newHeight = Math.max(150, resizeStart.height + deltaY);
-        
-        onSizeChange({ width: newWidth, height: newHeight });
-      }
-    };
-
-    const handleMouseUp = () => {
-      setIsDragging(null);
-      setIsResizing(false);
+    // Add fullscreen event listener
+    const handleFullscreenChange = () => {
+      setIsFullScreen(!!document.fullscreenElement);
     };
 
     useEffect(() => {
@@ -625,6 +627,11 @@ export default function RobotControl() {
     if (pcRef.current) pcRef.current.close();
 
     initializeWebSockets(selectedRobot, selectedCamera);
+
+    // Reset sensor data
+    setSensorData(null);
+    
+    if (pcRef.current) pcRef.current.close();
     startWebRTC(selectedRobot, selectedCamera);
 
     return () => {
@@ -635,47 +642,276 @@ export default function RobotControl() {
     };
   }, [selectedRobot, selectedCamera]);
 
-  // Get current date and time for display
-  const getCurrentDateTime = () => {
-    const now = new Date();
-    return now.toLocaleDateString('fr-FR', { 
-      day: '2-digit', 
-      month: '2-digit', 
-      year: 'numeric' 
-    }) + ' ' + now.toLocaleTimeString('fr-FR', { 
-      hour: '2-digit', 
-      minute: '2-digit' 
-    });
-  };
 
-  const buttonSize = isCompactMode ? 'sm' : 'md';
 
   return (
-    <div className="min-h-screen bg-black relative overflow-hidden">
-      {/* Fullscreen Camera View */}
-      <div className="absolute inset-0 bg-black">
-        <video
-          ref={videoRef}
-          autoPlay
-          playsInline
-          muted
-          className="w-full h-full bg-black object-contain"
-        />
-        
-        {/* Connection Status Overlay - Top Left */}
-        {!connectionStatus.video && (
-          <div className="absolute top-4 left-4 bg-black/80 backdrop-blur-sm text-white p-3 rounded-lg border border-white/20">
-            <div className="flex items-center gap-2">
-              <Camera className="h-4 w-4" />
-              <span className="text-sm">Connexion vidéo en cours...</span>
-            </div>
-          </div>
-        )}
+    <div className="min-h-screen bg-gray-50">
+      <TechHeader role="technicien" />
 
-        {/* Date/Time Display - Top Center */}
-        <div className="absolute top-4 left-1/2 transform -translate-x-1/2 bg-black/50 backdrop-blur-sm text-white px-3 py-1 rounded text-sm border border-white/10 font-mono">
-          {getCurrentDateTime()}
+      <div className="flex h-[calc(100vh-85px)]">
+        {/* Minimized Left Sidebar - Controls */}
+        <div className="w-64 bg-white shadow-lg p-3 overflow-y-auto space-y-3">
+          {/* Camera Selection */}
+          <Card className="text-sm">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm flex items-center gap-1">
+                <Camera className="h-3 w-3" />
+                Caméra
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Select value={selectedCamera} onValueChange={handleCameraChange}>
+                <SelectTrigger className="h-8 text-sm">
+                  <SelectValue placeholder="Choisir" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="left">Gauche</SelectItem>
+                  <SelectItem value="right">Droite</SelectItem>
+                </SelectContent>
+              </Select>
+            </CardContent>
+          </Card>
+
+          {/* Robot Selection */}
+          <Card className="text-sm">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm flex items-center gap-1">
+                <Bot className="h-3 w-3" />
+                Robot
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              <Select value={selectedRobot} onValueChange={handleRobotChange} disabled={isLoadingRobots || !!robotsError}>
+                <SelectTrigger className="h-8 text-sm">
+                  <SelectValue placeholder={isLoadingRobots ? "Chargement..." : robotsError ? "Erreur" : "Choisir un robot"} />
+                </SelectTrigger>
+                <SelectContent>
+                  {robots.map((robot) => (
+                    <SelectItem key={robot.referance} value={robot.referance.toString()}>
+                      {robot.nom} ({robot.referance})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              
+              {robotsError && (
+                <div className="text-xs text-red-600 bg-red-50 p-2 rounded">
+                  {robotsError}
+                </div>
+              )}
+              
+              <Button
+                onClick={fetchRobots}
+                disabled={isLoadingRobots}
+                className="w-full h-6 text-xs"
+                variant="outline"
+                size="sm"
+              >
+                <RefreshCw className={`h-3 w-3 mr-1 ${isLoadingRobots ? 'animate-spin' : ''}`} />
+                Actualiser les robots
+              </Button>
+            </CardContent>
+          </Card>
+
+          {/* Video Controls */}
+          <Card className="text-sm">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm">Contrôles Vidéo</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              <div className="flex gap-1">
+                <Button
+                  onClick={zoomOut}
+                  className="flex-1 h-8 text-sm"
+                  variant="outline"
+                  disabled={videoZoom <= 0.5}
+                >
+                  <ZoomOut className="h-3 w-3" />
+                </Button>
+                <Button
+                  onClick={resetZoom}
+                  className="flex-1 h-8 text-sm"
+                  variant="outline"
+                >
+                  {Math.round(videoZoom * 100)}%
+                </Button>
+                <Button
+                  onClick={zoomIn}
+                  className="flex-1 h-8 text-sm"
+                  variant="outline"
+                  disabled={videoZoom >= 3}
+                >
+                  <ZoomIn className="h-3 w-3" />
+                </Button>
+              </div>
+
+              <Button
+                onClick={captureImage}
+                className="w-full h-8 text-sm"
+                variant="outline"
+              >
+                <Download className="h-3 w-3 mr-1" />
+                Capturer Image
+              </Button>
+            </CardContent>
+          </Card>
+
+          {/* Control Actions */}
+          <Card className="text-sm">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm">Actions</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              <Button
+                onClick={refreshConnections}
+                disabled={isRefreshing}
+                className="w-full h-8 text-sm"
+                variant="outline"
+              >
+                <RefreshCw className={`h-3 w-3 mr-1 ${isRefreshing ? 'animate-spin' : ''}`} />
+                {isRefreshing ? 'Actualise...' : 'Actualiser'}
+              </Button>
+
+              <Button
+                onClick={toggleFullScreen}
+                className="w-full h-8 text-sm"
+                variant="outline"
+              >
+                {isFullScreen ? (
+                  <>
+                    <Minimize className="h-3 w-3 mr-1" />
+                    Quitter
+                  </>
+                ) : (
+                  <>
+                    <Maximize className="h-3 w-3 mr-1" />
+                    Plein Écran
+                  </>
+                )}
+              </Button>
+
+              <Button
+                onClick={toggleAIDetection}
+                className={`w-full h-8 text-sm ${
+                  isAIDetectionEnabled
+                    ? 'bg-green-500 hover:bg-green-600 text-white'
+                    : 'bg-gray-200 hover:bg-gray-300 text-gray-800'
+                }`}
+                variant="outline"
+              >
+                {isAIDetectionEnabled ? (
+                  <>
+                    <Eye className="h-3 w-3 mr-1" />
+                    IA Activée
+                  </>
+                ) : (
+                  <>
+                    <EyeOff className="h-3 w-3 mr-1" />
+                    IA Désactivée
+                  </>
+                )}
+              </Button>
+            </CardContent>
+          </Card>
+
+          {/* Connection Status */}
+          <Card className="text-sm">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm">Connexions</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-1">
+                {Object.entries(connectionStatus).map(([key, connected]) => (
+                  <div key={key} className="flex items-center justify-between">
+                    <span className="text-sm capitalize">{key}</span>
+                    <div className={`flex items-center gap-1 px-1 py-0.5 rounded text-sm ${connected ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                      <Wifi className="h-2 w-2" />
+                      <span className="text-sm">{connected ? 'OK' : 'KO'}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
         </div>
+
+        {/* Full Screen Video Area */}
+        <div className="flex-1 relative">
+          <div className="absolute inset-0 bg-black overflow-hidden">
+            <video
+              ref={videoRef}
+              autoPlay
+              playsInline
+              muted
+              className="w-full h-full bg-black object-contain transition-transform duration-200"
+              style={{
+                transform: `scale(${videoZoom}) translate(${videoPosition.x}px, ${videoPosition.y}px)`,
+                transformOrigin: 'center center'
+              }}
+            />
+
+            {/* Sensor Data Overlay - Top Left */}
+            <div className="absolute top-4 left-4 bg-black/80 backdrop-blur-sm text-white p-4 rounded-lg border border-white/20">
+              <div className="flex items-center gap-2 mb-3">
+                <Thermometer className="h-4 w-4" />
+                <span className="font-semibold text-sm">Sensor Data</span>
+              </div>
+              {sensorData ? (
+                <div className="space-y-2 text-sm">
+                  <div className="flex items-center gap-2">
+                    <Thermometer className="h-3 w-3 text-red-400" />
+                    <span>Température {sensorData.temperature} °C</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Droplets className="h-3 w-3 text-blue-400" />
+                    <span>Humidité {sensorData.humidity} %</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Zap className="h-3 w-3 text-green-400" />
+                    <span>CO₂ {sensorData.co2} ppm</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Sun className="h-3 w-3 text-yellow-400" />
+                    <span>Luminosité {sensorData.luminosite} lux</span>
+                  </div>
+                </div>
+              ) : (
+                <p className="text-gray-300 text-sm">Waiting for sensor data...</p>
+              )}
+            </div>
+
+            {/* QR Code Data Overlay - Top Right */}
+            <div className="absolute top-4 right-4 bg-black/80 backdrop-blur-sm text-white p-4 rounded-lg border border-white/20 max-w-xs">
+              <div className="flex items-center gap-2 mb-3">
+                <div className="h-4 w-4 border-2 border-white rounded-sm" />
+                <span className="font-semibold text-sm">QR Codes</span>
+              </div>
+              <div className="max-h-40 overflow-y-auto space-y-2 text-sm">
+                {qrCodes.length > 0 ? (
+                  qrCodes.map((qr) => (
+                    <div key={qr.id} className="p-2 bg-white/10 rounded text-sm">
+                      <div className="font-medium mb-1">QR {qr.id + 1}:</div>
+                      {typeof qr.data === 'object' ? (
+                        <div className="space-y-1">
+                          {Object.entries(qr.data).slice(0, 3).map(([key, value]) => (
+                            <div key={key} className="truncate">
+                              <span className="text-gray-300">{key}:</span> {String(value)}
+                            </div>
+                          ))}
+                          {Object.entries(qr.data).length > 3 && (
+                            <div className="text-gray-400">...{Object.entries(qr.data).length - 3} more</div>
+                          )}
+                        </div>
+                      ) : (
+                        <div className="truncate">{String(qr.data)}</div>
+                      )}
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-gray-300">No QR codes detected</p>
+                )}
+              </div>
+            </div>
 
         {/* Floating Control Panel */}
         <DraggablePanel
@@ -794,232 +1030,27 @@ export default function RobotControl() {
                   <div className="font-semibold">{sensorData.temperature}°C</div>
                 </div>
               </div>
-              <div className="flex items-center gap-2 p-2 bg-white/10 rounded">
-                <Droplets className="h-4 w-4 text-blue-400" />
-                <div>
-                  <div className="text-xs text-gray-300">Humidité</div>
-                  <div className="font-semibold">{sensorData.humidity}%</div>
-                </div>
-              </div>
-              <div className="flex items-center gap-2 p-2 bg-white/10 rounded">
-                <Zap className="h-4 w-4 text-green-400" />
-                <div>
-                  <div className="text-xs text-gray-300">CO₂</div>
-                  <div className="font-semibold">{sensorData.co2} ppm</div>
-                </div>
-              </div>
-              <div className="flex items-center gap-2 p-2 bg-white/10 rounded">
-                <Sun className="h-4 w-4 text-yellow-400" />
-                <div>
-                  <div className="text-xs text-gray-300">Luminosité</div>
-                  <div className="font-semibold">{sensorData.luminosite} lux</div>
-                </div>
-              </div>
             </div>
-          ) : (
-            <div className="text-center py-4 text-gray-400">
-              <Activity className="h-8 w-8 mx-auto mb-2 opacity-50" />
-              <p className="text-xs">En attente des données...</p>
-            </div>
-          )}
-        </DraggablePanel>
 
-        {/* Floating QR Panel */}
-        <DraggablePanel
-          id="qr"
-          title="QR Codes"
-          position={qrPanelPos}
-          onPositionChange={setQrPanelPos}
-          size={panelSizes.qr}
-          onSizeChange={(size) => setPanelSizes(prev => ({ ...prev, qr: size }))}
-          isVisible={showQRPanel}
-          onToggle={() => setShowQRPanel(!showQRPanel)}
-          onClose={() => setShowQRPanel(false)}
-        >
-          <div className="space-y-2 max-h-32 overflow-y-auto">
-            {qrCodes.length > 0 ? (
-              qrCodes.slice(0, 3).map((qr) => (
-                <div key={qr.id} className="p-2 bg-white/10 rounded border border-white/20">
-                  <div className="font-medium mb-1 text-green-300 text-xs">QR {qr.id + 1}</div>
-                  <div className="text-xs">
-                    <div className="font-semibold text-white truncate">
-                      {getBilanName(qr.data)}
-                    </div>
+            {/* Current Robot/Camera Info Overlay - Bottom Left */}
+            <div className="absolute bottom-4 left-4 bg-black/80 backdrop-blur-sm text-white p-3 rounded-lg border border-white/20">
+              <div className="text-sm space-y-1">
+                <div className="flex items-center gap-2">
+                  <Bot className="h-3 w-3 text-blue-400" />
+                  <span>Robot: {robots.find(r => r.referance.toString() === selectedRobot)?.nom || 'Chargement...'}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Camera className="h-3 w-3 text-green-400" />
+                  <span>Caméra: {selectedCamera === 'left' ? 'Gauche' : 'Droite'}</span>
+                </div>
+                {robots.find(r => r.referance.toString() === selectedRobot)?.referance && (
+                  <div className="flex items-center gap-2 text-xs text-gray-300">
+                    <span>Ref: {robots.find(r => r.referance.toString() === selectedRobot)?.referance}</span>
                   </div>
-                </div>
-              ))
-            ) : (
-              <div className="text-center py-2 text-gray-400">
-                <QrCode className="h-6 w-6 mx-auto mb-1 opacity-50" />
-                <p className="text-xs">Aucun QR code détecté</p>
+                )}
               </div>
-            )}
-          </div>
-        </DraggablePanel>
-
-        {/* Floating Settings Panel */}
-        <DraggablePanel
-          id="settings"
-          title="Paramètres"
-          position={settingsPanelPos}
-          onPositionChange={setSettingsPanelPos}
-          size={panelSizes.settings}
-          onSizeChange={(size) => setPanelSizes(prev => ({ ...prev, settings: size }))}
-          isVisible={showSettingsPanel}
-          onToggle={() => setShowSettingsPanel(!showSettingsPanel)}
-          onClose={() => setShowSettingsPanel(false)}
-        >
-          <div className="space-y-4">
-            {/* Camera and Robot Selection */}
-            <div className="space-y-3">
-              <div className="space-y-2">
-                <label className="text-sm font-medium flex items-center gap-1">
-                  <Camera className="h-4 w-4" />
-                  Caméra
-                </label>
-                <Select value={selectedCamera} onValueChange={handleCameraChange}>
-                  <SelectTrigger className="h-8 text-sm bg-white/10 border-white/20 text-white">
-                    <SelectValue placeholder="Choisir" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="left">Gauche</SelectItem>
-                    <SelectItem value="right">Droite</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-sm font-medium flex items-center gap-1">
-                  <Bot className="h-4 w-4" />
-                  Robot
-                </label>
-                <Select value={selectedRobot} onValueChange={handleRobotChange} disabled={isLoadingRobots || !!robotsError}>
-                  <SelectTrigger className="h-8 text-sm bg-white/10 border-white/20 text-white">
-                    <SelectValue placeholder={isLoadingRobots ? "Chargement..." : robotsError ? "Erreur" : "Choisir"} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {robots.map((robot) => (
-                      <SelectItem key={robot.id} value={robot.id.toString()}>
-                        {robot.nom}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            {/* Connection Status */}
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Connexions</label>
-              <div className="grid grid-cols-2 gap-2">
-                {Object.entries(connectionStatus).map(([key, connected]) => (
-                  <div key={key} className="flex items-center justify-between p-2 bg-white/10 rounded">
-                    <span className="text-xs capitalize text-gray-300">{key}</span>
-                    <div className={`flex items-center gap-1 px-2 py-1 rounded text-xs ${connected ? 'bg-green-500/20 text-green-300' : 'bg-red-500/20 text-red-300'}`}>
-                      <Wifi className="h-3 w-3" />
-                      <span>{connected ? 'OK' : 'KO'}</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Control Buttons */}
-            <div className="space-y-2">
-              <Button
-                onClick={fetchRobots}
-                disabled={isLoadingRobots}
-                className="w-full h-8 text-sm bg-white/10 border-white/20 text-white hover:bg-white/20"
-                variant="outline"
-              >
-                <RefreshCw className={`h-4 w-4 mr-2 ${isLoadingRobots ? 'animate-spin' : ''}`} />
-                Actualiser les robots
-              </Button>
-              <Button
-                onClick={refreshConnections}
-                disabled={isRefreshing}
-                className="w-full h-8 text-sm bg-white/10 border-white/20 text-white hover:bg-white/20"
-                variant="outline"
-              >
-                <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
-                Actualiser les connexions
-              </Button>
             </div>
           </div>
-        </DraggablePanel>
-
-        {/* Current Robot/Camera Info - Bottom Left */}
-        <div className="absolute bottom-4 left-4 bg-black/80 backdrop-blur-sm text-white p-3 rounded-lg border border-white/20">
-          <div className="text-sm space-y-1">
-            <div className="flex items-center gap-2">
-              <Bot className="h-3 w-3 text-blue-400" />
-              <span>Robot: {robots.find(r => r.id.toString() === selectedRobot)?.nom || 'Chargement...'}</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Camera className="h-3 w-3 text-green-400" />
-              <span>Caméra: {selectedCamera === 'left' ? 'Gauche' : 'Droite'}</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Panel Toggle Buttons - Bottom Right */}
-        <div className="absolute bottom-4 right-4 flex gap-2">
-          {!showControlPanel && (
-            <Button
-              onClick={() => setShowControlPanel(true)}
-              variant="outline"
-              size="sm"
-              className="bg-black/80 text-white border-white/20 hover:bg-white/10"
-            >
-              <Move className="h-4 w-4 mr-2" />
-              Contrôles
-            </Button>
-          )}
-          {!showSensorPanel && (
-            <Button
-              onClick={() => setShowSensorPanel(true)}
-              variant="outline"
-              size="sm"
-              className="bg-black/80 text-white border-white/20 hover:bg-white/10"
-            >
-              <Activity className="h-4 w-4 mr-2" />
-              Capteurs
-            </Button>
-          )}
-          {!showQRPanel && (
-            <Button
-              onClick={() => setShowQRPanel(true)}
-              variant="outline"
-              size="sm"
-              className="bg-black/80 text-white border-white/20 hover:bg-white/10"
-            >
-              <QrCode className="h-4 w-4 mr-2" />
-              QR Codes
-            </Button>
-          )}
-          {!showSettingsPanel && (
-            <Button
-              onClick={() => setShowSettingsPanel(true)}
-              variant="outline"
-              size="sm"
-              className="bg-black/80 text-white border-white/20 hover:bg-white/10"
-            >
-              <Settings className="h-4 w-4 mr-2" />
-              Paramètres
-            </Button>
-          )}
-        </div>
-
-        {/* Fullscreen Toggle - Top Right */}
-        <div className="absolute top-4 right-4">
-          <Button
-            onClick={toggleFullScreen}
-            variant="outline"
-            size="sm"
-            className="bg-black/80 text-white border-white/20 hover:bg-white/10"
-          >
-            {isFullScreen ? <Minimize className="h-4 w-4" /> : <Maximize className="h-4 w-4" />}
-          </Button>
         </div>
       </div>
     </div>

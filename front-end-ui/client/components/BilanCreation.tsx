@@ -20,6 +20,7 @@ import { MapPin, Navigation, Target, Play, Pause, Square, CheckCircle, XCircle, 
 import { BilanPoint, bilanService } from '../services/bilanService';
 import { lineString, buffer, simplify } from '@turf/turf';
 import BilanMapComponent from './BilanMapComponent';
+import GoogleMapsErrorBoundary from './GoogleMapsErrorBoundary';
 
 interface BilanCreationProps {
   serreId: number;

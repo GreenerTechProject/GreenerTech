@@ -61,7 +61,7 @@ const statusFilterOptions = [
 ];
 
 interface Serre {
-  id: string;
+  id: number;
   nom: string;
   domaine?: {
     nom: string;

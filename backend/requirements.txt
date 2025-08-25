@@ -13,3 +13,5 @@ WeasyPrint
 
 Flask-Mail
 #itsdangerous
+
+boto3

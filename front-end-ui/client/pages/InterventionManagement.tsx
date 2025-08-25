@@ -24,6 +24,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
+import InterventionForm from "../components/InterventionForm";
 
 interface Intervention {
   id: number;
@@ -605,6 +606,14 @@ export default function InterventionManagement() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Intervention Form Dialog */}
+      <InterventionForm
+        isOpen={isInterventionFormOpen}
+        onClose={() => setIsInterventionFormOpen(false)}
+        onSubmit={handleSubmitIntervention}
+        onSaveDraft={handleSaveDraft}
+      />
     </div>
   );
 }

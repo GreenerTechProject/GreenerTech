@@ -87,7 +87,8 @@ async def mission_data_handler(request):
                             UPDATE missions_robot SET executed = True
                             WHERE id = $1
                         """, mission["id"])
-                        await ws.send_str(json.dumps({"mission": mission}))
+                        #await ws.send_str(json.dumps({"mission": mission}))
+                        await ws.send_str(json.dumps({ "mission": mission, "control_mode": "LEFT" }))
                 else:
                     pass
                 #    #await ws.send_str(json.dumps({"type": "no_mission"}))

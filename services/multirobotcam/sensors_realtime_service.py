@@ -8,6 +8,9 @@ import asyncio
 import os
 from dotenv import load_dotenv
 
+import boto3
+from io import BytesIO
+
 stream_data = get_stream_data()
 
 # Load environment variables
@@ -99,25 +102,50 @@ async def sensor_data_handler(request):
 
                             # Convert BGR (OpenCV) to RGB (PIL)
                             pil_img = Image.fromarray(latest_frame[:, :, ::-1])
+                            
                             os.makedirs("../backend/app/static/images", exist_ok=True)
                             timanow = datetime.now().strftime("%Y%m%d%H%M%S")
                             image_filename = f"{qrdata['id']}_{timanow}.jpg"
                             image_path = f"../backend/app/static/images/{image_filename}"
                             pil_img.save(image_path, format="JPEG", quality=95)
+                            
+                            
+                            try:
+                                s3 = boto3.client("s3")
+                                bucket_name = "bucket-greenertech"
+                                region = "eu-west-1"
+
+                                timanow = datetime.now().strftime("%Y%m%d%H%M%S")
+                                image_filename = f"{qrdata['id']}_{timanow}.jpg"
+                                s3_key = f"images/{image_filename}"
+
+                                buffer = BytesIO()
+                                pil_img.save(buffer, format="JPEG", quality=95)
+                                buffer.seek(0)
+
+                                s3.upload_fileobj(buffer, bucket_name, s3_key)
+
+                                print(f"✅ Image saved to s3://{bucket_name}/{s3_key}")
+                            
+                                
+                            except Exception as e:
+                                print(f"❌ Error: {e}")
+
 
                             # Send alert
                             alert_data = {
                                 "id_bilan": qrdata["id"],
-                                "status_alert": 1,
-                                "maladie": "M1",
-                                "lien_image": f"/static/images/{image_filename}",
+                                "status_alert": 1, #1, 2, 3
+                                "maladie": warning,
+                                #"lien_image": f"/static/images/{image_filename}",
+                                "lien_image": f"https://{bucket_name}.s3.{region}.amazonaws.com/{s3_key}",
                                 "x1": x,
                                 "y1": y,
-                                "status": "résolue"
+                                "status": "non_vue" #non_vue vue résolue
                             }
                             try:
                                 response = requests.post(
-                                    os.getenv("BACKTEND_URL", "http://localhost:3000") + "/api/alerte",
+                                    os.getenv("BACKTEND_URL", "http://localhost:5000") + "/api/alerte",
                                     json=alert_data
                                 )
                                 print(f"[{key}] ✅ Alert sent:", response.status_code, response.text)

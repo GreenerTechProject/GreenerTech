@@ -653,6 +653,7 @@ export default function TechnicianMap() {
     setSelectedSerre(serre);
     setIsCreatingBilan(false);
     loadBilansForSerre(parseInt(serre.id));
+    loadGuidesForSerre(parseInt(serre.id));
   };
 
   const getStatusColor = (status: string) => {
