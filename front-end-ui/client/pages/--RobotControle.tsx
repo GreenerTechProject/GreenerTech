@@ -508,7 +508,7 @@ export default function RobotControl() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <TechHeader role="technicien" />
+      {/* Header removed: provided by TechnicianLayout */}
 
       <div className="flex h-[calc(100vh-85px)]">
         {/* Minimized Left Sidebar - Controls */}

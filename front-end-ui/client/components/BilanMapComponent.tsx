@@ -1,11 +1,11 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { GoogleMap, Marker, Polygon, Polyline, Circle } from '@react-google-maps/api';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { MapPin, Navigation, Target, Route } from 'lucide-react';
 import { BilanPoint } from '../services/bilanService';
-import GoogleMapsWrapper from './GoogleMapsWrapper';
-import { getGoogleMapsAPIKey } from '@/config/maps';
+import { useLoadScript } from '@react-google-maps/api';
+import { GOOGLE_MAPS_CONFIG } from '@/config/maps';
 
 interface BilanMapComponentProps {
   serreLocation: { lat: number; lng: number };
@@ -16,11 +16,19 @@ interface BilanMapComponentProps {
   onMapClick?: (lat: number, lng: number) => void;
 }
 
-const mapContainerStyle = {
+// Responsive map container styles
+const getMapContainerStyle = (isMobile: boolean, isTablet: boolean) => ({
   width: '100%',
-  height: '100%',
-  minHeight: '500px',
-};
+  height: '100%', // Use 100% height to fill available space
+  minHeight: '100%', // Ensure minimum height is also 100%
+});
+
+const libraries: ("drawing" | "geometry" | "places" | "visualization")[] = [
+  "drawing",
+  "geometry",
+  "places",
+  "visualization",
+];
 
 export default function BilanMapComponent({
   serreLocation,
@@ -31,16 +39,36 @@ export default function BilanMapComponent({
   onMapClick,
 }: BilanMapComponentProps) {
   const [map, setMap] = useState<google.maps.Map | null>(null);
-  const [mapLoaded, setMapLoaded] = useState(false);
   const [userPath, setUserPath] = useState<{ lat: number; lng: number }[]>([]);
+  const [isMobile, setIsMobile] = useState(false);
+  const [isTablet, setIsTablet] = useState(false);
+
+  // Responsive breakpoint detection
+  useEffect(() => {
+    const checkScreenSize = () => {
+      const width = window.innerWidth;
+      setIsMobile(width < 768);
+      setIsTablet(width >= 768 && width < 1024);
+    };
+
+    checkScreenSize();
+    window.addEventListener('resize', checkScreenSize);
+    return () => window.removeEventListener('resize', checkScreenSize);
+  }, []);
+
+  // Load Google Maps script
+  const { isLoaded, loadError } = useLoadScript({
+    googleMapsApiKey: GOOGLE_MAPS_CONFIG.API_KEY,
+    libraries,
+  });
 
   // Center map on serre location when component mounts
   useEffect(() => {
     if (map && serreLocation) {
       map.panTo(serreLocation);
-      map.setZoom(18); // High zoom for field-level view
+      map.setZoom(isMobile ? 16 : isTablet ? 17 : 18); // Responsive zoom levels
     }
-  }, [map, serreLocation]);
+  }, [map, serreLocation, isMobile, isTablet]);
 
   // Center map on current location when tracking
   useEffect(() => {
@@ -65,23 +93,16 @@ export default function BilanMapComponent({
     }
   }, [isTracking]);
 
-  const onMapLoad = (map: google.maps.Map) => {
+  const onMapLoad = useCallback((map: google.maps.Map) => {
     setMap(map);
-    setMapLoaded(true);
-  };
+  }, []);
 
-  // Safety check to ensure Google Maps API is loaded
-  const isGoogleMapsLoaded = () => {
-    return typeof window !== 'undefined' && window.google && window.google.maps;
-  };
-
-  const onMapUnmount = () => {
+  const onMapUnmount = useCallback(() => {
     setMap(null);
-    setMapLoaded(false);
-  };
+  }, []);
 
   // Create polygon path from selected points
-  const getPolygonPath = () => {
+  const getPolygonPath = useCallback(() => {
     if (selectedPoints.length < 3) return [];
     
     // Sort points by order
@@ -92,20 +113,20 @@ export default function BilanMapComponent({
       lat: point.lat,
       lng: point.lng,
     }));
-  };
+  }, [selectedPoints]);
 
   // Calculate center of all points for better map centering
-  const getMapCenter = () => {
+  const getMapCenter = useCallback(() => {
     if (selectedPoints.length > 0) {
       const avgLat = selectedPoints.reduce((sum, point) => sum + point.lat, 0) / selectedPoints.length;
       const avgLng = selectedPoints.reduce((sum, point) => sum + point.lng, 0) / selectedPoints.length;
       return { lat: avgLat, lng: avgLng };
     }
     return serreLocation;
-  };
+  }, [selectedPoints, serreLocation]);
 
   // Calculate total distance walked
-  const calculateTotalDistance = () => {
+  const calculateTotalDistance = useCallback(() => {
     if (userPath.length < 2) return 0;
     
     let totalDistance = 0;
@@ -125,29 +146,65 @@ export default function BilanMapComponent({
     }
     
     return totalDistance;
-  };
+  }, [userPath]);
 
-  // Don't render the map if Google Maps API isn't loaded
-  if (typeof window === 'undefined' || !window.google || !window.google.maps) {
+  // Handle map click
+  const handleMapClick = useCallback((e: google.maps.MapMouseEvent) => {
+    if (onMapClick && e.latLng) {
+      onMapClick(e.latLng.lat(), e.latLng.lng());
+    }
+  }, [onMapClick]);
+
+  // Show loading state while Google Maps is loading
+  if (!isLoaded) {
     return (
-      <Card className={className}>
-        <CardHeader className="pb-3">
-          <CardTitle className="flex items-center gap-2 text-lg">
-            <Route className="h-5 w-5" />
-            Carte Interactive du Bilan
+      <Card className={`${className} h-full flex flex-col`}>
+        <CardHeader className="pb-3 flex-shrink-0">
+          <CardTitle className="flex items-center gap-2 text-sm sm:text-base lg:text-lg">
+            <Route className="h-4 w-4 sm:h-5 sm:w-5" />
+            Carte Interactive du Billon
             {isTracking && (
-              <Badge variant="secondary" className="ml-2 animate-pulse">
+              <Badge variant="secondary" className="ml-2 animate-pulse text-xs sm:text-sm">
                 <Navigation className="h-3 w-3 mr-1" />
                 Suivi actif
               </Badge>
             )}
           </CardTitle>
         </CardHeader>
-        <CardContent className="p-0">
-          <div className="flex items-center justify-center h-full min-h-[500px]">
+        <CardContent className="p-0 flex-1 min-h-0">
+          <div className="flex items-center justify-center h-full">
             <div className="text-center">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600 mx-auto mb-2"></div>
-              <p className="text-sm text-gray-600">Chargement de Google Maps...</p>
+              <div className="animate-spin rounded-full h-6 w-6 sm:h-8 sm:w-8 border-b-2 border-green-600 mx-auto mb-2"></div>
+              <p className="text-xs sm:text-sm text-gray-600">Chargement de Google Maps...</p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // Show error state if Google Maps failed to load
+  if (loadError) {
+    return (
+      <Card className={`${className} h-full flex flex-col`}>
+        <CardHeader className="pb-3 flex-shrink-0">
+          <CardTitle className="flex items-center gap-2 text-sm sm:text-base lg:text-lg">
+            <Route className="h-4 w-4 sm:h-5 sm:w-5" />
+            Carte Interactive du Billon
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="p-0 flex-1 min-h-0">
+          <div className="flex items-center justify-center h-full">
+            <div className="text-center">
+              <div className="text-red-500 text-base sm:text-lg mb-2">Erreur de chargement</div>
+              <p className="text-xs sm:text-sm text-gray-600">Impossible de charger Google Maps</p>
+              <p className="text-xs text-gray-500 mt-1">{loadError.message}</p>
+              <button 
+                onClick={() => window.location.reload()} 
+                className="mt-3 px-3 py-2 sm:px-4 sm:py-2 bg-blue-500 text-white rounded hover:bg-blue-600 text-xs sm:text-sm"
+              >
+                Réessayer
+              </button>
             </div>
           </div>
         </CardContent>
@@ -156,173 +213,165 @@ export default function BilanMapComponent({
   }
 
   return (
-    <Card className={className}>
-      <CardHeader className="pb-3">
-        <CardTitle className="flex items-center gap-2 text-lg">
-          <Route className="h-5 w-5" />
-          Carte Interactive du Bilan
+    <Card className={`${className} h-full flex flex-col`}>
+      <CardHeader className="pb-2 sm:pb-3 flex-shrink-0">
+        <CardTitle className="flex items-center gap-2 text-sm sm:text-base lg:text-lg">
+          <Route className="h-4 w-4 sm:h-5 sm:w-5" />
+          <span className="hidden sm:inline">Carte Interactive du Billon</span>
+          <span className="sm:hidden">Billon</span>
           {isTracking && (
-            <Badge variant="secondary" className="ml-2 animate-pulse">
+            <Badge variant="secondary" className="ml-2 animate-pulse text-xs sm:text-sm">
               <Navigation className="h-3 w-3 mr-1" />
-              Suivi actif
+              <span className="hidden sm:inline">Suivi actif</span>
+              <span className="sm:hidden">Actif</span>
             </Badge>
           )}
         </CardTitle>
       </CardHeader>
-      <CardContent className="p-0">
-        <div className="relative">
-          <GoogleMapsWrapper>
-          {(!mapLoaded || !isGoogleMapsLoaded()) && (
-            <div className="flex items-center justify-center h-full min-h-[500px]">
-              <div className="text-center">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600 mx-auto mb-2"></div>
-                <p className="text-sm text-gray-600">Chargement de la carte...</p>
-              </div>
-            </div>
-          )}
-          {mapLoaded && isGoogleMapsLoaded() && (
-            <GoogleMap
-              mapContainerStyle={mapContainerStyle}
-              center={getMapCenter()}
-              zoom={18}
-              onLoad={onMapLoad}
-              onUnmount={onMapUnmount}
-              onClick={(e) => {
-                if (onMapClick && e.latLng) {
-                  onMapClick(e.latLng.lat(), e.latLng.lng());
-                }
+      <CardContent className="p-0 flex-1 min-h-0">
+        <div className="relative h-full w-full">
+          <GoogleMap
+            mapContainerStyle={{
+              width: '100%',
+              height: '100%',
+              minHeight: '100%',
+            }}
+            center={getMapCenter()}
+            zoom={isMobile ? 16 : isTablet ? 17 : 18}
+            onLoad={onMapLoad}
+            onUnmount={onMapUnmount}
+            onClick={handleMapClick}
+            options={{
+              mapTypeId: 'satellite',
+              tilt: 0,
+              streetViewControl: false,
+              fullscreenControl: true,
+              mapTypeControl: !isMobile, // Hide on mobile to save space
+              zoomControl: true,
+              scaleControl: !isMobile, // Hide on mobile to save space
+              gestureHandling: 'greedy',
+            }}
+          >
+            {/* Serre Location Marker */}
+            <Marker
+              position={serreLocation}
+              icon={{
+                url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
+                  <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="16" cy="16" r="16" fill="#10B981" opacity="0.8"/>
+                    <circle cx="16" cy="16" r="8" fill="#10B981"/>
+                    <text x="16" y="20" text-anchor="middle" fill="white" font-size="12" font-weight="bold">S</text>
+                  </svg>
+                `),
+                scaledSize: new google.maps.Size(32, 32),
               }}
-              options={{
-                mapTypeId: 'satellite', // Satellite view for better field visualization
-                tilt: 0,
-                streetViewControl: false,
-                fullscreenControl: true,
-                mapTypeControl: true,
-                zoomControl: true,
-                scaleControl: true,
-                gestureHandling: 'greedy',
-              }}
-            >
-              {/* Serre Location Marker */}
+              title="Serre"
+            />
+
+            {/* User Movement Path */}
+            {userPath.length > 1 && (
+              <Polyline
+                path={userPath}
+                options={{
+                  strokeColor: '#3B82F6',
+                  strokeOpacity: 0.8,
+                  strokeWeight: isMobile ? 2 : 3,
+                  geodesic: true,
+                }}
+              />
+            )}
+
+            {/* Current Location Marker */}
+            {currentLocation && (
               <Marker
-                position={serreLocation}
+                position={currentLocation}
                 icon={{
                   url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
                     <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <circle cx="16" cy="16" r="16" fill="#10B981" opacity="0.8"/>
-                      <circle cx="16" cy="16" r="8" fill="#10B981"/>
-                      <text x="16" y="20" text-anchor="middle" fill="white" font-size="12" font-weight="bold">S</text>
+                      <circle cx="16" cy="16" r="16" fill="#3B82F6" opacity="0.8"/>
+                      <circle cx="16" cy="16" r="8" fill="#3B82F6"/>
+                      <text x="16" y="20" text-anchor="middle" fill="white" font-size="12" font-weight="bold">T</text>
                     </svg>
                   `),
-                  scaledSize: mapLoaded && isGoogleMapsLoaded() ? new window.google.maps.Size(32, 32) : undefined,
+                  scaledSize: new google.maps.Size(32, 32),
                 }}
-                title="Serre"
+                title="Votre position actuelle"
               />
+            )}
 
-              {/* User Movement Path */}
-              {userPath.length > 1 && (
-                <Polyline
-                  path={userPath}
-                  options={{
-                    strokeColor: '#3B82F6',
-                    strokeOpacity: 0.8,
-                    strokeWeight: 3,
-                    geodesic: true,
-                  }}
-                />
-              )}
+            {/* Accuracy Circle */}
+            {currentLocation?.accuracy !== undefined && currentLocation.accuracy > 0 && (
+              <Circle
+                center={{ lat: currentLocation.lat, lng: currentLocation.lng }}
+                radius={currentLocation.accuracy}
+                options={{
+                  strokeColor: '#3B82F6',
+                  strokeOpacity: 0.4,
+                  strokeWeight: 1,
+                  fillColor: '#3B82F6',
+                  fillOpacity: 0.1,
+                  clickable: false,
+                }}
+              />
+            )}
 
-              {/* Current Location Marker */}
-              {currentLocation && (
-                <Marker
-                  position={currentLocation}
-                  icon={{
-                    url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
-                      <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <circle cx="16" cy="16" r="16" fill="#3B82F6" opacity="0.8"/>
-                        <circle cx="16" cy="16" r="8" fill="#3B82F6"/>
-                        <text x="16" y="20" text-anchor="middle" fill="white" font-size="12" font-weight="bold">T</text>
-                      </svg>
-                    `),
-                    scaledSize: mapLoaded && isGoogleMapsLoaded() ? new window.google.maps.Size(32, 32) : undefined,
-                  }}
-                  title="Votre position actuelle"
-                />
-              )}
+            {/* Selected Points Markers */}
+            {selectedPoints.map((point, index) => (
+              <Marker
+                key={index}
+                position={{ lat: point.lat, lng: point.lng }}
+                icon={{
+                  url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
+                    <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <circle cx="16" cy="16" r="16" fill="#F59E0B" opacity="0.8"/>
+                      <circle cx="16" cy="16" r="8" fill="#F59E0B"/>
+                      <text x="16" y="20" text-anchor="middle" fill="white" font-size="12" font-weight="bold">${point.ordre}</text>
+                    </svg>
+                  `),
+                  scaledSize: new google.maps.Size(32, 32),
+                }}
+                title={`Point ${point.ordre} du billon`}
+              />
+            ))}
 
-              {/* Accuracy Circle */}
-              {currentLocation?.accuracy !== undefined && currentLocation.accuracy > 0 && (
-                <Circle
-                  center={{ lat: currentLocation.lat, lng: currentLocation.lng }}
-                  radius={currentLocation.accuracy}
-                  options={{
-                    strokeColor: '#3B82F6',
-                    strokeOpacity: 0.4,
-                    strokeWeight: 1,
-                    fillColor: '#3B82F6',
-                    fillOpacity: 0.1,
-                    clickable: false,
-                  }}
-                />
-              )}
+            {/* Polygon connecting the selected points */}
+            {selectedPoints.length >= 3 && (
+              <Polygon
+                paths={getPolygonPath()}
+                options={{
+                  fillColor: '#10B981',
+                  fillOpacity: 0.3,
+                  strokeColor: '#10B981',
+                  strokeWeight: isMobile ? 2 : 3,
+                  strokeOpacity: 0.8,
+                }}
+              />
+            )}
+          </GoogleMap>
 
-              {/* Selected Points Markers */}
-              {selectedPoints.map((point, index) => (
-                <Marker
-                  key={index}
-                  position={{ lat: point.lat, lng: point.lng }}
-                  icon={{
-                    url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
-                      <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <circle cx="16" cy="16" r="16" fill="#F59E0B" opacity="0.8"/>
-                        <circle cx="16" cy="16" r="8" fill="#F59E0B"/>
-                        <text x="16" y="20" text-anchor="middle" fill="white" font-size="12" font-weight="bold">${point.ordre}</text>
-                      </svg>
-                    `),
-                    scaledSize: mapLoaded && isGoogleMapsLoaded() ? new window.google.maps.Size(32, 32) : undefined,
-                  }}
-                  title={`Point ${point.ordre} du bilan`}
-                />
-              ))}
-
-              {/* Polygon connecting the selected points */}
-              {selectedPoints.length >= 3 && (
-                <Polygon
-                  paths={getPolygonPath()}
-                  options={{
-                    fillColor: '#10B981',
-                    fillOpacity: 0.3,
-                    strokeColor: '#10B981',
-                    strokeWeight: 3,
-                    strokeOpacity: 0.8,
-                  }}
-                />
-              )}
-            </GoogleMap>
-          )}
-          </GoogleMapsWrapper>
-
-          {/* Map Legend and Stats */}
-          <div className="absolute top-4 right-4 bg-white bg-opacity-95 p-4 rounded-lg shadow-lg text-sm max-w-64">
-            <div className="space-y-3">
-              <h4 className="font-semibold text-gray-800">Légende</h4>
+          {/* Responsive Map Legend and Stats */}
+          <div className={`absolute bg-white bg-opacity-95 p-2 sm:p-3 lg:p-4 rounded-lg shadow-lg text-xs sm:text-sm max-w-48 sm:max-w-56 lg:max-w-64 ${
+            isMobile ? 'top-2 right-2' : 'top-4 right-4'
+          }`}>
+            <div className="space-y-2 sm:space-y-3">
+              <h4 className="font-semibold text-gray-800 text-xs sm:text-sm">Légende</h4>
               
-              <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 rounded-full bg-green-500"></div>
-                  <span className="text-gray-700">Serre</span>
+              <div className="space-y-1 sm:space-y-2">
+                <div className="flex items-center gap-1 sm:gap-2">
+                  <div className="w-3 h-3 sm:w-4 sm:h-4 rounded-full bg-green-500"></div>
+                  <span className="text-gray-700 text-xs sm:text-sm">Serre</span>
                 </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 rounded-full bg-blue-500"></div>
-                  <span className="text-gray-700">Votre position</span>
+                <div className="flex items-center gap-1 sm:gap-2">
+                  <div className="w-3 h-3 sm:w-4 sm:h-4 rounded-full bg-blue-500"></div>
+                  <span className="text-gray-700 text-xs sm:text-sm">Votre position</span>
                 </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 rounded-full bg-yellow-500"></div>
-                  <span className="text-gray-700">Points du bilan</span>
+                <div className="flex items-center gap-1 sm:gap-2">
+                  <div className="w-3 h-3 sm:w-4 sm:h-4 rounded-full bg-yellow-500"></div>
+                  <span className="text-gray-700 text-xs sm:text-sm">Points du billon</span>
                 </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-0.5 bg-blue-500"></div>
-                  <span className="text-gray-700">Votre parcours</span>
+                <div className="flex items-center gap-1 sm:gap-2">
+                  <div className="w-2 h-0.5 sm:w-3 sm:h-0.5 bg-blue-500"></div>
+                  <span className="text-gray-700 text-xs sm:text-sm">Votre parcours</span>
                 </div>
               </div>
 
@@ -330,10 +379,10 @@ export default function BilanMapComponent({
                 <>
                   <div className="border-t pt-2">
                     <div className="text-xs text-gray-600">
-                      Distance parcourue: {((calculateTotalDistance() || 0) / 1000).toFixed(2)} km
+                      Distance: {((calculateTotalDistance() || 0) / 1000).toFixed(2)} km
                     </div>
                     <div className="text-xs text-gray-600">
-                      Points du bilan: {selectedPoints.length}/4
+                      Points: {selectedPoints.length}/4
                     </div>
                   </div>
                 </>
@@ -341,33 +390,19 @@ export default function BilanMapComponent({
             </div>
           </div>
 
-          {/* Instructions Overlay */}
-          {selectedPoints.length === 0 && (
-            <div className="absolute bottom-4 left-4 bg-blue-600 text-white p-4 rounded-lg shadow-lg max-w-80">
-              <div className="flex items-start gap-3">
-                <Target className="h-5 w-5 mt-0.5 flex-shrink-0" />
-                <div className="text-sm">
-                  <div className="font-semibold mb-1">Instructions</div>
-                  <div className="space-y-1 text-blue-100">
-                    <div>1. Démarrer le suivi GPS</div>
-                    <div>2. Marcher dans le champ</div>
-                    <div>3. Cliquer "Ajouter Point" à chaque position</div>
-                    <div>4. Continuer jusqu'à 4 points</div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Progress Indicator */}
+          {/* Responsive Progress Indicator */}
           {selectedPoints.length > 0 && (
-            <div className="absolute bottom-4 left-4 bg-white p-3 rounded-lg shadow-lg">
-              <div className="text-sm font-medium text-gray-800 mb-2">
+            <div className={`absolute bg-white p-2 sm:p-3 rounded-lg shadow-lg ${
+              isMobile ? 'bottom-2 left-2 right-2' : 'bottom-4 left-4'
+            }`}>
+              <div className="text-xs sm:text-sm font-medium text-gray-800 mb-1 sm:mb-2">
                 Progression: {selectedPoints.length}/4 points
               </div>
-              <div className="w-32 bg-gray-200 rounded-full h-2">
+              <div className={`bg-gray-200 rounded-full h-1.5 sm:h-2 ${
+                isMobile ? 'w-full' : 'w-32'
+              }`}>
                 <div 
-                  className="bg-green-500 h-2 rounded-full transition-all duration-300"
+                  className="bg-green-500 h-1.5 sm:h-2 rounded-full transition-all duration-300"
                   style={{ width: `${(selectedPoints.length / 4) * 100}%` }}
                 ></div>
               </div>

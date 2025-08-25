@@ -45,11 +45,13 @@ interface PreRegisteredUser {
   name: string;
   email: string;
   role: string;
+  company_name?: string;
+  id_assigned?: string;
 }
 
 interface Company {
   id: string;
-  name: string;
+  nom: string;
 }
 
 export default function TechnicienRegistration() {
@@ -86,7 +88,6 @@ export default function TechnicienRegistration() {
     const response = await axios.get(`${window.location.protocol}//${window.location.hostname}:5000/api/entreprises`)
     setCompanies(Array.isArray(response.data) ? response.data : []);
   } catch (error) {
-    console.error("Error fetching companies:", error);
     setCompanies([]);
   }
 };
@@ -95,7 +96,6 @@ export default function TechnicienRegistration() {
   // Step 1: Check email
   const onEmailSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    console.log("Form submitted");
     const formData = new FormData(e.currentTarget);
     const email = formData.get("email") as string;
 
@@ -239,7 +239,6 @@ export default function TechnicienRegistration() {
         setLocalError(result.error || result.message || "Une erreur est survenue");
       }
     } catch (error) {
-      console.log(error);
       setLocalError("Impossible de compléter l'inscription");
     } finally {
       setIsLoading(false);
@@ -279,32 +278,36 @@ export default function TechnicienRegistration() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gradient-to-r from-[#D6E2CC] to-[#D6E2CC] flex flex-col lg:flex-row">
+    <div className="min-h-screen bg-gradient-to-br from-[#EAF4E1] via-[#FCFEFF] to-[#EAF4E1] flex flex-col lg:flex-row">
       {/* Background Image Section */}
-      <div className="flex-1 relative min-h-[40vh] lg:min-h-screen">
+      <div className="hidden lg:block flex-1 relative min-h-[40vh] lg:min-h-screen">
         <img
-          src="https://cdn.builder.io/api/v1/image/assets%2Fe15cdeeaccbb4f9394b3b7b30742eb8c%2F97c345a448194346ad4e8ebc4b57f88f?format=webp&width=800"
-          alt="Farmer using tablet in field"
+          src="https://cdn.builder.io/api/v1/image/assets%2Fe15cdeeaccbb4f9394b3b7b30742eb8c%2F97c345a448194346ad4e8ebc4b57f88f?format=webp&width=1200"
+          alt="Agriculture intelligente"
           className="absolute inset-0 w-full h-full object-cover"
         />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
       </div>
 
       {/* Registration Form Section */}
-      <div className="w-full lg:w-[845px] bg-[#FCFEFF] lg:rounded-l-[25px] flex flex-col items-center justify-center px-6 sm:px-8 py-8 lg:py-0">
+      <div className="w-full lg:w-[845px] bg-white/95 backdrop-blur lg:rounded-l-[28px] shadow-xl flex flex-col items-center justify-center px-6 sm:px-8 py-10 lg:py-12 min-h-screen">
         {/* Greener Tech Logo */}
-        <div className="mb-8 lg:mb-12">
+        <div className="mb-6 lg:mb-8">
           <img
-            src="https://api.builder.io/api/v1/image/assets/TEMP/b0dd8ca02c2a41b50f73559714fd5efaaf50e9cf?width=760"
+            src="/GreenerTech-Logo.jpg"
             alt="Greener Tech Logo"
-            className="w-[280px] sm:w-[320px] lg:w-[380px] h-auto"
+            className="w-[220px] sm:w-[260px] lg:w-[320px] h-auto"
           />
         </div>
+        <p className="text-center text-gray-600 mb-8">
+          Rejoignez la révolution verte avec GreenerTech
+        </p>
 
         {/* Registration Form */}
-        <div className="w-full max-w-[600px]">
+        <div className="w-full max-w-[640px]">
           {/* Header */}
           <div className="text-center mb-6">
-            <h2 className="text-xl font-bold text-gray-900 mb-2">
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">
               {step === 1
                 ? "Inscription Technicien"
                 : "Compléter l'inscription"}
@@ -345,7 +348,7 @@ export default function TechnicienRegistration() {
                     name="email"
                     placeholder="votre.email@exemple.com"
                     onChange={clearError}
-                    className="w-full h-10 pl-10 pr-4 border border-gray-300 rounded-md text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#B4CC5F] focus:border-transparent"
+                    className="w-full h-10 pl-10 pr-4 border border-gray-300 rounded-lg text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#8FB344] focus:border-transparent shadow-sm"
                     required
                   />
                 </div>
@@ -357,7 +360,7 @@ export default function TechnicienRegistration() {
                 <button
                   type="button"
                   onClick={goBack}
-                  className="flex items-center text-sm font-medium text-[#B4CC5F] hover:text-[#A3C247] transition-colors"
+                  className="flex items-center text-sm font-medium text-[#2E7D32] hover:text-[#276A2B] transition-colors"
                 >
                   <svg
                     width="18"
@@ -369,7 +372,7 @@ export default function TechnicienRegistration() {
                   >
                     <path
                       d="M1.11016 10.8839C0.622007 10.3957 0.622007 9.60427 1.11016 9.11612L9.06511 1.16117C9.55327 0.67301 10.3447 0.67301 10.8329 1.16117C11.321 1.64932 11.321 2.44078 10.8329 2.92893L3.76181 10L10.8329 17.0711C11.321 17.5592 11.321 18.3507 10.8329 18.8388C10.3447 19.327 9.55327 19.327 9.06511 18.8388L1.11016 10.8839ZM22.5684 10V11.25H1.99405V10V8.75H22.5684V10Z"
-                      fill="#B4CC5F"
+                      fill="#2E7D32"
                     />
                   </svg>
                   Retour
@@ -379,7 +382,7 @@ export default function TechnicienRegistration() {
                 <button
                   type="submit"
                   disabled={isLoading}
-                  className="w-full max-w-[384px] h-10 bg-[#B4CC5F] text-white text-sm font-medium rounded-md hover:bg-[#A3C247] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full max-w-[384px] h-12 bg-[#2E7D32] text-white text-base font-medium rounded-lg hover:bg-[#276A2B] transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow px-8"
                 >
                   {isLoading ? "Vérification..." : "Vérifier"}
                 </button>
@@ -447,7 +450,7 @@ export default function TechnicienRegistration() {
                         name="firstName"
                         placeholder="Prénom"
                         onChange={clearError}
-                        className="w-full h-10 px-4 border border-gray-300 rounded-md text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#B4CC5F] focus:border-transparent"
+                        className="w-full h-10 px-4 border border-gray-300 rounded-lg text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#8FB344] focus:border-transparent shadow-sm"
                         required
                       />
                     </div>
@@ -461,7 +464,7 @@ export default function TechnicienRegistration() {
                         name="lastName"
                         placeholder="Nom"
                         onChange={clearError}
-                        className="w-full h-10 px-4 border border-gray-300 rounded-md text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#B4CC5F] focus:border-transparent"
+                        className="w-full h-10 px-4 border border-gray-300 rounded-lg text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#8FB344] focus:border-transparent shadow-sm"
                         required
                       />
                     </div>
@@ -488,7 +491,7 @@ export default function TechnicienRegistration() {
                       <select
                         name="companyId"
                         onChange={clearError}
-                        className="w-full h-10 px-4 border border-gray-300 rounded-md text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#B4CC5F] focus:border-transparent"
+                        className="w-full h-10 px-4 border border-gray-300 rounded-lg text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#8FB344] focus:border-transparent shadow-sm"
                         required
                         defaultValue=""
                       >
@@ -523,7 +526,7 @@ export default function TechnicienRegistration() {
                     name="telephone"
                     placeholder="0612345678"
                     onChange={clearError}
-                    className="w-full h-10 px-4 border border-gray-300 rounded-md text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#B4CC5F] focus:border-transparent"
+                    className="w-full h-10 px-4 border border-gray-300 rounded-lg text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#8FB344] focus:border-transparent shadow-sm"
                     required
                   />
                 </div>
@@ -537,7 +540,7 @@ export default function TechnicienRegistration() {
                     name="cin"
                     placeholder="AB123456"
                     onChange={clearError}
-                    className="w-full h-10 px-4 border border-gray-300 rounded-md text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#B4CC5F] focus:border-transparent"
+                    className="w-full h-10 px-4 border border-gray-300 rounded-lg text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#8FB344] focus:border-transparent shadow-sm"
                     required
                   />
                 </div>
@@ -552,7 +555,7 @@ export default function TechnicienRegistration() {
                     type="date"
                     name="birthday"
                     onChange={clearError}
-                    className="w-full h-10 px-4 border border-gray-300 rounded-md text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#B4CC5F] focus:border-transparent"
+                    className="w-full h-10 px-4 border border-gray-300 rounded-lg text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#8FB344] focus:border-transparent shadow-sm"
                     required
                   />
                 </div>
@@ -566,7 +569,7 @@ export default function TechnicienRegistration() {
                     name="password"
                     placeholder="••••••••"
                     onChange={clearError}
-                    className="w-full h-10 px-4 border border-gray-300 rounded-md text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#B4CC5F] focus:border-transparent"
+                    className="w-full h-10 px-4 border border-gray-300 rounded-lg text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#8FB344] focus:border-transparent shadow-sm"
                     required
                   />
                 </div>
@@ -580,7 +583,7 @@ export default function TechnicienRegistration() {
                     name="confirmPassword"
                     placeholder="••••••••"
                     onChange={clearError}
-                    className="w-full h-10 px-4 border border-gray-300 rounded-md text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#B4CC5F] focus:border-transparent"
+                    className="w-full h-10 px-4 border border-gray-300 rounded-lg text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#8FB344] focus:border-transparent shadow-sm"
                     required
                   />
                 </div>
@@ -592,7 +595,7 @@ export default function TechnicienRegistration() {
                 <button
                   type="button"
                   onClick={goBack}
-                  className="flex items-center text-sm font-medium text-[#B4CC5F] hover:text-[#A3C247] transition-colors"
+                  className="flex items-center text-sm font-medium text-[#2E7D32] hover:text-[#276A2B] transition-colors"
                 >
                   <svg
                     width="18"
@@ -604,7 +607,7 @@ export default function TechnicienRegistration() {
                   >
                     <path
                       d="M1.11016 10.8839C0.622007 10.3957 0.622007 9.60427 1.11016 9.11612L9.06511 1.16117C9.55327 0.67301 10.3447 0.67301 10.8329 1.16117C11.321 1.64932 11.321 2.44078 10.8329 2.92893L3.76181 10L10.8329 17.0711C11.321 17.5592 11.321 18.3507 10.8329 18.8388C10.3447 19.327 9.55327 19.327 9.06511 18.8388L1.11016 10.8839ZM22.5684 10V11.25H1.99405V10V8.75H22.5684V10Z"
-                      fill="#B4CC5F"
+                      fill="#2E7D32"
                     />
                   </svg>
                   Retour
@@ -614,7 +617,7 @@ export default function TechnicienRegistration() {
                 <button
                   type="submit"
                   disabled={isLoading}
-                  className="w-full max-w-[384px] h-10 bg-[#B4CC5F] text-white text-sm font-medium rounded-md hover:bg-[#A3C247] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full max-w-[384px] h-12 bg-[#2E7D32] text-white text-base font-medium rounded-lg hover:bg-[#276A2B] transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow px-8"
                 >
                   {isLoading ? "Inscription..." : "Compléter l'inscription"}
                 </button>
@@ -627,8 +630,8 @@ export default function TechnicienRegistration() {
             <p className="text-sm text-gray-600">
               Déjà membre ?{" "}
               <button
-                onClick={() => navigate("/login")}
-                className="text-[#B4CC5F] hover:text-[#A3C247] transition-colors"
+                onClick={() => navigate("/")}
+                className="text-[#2E7D32] hover:text-[#276A2B] transition-colors"
               >
                 Se connecter
               </button>

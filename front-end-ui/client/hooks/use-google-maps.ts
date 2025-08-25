@@ -13,12 +13,12 @@ export const useGoogleMaps = () => {
     // Check immediately
     checkGoogleMaps();
 
-    // Set up an interval to check periodically
-    const interval = setInterval(checkGoogleMaps, 100);
-
-    // Clean up
-    return () => clearInterval(interval);
-  }, []);
+    // If not loaded, check once after a delay
+    if (!isLoaded) {
+      const timeout = setTimeout(checkGoogleMaps, 1000);
+      return () => clearTimeout(timeout);
+    }
+  }, [isLoaded]);
 
   return isLoaded;
 };

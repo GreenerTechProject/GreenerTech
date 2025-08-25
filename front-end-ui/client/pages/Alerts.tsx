@@ -3,9 +3,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Bell, AlertTriangle, CheckCircle, Clock, Search, Image, ZoomIn, ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
-import TechHeader from "@/components/TechHeader";
 import {AlertService} from "@/services/alertService";
 import { Alert } from "@/types/alert";
 
@@ -138,14 +138,14 @@ export default function AlertsPage() {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#B4CC5F]"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-greener-600"></div>
       </div>
     );
   }
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <TechHeader role="technicien" />
+      {/* Header removed: provided by TechnicianLayout */}
       
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -208,7 +208,7 @@ export default function AlertsPage() {
               <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
             <Input
               type="text"
-                placeholder="Rechercher par anomalie, bilan ou serre ..."
+                placeholder="Rechercher par anomalie, billon ou serre ..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-12 pr-4 py-3 text-base border-2 border-gray-200 focus:border-red-500 focus:ring-2 focus:ring-red-500/20 rounded-xl shadow-sm hover:border-gray-300 transition-all duration-200 w-full"
@@ -406,7 +406,7 @@ export default function AlertsPage() {
                             <td className="py-4 px-6">
                               <div className="space-y-1">
                                 <div className="text-sm text-gray-700 bg-blue-100 px-2 py-1 rounded text-xs">
-                                  {alert.bilan_nom || `Bilan ${alert.id_bilan}`}
+                                  {alert.bilan_nom || `Billon ${alert.id_bilan}`}
                                 </div>
                                 <div className="text-sm text-gray-700 bg-green-100 px-2 py-1 rounded text-xs">
                                   {alert.serre_nom || "Serre inconnue"}
@@ -522,8 +522,8 @@ export default function AlertsPage() {
                         {/* Location Info */}
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-4">
                           <div className="text-sm text-gray-700 bg-blue-50 px-3 py-2 rounded-lg border border-blue-200">
-                            <span className="font-medium text-blue-800">Bilan:</span>
-                            <p className="text-blue-700 truncate">{alert.bilan_nom || `Bilan ${alert.id_bilan}`}</p>
+                            <span className="font-medium text-blue-800">Billon:</span>
+                            <p className="text-blue-700 truncate">{alert.bilan_nom || `Billon ${alert.id_bilan}`}</p>
                           </div>
                           <div className="text-sm text-gray-700 bg-green-50 px-3 py-2 rounded-lg border border-green-200">
                             <span className="font-medium text-green-800">Serre:</span>

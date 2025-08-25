@@ -48,7 +48,6 @@ export class ReportService {
       );
       return response.data;
     } catch (error) {
-      console.error("Error creating report:", error);
       throw error;
     }
   }
@@ -61,7 +60,6 @@ export class ReportService {
       );
       return response.data;
     } catch (error) {
-      console.error("Error fetching enterprise reports:", error);
       throw error;
     }
   }
@@ -74,7 +72,6 @@ export class ReportService {
       );
       return response.data;
     } catch (error) {
-      console.error("Error fetching assigned serre reports:", error);
       throw error;
     }
   }
@@ -82,12 +79,11 @@ export class ReportService {
   static async getReportsByUser(): Promise<ApiReport[]> {
     try {
       const response = await axios.get<ApiReport[]>(
-        `${API_BASE_URL}/rapport`,
+        `${API_BASE_URL}/rapports/user`,
         createAuthenticatedRequest()
       );
       return response.data;
     } catch (error) {
-      console.error("Error fetching user reports:", error);
       throw error;
     }
   }
@@ -112,6 +108,17 @@ export class ReportService {
     link.click();
     link.parentNode?.removeChild(link);
     window.URL.revokeObjectURL(blobUrl);
+  }
+
+  static async deleteReport(reportId: number): Promise<void> {
+    try {
+      await axios.delete(
+        `${API_BASE_URL}/rapport/${reportId}`,
+        createAuthenticatedRequest()
+      );
+    } catch (error) {
+      throw error;
+    }
   }
 }
 

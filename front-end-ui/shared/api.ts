@@ -48,10 +48,10 @@ export interface ExtendedSerre {
   nom: string;
   surface: number;
   domainId: string;
-  guideId: string;
+  guideId?: string;
   position: google.maps.LatLng[];
   center: google.maps.LatLng;
-  guide?: ExtendedGuideDeCulture;
+  guideData?: ExtendedGuideDeCulture;
 }
 
 export interface ExtendedGuideDeCulture extends Omit<GuideDeCulture, "date_debut_saison" | "date_fin_saison"> {

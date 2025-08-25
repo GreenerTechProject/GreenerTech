@@ -52,17 +52,13 @@ export const guideService = {
     guide: CreateGuideRequest,
   ): Promise<CreateGuideResponse> => {
     try {
-      console.log("Creating guide:", guide);
       const response = await axios.post<CreateGuideResponse>(
         `${API_BASE_URL}/guide_culture`,
         guide,
         createAuthenticatedRequest(),
       );
-      console.log("Guide creation response:", response.data);
       return response.data;
     } catch (error: any) {
-      console.error("Erreur lors de la création du guide:", error);
-
       const errorMessage =
         error.response?.data?.message ||
         "Erreur lors de la création du guide de culture";
@@ -83,8 +79,6 @@ export const guideService = {
       );
       return response.data;
     } catch (error: any) {
-      console.error("Erreur lors de la récupération des guides:", error);
-
       const errorMessage =
         error.response?.data?.message ||
         "Erreur lors de la récupération des guides de culture";
@@ -99,19 +93,76 @@ export const guideService = {
   // Get guides by serre ID
   getGuidesBySerre: async (serreId: number): Promise<GuideDeCulture[]> => {
     try {
-      console.log("Fetching guides for serre:", serreId);
       const response = await axios.get<GuideDeCulture[]>(
-        `${API_BASE_URL}/guide_culture/serre/${serreId}`, 
+        `${API_BASE_URL}/serre/${serreId}/guides`, 
         createAuthenticatedRequest()
       );
-      console.log("Received guides for serre:", response.data);
       return response.data;
     } catch (error: any) {
-      console.error("Erreur lors de la récupération des guides pour la serre:", error);
-
       const errorMessage =
         error.response?.data?.message ||
         "Erreur lors de la récupération des guides de culture pour cette serre";
+
+      throw {
+        message: errorMessage,
+        status: error.response?.status || 500,
+      } as ApiError;
+    }
+  },
+
+  // Get guide by ID
+  getGuideById: async (guideId: string): Promise<GuideDeCulture> => {
+    try {
+      const response = await axios.get<GuideDeCulture>(
+        `${API_BASE_URL}/guide_culture/${guideId}`, 
+        createAuthenticatedRequest()
+      );
+      return response.data;
+    } catch (error: any) {
+      const errorMessage =
+        error.response?.data?.message ||
+        "Erreur lors de la récupération du guide de culture";
+
+      throw {
+        message: errorMessage,
+        status: error.response?.status || 500,
+      } as ApiError;
+    }
+  },
+
+  // Update guide by ID
+  updateGuide: async (guideId: string, updateData: Partial<CreateGuideRequest>): Promise<GuideDeCulture> => {
+    try {
+      const response = await axios.put<GuideDeCulture>(
+        `${API_BASE_URL}/guide_culture/${guideId}`,
+        updateData,
+        createAuthenticatedRequest()
+      );
+      return response.data;
+    } catch (error: any) {
+      const errorMessage =
+        error.response?.data?.message ||
+        "Erreur lors de la mise à jour du guide de culture";
+
+      throw {
+        message: errorMessage,
+        status: error.response?.status || 500,
+      } as ApiError;
+    }
+  },
+
+  // Delete guide by ID
+  deleteGuide: async (guideId: string): Promise<{ message: string }> => {
+    try {
+      const response = await axios.delete<{ message: string }>(
+        `${API_BASE_URL}/guide_culture/${guideId}`,
+        createAuthenticatedRequest()
+      );
+      return response.data;
+    } catch (error: any) {
+      const errorMessage =
+        error.response?.data?.message ||
+        "Erreur lors de la suppression du guide de culture";
 
       throw {
         message: errorMessage,

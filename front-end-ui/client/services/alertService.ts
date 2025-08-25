@@ -1,16 +1,34 @@
 import axios from "axios";
 import { tokenManager } from "./authService";
-import {
-  Alert,
-  CreateAlertRequest,
-  UpdateAlertRequest,
-  AlertFilters,
-  AlertStats,
-} from "@/types/alert";
+import { Alert } from "@/types/alert";
+
+export interface CreateAlertRequest {
+  id_bilan: number;
+  id_serre: number;
+  maladie: string;
+  status: "résolue" | "non résolue";
+  status_alert: number;
+}
+
+export interface UpdateAlertRequest {
+  status?: "résolue" | "non résolue";
+  status_alert?: number;
+}
+
+export interface AlertStats {
+  totalAlerts: number;
+  resolvedAlerts: number;
+  unresolvedAlerts: number;
+  averageResolutionTime: number;
+}
+
+export interface ApiError {
+  message: string;
+  status: number;
+}
 
 const API_BASE_URL = `${window.location.protocol}//${window.location.hostname}:5000/api`;
 
-// Create axios instance with auth headers (aligned with domainService)
 const createAuthenticatedRequest = () => {
   const token = tokenManager.getToken();
   return {
@@ -21,192 +39,101 @@ const createAuthenticatedRequest = () => {
   };
 };
 
-export class AlertService {
-  static async getAllAlerts(
-    page = 1,
-    limit = 10,
-    filters?: AlertFilters
-  ): Promise<{ alerts: Alert[]; total: number }> {
+export const AlertService = {
+  getAllAlerts: async (page: number = 1, limit: number = 10): Promise<{ alerts: Alert[]; total: number }> => {
     try {
-      const params: any = {
-        page,
-        limit,
-      };
-
-      if (filters?.search) params.search = filters.search;
-      if (filters?.status) params.status = filters.status;
-      if (filters?.level) params.level = filters.level;
-      if (filters?.dateFrom) params.dateFrom = filters.dateFrom;
-      if (filters?.dateTo) params.dateTo = filters.dateTo;
-
-      const response = await axios.get(
-        `${API_BASE_URL}/alerte`,
-        { ...createAuthenticatedRequest(), params }
-      );
-
-      const data = response.data;
-      return {
-        alerts: Array.isArray(data) ? data : data.alerts || [],
-        total: Array.isArray(data) ? data.length : data.total || 0,
-      };
-    } catch (error) {
-      console.error("Error fetching alerts:", error);
-      throw error;
-    }
-  }
-
-  static async getAlertsByAssignedSerres(): Promise<Alert[]> {
-    try {
-      const response = await axios.get(
-        `${API_BASE_URL}/alerte`,
-        createAuthenticatedRequest()
-      );
+      const response = await axios.get(`${API_BASE_URL}/alerte`, {
+        ...createAuthenticatedRequest(),
+        params: { page, limit },
+      });
       return response.data;
-    } catch (error) {
-      console.error("Error fetching alerts by assigned serres:", error);
-      throw error;
+    } catch (error: any) {
+      const errorMessage = error.response?.data?.message || "Erreur lors de la récupération des alertes";
+      throw { message: errorMessage, status: error.response?.status || 500 } as ApiError;
     }
-  }
+  },
 
-  static async getAlert(id: number): Promise<Alert> {
+  getAlertsByAssignedSerres: async (): Promise<Alert[]> => {
     try {
-      const response = await axios.get(
-        `${API_BASE_URL}/alerte/${id}`,
-        createAuthenticatedRequest()
-      );
+      console.log("[DEBUG] Calling API endpoint:", `${API_BASE_URL}/alerte/assigned-serres`);
+      const response = await axios.get(`${API_BASE_URL}/alerte/assigned-serres`, createAuthenticatedRequest());
+      console.log("[DEBUG] API response status:", response.status);
+      console.log("[DEBUG] API response data:", response.data);
+      return response.data || [];
+    } catch (error: any) {
+      console.error("[DEBUG] API error:", error);
+      const errorMessage = error.response?.data?.message || "Erreur lors de la récupération des alertes par serres assignées";
+      throw { message: errorMessage, status: error.response?.status || 500 } as ApiError;
+    }
+  },
+
+  getAlert: async (id: number): Promise<Alert> => {
+    try {
+      const response = await axios.get(`${API_BASE_URL}/alerte/${id}`, createAuthenticatedRequest());
       return response.data;
-    } catch (error) {
-      console.error("Error fetching alert:", error);
-      throw error;
+    } catch (error: any) {
+      const errorMessage = error.response?.data?.message || "Erreur lors de la récupération de l'alerte";
+      throw { message: errorMessage, status: error.response?.status || 500 } as ApiError;
     }
-  }
+  },
 
-  static async createAlert(alert: CreateAlertRequest): Promise<Alert> {
+  createAlert: async (alert: CreateAlertRequest): Promise<Alert> => {
     try {
-      const response = await axios.post(
-        `${API_BASE_URL}/alerte`,
-        alert,
-        createAuthenticatedRequest()
-      );
+      const response = await axios.post(`${API_BASE_URL}/alerte`, alert, createAuthenticatedRequest());
       return response.data;
-    } catch (error) {
-      console.error("Error creating alert:", error);
-      throw error;
+    } catch (error: any) {
+      const errorMessage = error.response?.data?.message || "Erreur lors de la création de l'alerte";
+      throw { message: errorMessage, status: error.response?.status || 500 } as ApiError;
     }
-  }
+  },
 
-  static async updateAlert(
-    id: number,
-    alert: UpdateAlertRequest
-  ): Promise<Alert> {
+  updateAlert: async (id: number, updates: UpdateAlertRequest): Promise<Alert> => {
     try {
-      const response = await axios.put(
-        `${API_BASE_URL}/alerte/${id}`,
-        alert,
-        createAuthenticatedRequest()
-      );
+      const response = await axios.put(`${API_BASE_URL}/alerte/${id}`, updates, createAuthenticatedRequest());
       return response.data;
-    } catch (error) {
-      console.error("Error updating alert:", error);
-      throw error;
+    } catch (error: any) {
+      const errorMessage = error.response?.data?.message || "Erreur lors de la mise à jour de l'alerte";
+      throw { message: errorMessage, status: error.response?.status || 500 } as ApiError;
     }
-  }
+  },
 
-  static async deleteAlert(id: number): Promise<void> {
+  deleteAlert: async (id: number): Promise<{ message: string }> => {
     try {
-      await axios.delete(
-        `${API_BASE_URL}/alerte/${id}`,
-        createAuthenticatedRequest()
-      );
-    } catch (error) {
-      console.error("Error deleting alert:", error);
-      throw error;
-    }
-  }
-
-  static async getAlertStats(): Promise<AlertStats> {
-    try {
-      const { alerts } = await this.getAllAlerts(1, 1000);
-
-      const totalAlerts = alerts.length;
-      const resolvedAlerts = alerts.filter(
-        (alert) => alert.status === "résolue"
-      ).length;
-      const unresolvedAlerts = totalAlerts - resolvedAlerts;
-      const averageResolutionTime = 2.5; // mock
-
-      return {
-        totalAlerts,
-        resolvedAlerts,
-        unresolvedAlerts,
-        averageResolutionTime,
-      };
-    } catch (error) {
-      console.error("Error fetching alert stats:", error);
-      throw error;
-    }
-  }
-
-  static async getAlertsByEnterprise(entrepriseId: number): Promise<Alert[]> {
-    try {
-      const response = await axios.get(
-        `${API_BASE_URL}/alerte/entreprise/${entrepriseId}`,
-        createAuthenticatedRequest()
-      );
+      const response = await axios.delete(`${API_BASE_URL}/alerte/${id}`, createAuthenticatedRequest());
       return response.data;
-    } catch (error) {
-      console.error("Error fetching alerts by enterprise:", error);
-      throw error;
+    } catch (error: any) {
+      const errorMessage = error.response?.data?.message || "Erreur lors de la suppression de l'alerte";
+      throw { message: errorMessage, status: error.response?.status || 500 } as ApiError;
     }
-  }
+  },
 
-  static async getAlertsByDirectorEnterprise(): Promise<Alert[]> {
+  getAlertStats: async (): Promise<AlertStats> => {
     try {
-      const response = await axios.get(
-      `${API_BASE_URL}/alerte/director-enterprise`,
-      createAuthenticatedRequest()
-      );
+      const response = await axios.get(`${API_BASE_URL}/alerte/stats`, createAuthenticatedRequest());
       return response.data;
-    } catch (error) {
-      console.error("Error fetching alerts by director enterprise:", error);
-      throw error;
+    } catch (error: any) {
+      const errorMessage = error.response?.data?.message || "Erreur lors de la récupération des statistiques d'alertes";
+      throw { message: errorMessage, status: error.response?.status || 500 } as ApiError;
     }
-  }
+  },
 
-  static getAlertLevel(statusAlert: number): "High" | "Medium" | "Low" {
-    if (statusAlert === 2) return "High";
-    if (statusAlert === 1) return "Medium";
-    if (statusAlert === 0) return "Low";
-    return "Low"; // default fallback
-  }
-
-  static getAlertLevelColor(level: "High" | "Medium" | "Low"): string {
-    switch (level) {
-      case "High":
-        return "bg-red-100 text-red-800";
-      case "Medium":
-        return "bg-orange-100 text-orange-800";
-      case "Low":
-        return "bg-green-100 text-green-800";
-      default:
-        return "bg-gray-100 text-gray-800";
+  getAlertsByEnterprise: async (enterpriseId: number): Promise<Alert[]> => {
+    try {
+      const response = await axios.get(`${API_BASE_URL}/alerte/entreprise/${enterpriseId}`, createAuthenticatedRequest());
+      return response.data || [];
+    } catch (error: any) {
+      const errorMessage = error.response?.data?.message || "Erreur lors de la récupération des alertes par entreprise";
+      throw { message: errorMessage, status: error.response?.status || 500 } as ApiError;
     }
-  }
+  },
 
-  static getStatusColor(status: "résolue" | "non résolue"): string {
-    return status === "résolue"
-      ? "bg-green-100 text-green-800"
-      : "bg-red-100 text-red-800";
-  }
-
-  static formatDate(dateString: string): string {
-    const date = new Date(dateString);
-    return date.toLocaleDateString("fr-FR", {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  }
-}
+  getAlertsByDirectorEnterprise: async (): Promise<Alert[]> => {
+    try {
+      const response = await axios.get(`${API_BASE_URL}/alerte/director-enterprise`, createAuthenticatedRequest());
+      return response.data || [];
+    } catch (error: any) {
+      const errorMessage = error.response?.data?.message || "Erreur lors de la récupération des alertes de l'entreprise du directeur";
+      throw { message: errorMessage, status: error.response?.status || 500 } as ApiError;
+    }
+  },
+};

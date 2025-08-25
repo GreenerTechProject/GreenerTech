@@ -2,7 +2,7 @@ import axios from "axios";
 import { tokenManager } from "./authService";
 
 export interface Technician {
-  id: number;
+  id: number | string; // Allow string for temp IDs in setup mode
   fullName: string;
   email: string;
   role: "technicien_superieur" | "technicien";
@@ -10,7 +10,7 @@ export interface Technician {
   birthday: string | null;
   created_at: string | null;
   updated_at: string | null;
-  id_assigned: number | null;
+  id_assigned: number | string | null; // Allow string for temp IDs in setup mode
   setup_completed: boolean;
   directeur_valide: boolean;
   email_valide: boolean;
@@ -98,7 +98,6 @@ export const technicianService = {
       const results: CreateTechnicianResponse[] = [];
 
       for (const technician of technicians) {
-        console.log("Creating technician:", technician);
         const response = await axios.post<any>(
           `${API_BASE_URL}/technicien`,
           {
@@ -109,8 +108,6 @@ export const technicianService = {
           },
           createAuthenticatedRequest(),
         );
-        console.log("Technician creation response:", response.data);
-        // Normalize backend response { message, id }
         results.push({
           message: response.data?.message ?? "",
           id: response.data?.id ?? 0,
@@ -119,8 +116,6 @@ export const technicianService = {
 
       return results;
     } catch (error: any) {
-      console.error("Erreur lors de la création des techniciens:", error);
-
       const errorMessage =
         error.response?.data?.message ||
         "Erreur lors de la création des techniciens";
@@ -132,41 +127,25 @@ export const technicianService = {
     }
   },
 
-  // Get technicians by company ID
-  getTechniciansByCompany: async (companyId: number): Promise<Technician[]> => {
+  // Get all technicians by company ID (including both technicien and technicien_superieur)
+  getAllTechniciansByCompany: async (companyId: number): Promise<Technician[]> => {
     try {
-      console.log('[TechService] Fetching technicians for company:', companyId);
-      console.log('[TechService] API URL:', `${API_BASE_URL}/technicien/company/${companyId}`);
-      
       const response = await axios.get<{
         success: boolean;
         technicians: Technician[];
-      }>(`${API_BASE_URL}/technicien/company/${companyId}`,
+      }>(`${API_BASE_URL}/technicien/alltypes/company/${companyId}`,
         createAuthenticatedRequest());
   
-      console.log('[TechService] Response:', response.data);
-      
-      console.log('[TechService] Full response data:', response.data);
-      
-      // Handle different response formats
       if (response.data?.success && response.data?.technicians) {
-        console.log('[TechService] Success response with technicians array:', response.data.technicians);
         return response.data.technicians;
       } else if (Array.isArray(response.data)) {
-        console.log('[TechService] Direct array response:', response.data);
         return response.data;
       } else if (response.data?.technicians && Array.isArray(response.data.technicians)) {
-        console.log('[TechService] Response with technicians array (no success field):', response.data.technicians);
         return response.data.technicians;
       }
       
-      console.log('[TechService] Unexpected response format, returning empty array');
-      console.log('[TechService] Response data type:', typeof response.data);
-      console.log('[TechService] Response data keys:', Object.keys(response.data || {}));
       return [];
     } catch (error: any) {
-      console.error("Erreur lors de la récupération des techniciens:", error);
-
       const errorMessage =
         error.response?.data?.message ||
         "Erreur lors de la récupération des techniciens";
@@ -178,48 +157,29 @@ export const technicianService = {
     }
   },
 
-  getAllTechniciansByCompany: async (companyId: number): Promise<Technician[]> => {
+  // Get only technicians (not supervisors) by company ID
+  getTechniciansByCompany: async (companyId: number): Promise<Technician[]> => {
     try {
-      console.log('[TechService] Fetching technicians for company:', companyId);
-      console.log('[TechService] API URL:', `${API_BASE_URL}/technicien/alltypes/company/${companyId}`);
-      
-      const response = await axios.get<{
-        success: boolean;
-        technicians: Technician[];
-      }>(`${API_BASE_URL}/technicien/alltypes/company/${companyId}`,
-        createAuthenticatedRequest());
-  
-      console.log('[TechService] Response:', response.data);
-      
-      console.log('[TechService] Full response data:', response.data);
-      
-      // Handle different response formats
-      if (response.data?.success && response.data?.technicians) {
-        console.log('[TechService] Success response with technicians array:', response.data.technicians);
-        return response.data.technicians;
-      } else if (Array.isArray(response.data)) {
-        console.log('[TechService] Direct array response:', response.data);
-        return response.data;
-      } else if (response.data?.technicians && Array.isArray(response.data.technicians)) {
-        console.log('[TechService] Response with technicians array (no success field):', response.data.technicians);
-        return response.data.technicians;
-      }
-      
-      console.log('[TechService] Unexpected response format, returning empty array');
-      console.log('[TechService] Response data type:', typeof response.data);
-      console.log('[TechService] Response data keys:', Object.keys(response.data || {}));
-      return [];
+      const response = await axios.get(
+        `${API_BASE_URL}/technicien/company/${companyId}`,
+        createAuthenticatedRequest()
+      );
+      return response.data.technicians || [];
     } catch (error: any) {
-      console.error("Erreur lors de la récupération des techniciens:", error);
+      throw new Error(error.response?.data?.message || "Erreur lors de la récupération des techniciens");
+    }
+  },
 
-      const errorMessage =
-        error.response?.data?.message ||
-        "Erreur lors de la récupération des techniciens";
-
-      throw {
-        message: errorMessage,
-        status: error.response?.status || 500,
-      } as ApiError;
+  // Get all supervisors by company ID
+  getSupervisorsByCompany: async (companyId: number): Promise<Technician[]> => {
+    try {
+      const response = await axios.get(
+        `${API_BASE_URL}/technicien/supervisors/company/${companyId}`,
+        createAuthenticatedRequest()
+      );
+      return response.data.supervisors || [];
+    } catch (error: any) {
+      throw new Error(error.response?.data?.message || "Erreur lors de la récupération des superviseurs");
     }
   },
 
@@ -229,23 +189,17 @@ export const technicianService = {
     updates: UpdateTechnicianRequest
   ): Promise<UpdateTechnicianResponse> => {
     try {
-      console.log("Updating technician:", technicianId, "with updates:", updates);
-      
       const response = await axios.put<any>(
         `${API_BASE_URL}/technicien/${technicianId}`,
         updates,
         createAuthenticatedRequest(),
       );
       
-      console.log("Technician update response:", response.data);
-      
       return {
         message: response.data?.message ?? "Technicien mis à jour avec succès",
         user: response.data?.user ?? null,
       };
     } catch (error: any) {
-      console.error("Erreur lors de la mise à jour du technicien:", error);
-
       const errorMessage =
         error.response?.data?.error ||
         error.response?.data?.message ||
@@ -263,22 +217,16 @@ export const technicianService = {
     technicianId: number
   ): Promise<DeleteTechnicianResponse> => {
     try {
-      console.log("Deleting technician:", technicianId);
-      
       const response = await axios.delete<any>(
         `${API_BASE_URL}/technicien/${technicianId}`,
         createAuthenticatedRequest(),
       );
-      
-      console.log("Technician deletion response:", response.data);
       
       return {
         message: response.data?.message ?? "Technicien supprimé avec succès",
         deleted_user: response.data?.deleted_user ?? null,
       };
     } catch (error: any) {
-      console.error("Erreur lors de la suppression du technicien:", error);
-
       const errorMessage =
         error.response?.data?.error ||
         error.response?.data?.message ||
@@ -296,8 +244,6 @@ export const technicianService = {
     technicianId: number
   ): Promise<Intervention[]> => {
     try {
-      console.log("Fetching interventions for technician:", technicianId);
-      
       const response = await axios.get<{
         success: boolean;
         interventions: Intervention[];
@@ -305,15 +251,12 @@ export const technicianService = {
         createAuthenticatedRequest(),
       );
       
-      console.log("Interventions response:", response.data);
-      
       if (response.data?.success && response.data?.interventions) {
         return response.data.interventions;
       }
       
       return [];
     } catch (error: any) {
-      console.error("Erreur lors de la récupération des interventions:", error);
       return [];
     }
   },

@@ -11,10 +11,16 @@ interface ProtectedRouteProps {
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   children,
   requiredRole,
-  redirectTo = "/login",
+  redirectTo = "/",
 }) => {
   const { isAuthenticated, user, isLoading } = useAuth();
   const location = useLocation();
+  
+  console.log("ProtectedRoute - isAuthenticated:", isAuthenticated);
+  console.log("ProtectedRoute - user:", user);
+  console.log("ProtectedRoute - isLoading:", isLoading);
+  console.log("ProtectedRoute - requiredRole:", requiredRole);
+  console.log("ProtectedRoute - current location:", location.pathname);
 
   // Show loading state while checking authentication
   if (isLoading) {
@@ -39,7 +45,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
       return "/technician";
     }
     if (user?.role === "technicien_superieur") {
-      return "/technicien-sup";
+      return "/technicien-sup/map";
     }
     return "/dashboard";
   };

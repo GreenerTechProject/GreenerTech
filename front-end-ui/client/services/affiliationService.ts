@@ -70,7 +70,6 @@ export const affiliationService = {
       
       return [];
     } catch (error: any) {
-      console.error("Error fetching pending technicians:", error);
       throw {
         message: error.response?.data?.message || "Failed to fetch pending technicians",
         status: error.response?.status || 500,
@@ -87,7 +86,6 @@ export const affiliationService = {
   
       return response.data;
     } catch (error: any) {
-      console.error("Error fetching all technicians:", error);
       throw {
         message: error.response?.data?.message || "Failed to fetch technicians",
         status: error.response?.status || 500,
@@ -105,7 +103,6 @@ export const affiliationService = {
   
       return response.data;
     } catch (error: any) {
-      console.error("Error validating technician:", error);
       throw {
         message: error.response?.data?.message || "Failed to validate technician",
         status: error.response?.status || 500,
@@ -126,7 +123,6 @@ export const affiliationService = {
   
       return response.data;
     } catch (error: any) {
-      console.error("Error rejecting technician:", error);
       throw {
         message: error.response?.data?.message || "Failed to reject technician",
         status: error.response?.status || 500,
@@ -149,7 +145,6 @@ export const affiliationService = {
       
       return [];
     } catch (error: any) {
-      console.error("Error fetching company technicians:", error);
       throw {
         message: error.response?.data?.message || "Failed to fetch company technicians",
         status: error.response?.status || 500,

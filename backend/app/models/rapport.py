@@ -9,8 +9,8 @@ class Rapport(db.Model):
     description = Column(String(255), nullable=False)
     lien_pdf = Column(String(255), nullable=True)
 
-    id_serre = Column(Integer, ForeignKey('serres.id'), nullable=False)
-    user_id = Column(Integer, ForeignKey('users.id'), nullable=False)
+    id_serre = Column(Integer, ForeignKey('serres.id', ondelete='CASCADE'), nullable=False)
+    user_id = Column(Integer, ForeignKey('users.id', ondelete='CASCADE'), nullable=False)
     
 
 

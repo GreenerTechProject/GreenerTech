@@ -5,7 +5,7 @@ import { useAuth } from "../contexts/AuthContext";
 import { companyService, Company } from "../services/companyService";
 
 const roles = [
-  { value: "technicien-superieur", label: "Technicien Supérieur" },
+  { value: "technicien_superieur", label: "Technicien Supérieur" },
   { value: "technicien", label: "Technicien" },
 ];
 
@@ -79,7 +79,7 @@ export default function AffiliationRequest() {
   // If no role selected or wrong role, redirect to role selection
   if (
     !selectedRole ||
-    (selectedRole !== "technicien-superieur" && selectedRole !== "technicien")
+    (selectedRole !== "technicien_superieur" && selectedRole !== "technicien")
   ) {
     navigate("/role-selection", { replace: true });
     return null;
@@ -170,7 +170,7 @@ export default function AffiliationRequest() {
         alert(
           `Demande d'affiliation soumise avec succès! ID de demande: ${result.data.requestId}`,
         );
-        navigate("/login");
+        navigate("/");
       }
     } catch (error) {
       // Error is handled by AuthContext
@@ -198,7 +198,7 @@ export default function AffiliationRequest() {
         {/* Greener Tech Logo */}
         <div className="mb-8 lg:mb-12 mt-4">
           <img
-            src="https://api.builder.io/api/v1/image/assets/TEMP/b0dd8ca02c2a41b50f73559714fd5efaaf50e9cf?width=760"
+            src="/GreenerTech-Logo.jpg"
             alt="Greener Tech Logo"
             className="w-[280px] sm:w-[320px] lg:w-[317px] h-auto"
           />

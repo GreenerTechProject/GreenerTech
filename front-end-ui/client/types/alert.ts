@@ -17,21 +17,15 @@ export interface Alert {
 
 export interface CreateAlertRequest {
   id_bilan: number;
-  status_alert: number;
+  id_serre: number;
   maladie: string;
-  lien_image?: string;
-  x1?: number;
-  y1?: number;
-  status?: "résolue" | "non résolue";
+  status: "résolue" | "non résolue";
+  status_alert: number;
 }
 
 export interface UpdateAlertRequest {
-  status_alert?: number;
-  maladie?: string;
-  lien_image?: string;
-  x1?: number;
-  y1?: number;
   status?: "résolue" | "non résolue";
+  status_alert?: number;
 }
 
 export interface AlertsResponse {

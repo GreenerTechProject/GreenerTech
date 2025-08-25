@@ -5,8 +5,8 @@ class Autorisation_serre(db.Model):
     __tablename__ = 'autorisations_serre'
 
     id = Column(Integer, primary_key=True)
-    id_user = Column(Integer, ForeignKey('users.id'), nullable=False)
-    id_serre = Column(Integer, ForeignKey('serres.id'), nullable=False)
+    id_user = Column(Integer, ForeignKey('users.id', ondelete='CASCADE'), nullable=False)
+    id_serre = Column(Integer, ForeignKey('serres.id', ondelete='CASCADE'), nullable=False)
 
     # without this line I get duplicated rows , duplicated authorizations
     # this to avoid duplicate authorizations

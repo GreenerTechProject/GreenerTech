@@ -37,8 +37,8 @@ def get_autorisation_bilan(current_user, id_bilan):
 
 @token_required
 @role_required("directeur", "technicien_superieur")
-def delete_autorisation_bilan(current_user, autorisation_bilan_id):
-    autorisation_bilan = Autorisation_bilan.query.get(autorisation_bilan_id)
+def delete_autorisation_bilan(current_user, autorisation_id):
+    autorisation_bilan = Autorisation_bilan.query.get(autorisation_id)
     if not autorisation_bilan:
         return jsonify({"status": "error", "message": "Autorisation_bilan non trouvée"}), 404
 
@@ -47,7 +47,7 @@ def delete_autorisation_bilan(current_user, autorisation_bilan_id):
         db.session.commit()
         return jsonify({
             "status": "success",
-            "message": f"Autorisation_bilan {autorisation_bilan_id} supprimée avec succès"
+            "message": f"Autorisation_bilan {autorisation_id} supprimée avec succès"
         }), 200
 
     except Exception as e:
