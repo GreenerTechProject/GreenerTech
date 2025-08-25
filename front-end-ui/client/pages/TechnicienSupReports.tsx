@@ -385,7 +385,7 @@ export default function TechnicienSupReports() {
                             
                             {report.bilans && report.bilans.length > 0 && (
                               <div className="mb-3">
-                                <span className="text-xs sm:text-sm font-medium text-muted-foreground">Bilans: </span>
+                                <span className="text-xs sm:text-sm font-medium text-muted-foreground">Billons: </span>
                                 <span className="text-xs sm:text-sm text-foreground">{report.bilans.join(", ")}</span>
                               </div>
                             )}
