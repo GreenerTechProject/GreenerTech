@@ -2353,7 +2353,7 @@ export default function TechnicianMap() {
             <div className="flex space-x-2 mb-6 bg-gray-100 rounded-xl p-2">
               {[
                 { key: 'serres', label: 'Serres', icon: MapPin },
-                { key: 'bilan', label: 'Bilans', icon: FileText },
+                { key: 'bilan', label: 'Billons', icon: FileText },
                 { key: 'guides', label: 'Guides', icon: BookOpen },
                 { key: 'etat', label: 'État', icon: BarChart3 },
                 { key: 'alerts', label: 'Alertes', icon: Thermometer },
