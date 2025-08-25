@@ -31,7 +31,7 @@ import {
   GripVertical,
   X
 } from 'lucide-react';
-import TechHeader from '@/components/TechHeader';
+
 
 interface QRData {
   [key: string]: any;
@@ -791,12 +791,15 @@ export default function RobotControl() {
 
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <TechHeader role="technicien" />
+    <div className="flex h-screen bg-background">
+      {/* Header removed: provided by TechnicianLayout */}
 
-      <div className="flex h-[calc(100vh-85px)]">
-        {/* Minimized Left Sidebar - Controls */}
-        <div className="w-64 bg-white shadow-lg p-3 overflow-y-auto space-y-3">
+      <div className="flex-1 flex flex-col">
+        {/* Main Content */}
+        <main className="flex-1 overflow-auto">
+          <div className="flex h-full">
+            {/* Left Sidebar - Controls */}
+            <div className="w-64 bg-white shadow-lg p-3 overflow-y-auto space-y-3 border-r">
           {/* Camera Selection */}
           <Card className="text-sm">
             <CardHeader className="pb-2">
@@ -1215,6 +1218,8 @@ export default function RobotControl() {
             </div>
           </div>
         </div>
+          </div>
+        </main>
       </div>
     </div>
   );

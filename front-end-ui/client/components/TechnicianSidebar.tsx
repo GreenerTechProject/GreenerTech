@@ -52,38 +52,38 @@ export default function TechnicianSidebar({
         id: "accueil",
         label: "Accueil",
         icon: <Home className="h-5 w-5" />,
-        path: isSuperiorTechnician ? "/technicien-sup" : "/technician/dashboard",
+        path: isSuperiorTechnician ? `${basePath}` : `${basePath}/dashboard`,
       },
       {
         id: "carte",
         label: "Carte",
         icon: <Map className="h-5 w-5" />,
-        path: isSuperiorTechnician ? "/technicien-sup/map" : "/technician",
+        path: isSuperiorTechnician ? `${basePath}/map` : basePath,
       },
       // Only show missions for regular technicians, not for tech-sup
       ...(isSuperiorTechnician ? [] : [{
         id: "missions",
         label: "Missions",
         icon: <Target className="h-5 w-5" />,
-        path: "/technician/missions",
+        path: `${basePath}/missions`,
       }]),
       {
         id: "alertes",
         label: "Alertes",
         icon: <AlertTriangle className="h-5 w-5" />,
-        path: isSuperiorTechnician ? "/technicien-sup/alerts" : "/technician/alerts",
+        path: `${basePath}/alerts`,
       },
       {
         id: "interventions",
         label: "Interventions",
         icon: <Bell className="h-5 w-5" />,
-        path: isSuperiorTechnician ? "/technicien-sup/interventions" : "/technician/interventions",
+        path: `${basePath}/interventions`,
       },
       {
         id: "rapports",
         label: "Rapports",
         icon: <Bookmark className="h-5 w-5" />,
-        path: isSuperiorTechnician ? "/technicien-sup/reports" : "/technician/reports",
+        path: `${basePath}/reports`,
       },
       // Show Authorizations only for superior technicians
       ...(isSuperiorTechnician ? [
@@ -91,24 +91,24 @@ export default function TechnicianSidebar({
           id: "team",
           label: "Mon Équipe",
           icon: <Users className="h-5 w-5" />,
-          path: "/technicien-sup/team",
+          path: `${basePath}/team`,
         },
         {
           id: "authorizations",
           label: "Autorisations",
           icon: <Shield className="h-5 w-5" />,
-          path: "/technicien-sup/authorizations",
+          path: `${basePath}/authorizations`,
         }
       ] : []),
     ];
-    // Show Surveillance only for regular technicians, not for tech-sup
+    // Show Robot Control only for regular technicians, not for tech-sup
     if (!isSuperiorTechnician) {
       items.splice(2, 0,  {
         id: "robot-control",
         label: "Contrôle Robot",
         icon: <Bot className="h-5 w-5" />,
-        path: "/technician/technician/robot-control",
-    });
+        path: `${basePath}/robot-control`,
+      });
     }
     return items;
   })();
