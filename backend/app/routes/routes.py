@@ -144,7 +144,7 @@ all_bp.route('/mission_robot/<int:mission_id>', methods=['DELETE'])(delete_missi
 
 all_bp.route('/robot', methods=['POST'])(create_robot)
 all_bp.route('/robot', methods=['GET'])(get_all_robots)
-all_bp.route('/robot/<int:robot_id>', methods=['PUT'])(update_robot)
+all_bp.route('/robot', methods=['PUT'])(update_robot)
 all_bp.route('/robot/<int:robot_id>', methods=['GET'])(get_robot)
 all_bp.route('/robot/<int:robot_id>', methods=['DELETE'])(delete_robot)
 

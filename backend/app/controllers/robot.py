@@ -36,12 +36,13 @@ def get_robot(current_user, robot_id):
 
 @token_required
 @role_required("directeur", "technicien_superieur")
-def update_robot(current_user, robot_id):
-    robot = Robot.query.get(robot_id)
+def update_robot(current_user):
+    data = request.get_json()
+    referance = data.get('referance')
+    robot = Robot.query.filter_by(referance=referance).first()
     if not robot:
         return jsonify({"status": "error", "message": "Robot introuvable"}), 404
 
-    data = request.get_json()
     try:
         robot.nom = data.get('nom', robot.nom)
         robot.referance = data.get('referance', robot.referance)
