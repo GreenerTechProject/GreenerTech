@@ -20,6 +20,7 @@ from app.models.domaine import Domaine
 from app.models.serre import Serre
 from app.models.points_gps import GroupCor
 from app.models.bilan import Bilan
+from app.models.etat_bilan import Etat_bilan
 from app.models.autorisation_serre import Autorisation_serre
 from app.models.alerte import Alerte
 from app.models.intervention import Intervention, StatutInterventionEnum

@@ -86,7 +86,7 @@ export default function DirectorHeader({ isSidebarOpen, onMenuClick }: DirectorH
             <img
               src="/GreenerTech-Logo4T.png"
               alt="GreenerTech"
-              className="h-8 w-auto object-contain cursor-pointer hidden lg:block"
+              className="h-6 w-auto object-contain cursor-pointer hidden lg:block"
               title="Accueil"
               role="button"
               tabIndex={0}

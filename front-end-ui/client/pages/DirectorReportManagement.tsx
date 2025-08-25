@@ -4,6 +4,15 @@ import { Input } from '../components/ui/input';
 import { Badge } from '../components/ui/badge';
 import { Button } from '../components/ui/button';
 import { Label } from '../components/ui/label';
+import { Textarea } from '../components/ui/textarea';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '../components/ui/dialog';
+import { Alert, AlertDescription } from '../components/ui/alert';
 import {
   Select,
   SelectContent,
@@ -25,6 +34,9 @@ import {
   AlertTriangle,
   CheckCircle,
   Clock,
+  X,
+  Save,
+  AlertCircle,
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useSidebar } from '@/hooks/useSidebar';
@@ -47,6 +59,17 @@ const DirectorReportManagement: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [availableSerres, setAvailableSerres] = useState<any[]>([]);
   const [availableDomaines, setAvailableDomaines] = useState<any[]>([]);
+
+  // Report creation modal state
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [createFormData, setCreateFormData] = useState({
+    description: '',
+    selectedSerre: '',
+    dateDebut: '',
+    dateFin: '',
+  });
+  const [createLoading, setCreateLoading] = useState(false);
+  const [createError, setCreateError] = useState<string | null>(null);
 
   useEffect(() => {
     fetchReports();
@@ -128,10 +151,30 @@ const DirectorReportManagement: React.FC = () => {
     }
   };
 
+  const handleViewReport = (report: ApiReport) => {
+    // For now, just show an alert with report details
+    // You can implement a modal or navigate to a detailed view later
+    const details = `
+      Rapport: ${report.description}
+      Serre: ${report.serre_nom || `Serre ${report.serre_id}`}
+      Domaine: ${report.domaine_nom || 'N/A'}
+      Créé par: ${report.user_nom || 'N/A'}
+      Date: ${report.date ? new Date(report.date).toLocaleDateString("fr-FR") : 'N/A'}
+      PDF: ${report.lien_pdf ? 'Disponible' : 'Non disponible'}
+    `;
+
+    alert(details.trim());
+  };
+
   const handleDeleteReport = async (reportId: number) => {
+    if (!confirm("Êtes-vous sûr de vouloir supprimer ce rapport ? Cette action est irréversible.")) {
+      return;
+    }
+
     try {
       await ReportService.deleteReport(reportId);
       setReports(reports.filter(r => r.id !== reportId));
+      setFilteredReports(filteredReports.filter(r => r.id !== reportId));
       toast({
         title: "Rapport supprimé",
         description: "Le rapport a été supprimé avec succès",
@@ -143,6 +186,61 @@ const DirectorReportManagement: React.FC = () => {
         description: "Impossible de supprimer le rapport",
         variant: "destructive",
       });
+    }
+  };
+
+  // Report creation handlers
+  const handleCreateReport = () => {
+    setIsCreateModalOpen(true);
+    setCreateError(null);
+    // Set default date range (last 7 days)
+    const now = new Date();
+    const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    setCreateFormData({
+      description: '',
+      selectedSerre: '',
+      dateDebut: oneWeekAgo.toISOString().slice(0, 16),
+      dateFin: now.toISOString().slice(0, 16),
+    });
+  };
+
+  const handleCreateReportSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!createFormData.selectedSerre || !createFormData.description.trim()) {
+      setCreateError("Veuillez remplir tous les champs obligatoires");
+      return;
+    }
+
+    setCreateLoading(true);
+    setCreateError(null);
+
+    try {
+      const reportData = {
+        description: createFormData.description.trim(),
+        id_serre: parseInt(createFormData.selectedSerre),
+        date_debut: createFormData.dateDebut ? new Date(createFormData.dateDebut).toISOString() : undefined,
+        date_fin: createFormData.dateFin ? new Date(createFormData.dateFin).toISOString() : undefined,
+        ids_bilans: [], // Backend will populate based on serre and date range
+      };
+
+      const response = await ReportService.createReport(reportData);
+
+      toast({
+        title: "Rapport créé",
+        description: "Le rapport a été généré avec succès",
+      });
+
+      // Refresh reports list
+      fetchReports();
+
+      // Close modal
+      setIsCreateModalOpen(false);
+
+    } catch (error: any) {
+      setCreateError(error.response?.data?.message || "Erreur lors de la création du rapport");
+    } finally {
+      setCreateLoading(false);
     }
   };
 
@@ -366,7 +464,8 @@ const DirectorReportManagement: React.FC = () => {
                   </div>
 
                   <div className="sm:col-span-2 lg:col-span-1 flex items-end">
-                    <Button 
+                    <Button
+                      onClick={handleCreateReport}
                       className="w-full bg-[#B4CC5F] hover:bg-[#9BB84F] text-white font-medium transition-all duration-200 hover:scale-105 active:scale-95 shadow-lg hover:shadow-xl h-8 sm:h-10 text-xs sm:text-sm"
                     >
                       <Plus className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
@@ -477,6 +576,7 @@ const DirectorReportManagement: React.FC = () => {
                                   <Button
                                     variant="outline"
                                     size="sm"
+                                    onClick={() => handleViewReport(report)}
                                     className="h-8 w-8 sm:h-10 sm:w-10 p-0 border-blue-500 text-blue-500 hover:bg-blue-500 hover:text-white transition-all duration-200 hover:scale-105 active:scale-95"
                                     title="Voir le rapport"
                                   >
@@ -518,6 +618,133 @@ const DirectorReportManagement: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Report Creation Modal */}
+      <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
+        <DialogContent className="sm:max-w-[600px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center space-x-2">
+              <Plus className="h-5 w-5 text-[#B4CC5F]" />
+              <span>Créer un nouveau rapport</span>
+            </DialogTitle>
+          </DialogHeader>
+
+          <form onSubmit={handleCreateReportSubmit} className="space-y-6">
+            {/* Error Alert */}
+            {createError && (
+              <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>{createError}</AlertDescription>
+              </Alert>
+            )}
+
+            {/* Description */}
+            <div className="space-y-2">
+              <Label htmlFor="description" className="text-sm font-medium">
+                Description du rapport *
+              </Label>
+              <Textarea
+                id="description"
+                placeholder="Entrez une description détaillée du rapport..."
+                value={createFormData.description}
+                onChange={(e) => setCreateFormData({
+                  ...createFormData,
+                  description: e.target.value
+                })}
+                className="min-h-[100px] resize-none"
+                required
+              />
+            </div>
+
+            {/* Serre Selection */}
+            <div className="space-y-2">
+              <Label htmlFor="serre" className="text-sm font-medium">
+                Serre *
+              </Label>
+              <Select
+                value={createFormData.selectedSerre}
+                onValueChange={(value) => setCreateFormData({
+                  ...createFormData,
+                  selectedSerre: value
+                })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Sélectionnez une serre" />
+                </SelectTrigger>
+                <SelectContent>
+                  {availableSerres.map((serre) => (
+                    <SelectItem key={serre.id} value={serre.id?.toString() || ""}>
+                      {serre.nom || `Serre ${serre.id}`}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Date Range */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="dateDebut" className="text-sm font-medium">
+                  Date de début
+                </Label>
+                <Input
+                  id="dateDebut"
+                  type="datetime-local"
+                  value={createFormData.dateDebut}
+                  onChange={(e) => setCreateFormData({
+                    ...createFormData,
+                    dateDebut: e.target.value
+                  })}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="dateFin" className="text-sm font-medium">
+                  Date de fin
+                </Label>
+                <Input
+                  id="dateFin"
+                  type="datetime-local"
+                  value={createFormData.dateFin}
+                  onChange={(e) => setCreateFormData({
+                    ...createFormData,
+                    dateFin: e.target.value
+                  })}
+                />
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div className="flex justify-end space-x-3 pt-4">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setIsCreateModalOpen(false)}
+                disabled={createLoading}
+              >
+                Annuler
+              </Button>
+              <Button
+                type="submit"
+                disabled={createLoading}
+                className="bg-[#B4CC5F] hover:bg-[#9BB84F] text-white"
+              >
+                {createLoading ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    Création...
+                  </>
+                ) : (
+                  <>
+                    <Save className="h-4 w-4 mr-2" />
+                    Créer le rapport
+                  </>
+                )}
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

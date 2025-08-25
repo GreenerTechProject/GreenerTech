@@ -58,7 +58,6 @@ all_bp.route('/technicien/<int:id>', methods=['PUT'])(update_technicien)
 all_bp.route('/technicien/<int:id>', methods=['DELETE'])(delete_technicien)
 all_bp.route('/technicien/<int:id>/interventions', methods=['GET'])(get_interventions_by_technicien)
 # Generic routes come last
-all_bp.route('/technicien', methods=['GET'])(get_technicien_by_email)
 all_bp.route('/technicien', methods=['GET'])(get_all_technicians)
 
 
@@ -198,7 +197,7 @@ all_bp.route('/notifications/mark-all-vue', methods=['PUT'])(mark_all_notificati
 
 all_bp.route('/rapport', methods=['POST'])(create_rapport)
 all_bp.route('/rapport', methods=['GET'])(get_all_rapports)
-all_bp.route('/rapport', methods=['GET'])(get_rapports_by_user)
+all_bp.route('/rapports/user', methods=['GET'])(get_rapports_by_user)
 all_bp.route('/rapport/<int:id>', methods=['PUT'])(update_rapport)
 all_bp.route('/rapport/<int:id>', methods=['DELETE'])(delete_rapport)
 all_bp.route('/rapport/director-enterprise', methods=['GET'])(get_rapports_by_director_entreprise)

@@ -367,7 +367,7 @@ export default function TechnicienSupAlerts() {
                             <td className="py-2 sm:py-3 px-2 sm:px-4">
                               <div className="font-medium text-gray-900 text-xs sm:text-sm">{alert.maladie}</div>
                               {alert.bilan_nom && (
-                                <div className="text-xs text-gray-500 mt-1">Bilan: {alert.bilan_nom}</div>
+                                <div className="text-xs text-gray-500 mt-1">Billon: {alert.bilan_nom}</div>
                               )}
                             </td>
                             <td className="py-2 sm:py-3 px-2 sm:px-4">
@@ -457,7 +457,7 @@ export default function TechnicienSupAlerts() {
                                 <div className="flex-1 min-w-0">
                                   <h4 className="font-medium text-gray-900 text-sm truncate">{alert.maladie}</h4>
                                   {alert.bilan_nom && (
-                                    <p className="text-xs text-gray-500 mt-1">Bilan: {alert.bilan_nom}</p>
+                                    <p className="text-xs text-gray-500 mt-1">Billon: {alert.bilan_nom}</p>
                                   )}
                                 </div>
                                 <div className="flex items-center gap-2 ml-2">
@@ -604,7 +604,7 @@ export default function TechnicienSupAlerts() {
                         <>
                           <div><span className="font-medium">Serre:</span> {alerts.find(a => a.lien_image === selectedImage)?.serre_nom || "Inconnue"}</div>
                           <div><span className="font-medium">Domaine:</span> {alerts.find(a => a.lien_image === selectedImage)?.domaine_nom || "Inconnu"}</div>
-                          <div><span className="font-medium">Bilan:</span> {alerts.find(a => a.lien_image === selectedImage)?.bilan_nom || "Inconnu"}</div>
+                          <div><span className="font-medium">Billon:</span> {alerts.find(a => a.lien_image === selectedImage)?.bilan_nom || "Inconnu"}</div>
                           {alerts.find(a => a.lien_image === selectedImage)?.x1 !== undefined && 
                            alerts.find(a => a.lien_image === selectedImage)?.y1 !== undefined && (
                             <div><span className="font-medium">Coordonnées:</span> ({alerts.find(a => a.lien_image === selectedImage)?.x1?.toFixed(2)}, {alerts.find(a => a.lien_image === selectedImage)?.y1?.toFixed(2)})</div>
