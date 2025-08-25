@@ -15,7 +15,7 @@ const Logout = () => {
     sessionStorage.clear();
 
     // Redirect to login (or home)
-    navigate("/login");
+            navigate("/");
   }, [navigate]);
 
   return <p>Déconnexion en cours...</p>;

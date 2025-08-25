@@ -25,6 +25,7 @@ from app.models.alerte import Alerte
 from app.models.intervention import Intervention, StatutInterventionEnum
 from app.models.type_tache import TypeTache
 from app.models.rapport import Rapport
+from app.models.notification import Notification
 
 
 def _ensure_polygon(group_id: int, center_lat: float, center_lng: float, size_deg: float = 0.001) -> None:
@@ -259,48 +260,98 @@ def _create_type_taches() -> list:
         raise
 
 
-def _create_interventions_for_serre(serre: Serre, tech_user: User, task_types: list, count: int = 3) -> None:
-    """Create interventions for a specific serre"""
+# Interventions creation removed - no more mock interventions
+
+
+def _clear_all_notifications() -> None:
+    """Clear all existing notifications from the database"""
     try:
-        # Check if interventions already exist for this serre
-        if Intervention.query.filter_by(id_serre=serre.id).first():
-            print(f"[seed] Interventions already exist for serre {serre.nom}, skipping...")
+        notification_count = Notification.query.count()
+        if notification_count > 0:
+            Notification.query.delete()
+            print(f"[seed] Cleared {notification_count} existing notifications")
+        else:
+            print("[seed] No notifications to clear")
+    except Exception as e:
+        print(f"[seed] Error clearing notifications: {e}")
+        raise
+
+
+def _clear_all_interventions() -> None:
+    """Clear all existing interventions from the database"""
+    try:
+        intervention_count = Intervention.query.count()
+        if intervention_count > 0:
+            Intervention.query.delete()
+            print(f"[seed] Cleared {intervention_count} existing interventions")
+        else:
+            print("[seed] No interventions to clear")
+    except Exception as e:
+        print(f"[seed] Error clearing interventions: {e}")
+        raise
+
+
+def _auto_assign_technicians_to_supervisors():
+    """Automatically assign unassigned technicians to supervisors based on serre access with load balancing"""
+    try:
+        # Get all unassigned technicians
+        unassigned_techs = User.query.filter_by(role='technicien', id_assigned=None).all()
+        if not unassigned_techs:
+            print("[seed] All technicians are already assigned")
             return
         
-        today = datetime.now(timezone(timedelta(hours=1))).date()
+        # Get all supervisors
+        supervisors = User.query.filter_by(role='technicien_superieur').all()
+        if not supervisors:
+            print("[seed] No supervisors found for auto-assignment")
+            return
         
-        for i in range(count):
-            # Random task type
-            task_type = choice(task_types)
-            
-            # Random status (mostly in progress, some completed)
-            status = choice([StatutInterventionEnum.ENCOURS, StatutInterventionEnum.TERMINE])
-            
-            # Random dates
-            start_date = today - timedelta(days=randint(0, 30))
-            end_date = None
-            if status == StatutInterventionEnum.TERMINE:
-                end_date = start_date + timedelta(days=randint(1, 7))
-            
-            # Random charges
-            charges = round(uniform(50.0, 500.0), 2)
-            
-            intervention = Intervention(
-                description=f"Intervention {i+1} sur {serre.nom}: {task_type.nom}",
-                status=status,
-                date_debut=start_date,
-                date_fin=end_date,
-                total_charges=charges,
-                id_user=tech_user.id,
-                id_serre=serre.id,
-                id_type_tache=task_type.id,
-                valid=choice([True, False])  # Random validation status
-            )
-            db.session.add(intervention)
+        print(f"[seed] Auto-assigning {len(unassigned_techs)} unassigned technicians...")
         
-        print(f"[seed] Created {count} interventions for serre {serre.nom}")
+        # Track current load for each supervisor
+        supervisor_load = {sup.id: 0 for sup in supervisors}
+        
+        # Count existing assignments
+        for sup in supervisors:
+            existing_techs = User.query.filter_by(role='technicien', id_assigned=sup.id).count()
+            supervisor_load[sup.id] = existing_techs
+            print(f"[seed] Supervisor {sup.email} currently has {existing_techs} technicians")
+        
+        for tech in unassigned_techs:
+            # Find supervisors with overlapping serre access
+            tech_serres = set(auth.id_serre for auth in Autorisation_serre.query.filter_by(id_user=tech.id).all())
+            
+            # Find all supervisors with access to tech's serres
+            eligible_supervisors = []
+            for sup in supervisors:
+                sup_serres = set(auth.id_serre for auth in Autorisation_serre.query.filter_by(id_user=sup.id).all())
+                overlap = len(tech_serres & sup_serres)
+                if overlap > 0:
+                    eligible_supervisors.append((sup, overlap))
+            
+            if eligible_supervisors:
+                # Sort by overlap (descending) and then by current load (ascending)
+                eligible_supervisors.sort(key=lambda x: (-x[1], supervisor_load[x[0].id]))
+                
+                # Pick the supervisor with best overlap and lowest load
+                best_supervisor, overlap = eligible_supervisors[0]
+                
+                tech.id_assigned = best_supervisor.id
+                supervisor_load[best_supervisor.id] += 1
+                
+                print(f"[seed] Assigned {tech.email} to {best_supervisor.email} (overlap: {overlap} serres, load: {supervisor_load[best_supervisor.id]})")
+            else:
+                # No overlap found - assign to supervisor with lowest load
+                best_supervisor = min(supervisors, key=lambda x: supervisor_load[x.id])
+                tech.id_assigned = best_supervisor.id
+                supervisor_load[best_supervisor.id] += 1
+                
+                print(f"[seed] No serre overlap - assigned {tech.email} to {best_supervisor.email} (lowest load: {supervisor_load[best_supervisor.id]})")
+        
+        print("[seed] Auto-assignment completed with load balancing")
+        
     except Exception as e:
-        print(f"[seed] Error creating interventions for serre {serre.nom}: {e}")
+        print(f"[seed] Error in auto-assignment: {e}")
         raise
 
 
@@ -369,18 +420,43 @@ def seed() -> None:
 
             print("[seed] Starting to create entities...")
             
+            # 0) Clear all existing data
+            print("[seed] Clearing existing notifications...")
+            _clear_all_notifications()
+            
+            print("[seed] Clearing existing interventions...")
+            _clear_all_interventions()
+            
             # 1) Users
             print("[seed] Creating users...")
             director = _get_or_create_user("director@greenfarm.dev", "directeur", "Alice Director")
             tech_sup = _get_or_create_user("techsup@greenfarm.dev", "technicien_superieur", "Bob TechSup")
+            tech_sup2 = _get_or_create_user("techsup2@greenfarm.dev", "technicien_superieur", "David TechSup2")
             tech = _get_or_create_user("tech@greenfarm.dev", "technicien", "Charlie Tech")
+            tech2 = _get_or_create_user("tech2@greenfarm.dev", "technicien", "Eve Tech2")
+            tech3 = _get_or_create_user("tech3@greenfarm.dev", "technicien", "Frank Tech3")
 
             # 2) Company
             print("[seed] Creating company...")
             company = _get_or_create_company(director)
             # Make sure technicians belong to same company for role-based queries
             tech_sup.id_entreprise = company.id
+            tech_sup2.id_entreprise = company.id
             tech.id_entreprise = company.id
+            tech2.id_entreprise = company.id
+            tech3.id_entreprise = company.id
+            
+            # 🔴 FIX: Link technicians to supervisors for notifications to work
+            tech.id_assigned = tech_sup.id
+            tech2.id_assigned = tech_sup.id
+            tech3.id_assigned = tech_sup2.id
+            
+            print(f"[seed] Linked technician {tech.email} to supervisor {tech_sup.email}")
+            print(f"[seed] Linked technician {tech2.email} to supervisor {tech_sup.email}")
+            print(f"[seed] Linked technician {tech3.email} to supervisor {tech_sup2.email}")
+            
+            # 🔴 ADD: Auto-assignment function for future scalability
+            _auto_assign_technicians_to_supervisors()
 
             # 3) Domaines
             print("[seed] Creating domaines...")
@@ -402,7 +478,10 @@ def seed() -> None:
             print("[seed] Creating authorizations...")
             _ensure_serre_authorization(tech_sup, serre_1)
             _ensure_serre_authorization(tech_sup, serre_2)
+            _ensure_serre_authorization(tech_sup2, serre_1)
             _ensure_serre_authorization(tech, serre_1)
+            _ensure_serre_authorization(tech2, serre_1)
+            _ensure_serre_authorization(tech3, serre_2)
 
             # 7) Alerts
             print("[seed] Creating alerts...")
@@ -414,11 +493,8 @@ def seed() -> None:
             print("[seed] Creating task types...")
             task_types = _create_type_taches()
 
-            # 9) Interventions
-            print("[seed] Creating interventions...")
-            _create_interventions_for_serre(serre_1, tech, task_types, count=4)
-            _create_interventions_for_serre(serre_2, tech_sup, task_types, count=3)
-            _create_interventions_for_serre(serre_1, tech_sup, task_types, count=2)
+            # 9) Interventions - REMOVED
+            print("[seed] Skipping interventions creation...")
 
             # 10) Reports
             print("[seed] Creating reports...")
@@ -441,8 +517,9 @@ def seed() -> None:
             print(f"  - Authorizations: {Autorisation_serre.query.count()}")
             print(f"  - Polygons: {GroupCor.query.count()}")
             print(f"  - Task Types: {TypeTache.query.count()}")
-            print(f"  - Interventions: {Intervention.query.count()}")
+            print(f"  - Interventions: 0 (cleared)")
             print(f"  - Reports: {Rapport.query.count()}")
+            print(f"  - Notifications: 0 (cleared)")
             
     except Exception as e:
         print(f"[seed] Error during seeding: {e}")

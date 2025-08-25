@@ -3,12 +3,14 @@ import { useState, useEffect } from 'react';
 export function useSidebar() {
   const [isOpen, setIsOpen] = useState(false);
 
-  // Close sidebar when screen becomes large
+  // Keep sidebar collapsed on desktop by default, closed on mobile
   useEffect(() => {
     const handleResize = () => {
       if (window.innerWidth >= 1024) {
-        setIsOpen(true);
+        // Desktop: keep collapsed by default
+        setIsOpen(false);
       } else {
+        // Mobile: keep closed
         setIsOpen(false);
       }
     };

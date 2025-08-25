@@ -5,9 +5,7 @@ import { serreService } from '../services/serreService';
 import { technicianService } from '../services/technicianService';
 import { typeTacheService } from '../services/typeTacheService';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
-import DirectorHeader from '@/components/DirectorHeader';
-import DirectorSidebar from '@/components/DirectorSidebar';
-import { useSidebar } from '@/hooks/useSidebar';
+import DirectorLayout from '@/components/DirectorLayout';
 import { Badge } from '../components/ui/badge';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
@@ -35,7 +33,6 @@ interface DirectorIntervention {
 
 const DirectorInterventionManagement: React.FC = () => {
   const [interventions, setInterventions] = useState<DirectorIntervention[]>([]);
-  const { isOpen, setIsOpen } = useSidebar();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
@@ -224,212 +221,202 @@ const DirectorInterventionManagement: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex overflow-x-hidden">
-      <DirectorSidebar isOpen={isOpen} setIsOpen={setIsOpen} />
-      <div className="flex-1 transition-all duration-300">
-        <DirectorHeader />
-        <main className="p-4 sm:p-6 lg:p-8">
+    <DirectorLayout title="Gestion des Interventions" subtitle="Gérez toutes les interventions de votre entreprise">
       <div className="mx-auto max-w-screen-2xl">
-      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 sm:gap-4 mt-4 mb-6 text-center sm:text-left">
-        <h1 className="text-2xl font-bold text-gray-900">Gestion des Interventions</h1>
-        <p className="text-gray-600 text-sm sm:text-base">Gérez toutes les interventions de votre entreprise</p>
-      </div>
-      
-      {/* Statistics */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-        <Card>
-          <CardContent className="pt-6">
-            <div className="text-2xl font-bold text-blue-600">
-              {interventions.length}
-            </div>
-            <p className="text-sm text-gray-600">Total Interventions</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-6">
-            <div className="text-2xl font-bold text-yellow-600">
-              {interventions.filter(i => i.statut === 'encours').length}
-            </div>
-            <p className="text-sm text-gray-600">En cours</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-6">
-            <div className="text-2xl font-bold text-green-600">
-              {interventions.filter(i => i.statut === 'terminé').length}
-            </div>
-            <p className="text-sm text-gray-600">Terminées</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-6">
-            <div className="text-2xl font-bold text-gray-600">
-              {interventions.filter(i => i.statut === 'en_attente').length}
-            </div>
-            <p className="text-sm text-gray-600">En attente</p>
-          </CardContent>
-        </Card>
-      </div>
-
-
-      {/* Filters */}
-      <Card className="mb-6">
-        <CardContent className="p-4">
-          <div className="flex flex-col sm:flex-row sm:flex-wrap gap-3 sm:gap-4">
-            <div className="flex-1 min-w-0">
-              <Input
-                placeholder="Rechercher par description ou ID..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
-            </div>
-            <div className="w-full sm:w-48">
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Filtrer par statut" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Tous les statuts</SelectItem>
-                  <SelectItem value="encours">En cours</SelectItem>
-                  <SelectItem value="terminé">Terminée</SelectItem>
-                  <SelectItem value="en_attente">En attente</SelectItem>
-                  <SelectItem value="annulee">Annulée</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <Button onClick={fetchInterventions} variant="outline" className="w-full sm:w-auto">
-              Actualiser
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Interventions Table */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Liste des Interventions</CardTitle>
-        </CardHeader>
-        <CardContent className="p-4">
-          {filteredInterventions.length === 0 ? (
-            <div className="text-center py-8 text-gray-500">Aucune intervention trouvée</div>
-          ) : (
-            <>
-              {/* Mobile, tablet, and mid-large list (below 1145px) */}
-              <div className="lg2:hidden space-y-4">
-                {filteredInterventions.map((intervention) => (
-                  <div key={intervention.id} className="p-4 border rounded-lg">
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="font-semibold text-gray-900">#{intervention.id}</div>
-                      {getStatusBadge(intervention.statut)}
-                    </div>
-                    <div className="text-sm text-gray-600 mb-1">
-                      {intervention.date_intervention ? new Date(intervention.date_intervention).toLocaleDateString('fr-FR') : 'N/A'}
-                    </div>
-                    <div className="text-sm text-gray-800 mb-2 truncate" title={intervention.description}>{intervention.description}</div>
-                    <div className="grid grid-cols-2 gap-2 text-sm">
-                      <div className="text-gray-500">Serre</div>
-                      <div className="truncate">{getSerreDisplay(intervention.serre_id, intervention.serre_nom)}</div>
-                      <div className="text-gray-500">Technicien</div>
-                      <div className="truncate">{getTechnicianDisplay(intervention.technicien_id, intervention.technicien_nom)}</div>
-                      <div className="text-gray-500">Type</div>
-                      <div>{intervention.type_tache_nom || typeNameById[intervention.type_tache_id] || intervention.type_tache_id}</div>
-                      <div className="text-gray-500">Charges</div>
-                      <div>{formatMAD(intervention.total_charges)}</div>
-                    </div>
-                    <div className="mt-3 flex justify-end">
-                      <Button size="sm" variant="outline" className="w-full sm:w-auto" onClick={() => { setActiveIntervention(intervention); setDetailsOpen(true); }}>
-                        Voir détails
-                      </Button>
-                    </div>
-                  </div>
-                ))}
+        {/* Statistics */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+          <Card>
+            <CardContent className="pt-6">
+              <div className="text-2xl font-bold text-blue-600">
+                {interventions.length}
               </div>
-
-              {/* Desktop table (≥1145px) */}
-              <div className="hidden lg2:block w-full max-w-full overflow-x-auto scrollbar-mobile">
-                <Table className="w-full lg:min-w-[900px] xl:min-w-[1100px]">
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>ID</TableHead>
-                      <TableHead>Date</TableHead>
-                      <TableHead>Description</TableHead>
-                      <TableHead>Statut</TableHead>
-                      <TableHead>Serre</TableHead>
-                      <TableHead>Technicien</TableHead>
-                      <TableHead>Type Tâche</TableHead>
-                      <TableHead>Charges</TableHead>
-                      <TableHead>Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredInterventions.map((intervention) => (
-                      <TableRow key={intervention.id}>
-                        <TableCell className="font-medium">{intervention.id}</TableCell>
-                        <TableCell>
-                          {intervention.date_intervention ? 
-                            new Date(intervention.date_intervention).toLocaleDateString('fr-FR') : 
-                            'N/A'
-                          }
-                        </TableCell>
-                        <TableCell className="max-w-xs lg:max-w-none truncate lg:whitespace-normal lg:overflow-visible" title={intervention.description}>
-                          {intervention.description}
-                        </TableCell>
-                        <TableCell>{getStatusBadge(intervention.statut)}</TableCell>
-                        <TableCell className="max-w-[200px] lg:max-w-[280px] xl:max-w-[360px] 2xl:max-w-none truncate lg:whitespace-normal lg:overflow-visible">{getSerreDisplay(intervention.serre_id, intervention.serre_nom)}</TableCell>
-                        <TableCell className="max-w-[200px] lg:max-w-[280px] xl:max-w-[360px] 2xl:max-w-none truncate lg:whitespace-normal lg:overflow-visible">{getTechnicianDisplay(intervention.technicien_id, intervention.technicien_nom)}</TableCell>
-                        <TableCell>{intervention.type_tache_nom || typeNameById[intervention.type_tache_id] || intervention.type_tache_id}</TableCell>
-                        <TableCell>{formatMAD(intervention.total_charges)}</TableCell>
-                        <TableCell>
-                          <Button size="sm" variant="outline" onClick={() => { setActiveIntervention(intervention); setDetailsOpen(true); }}>
-                            Voir détails
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+              <p className="text-sm text-gray-600">Total Interventions</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="pt-6">
+              <div className="text-2xl font-bold text-yellow-600">
+                {interventions.filter(i => i.statut === 'encours').length}
               </div>
-            </>
-          )}
-        </CardContent>
-      </Card>
-
-      <Dialog open={detailsOpen} onOpenChange={setDetailsOpen}>
-        <DialogContent className="sm:max-w-[640px] w-[calc(100vw-2rem)]">
-          <DialogHeader>
-            <DialogTitle>Détails de l'intervention #{activeIntervention?.id}</DialogTitle>
-            <DialogDescription>Informations complètes de l'intervention sélectionnée.</DialogDescription>
-          </DialogHeader>
-          {activeIntervention && (
-            <div className="space-y-2">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                <div className="text-sm text-gray-500">Date début</div>
-                <div>{activeIntervention.date_intervention ? new Date(activeIntervention.date_intervention).toLocaleString('fr-FR') : 'N/A'}</div>
-                <div className="text-sm text-gray-500">Date fin</div>
-                <div>{activeIntervention.date_fin ? new Date(activeIntervention.date_fin).toLocaleString('fr-FR') : '—'}</div>
-                <div className="text-sm text-gray-500">Serre</div>
-                <div>{getSerreDisplay(activeIntervention.serre_id, activeIntervention.serre_nom)}</div>
-                <div className="text-sm text-gray-500">Technicien</div>
-                <div>{getTechnicianDisplay(activeIntervention.technicien_id, activeIntervention.technicien_nom)}</div>
-                <div className="text-sm text-gray-500">Type Tâche</div>
-                <div>{activeIntervention.type_tache_nom || typeNameById[activeIntervention.type_tache_id] || activeIntervention.type_tache_id}</div>
-                <div className="text-sm text-gray-500">Statut</div>
-                <div>{getStatusBadge(activeIntervention.statut)}</div>
-                <div className="text-sm text-gray-500">Charges</div>
-                <div>{formatMAD(activeIntervention.total_charges)}</div>
+              <p className="text-sm text-gray-600">En cours</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="pt-6">
+              <div className="text-2xl font-bold text-green-600">
+                {interventions.filter(i => i.statut === 'terminé').length}
               </div>
-              <div className="pt-2">
-                <div className="text-sm text-gray-500 mb-1">Description</div>
-                <div className="text-sm whitespace-pre-wrap">{activeIntervention.description || '—'}</div>
+              <p className="text-sm text-gray-600">Terminées</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="pt-6">
+              <div className="text-2xl font-bold text-gray-600">
+                {interventions.filter(i => i.statut === 'en_attente').length}
               </div>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
+              <p className="text-sm text-gray-600">En attente</p>
+            </CardContent>
+          </Card>
         </div>
-        </main>
+
+        {/* Filters */}
+        <Card className="mb-6">
+          <CardContent className="p-4">
+            <div className="flex flex-col sm:flex-row sm:flex-wrap gap-3 sm:gap-4">
+              <div className="flex-1 min-w-0">
+                <Input
+                  placeholder="Rechercher par description ou ID..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
+              </div>
+              <div className="w-full sm:w-48">
+                <Select value={statusFilter} onValueChange={setStatusFilter}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Filtrer par statut" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Tous les statuts</SelectItem>
+                    <SelectItem value="encours">En cours</SelectItem>
+                    <SelectItem value="terminé">Terminée</SelectItem>
+                    <SelectItem value="en_attente">En attente</SelectItem>
+                    <SelectItem value="annulee">Annulée</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Interventions List */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Interventions ({filteredInterventions.length})</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {filteredInterventions.length === 0 ? (
+              <div className="text-center py-8">
+                <p className="text-gray-500">Aucune intervention trouvée</p>
+              </div>
+            ) : (
+              <>
+                {/* Mobile cards (≤1144px) */}
+                <div className="lg2:hidden space-y-4">
+                  {filteredInterventions.map((intervention) => (
+                    <div key={intervention.id} className="border rounded-lg p-4 space-y-3">
+                      <div className="flex justify-between items-start">
+                        <div className="space-y-1">
+                          <h3 className="font-semibold">Intervention #{intervention.id}</h3>
+                          <p className="text-sm text-gray-600">
+                            {intervention.date_intervention ? 
+                              new Date(intervention.date_intervention).toLocaleDateString('fr-FR') : 
+                              'N/A'
+                            }
+                          </p>
+                        </div>
+                        {getStatusBadge(intervention.statut)}
+                      </div>
+                      
+                      <div className="text-sm space-y-1">
+                        <p><span className="font-medium">Description:</span> {intervention.description || 'N/A'}</p>
+                        <p><span className="font-medium">Serre:</span> {getSerreDisplay(intervention.serre_id, intervention.serre_nom)}</p>
+                        <p><span className="font-medium">Technicien:</span> {getTechnicianDisplay(intervention.technicien_id, intervention.technicien_nom)}</p>
+                        <p><span className="font-medium">Type:</span> {intervention.type_tache_nom || typeNameById[intervention.type_tache_id] || intervention.type_tache_id}</p>
+                        <p><span className="font-medium">Charges:</span> {formatMAD(intervention.total_charges)}</p>
+                      </div>
+                      
+                      <div className="mt-3 flex justify-end">
+                        <Button size="sm" variant="outline" className="w-full sm:w-auto" onClick={() => { setActiveIntervention(intervention); setDetailsOpen(true); }}>
+                          Voir détails
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Desktop table (≥1145px) */}
+                <div className="hidden lg2:block w-full max-w-full overflow-x-auto scrollbar-mobile">
+                  <Table className="w-full lg:min-w-[900px] xl:min-w-[1100px]">
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>ID</TableHead>
+                        <TableHead>Date</TableHead>
+                        <TableHead>Description</TableHead>
+                        <TableHead>Statut</TableHead>
+                        <TableHead>Serre</TableHead>
+                        <TableHead>Technicien</TableHead>
+                        <TableHead>Type Tâche</TableHead>
+                        <TableHead>Charges</TableHead>
+                        <TableHead>Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {filteredInterventions.map((intervention) => (
+                        <TableRow key={intervention.id}>
+                          <TableCell className="font-medium">{intervention.id}</TableCell>
+                          <TableCell>
+                            {intervention.date_intervention ? 
+                              new Date(intervention.date_intervention).toLocaleDateString('fr-FR') : 
+                              'N/A'
+                            }
+                          </TableCell>
+                          <TableCell className="max-w-xs lg:max-w-none truncate lg:whitespace-normal lg:overflow-visible" title={intervention.description}>
+                            {intervention.description}
+                          </TableCell>
+                          <TableCell>{getStatusBadge(intervention.statut)}</TableCell>
+                          <TableCell className="max-w-[200px] lg:max-w-[280px] xl:max-w-[360px] 2xl:max-w-none truncate lg:whitespace-normal lg:overflow-visible">{getSerreDisplay(intervention.serre_id, intervention.serre_nom)}</TableCell>
+                          <TableCell className="max-w-[200px] lg:max-w-[280px] xl:max-w-[360px] 2xl:max-w-none truncate lg:whitespace-normal lg:overflow-visible">{getTechnicianDisplay(intervention.technicien_id, intervention.technicien_nom)}</TableCell>
+                          <TableCell>{intervention.type_tache_nom || typeNameById[intervention.type_tache_id] || intervention.type_tache_id}</TableCell>
+                          <TableCell>{formatMAD(intervention.total_charges)}</TableCell>
+                          <TableCell>
+                            <Button size="sm" variant="outline" onClick={() => { setActiveIntervention(intervention); setDetailsOpen(true); }}>
+                              Voir détails
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              </>
+            )}
+          </CardContent>
+        </Card>
+
+        <Dialog open={detailsOpen} onOpenChange={setDetailsOpen}>
+          <DialogContent className="sm:max-w-[640px] w-[calc(100vw-2rem)]">
+            <DialogHeader>
+              <DialogTitle>Détails de l'intervention #{activeIntervention?.id}</DialogTitle>
+              <DialogDescription>Informations complètes de l'intervention sélectionnée.</DialogDescription>
+            </DialogHeader>
+            {activeIntervention && (
+              <div className="space-y-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <div className="text-sm text-gray-500">Date début</div>
+                  <div>{activeIntervention.date_intervention ? new Date(activeIntervention.date_intervention).toLocaleString('fr-FR') : 'N/A'}</div>
+                  <div className="text-sm text-gray-500">Date fin</div>
+                  <div>{activeIntervention.date_fin ? new Date(activeIntervention.date_fin).toLocaleString('fr-FR') : '—'}</div>
+                  <div className="text-sm text-gray-500">Serre</div>
+                  <div>{getSerreDisplay(activeIntervention.serre_id, activeIntervention.serre_nom)}</div>
+                  <div className="text-sm text-gray-500">Technicien</div>
+                  <div>{getTechnicianDisplay(activeIntervention.technicien_id, activeIntervention.technicien_nom)}</div>
+                  <div className="text-sm text-gray-500">Type Tâche</div>
+                  <div>{activeIntervention.type_tache_nom || typeNameById[activeIntervention.type_tache_id] || activeIntervention.type_tache_id}</div>
+                  <div className="text-sm text-gray-500">Statut</div>
+                  <div>{getStatusBadge(activeIntervention.statut)}</div>
+                  <div className="text-sm text-gray-500">Charges</div>
+                  <div>{formatMAD(activeIntervention.total_charges)}</div>
+                </div>
+                <div className="pt-2">
+                  <div className="text-sm text-gray-500 mb-1">Description</div>
+                  <div className="text-sm whitespace-pre-wrap">{activeIntervention.description || '—'}</div>
+                </div>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
       </div>
-    </div>
+    </DirectorLayout>
   );
 };
 

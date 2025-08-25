@@ -3,9 +3,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Bell, AlertTriangle, CheckCircle, Clock, Search, Image, ZoomIn, ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
-import TechHeader from "@/components/TechHeader";
 import {AlertService} from "@/services/alertService";
 import { Alert } from "@/types/alert";
 
@@ -138,14 +138,14 @@ export default function AlertsPage() {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#B4CC5F]"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-greener-600"></div>
       </div>
     );
   }
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <TechHeader role="technicien" />
+      {/* Header removed: provided by TechnicianLayout */}
       
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">

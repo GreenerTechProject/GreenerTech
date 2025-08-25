@@ -6,6 +6,7 @@ from app.models.bilan import Bilan
 from database.config import db
 from app.utils.security import token_required, role_required
 from app.models.user import User
+from app.models.autorisation_serre import Autorisation_serre
 
 @token_required
 @role_required("directeur")
@@ -148,7 +149,8 @@ def get_company_map_data(current_user, company_id):
                         "lat": serre.center_lat or domain.center_lat or 0,
                         "lng": serre.center_lng or domain.center_lng or 0
                     },
-                    "bilans": []
+                    "bilans": [],
+                    "guideId": None  # Initialize guideId as None
                 }
                 
                 # Fetch position points for the serre
@@ -161,6 +163,12 @@ def get_company_map_data(current_user, company_id):
                         }
                         for point in sorted(serre.group_coords, key=lambda x: x.ordre)
                     ]
+                
+                # Fetch guide culture for this serre
+                from app.models.guide_culture import GuideCulture
+                guide = GuideCulture.query.filter_by(id_serre=serre.id).first()
+                if guide:
+                    serre_dict["guideId"] = str(guide.id)
                 
                 # Fetch bilans for this serre
                 bilans = Bilan.query.filter_by(id_serre=serre.id).all()
@@ -199,3 +207,124 @@ def get_company_map_data(current_user, company_id):
     except Exception as e:
         print("Erreur dans get_company_map_data:", str(e))
         return jsonify({"error": "Erreur lors de la récupération des données de la carte"}), 500
+
+@token_required
+@role_required("directeur", "technicien_superieur")
+def get_company_assignments(current_user):
+    """Get all assignments and authorizations for the current user's company"""
+    try:
+        # Get the company of the current user
+        entreprise = Entreprise.query.filter_by(id_user=current_user.id).first()
+        if not entreprise:
+            return jsonify({"message": "Aucune entreprise trouvée"}), 404
+
+        # Get all users in the company (technicians and supervisors)
+        all_users = User.query.filter_by(id_entreprise=entreprise.id).all()
+
+        # Separate technicians and supervisors
+        technicians = [user for user in all_users if user.role == "technicien"]
+        supervisors = [user for user in all_users if user.role == "technicien_superieur"]
+
+        # Get all serres in the company
+        domaines = Domaine.query.filter_by(id_entreprise=entreprise.id).all()
+        domaine_ids = [d.id for d in domaines]
+        serres = Serre.query.filter(Serre.id_domaine.in_(domaine_ids)).all()
+
+        # Get all serre authorizations
+        serre_authorizations = Autorisation_serre.query.join(Serre).filter(
+            Serre.id_domaine.in_(domaine_ids)
+        ).all()
+
+        # Build detailed serre information with assigned and authorized users
+        serres_detailed = []
+        for serre in serres:
+            # Get users directly assigned to this serre
+            assigned_users = [
+                {
+                    "user_id": auth.id_user,
+                    "user_name": next((u.name for u in all_users if u.id == auth.id_user), "Unknown"),
+                    "user_role": next((u.role for u in all_users if u.id == auth.id_user), "Unknown"),
+                    "user_email": next((u.email for u in all_users if u.id == auth.id_user), "Unknown")
+                }
+                for auth in serre_authorizations if auth.id_serre == serre.id
+            ]
+
+            # Get users with authorization on this serre (same as assigned for now)
+            authorized_users = assigned_users.copy()
+
+            # Get domain information
+            domaine = next((d for d in domaines if d.id == serre.id_domaine), None)
+
+            serre_info = {
+                "id": serre.id,
+                "nom": serre.nom,
+                "surface": serre.surface,
+                "center_lat": serre.center_lat,
+                "center_lng": serre.center_lng,
+                "id_domaine": serre.id_domaine,
+                "domaine_nom": domaine.nom if domaine else "Unknown",
+                "techniciens_assignes": assigned_users,
+                "techniciens_autorises": authorized_users,
+                "total_assignes": len(assigned_users),
+                "total_autorises": len(authorized_users),
+                "guideId": None  # Initialize guideId as None
+            }
+            
+            # Fetch guide culture for this serre
+            from app.models.guide_culture import GuideCulture
+            guide = GuideCulture.query.filter_by(id_serre=serre.id).first()
+            if guide:
+                serre_info["guideId"] = guide.id
+                
+            serres_detailed.append(serre_info)
+
+        # Build supervisor assignments (technicians assigned to supervisors)
+        supervisor_assignments = []
+        for tech in technicians:
+            if tech.id_assigned:
+                supervisor = next((s for s in supervisors if s.id == tech.id_assigned), None)
+                if supervisor:
+                    supervisor_assignments.append({
+                        "technicien_id": tech.id,
+                        "technicien_name": tech.name,
+                        "technicien_email": tech.email,
+                        "superviseur_id": supervisor.id,
+                        "superviseur_name": supervisor.name,
+                        "superviseur_email": supervisor.email
+                    })
+
+        # Build the comprehensive response
+        assignments = {
+            "company": entreprise.to_dict(),
+            "users": {
+                "all_users": [user.to_dict() for user in all_users],
+                "techniciens": [user.to_dict() for user in technicians],
+                "techniciens_superieurs": [user.to_dict() for user in supervisors]
+            },
+            "serres": serres_detailed,
+            "assignations_directes": [
+                {
+                    "user_id": auth.id_user,
+                    "serre_id": auth.id_serre,
+                    "serre_name": next((s.nom for s in serres if s.id == auth.id_serre), "Unknown"),
+                    "user_name": next((u.name for u in all_users if u.id == auth.id_user), "Unknown"),
+                    "user_role": next((u.role for u in all_users if u.id == auth.id_user), "Unknown")
+                }
+                for auth in serre_authorizations
+            ],
+            "assignations_superviseurs": supervisor_assignments,
+            "statistiques": {
+                "total_serres": len(serres),
+                "total_utilisateurs": len(all_users),
+                "total_techniciens": len(technicians),
+                "total_techniciens_superieurs": len(supervisors),
+                "total_assignations_directes": len(serre_authorizations),
+                "total_assignations_superviseurs": len(supervisor_assignments)
+            }
+        }
+
+        return jsonify(assignments), 200
+
+    except Exception as e:
+        print(f"Error in get_company_assignments: {str(e)}")
+        return jsonify({"error": "Erreur lors de la récupération des assignations"}), 500

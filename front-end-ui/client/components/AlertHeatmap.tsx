@@ -33,7 +33,7 @@ const SAMPLE_ALERTS: Alert[] = [
     status: "non résolue",
     x1: -6.8498,
     y1: 33.9716,
-    bilan_nom: "Bilan Serre 1",
+    bilan_nom: "Billon Serre 1",
     serre_nom: "Serre Principale",
     domaine_nom: "Domaine Nord"
   },
@@ -46,7 +46,7 @@ const SAMPLE_ALERTS: Alert[] = [
     status: "non résolue",
     x1: -6.8500,
     y1: 33.9718,
-    bilan_nom: "Bilan Serre 2",
+    bilan_nom: "Billon Serre 2",
     serre_nom: "Serre Secondaire",
     domaine_nom: "Domaine Nord"
   },
@@ -59,7 +59,7 @@ const SAMPLE_ALERTS: Alert[] = [
     status: "résolue",
     x1: -6.8495,
     y1: 33.9714,
-    bilan_nom: "Bilan Serre 3",
+    bilan_nom: "Billon Serre 3",
     serre_nom: "Serre Est",
     domaine_nom: "Domaine Sud"
   },
@@ -72,7 +72,7 @@ const SAMPLE_ALERTS: Alert[] = [
     status: "non résolue",
     x1: -6.8505,
     y1: 33.9720,
-    bilan_nom: "Bilan Serre 4",
+    bilan_nom: "Billon Serre 4",
     serre_nom: "Serre Ouest",
     domaine_nom: "Domaine Sud"
   },
@@ -85,7 +85,7 @@ const SAMPLE_ALERTS: Alert[] = [
     status: "non résolue",
     x1: -6.8490,
     y1: 33.9710,
-    bilan_nom: "Bilan Serre 5",
+    bilan_nom: "Billon Serre 5",
     serre_nom: "Serre Centre",
     domaine_nom: "Domaine Nord"
   }
@@ -503,14 +503,14 @@ export default function AlertHeatmap({
         {usingSampleData && (
           <div className="mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded-md">
             <p className="text-xs text-yellow-800">
-              ⚠️ Données de démonstration - Connectez-vous à votre backend pour voir vos vraies alertes
+              Données de démonstration - Connectez-vous à votre backend pour voir vos vraies alertes
             </p>
           </div>
         )}
         {!googleMapsLoaded && (
           <div className="mt-2 p-2 bg-blue-50 border border-blue-200 rounded-md">
             <p className="text-xs text-blue-800">
-              🔄 Chargement de Google Maps...
+              Chargement de Google Maps...
             </p>
           </div>
         )}
@@ -622,58 +622,26 @@ export default function AlertHeatmap({
             )}
 
             {/* Legend in bottom-left corner: 3 alert levels */}
-            <div className="absolute bottom-4 left-4 z-10">
+            <div className="absolute bottom-4 left-4 ">
               <div className="rounded-2xl shadow-xl border border-black/5 dark:border-white/10 backdrop-blur bg-white/80 dark:bg-gray-900/70 p-3">
                 <h4 className="text-xs font-semibold text-gray-900 dark:text-gray-100 mb-2">Niveaux d'alerte</h4>
                 <div className="space-y-2">
                   <div className="flex items-center gap-2">
                     <div className="w-3 h-3 rounded-full bg-[#EF4444]"></div>
-                    <span className="text-xs text-gray-700 dark:text-gray-300">Élevée (2)</span>
+                    <span className="text-xs text-gray-700 dark:text-gray-300">Élevée</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <div className="w-3 h-3 rounded-full bg-[#F97316]"></div>
-                    <span className="text-xs text-gray-700 dark:text-gray-300">Moyenne (1)</span>
+                    <span className="text-xs text-gray-700 dark:text-gray-300">Moyenne</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <div className="w-3 h-3 rounded-full bg-[#EAB308]"></div>
-                    <span className="text-xs text-gray-700 dark:text-gray-300">Faible (0)</span>
+                    <span className="text-xs text-gray-700 dark:text-gray-300">Faible</span>
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* Data source indicator in top-right corner */}
-            <div className="absolute top-4 right-4 z-10">
-              <div className={`rounded-lg shadow-lg border p-2 ${
-                usingSampleData 
-                  ? 'bg-yellow-50 border-yellow-200 text-yellow-800' 
-                  : 'bg-green-50 border-green-200 text-green-800'
-              }`}>
-                <div className="flex items-center gap-2 text-xs font-medium">
-                  {usingSampleData ? (
-                    <>
-                      <AlertTriangle className="h-3 w-3" />
-                      <span>Démo</span>
-                    </>
-                  ) : (
-                    <>
-                      <CheckCircle2 className="h-3 w-3" />
-                      <span>Données réelles</span>
-                    </>
-                  )}
-                </div>
-                {usingSampleData && (
-                  <div className="text-[10px] text-yellow-700 mt-1">
-                    {alerts.length} alertes de démonstration
-                  </div>
-                )}
-                {!usingSampleData && (
-                  <div className="text-[10px] text-green-700 mt-1">
-                    {alerts.length} alertes réelles
-                  </div>
-                )}
-              </div>
-            </div>
           </div>
 
 

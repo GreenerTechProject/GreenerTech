@@ -45,7 +45,7 @@ export default function TechnicianReportsPage() {
   const fetchReports = async () => {
     try {
       setLoading(true);
-      const data = await ReportService.getReportsByAssignedSerres();
+      const data = await ReportService.getReportsByUser();
       setReports(data);
     } catch (error) {
       console.error("Error fetching reports:", error);
@@ -125,7 +125,6 @@ export default function TechnicianReportsPage() {
 
   return (
     <div className="min-h-screen bg-white dark:bg-gray-900">
-      <TechHeader role="technicien" />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
 
         {/* Stats Cards */}

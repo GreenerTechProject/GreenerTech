@@ -97,7 +97,7 @@ export default function ReportsPage() {
       case "production":
         return "bg-green-100 text-green-800 border-green-300";
       case "quality":
-        return "bg-purple-100 text-purple-800 border-purple-300";
+        return "bg-green-100 text-green-800 border-green-300";
       default:
         return "bg-gray-100 text-gray-800 border-gray-300";
     }

@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useTechnicianSidebar } from "../contexts/TechnicianSidebarContext";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -14,6 +15,8 @@ import {
   X,
   Bot,
   Target,
+  Shield,
+  Users,
 } from "lucide-react";
 
 interface SidebarItem {
@@ -33,7 +36,8 @@ export default function TechnicianSidebar({
   userRole,
   onInterventionClick,
 }: TechnicianSidebarProps) {
-  const [isOpen, setIsOpen] = useState(false);
+  // Share open state with layout
+  const { isOpen, setIsOpen } = useTechnicianSidebar();
   const { logout } = useAuth();
   const navigate = useNavigate();
 
@@ -48,7 +52,7 @@ export default function TechnicianSidebar({
         id: "accueil",
         label: "Accueil",
         icon: <Home className="h-5 w-5" />,
-        path: isSuperiorTechnician ? "/technicien-sup/home" : "/technician/dashboard",
+        path: isSuperiorTechnician ? "/technicien-sup" : "/technician/dashboard",
       },
       {
         id: "carte",
@@ -56,12 +60,13 @@ export default function TechnicianSidebar({
         icon: <Map className="h-5 w-5" />,
         path: isSuperiorTechnician ? "/technicien-sup/map" : "/technician",
       },
-      {
+      // Only show missions for regular technicians, not for tech-sup
+      ...(isSuperiorTechnician ? [] : [{
         id: "missions",
         label: "Missions",
         icon: <Target className="h-5 w-5" />,
-        path: isSuperiorTechnician ? "/technicien-sup/missions" : "/technician/missions",
-      },
+        path: "/technician/missions",
+      }]),
       {
         id: "alertes",
         label: "Alertes",
@@ -80,7 +85,21 @@ export default function TechnicianSidebar({
         icon: <Bookmark className="h-5 w-5" />,
         path: isSuperiorTechnician ? "/technicien-sup/reports" : "/technician/reports",
       },
-	
+      // Show Authorizations only for superior technicians
+      ...(isSuperiorTechnician ? [
+        {
+          id: "team",
+          label: "Mon Équipe",
+          icon: <Users className="h-5 w-5" />,
+          path: "/technicien-sup/team",
+        },
+        {
+          id: "authorizations",
+          label: "Autorisations",
+          icon: <Shield className="h-5 w-5" />,
+          path: "/technicien-sup/authorizations",
+        }
+      ] : []),
     ];
     // Show Surveillance only for regular technicians, not for tech-sup
     if (!isSuperiorTechnician) {
@@ -88,8 +107,8 @@ export default function TechnicianSidebar({
         id: "robot-control",
         label: "Contrôle Robot",
         icon: <Bot className="h-5 w-5" />,
-        path: "/technician/robot-control",
-	  });
+        path: "/technician/technician/robot-control",
+    });
     }
     return items;
   })();
@@ -110,122 +129,117 @@ export default function TechnicianSidebar({
 
   return (
     <>
-      {/* Menu Button - Now positioned for header integration */}
-      <Button
-        onClick={() => setIsOpen(!isOpen)}
-        className={cn(
-          "h-10 w-10 rounded-lg transition-all duration-300",
-          "bg-muted hover:bg-muted/80 text-foreground border border-border",
-          isOpen && "bg-muted/80",
-          "lg:h-11 lg:w-11 xl:h-12 xl:w-12",
-        )}
-        size="sm"
-      >
-        {isOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-      </Button>
-
       {/* Backdrop */}
       {isOpen && (
         <div
-          className="fixed inset-0 bg-black/20 backdrop-blur-sm z-40 transition-opacity duration-300 lg:hidden"
+          className="fixed inset-0 bg-black/50 z-40 lg:hidden"
           onClick={() => setIsOpen(false)}
         />
       )}
 
-      {/* Sidebar */}
+      {/* Sidebar (Director style) */}
       <div
         className={cn(
-          "fixed top-1/2 left-4 lg:left-8 xl:left-12 2xl:left-16 transform -translate-y-1/2 w-72 lg:w-80 xl:w-96 2xl:w-[28rem] bg-card shadow-2xl z-50 transition-all duration-300 ease-in-out",
-          "rounded-2xl border border-border/50 backdrop-blur-sm bg-card/95",
+          "fixed left-0 top-0 z-50 h-screen bg-white border-r border-gray-200 shadow-lg transform transition-all duration-300 ease-in-out overflow-hidden",
+          "lg:translate-x-0 lg:sticky lg:top-0 lg:z-10 lg:h-screen",
+          isOpen ? "translate-x-0" : "-translate-x-full",
+          // Mobile width
+          "w-80",
+          // Desktop widths toggle: collapsed (icon-only) vs expanded
           isOpen
-            ? "translate-x-0 opacity-100 scale-100"
-            : "-translate-x-full opacity-0 scale-95",
-          "max-h-[85vh] overflow-hidden",
-          "lg:max-w-sm xl:max-w-md 2xl:max-w-lg",
-          "pointer-events-auto",
-          "max-w-[calc(100vw-2rem)]",
-          "lg:max-w-none",
+            ? "lg:w-64 lg:min-w-64 lg:max-w-64 xl:w-64 xl:min-w-64 xl:max-w-64 2xl:w-80 2xl:min-w-80 2xl:max-w-80"
+            : "lg:w-20 lg:min-w-20 lg:max-w-20 xl:w-20 xl:min-w-20 xl:max-w-20 2xl:w-20 2xl:min-w-20 2xl:max-w-20",
+          "flex flex-col h-full"
         )}
       >
-        {/* Sidebar Content */}
-        <div className="flex flex-col h-full">
-          {/* Header */}
-          <div className="p-6 border-b border-border">
-            <h2 className="text-lg font-semibold text-foreground">Navigation</h2>
-            <p className="text-sm text-muted-foreground mt-1">
-              {isSuperiorTechnician
-                ? "Technicien Supérieur"
-                : "Technicien"}
-            </p>
-          </div>
-
-          {/* Navigation Items */}
-          <nav className="flex-1 px-4 py-6 overflow-y-auto">
-            <ul className="space-y-1">
-              {sidebarItems.map((item) => (
-                <li key={item.id}>
-                  <button
-                    onClick={() => handleItemClick(item)}
-                    className={cn(
-                      "flex items-center w-full px-4 py-3 text-left rounded-lg transition-all duration-200",
-                      "hover:bg-muted focus:outline-none focus:bg-muted focus:ring-2 focus:ring-greener-400/20",
-                      "group transform hover:scale-[1.02]",
-                      item.id === "interventions" && "bg-gradient-to-r from-blue-50 to-blue-100 hover:from-blue-100 hover:to-blue-200 border border-blue-200 shadow-sm"
-                    )}
-                  >
-                    <div className="flex items-center space-x-3">
-                      <div className={cn(
-                        "transition-colors duration-200",
-                        item.id === "interventions"
-                          ? "text-blue-600 group-hover:text-blue-700"
-                          : "text-muted-foreground group-hover:text-greener-500"
-                      )}>
-                        {item.icon}
-                      </div>
-                      <span className={cn(
-                        "font-medium text-sm transition-colors duration-200",
-                        item.id === "interventions"
-                          ? "text-blue-700 group-hover:text-blue-800 font-semibold"
-                          : "text-foreground group-hover:text-foreground"
-                      )}>
-                        {item.label}
-                        {item.id === "interventions" && (
-                          <span className="inline-block ml-2 px-2 py-0.5 text-xs bg-blue-500 text-white rounded-full animate-pulse">
-                            +
-                          </span>
-                        )}
-                      </span>
-                    </div>
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </nav>
-
-          {/* Logout Section */}
-          <div className="p-4 border-t border-border">
-            <button
-              onClick={handleLogout}
-              className={cn(
-                "flex items-center w-full px-4 py-3 text-left rounded-lg transition-all duration-200",
-                "hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-red-400/20",
-                "group",
-              )}
+        {/* Header */}
+        <div className="flex items-center justify-between p-6 border-b border-gray-200 flex-shrink-0">
+          <div className="flex items-center space-x-3">
+            {/* Hamburger menu button */}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setIsOpen(!isOpen)}
+              className="p-2"
+              title={isOpen ? "Réduire la barre latérale" : "Agrandir la barre latérale"}
             >
-              <div className="flex items-center space-x-3">
-                <div className="text-muted-foreground group-hover:text-red-500 transition-colors duration-200">
-                  <LogOut className="h-5 w-5" />
-                </div>
-                <span className="text-foreground font-medium text-sm group-hover:text-red-600 transition-colors duration-200">
-                  Se déconnecter
-                </span>
-              </div>
-            </button>
+              {isOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+            </Button>
+            
+            <div className={cn("block", isOpen ? "lg:block" : "lg:hidden") }>
+              <h1 className="font-semibold text-gray-900">{isSuperiorTechnician ? "Technicien Supérieur" : "Technicien"}</h1>
+              <p className="text-sm text-gray-500">Navigation</p>
+            </div>
           </div>
         </div>
 
-        {/* Decorative gradient border */}
-        <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-greener-100/20 via-transparent to-blue-100/20 pointer-events-none" />
+        {/* Navigation */}
+        <nav className="flex-1 p-4 space-y-2 overflow-y-auto min-h-0">
+          {sidebarItems.map((item) => (
+            <div key={item.id} className="relative group">
+              <button
+                onClick={() => handleItemClick(item)}
+                className={cn(
+                  "w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-left transition-all duration-200",
+                  "hover:bg-gray-50 hover:shadow-sm",
+                  // When collapsed on desktop, center icons; when expanded, show full spacing
+                  isOpen
+                    ? "lg:justify-start lg:px-4 lg:py-3 lg:space-x-3"
+                    : "lg:justify-center lg:px-2 lg:py-3 lg:space-x-0",
+                  item.id === (isSuperiorTechnician ? "alertes" : "carte")
+                    ? "bg-greener-50 text-greener-700 border border-greener-200 shadow-sm"
+                    : "text-gray-700 hover:text-gray-900"
+                )}
+                title={item.label}
+              >
+                <div className="h-5 w-5 flex-shrink-0 text-gray-500">
+                  {item.icon}
+                </div>
+                <div className={cn("flex-1 min-w-0", isOpen ? "lg:block" : "lg:hidden") }>
+                  <div className="font-medium text-sm text-gray-900">{item.label}</div>
+                </div>
+              </button>
+
+              {/* Tooltip for collapsed */}
+              <div className={cn(
+                "absolute z-50 px-3 py-2 bg-gray-900 text-white text-sm rounded-lg shadow-lg whitespace-nowrap lg:left-full lg:ml-2 lg:top-1/2 lg:transform lg:-translate-y-1/2 opacity-0 group-hover:opacity-100 hidden",
+                isOpen ? "lg:hidden" : "lg:block"
+              )}>
+                {item.label}
+                <div className="absolute left-0 top-1/2 transform -translate-y-1/2 -translate-x-1 w-2 h-2 bg-gray-900 rotate-45"></div>
+              </div>
+            </div>
+          ))}
+        </nav>
+
+        {/* Footer */}
+        <div className="p-4 border-t border-gray-200 bg-white flex-shrink-0">
+          <div className="relative group">
+            <button
+              onClick={handleLogout}
+              title="Se déconnecter"
+              className={cn(
+                "w-full flex items-center p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors duration-200",
+                isOpen ? "justify-start space-x-3" : "justify-center"
+              )}
+            >
+              <LogOut className="h-5 w-5 text-gray-500" />
+              <div className={cn("flex-1 min-w-0", isOpen ? "lg:block" : "lg:hidden") }>
+                <div className="text-sm font-medium text-gray-900">Se déconnecter</div>
+                <div className="text-xs text-gray-500">Terminer la session</div>
+              </div>
+            </button>
+
+            {/* Tooltip when collapsed on desktop */}
+            <div className={cn(
+              "absolute z-50 px-3 py-2 bg-gray-900 text-white text-sm rounded-lg shadow-lg whitespace-nowrap lg:left-full lg:ml-2 lg:top-1/2 lg:transform lg:-translate-y-1/2 opacity-0 group-hover:opacity-100 hidden",
+              isOpen ? "lg:hidden" : "lg:block"
+            )}>
+              Se déconnecter
+              <div className="absolute left-0 top-1/2 transform -translate-y-1/2 -translate-x-1 w-2 h-2 bg-gray-900 rotate-45"></div>
+            </div>
+          </div>
+        </div>
       </div>
     </>
   );

@@ -4,6 +4,8 @@ import { useAuth } from "../contexts/AuthContext";
 import { useAuthRedirect } from "../hooks/useAuthRedirect";
 
 export default function Index() {
+  console.log("Index (Login) component is rendering!");
+  
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [errorMsg, setErrorMsg] = useState("");
@@ -51,26 +53,30 @@ export default function Index() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-r from-[#D6E2CC] to-[#D6E2CC] flex flex-col lg:flex-row">
+    <div className="min-h-screen bg-gradient-to-br from-[#EAF4E1] via-[#FCFEFF] to-[#EAF4E1] flex flex-col lg:flex-row">
       {/* Background Image Section */}
-      <div className="flex-1 relative min-h-[40vh] lg:min-h-screen">
+      <div className="hidden lg:block flex-1 relative min-h-[40vh] lg:min-h-screen">
         <img
-          src="https://cdn.builder.io/api/v1/image/assets%2Fe15cdeeaccbb4f9394b3b7b30742eb8c%2F97c345a448194346ad4e8ebc4b57f88f?format=webp&width=800"
-          alt="Farmer using tablet in field"
+          src="https://cdn.builder.io/api/v1/image/assets%2Fe15cdeeaccbb4f9394b3b7b30742eb8c%2F97c345a448194346ad4e8ebc4b57f88f?format=webp&width=1200"
+          alt="Agriculture intelligente"
           className="absolute inset-0 w-full h-full object-cover"
         />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
       </div>
 
       {/* Login Form Section */}
-      <div className="w-full lg:w-[845px] bg-[#FCFEFF] lg:rounded-l-[25px] flex flex-col items-center justify-center px-6 sm:px-8 py-8 lg:py-0">
+      <div className="w-full lg:w-[845px] bg-white/95 backdrop-blur lg:rounded-l-[28px] shadow-xl flex flex-col items-center justify-center px-6 sm:px-8 py-10 lg:py-12 min-h-screen">
         {/* Greener Tech Logo */}
-        <div className="mb-12 lg:mb-16">
+        <div className="mb-6 lg:mb-8">
           <img
-            src="https://api.builder.io/api/v1/image/assets/TEMP/b0dd8ca02c2a41b50f73559714fd5efaaf50e9cf?width=760"
+            src="/GreenerTech-Logo.jpg"
             alt="Greener Tech Logo"
-            className="w-[280px] sm:w-[320px] lg:w-[380px] h-auto"
+            className="w-[220px] sm:w-[260px] lg:w-[320px] h-auto mx-auto"
           />
         </div>
+        <p className="text-center text-gray-600 mb-8">
+          Rejoignez la révolution verte avec GreenerTech
+        </p>
 
         {/* Login Form */}
         <div className="w-full max-w-[416px]">
@@ -91,13 +97,13 @@ export default function Index() {
                 </svg>
               </div>
               <div className="ml-3">
-                <h3 className="text-sm font-medium mb-2">
-                  ⏳ COMPTE NON ACTIVÉ
-                </h3>
+                                  <h3 className="text-sm font-medium mb-2">
+                    COMPTE NON ACTIVÉ
+                  </h3>
                 <p className="text-sm">{errorMsg}</p>
                 <div className="bg-amber-100 p-3 rounded-md mt-2">
                   <p className="text-xs font-medium text-amber-800 mb-1">
-                    💡 Que faire maintenant ?
+                    Que faire maintenant ?
                   </p>
                   <ul className="text-xs text-amber-700 space-y-1">
                     <li>• Vérifiez votre email et cliquez sur le lien de confirmation</li>
@@ -139,7 +145,7 @@ export default function Index() {
                     handleInputChange();
                   }}
                   placeholder="votre.email@exemple.com"
-                  className="w-full h-10 pl-10 pr-4 border border-gray-300 rounded-md text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#B4CC5F] focus:border-transparent"
+                  className="w-full h-10 pl-10 pr-4 border border-gray-300 rounded-lg text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#8FB344] focus:border-transparent shadow-sm"
                   required
                 />
               </div>
@@ -173,7 +179,7 @@ export default function Index() {
                     handleInputChange();
                   }}
                   placeholder="••••••••••••••"
-                  className="w-full h-10 pl-10 pr-4 border border-gray-300 rounded-md text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#B4CC5F] focus:border-transparent"
+                  className="w-full h-10 pl-10 pr-4 border border-gray-300 rounded-lg text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#8FB344] focus:border-transparent shadow-sm"
                   required
                 />
               </div>
@@ -184,7 +190,7 @@ export default function Index() {
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full h-10 bg-[#B4CC5F] text-white text-sm font-medium rounded-md hover:bg-[#A3C247] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full h-12 bg-[#2E7D32] text-white text-base font-medium rounded-lg hover:bg-[#276A2B] transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow px-8"
               >
                 {isSubmitting ? "Connexion..." : "Se connecter"}
               </button>
@@ -195,7 +201,7 @@ export default function Index() {
           <div className="flex items-center justify-center mt-6 gap-2">
             <Link
               to="/role-selection"
-              className="text-sm font-medium text-[#B4CC5F] hover:text-[#A3C247] transition-colors"
+              className="text-sm font-medium text-[#2E7D32] hover:text-[#276A2B] transition-colors"
             >
               S'inscrire
             </Link>
@@ -209,7 +215,7 @@ export default function Index() {
             >
               <path
                 d="M21.821 10.9914C22.3091 10.5032 22.3091 9.71175 21.821 9.2236L13.866 1.26865C13.3779 0.780493 12.5864 0.780493 12.0983 1.26865C11.6101 1.7568 11.6101 2.54826 12.0983 3.03642L19.1693 10.1075L12.0983 17.1786C11.6101 17.6667 11.6101 18.4582 12.0983 18.9463C12.5864 19.4345 13.3779 19.4345 13.866 18.9463L21.821 10.9914ZM0.362793 10.1075V11.3575H20.9371V10.1075V8.85748H0.362793V10.1075Z"
-                fill="#B4CC5F"
+                fill="#2E7D32"
               />
             </svg>
           </div>

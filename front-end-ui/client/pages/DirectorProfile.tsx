@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { 
-  ArrowLeft, 
   Edit, 
   LogOut, 
   MapPin, 
@@ -13,14 +12,15 @@ import {
   Mail, 
   Calendar,
   Building,
-  Users
+  Users,
+  Trash2
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import DirectorHeader from "@/components/DirectorHeader";
+import DirectorLayout from "@/components/DirectorLayout";
 import { companyService, CompanyInfo } from "../services/companyService";
 
 export default function DirectorProfile() {
-  const { user, logout } = useAuth();
+  const { user, logout, deleteUser } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -64,7 +64,7 @@ export default function DirectorProfile() {
       case "technicien":
         return "bg-blue-100 text-blue-800";
       case "technicien_superieur":
-        return "bg-purple-100 text-purple-800";
+        return "bg-green-100 text-green-800";
       default:
         return "bg-gray-100 text-gray-800";
     }
@@ -95,7 +95,7 @@ export default function DirectorProfile() {
 
       // Fetch enterprises created by the director
       if (user.role === 'directeur') {
-        fetchDirectorEnterprises(user.id);
+        fetchDirectorEnterprises(Number(user.id));
       }
     }
   }, [user]);
@@ -115,7 +115,7 @@ export default function DirectorProfile() {
   const fetchDirectorEnterprises = async (directorId: number) => {
     try {
       setLoadingDirectorEnterprises(true);
-      const enterprises = await companyService.getEnterprisesByDirector(directorId);
+      const enterprises = await companyService.getCompaniesByDirector();
       setDirectorEnterprises(enterprises);
     } catch (error) {
       console.error("Error fetching director enterprises:", error);
@@ -127,7 +127,7 @@ export default function DirectorProfile() {
   const handleLogout = async () => {
     try {
       await logout();
-      navigate("/login");
+              navigate("/");
     } catch (error) {
       toast({
         title: "Erreur",
@@ -141,43 +141,53 @@ export default function DirectorProfile() {
     navigate("/directeur/profile/edit");
   };
 
-  if (!userInfo) {
+  const handleDeleteAccount = async () => {
+    if (window.confirm("Êtes-vous sûr de vouloir supprimer votre compte ? Cette action est irréversible.")) {
+      try {
+        // Call the deleteUser method from AuthContext
+        await deleteUser();
+        
+        // Show success message
+        toast({
+          title: "Compte supprimé",
+          description: "Votre compte a été supprimé avec succès",
+        });
+      } catch (error) {
+        toast({
+          title: "Erreur",
+          description: "Erreur lors de la suppression du compte",
+          variant: "destructive",
+        });
+      }
+    }
+  };
+
+    if (!userInfo) {
     return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600"></div>
-      </div>
+      <DirectorLayout>
+        <div className="flex items-center justify-center min-h-[400px]">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-greener-600"></div>
+        </div>
+      </DirectorLayout>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <DirectorHeader />
-      
-      <div className="flex-1 transition-all duration-300">
-        <div className="flex items-center justify-center p-4 pt-20">
-          {/* Back button */}
-          <div className="absolute top-20 left-4">
-            <Button 
-              variant="ghost" 
-              onClick={() => navigate("/directeur")}
-              className="text-green-600 hover:text-green-800"
-            >
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Retour
-            </Button>
-          </div>
+    <DirectorLayout>
+      <div className="flex items-center justify-center p-4 pt-8">
+
           
           <Card className="w-full max-w-md shadow-lg border-0">
             {/* Green Header with User Info */}
-            <div className="bg-green-600 rounded-t-lg p-6 relative">
+            <div className="bg-greener-600 rounded-t-lg p-6 relative">
               {/* Profile Picture Placeholder */}
               <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center mb-4 relative">
-                <div className="text-2xl font-bold text-green-600">
+                <div className="text-2xl font-bold text-greener-600">
                   {userInfo.firstName ? userInfo.firstName[0] : 'U'}
                   {userInfo.lastName ? userInfo.lastName[0] : ''}
                 </div>
                 {/* Online status dot */}
-                <div className="absolute bottom-0 right-0 w-4 h-4 bg-green-500 rounded-full border-2 border-white"></div>
+                <div className="absolute bottom-0 right-0 w-4 h-4 bg-greener-500 rounded-full border-2 border-white"></div>
               </div>
               
               {/* User Name and Role */}
@@ -196,8 +206,8 @@ export default function DirectorProfile() {
               {/* Company and Employees */}
               {userInfo.id_entreprise ? (
                 <div className="flex items-center space-x-3">
-                  <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
-                    <Building className="w-4 h-4 text-green-600" />
+                  <div className="w-8 h-8 bg-greener-100 rounded-full flex items-center justify-center">
+                    <Building className="w-4 h-4 text-greener-700" />
                   </div>
                   <div>
                     <div className="text-sm text-gray-600">Entreprise</div>
@@ -300,7 +310,7 @@ export default function DirectorProfile() {
                       <div className="text-sm text-gray-400">Chargement...</div>
                     ) : directorEnterprises.length > 0 ? (
                       directorEnterprises.map((enterprise, index) => (
-                        <div key={enterprise.id} className="mb-2 p-3 bg-gray-50 rounded-lg">
+                        <div key={index} className="mb-2 p-3 bg-gray-50 rounded-lg">
                           <div className="font-medium text-gray-900">{enterprise.nom}</div>
                           {enterprise.adresse && (
                             <div className="text-sm text-gray-600">{enterprise.adresse}</div>
@@ -325,7 +335,7 @@ export default function DirectorProfile() {
             <div className="p-6 pt-0 space-y-3">
               <Button 
                 onClick={handleEditProfile}
-                className="w-full bg-green-600 hover:bg-green-700 text-white"
+                className="w-full bg-greener-600 hover:bg-greener-700 text-white"
               >
                 <Edit className="w-4 h-4 mr-2" />
                 Modifier le profil
@@ -339,10 +349,18 @@ export default function DirectorProfile() {
                 <LogOut className="w-4 h-4 mr-2" />
                 Déconnexion
               </Button>
+
+              <Button 
+                onClick={handleDeleteAccount}
+                variant="outline"
+                className="w-full border-red-300 text-red-700 hover:bg-red-50"
+              >
+                <Trash2 className="w-4 h-4 mr-2" />
+                Supprimer le compte
+              </Button>
             </div>
           </Card>
         </div>
-      </div>
-    </div>
-  );
-}
+      </DirectorLayout>
+    );
+  }

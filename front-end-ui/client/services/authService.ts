@@ -1,6 +1,5 @@
 import axios from "axios";
 
-// Types for authentication
 export interface User {
   id: string;
   email: string;
@@ -33,7 +32,7 @@ export interface AffiliationRequest {
   lastName: string;
   telephone: string;
   cin: string;
-  id_entreprise: string; // Changed from companyName to id_entreprise to match backend model
+  id_entreprise: string;
   birthDate: string;
   role: string;
 }
@@ -55,10 +54,8 @@ export interface ApiError {
   status: number;
 }
 
-// Configure axios base URL - update this to match your backend
 const API_BASE_URL = `${window.location.protocol}//${window.location.hostname}:5000/api`;
 
-// Create axios instance
 const api = axios.create({
   baseURL: API_BASE_URL,
   headers: {
@@ -66,7 +63,6 @@ const api = axios.create({
   },
 });
 
-// Token management
 const TOKEN_KEY = "auth_token";
 const REFRESH_TOKEN_KEY = "refresh_token";
 const USER_KEY = "user_data";
@@ -117,7 +113,6 @@ export const tokenManager = {
   },
 };
 
-// Request interceptor to add auth token
 api.interceptors.request.use(
   (config) => {
     const token = tokenManager.getToken();
@@ -131,7 +126,6 @@ api.interceptors.request.use(
   },
 );
 
-// Response interceptor for token refresh
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
@@ -153,7 +147,6 @@ api.interceptors.response.use(
           return api(originalRequest);
         }
       } catch (refreshError) {
-        // Refresh failed, redirect to login
         authService.logout();
         window.location.href = "/login";
       }
@@ -163,78 +156,42 @@ api.interceptors.response.use(
   },
 );
 
-// Auth service functions
 export const authService = {
   setUser(user: any) {
     tokenManager.setUser(user);
   },
-  // Login user
- login: async (credentials: LoginRequest): Promise<AuthResponse> => {
-  try {
-    const response = await axios.post(`${API_BASE_URL}/login`, credentials);
-    const { user, token } = response.data;
 
-    // // Check for unvalidated technician accounts
-    // if ((user.role === "technicien" || user.role === "technicien_superieur") && !user.directeur_valide) {
-    //   tokenManager.clearAll();
-    //   console.log("this user is not validated by director");
+  login: async (credentials: LoginRequest): Promise<AuthResponse> => {
+    try {
+      const response = await axios.post(`${API_BASE_URL}/login`, credentials);
+      const { user, token } = response.data;
 
-    //   throw {
-    //     message: "Votre compte n'a pas encore été validé par un directeur. Veuillez contacter votre directeur pour activer votre accès.",
-    //     status: 403
-    //   } as ApiError;
-    // }
+      tokenManager.setToken(token);
+      tokenManager.setUser(user);
 
-    tokenManager.setToken(token);
-    tokenManager.setUser(user);
+      return response.data;
+    } catch (error: any) {
+      const normalizedMessage =
+        error?.message ||
+        error?.response?.data?.message ||
+        "Login failed";
 
-    return response.data;
-  } catch (error: any) {
-    // Debug: Log the error details
-    console.log("Login error details:", {
-      error: error,
-      response: error?.response,
-      data: error?.response?.data,
-      message: error?.response?.data?.message,
-      status: error?.response?.status
-    });
+      const status =
+        error?.status ||
+        error?.response?.status ||
+        500;
 
-    // Normalize all Axios and manual errors
-    const normalizedMessage =
-      error?.message ||
-      error?.response?.data?.message ||
-      "Login failed";
+      throw {
+        message: normalizedMessage,
+        status,
+      } as ApiError;
+    }
+  },
 
-    const status =
-      error?.status ||
-      error?.response?.status ||
-      500;
-
-    console.log("Normalized error:", { message: normalizedMessage, status });
-
-    throw {
-      message: normalizedMessage,
-      status,
-    } as ApiError;
-  }
-},
-
-
-  // Register user (for Directeur role)
   register: async (userData: RegisterRequest): Promise<AuthResponse> => {
     try {
-      console.log(userData);
       const response = await axios.post(`${API_BASE_URL}/register`, userData);
       const { message } = response.data;
-
-      console.log(response);
-
-      //tokenManager.setToken(token);
-      // tokenManager.setUser(user);
-
-      // if (refreshToken) {
-      //   tokenManager.setRefreshToken(refreshToken);
-      // }
 
       return response.data;
     } catch (error: any) {
@@ -245,14 +202,13 @@ export const authService = {
     }
   },
 
-  // Submit affiliation request (for Technicien Supérieur and Technicien roles)
   submitAffiliationRequest: async (
-    affiliationData: AffiliationRequest,
+    affiliationData: AffiliationRequest
   ): Promise<AffiliationResponse> => {
     try {
       const response = await axios.post(
-        `${API_BASE_URL}/technicien/register`,
-        affiliationData,
+        `${API_BASE_URL}/affiliation/request`,
+        affiliationData
       );
       return response.data;
     } catch (error: any) {
@@ -263,178 +219,99 @@ export const authService = {
     }
   },
 
-  // Check affiliation request status
   checkAffiliationStatus: async (
-    requestId: string,
+    requestId: string
   ): Promise<AffiliationResponse> => {
     try {
-      const response = await api.get(`/auth/affiliation-request/${requestId}`);
-      return response.data;
-    } catch (error: any) {
-      throw {
-        message:
-          error.response?.data?.message || "Failed to check affiliation status",
-        status: error.response?.status || 500,
-      } as ApiError;
-    }
-  },
-
-  // Get all affiliation requests (for admin users)
-  getAffiliationRequests: async (): Promise<AffiliationResponse[]> => {
-    try {
-      const response = await api.get("/auth/affiliation-requests");
-      return response.data;
-    } catch (error: any) {
-      throw {
-        message:
-          error.response?.data?.message || "Failed to get affiliation requests",
-        status: error.response?.status || 500,
-      } as ApiError;
-    }
-  },
-
-  // Approve or reject affiliation request (for admin users)
-  updateAffiliationRequest: async (
-    requestId: string,
-    status: "approved" | "rejected",
-    adminNotes?: string,
-  ): Promise<AffiliationResponse> => {
-    try {
-      const response = await api.patch(
-        `/auth/affiliation-request/${requestId}`,
-        {
-          status,
-          adminNotes,
-        },
+      const response = await axios.get(
+        `${API_BASE_URL}/affiliation/status/${requestId}`
       );
       return response.data;
     } catch (error: any) {
       throw {
-        message:
-          error.response?.data?.message ||
-          "Failed to update affiliation request",
+        message: error.response?.data?.message || "Failed to check affiliation status",
         status: error.response?.status || 500,
       } as ApiError;
     }
   },
 
-  // Logout user
   logout: async (): Promise<void> => {
     try {
       const token = tokenManager.getToken();
       if (token) {
-        await api.post("/auth/logout");
+        await api.post("/logout");
       }
-    } catch (error) {
-      // Continue with logout even if API call fails
-      console.warn("Logout API call failed:", error);
+    } catch (error: any) {
+      // Logout API call failed, but continue with local cleanup
     } finally {
       tokenManager.clearAll();
+      // Don't redirect here - let the component handle routing
+      // window.location.href = "/login"; // ← REMOVED THIS LINE
     }
   },
 
-  // Get current user data from backend
   getCurrentUser: async (): Promise<User> => {
     try {
-      console.log("authService: Fetching current user data from backend");
-      const response = await api.get(`${API_BASE_URL}/user`);
-      const user = response.data;
-      console.log("authService: Received user data from backend:", user);
-      tokenManager.setUser(user);
-      return user;
+      const user = await api.get("/user");
+      return user.data;
     } catch (error: any) {
-      console.error("authService: Error fetching current user:", error);
       throw {
-        message: error.response?.data?.message || "Failed to get user data",
+        message: error.response?.data?.message || "Failed to get current user",
         status: error.response?.status || 500,
       } as ApiError;
     }
   },
 
-  // Change password
-  changePassword: async (
-    currentPassword: string,
-    newPassword: string,
-  ): Promise<void> => {
+  updateProfile: async (profileData: Partial<User>): Promise<User> => {
     try {
-      await api.post("/auth/change-password", {
-        currentPassword,
-        newPassword,
-      });
-    } catch (error: any) {
-      throw {
-        message: error.response?.data?.message || "Failed to change password",
-        status: error.response?.status || 500,
-      } as ApiError;
-    }
-  },
-
-  // Request password reset
-  requestPasswordReset: async (email: string): Promise<void> => {
-    try {
-      await api.post("/auth/forgot-password", { email });
-    } catch (error: any) {
-      throw {
-        message:
-          error.response?.data?.message || "Failed to request password reset",
-        status: error.response?.status || 500,
-      } as ApiError;
-    }
-  },
-
-  // Reset password
-  resetPassword: async (token: string, newPassword: string): Promise<void> => {
-    try {
-      await api.post("/auth/reset-password", {
-        token,
-        newPassword,
-      });
-    } catch (error: any) {
-      throw {
-        message: error.response?.data?.message || "Failed to reset password",
-        status: error.response?.status || 500,
-      } as ApiError;
-    }
-  },
-
-  // Check if user is authenticated
-  isAuthenticated: (): boolean => {
-    const token = tokenManager.getToken();
-    const user = tokenManager.getUser();
-    return !!(token && user);
-  },
-
-  // Get stored user data
-  getStoredUser: (): User | null => {
-    return tokenManager.getUser();
-  },
-
-  // Update user profile
-  updateProfile: async (profileData: Partial<User & {
-    telephone?: string;
-    birthday?: string;
-    password?: string;
-  }>): Promise<User> => {
-    try {
-      console.log("authService: Sending profile update request with data:", profileData);
       const response = await api.put("/user", profileData);
-      console.log("authService: Profile update response:", response.data);
-      const updatedUser = response.data.user || response.data;
-
-      // Update local storage with new user data
+      const updatedUser = response.data;
+      
       const currentUser = tokenManager.getUser();
-      if (currentUser) {
-        const mergedUser = { ...currentUser, ...profileData };
-        delete mergedUser.password; // Don't store password locally
-        tokenManager.setUser(mergedUser);
-        console.log("authService: Updated local user data:", mergedUser);
-      }
-
-      return updatedUser;
+      const mergedUser = { ...currentUser, ...updatedUser };
+      tokenManager.setUser(mergedUser);
+      
+      return mergedUser;
     } catch (error: any) {
-      console.error("authService: Profile update error:", error);
       throw {
         message: error.response?.data?.message || "Failed to update profile",
+        status: error.response?.status || 500,
+      } as ApiError;
+    }
+  },
+
+  deleteUser: async (): Promise<void> => {
+    try {
+      await api.delete("/user");
+      tokenManager.clearAll();
+      // Don't redirect here - let the component handle routing
+      // window.location.href = "/login"; // ← REMOVED THIS LINE
+    } catch (error: any) {
+      throw {
+        message: error.response?.data?.message || "Failed to delete user",
+        status: error.response?.status || 500,
+      } as ApiError;
+    }
+  },
+
+  refreshToken: async (): Promise<{ token: string }> => {
+    try {
+      const refreshToken = tokenManager.getRefreshToken();
+      if (!refreshToken) {
+        throw new Error("No refresh token available");
+      }
+
+      const response = await axios.post(`${API_BASE_URL}/auth/refresh`, {
+        refreshToken,
+      });
+
+      const { token } = response.data;
+      tokenManager.setToken(token);
+
+      return { token };
+    } catch (error: any) {
+      throw {
+        message: error.response?.data?.message || "Token refresh failed",
         status: error.response?.status || 500,
       } as ApiError;
     }

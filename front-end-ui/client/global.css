@@ -10,19 +10,21 @@
     --card-foreground: 222.2 84% 4.9%;
     --popover: 0 0% 100%;
     --popover-foreground: 222.2 84% 4.9%;
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
-    --secondary: 210 40% 96%;
-    --secondary-foreground: 222.2 84% 4.9%;
-    --muted: 210 40% 96%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 210 40% 96%;
-    --accent-foreground: 222.2 84% 4.9%;
+    /* Primary set to GreenerTech green: #B4CC5F (74, 50%, 59%) */
+    --primary: 74 50% 59%;
+    --primary-foreground: 0 0% 100%;
+    /* Secondary: lighter green tint */
+    --secondary: 74 40% 90%;
+    --secondary-foreground: 74 30% 20%;
+    --muted: 74 20% 95%;
+    --muted-foreground: 74 10% 35%;
+    --accent: 74 45% 70%;
+    --accent-foreground: 0 0% 100%;
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
+    --ring: 74 50% 59%;
     --radius: 0.5rem;
     --sidebar-background: 0 0% 100%;
     --sidebar-foreground: 222.2 84% 4.9%;
@@ -41,27 +43,27 @@
     --card-foreground: 210 40% 98%;
     --popover: 222.2 84% 4.9%;
     --popover-foreground: 210 40% 98%;
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
-    --secondary: 217.2 32.6% 17.5%;
+    --primary: 74 50% 59%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 74 25% 20%;
     --secondary-foreground: 210 40% 98%;
     --muted: 217.2 32.6% 17.5%;
     --muted-foreground: 215 20.2% 65.1%;
-    --accent: 217.2 32.6% 17.5%;
+    --accent: 74 35% 30%;
     --accent-foreground: 210 40% 98%;
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 210 40% 98%;
     --border: 217.2 32.6% 17.5%;
     --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
+    --ring: 74 50% 59%;
     --sidebar-background: 222.2 84% 4.9%;
     --sidebar-foreground: 210 40% 98%;
-    --sidebar-primary: 210 40% 98%;
+    --sidebar-primary: 74 50% 59%;
     --sidebar-primary-foreground: 222.2 47.4% 11.2%;
     --sidebar-accent: 217.2 32.6% 17.5%;
     --sidebar-accent-foreground: 210 40% 98%;
     --sidebar-border: 217.2 32.6% 17.5%;
-    --sidebar-ring: 212.7 26.8% 83.9%;
+    --sidebar-ring: 74 50% 59%;
   }
 }
 
@@ -104,8 +106,142 @@
   }
   
   .scrollbar-mobile::-webkit-scrollbar-thumb {
-    background-color: #CBD5E1;
+    background: #CBD5E1;
     border-radius: 2px;
+  }
+  
+  /* Mobile viewport improvements */
+  @media (max-width: 1024px) {
+    .mobile-full-height {
+      height: 100vh;
+      height: 100dvh; /* Dynamic viewport height for mobile browsers */
+    }
+    
+    .mobile-safe-area {
+      padding-top: env(safe-area-inset-top);
+      padding-bottom: env(safe-area-inset-bottom);
+      padding-left: env(safe-area-inset-left);
+      padding-right: env(safe-area-inset-right);
+    }
+    
+    /* Prevent zoom on input focus on iOS */
+    input, textarea, select {
+      font-size: 16px;
+    }
+    
+    /* Improve touch targets */
+    button, [role="button"] {
+      min-height: 44px;
+      min-width: 44px;
+    }
+  }
+  
+  /* Very small screens */
+  @media (max-width: 480px) {
+    .mobile-compact {
+      font-size: 0.875rem;
+    }
+    
+    .mobile-compact .text-lg {
+      font-size: 1rem;
+    }
+    
+    .mobile-compact .text-xl {
+      font-size: 1.125rem;
+    }
+  }
+  
+  /* Mobile map specific improvements */
+  .mobile-map-container {
+    position: relative;
+    width: 100vw;
+    height: 100vh;
+    height: 100dvh;
+    overflow: hidden;
+  }
+  
+  .mobile-map-container .gm-style {
+    width: 100% !important;
+    height: 100% !important;
+  }
+  
+  /* Ensure mobile panels don't interfere with map */
+  .mobile-panel-overlay {
+    z-index: 1000;
+    pointer-events: auto;
+  }
+  
+  .mobile-panel-content {
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+  }
+  
+  /* Google Maps zoom controls - small and compact on mobile */
+  .mobile-map-container .gm-control-active {
+    margin-bottom: 0.25rem !important;
+    margin-right: 0.25rem !important;
+  }
+  
+  /* Ensure zoom controls are not cut off */
+  .mobile-map-container .gm-style-moc {
+    padding-bottom: 0.25rem !important;
+    padding-right: 0.25rem !important;
+  }
+  
+  /* Make zoom controls smaller on mobile */
+  .mobile-map-container .gm-control-active button {
+    width: 28px !important;
+    height: 28px !important;
+    font-size: 18px !important;
+    line-height: 28px !important;
+  }
+  
+  /* Ensure small zoom control style */
+  .mobile-map-container .gm-style-moc .gm-control-active {
+    transform: scale(0.8) !important;
+    transform-origin: bottom right !important;
+  }
+  
+  /* Custom animations for enhanced UX */
+  @keyframes fade-in-up {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  
+  .animate-fade-in-up {
+    animation: fade-in-up 0.6s ease-out forwards;
+  }
+  
+  /* Slide in from bottom animation for etat bilan section */
+  @keyframes slideInFromBottom {
+    from {
+      opacity: 0;
+      transform: translateY(30px) scale(0.95);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+  }
+  
+  .slide-in-from-bottom-2 {
+    animation: slideInFromBottom 0.5s ease-out forwards;
+  }
+  
+  /* Enhanced hover effects */
+  .hover-lift {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  
+  .hover-lift:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
   }
   
   /* Map responsive improvements */
@@ -175,4 +311,32 @@
   .dark .border-gray-300 {
     @apply border-border;
   }
+}
+
+/* Landing page animations */
+@keyframes blob {
+  0% {
+    transform: translate(0px, 0px) scale(1);
+  }
+  33% {
+    transform: translate(30px, -50px) scale(1.1);
+  }
+  66% {
+    transform: translate(-20px, 20px) scale(0.9);
+  }
+  100% {
+    transform: translate(0px, 0px) scale(1);
+  }
+}
+
+.animate-blob {
+  animation: blob 7s infinite;
+}
+
+.animation-delay-2000 {
+  animation-delay: 2s;
+}
+
+.animation-delay-4000 {
+  animation-delay: 4s;
 }

@@ -38,12 +38,38 @@ def get_all_notifications():
 
 
 # ✅ Marquer une notification comme "vue"
-def mark_notification_as_seen(id):
+@token_required
+def mark_notification_as_seen(current_user, id):
     try:
         notif = Notification.query.get_or_404(id)
         notif.status = 'vue'
         db.session.commit()
         return jsonify({'message': 'Notification marquée comme vue'}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 400
+
+
+# ✅ Marquer toutes les notifications de l'utilisateur comme "vue"
+@token_required
+def mark_all_notifications_as_seen(current_user):
+    try:
+        # Get all unread notifications for the current user
+        unread_notifications = Notification.query.filter_by(
+            id_user=current_user.id, 
+            status='non_vue'
+        ).all()
+        
+        # Mark all as read
+        for notif in unread_notifications:
+            notif.status = 'vue'
+        
+        db.session.commit()
+        
+        return jsonify({
+            'message': f'{len(unread_notifications)} notifications marquées comme vues',
+            'count': len(unread_notifications)
+        }), 200
     except Exception as e:
         db.session.rollback()
         return jsonify({'error': str(e)}), 400

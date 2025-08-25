@@ -8,7 +8,7 @@ from app.models.entreprise import Entreprise
 from app.models.domaine import Domaine
 
 @token_required
-@role_required("directeur", "technicien_superieur")
+@role_required("directeur", "technicien_superieur", "technicien")
 def create_guide_culture(current_user):
     data = request.get_json()
 
@@ -42,7 +42,7 @@ def create_guide_culture(current_user):
 
 
 @token_required
-@role_required("directeur", "technicien_superieur")
+@role_required("directeur", "technicien_superieur", "technicien")
 def update_guide_culture(current_user, id):
     guide = GuideCulture.query.get(id)
     if not guide:
@@ -69,6 +69,7 @@ def update_guide_culture(current_user, id):
     return jsonify(guide.to_dict()), 200
 
 @token_required
+@role_required("directeur", "technicien_superieur")
 def get_guide_culture(current_user, id):
     guide = GuideCulture.query.get(id)
     if not guide:
@@ -83,7 +84,7 @@ def get_guide_culture(current_user, id):
     return jsonify(guide.to_dict()), 200
 
 @token_required
-@role_required("directeur", "technicien_superieur")
+@role_required("directeur", "technicien_superieur", "technicien")
 def get_all_guides(current_user):
     guides = GuideCulture.query.all()
     if not guides:
@@ -95,7 +96,7 @@ def get_all_guides(current_user):
 
 
 @token_required
-@role_required("directeur", "technicien_superieur")
+@role_required("directeur", "technicien_superieur", "technicien")
 def delete_guide(current_user, id):
     guide = GuideCulture.query.get(id)
     if not guide:

@@ -27,19 +27,16 @@ export interface DomainSetup {
   area: number;
   center: google.maps.LatLng;
   path: google.maps.LatLng[];
-  serres: SerreSetup[];
+  serres: any[]; // Using any[] to match CompanySetupWizard interface
 }
 
 export interface TechnicianSetup {
   id: string;
   fullName: string;
-  birthday: Date;
-  telephone: string;
-  cin: string;
   email: string;
-  password: string;
   role: "technicien_superieur" | "technicien";
-  assignedSerres: string[];
+  assignedSerres: string[]; // Serres assigned to this technician (for Technicien Sup)
+  id_assigned?: string | null; // ID of supervisor this technician reports to (for regular technicians)
 }
 
 export interface CompanyInfoSetup {
@@ -50,8 +47,14 @@ export interface CompanyInfoSetup {
   email: string;
 }
 
+export interface SerreAssignment {
+  serreId: string;
+  supervisorIds: string[]; // Array of Technicien Sup IDs assigned to this serre
+}
+
 export interface CompletedSetupData {
   companyInfo: CompanyInfoSetup;
   domains: DomainSetup[];
   technicians: TechnicianSetup[];
+  serreAssignments: SerreAssignment[];
 }
