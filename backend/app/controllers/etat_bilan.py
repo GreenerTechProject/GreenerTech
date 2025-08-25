@@ -17,11 +17,23 @@ def create_etat_bilan():
             nombre_tomates_non_maladies=data.get('nombre_tomates_non_maladies', 0),
             nombre_malade1=data.get('nombre_malade1', 0),
             nombre_malade2=data.get('nombre_malade2', 0),
-            temperature=data.get('temperature'),
-            humidite=data.get('humidite'),
-            luminosite=data.get('luminosite'),
-            co2=data.get('co2'),
-            rendement=data.get('rendement')
+            
+            mean_temperature=data.get('mean_temperature'),
+            mean_humidite=data.get('mean_humidite'),
+            mean_luminosite=data.get('mean_luminosite'),
+            mean_co2=data.get('mean_co2'),
+            
+            max_temperature=data.get('max_temperature'),
+            max_humidite=data.get('max_humidite'),
+            max_luminosite=data.get('max_luminosite'),
+            max_co2=data.get('max_co2'),
+            
+            min_temperature=data.get('min_temperature'),
+            min_humidite=data.get('min_humidite'),
+            min_luminosite=data.get('min_luminosite'),
+            min_co2=data.get('min_co2'),
+            
+            #rendement=data.get('rendement')
         )
         db.session.add(etat)
         db.session.commit()
@@ -118,11 +130,23 @@ def update_etat_bilan(current_user, etat_bilan_id):
         etat.nombre_tomates_non_maladies = data.get('nombre_tomates_non_maladies', etat.nombre_tomates_non_maladies)
         etat.nombre_malade1 = data.get('nombre_malade1', etat.nombre_malade1)
         etat.nombre_malade2 = data.get('nombre_malade2', etat.nombre_malade2)
-        etat.temperature = data.get('temperature', etat.temperature)
-        etat.humidite = data.get('humidite', etat.humidite)
-        etat.luminosite = data.get('luminosite', etat.luminosite)
-        etat.co2 = data.get('co2', etat.co2)
-        etat.rendement = data.get('rendement', etat.rendement)
+        
+        etat.mean_temperature = data.get('mean_temperature', etat.mean_temperature)
+        etat.mean_humidite = data.get('mean_humidite', etat.mean_humidite)
+        etat.mean_luminosite = data.get('mean_luminosite', etat.mean_luminosite)
+        etat.mean_co2 = data.get('mean_co2', etat.mean_co2)
+        
+        etat.max_temperature = data.get('max_temperature', etat.max_temperature)
+        etat.max_humidite = data.get('max_humidite', etat.max_humidite)
+        etat.max_luminosite = data.get('max_luminosite', etat.max_luminosite)
+        etat.max_co2 = data.get('max_co2', etat.max_co2)
+        
+        etat.min_temperature = data.get('min_temperature', etat.min_temperature)
+        etat.min_humidite = data.get('min_humidite', etat.min_humidite)
+        etat.min_luminosite = data.get('min_luminosite', etat.min_luminosite)
+        etat.min_co2 = data.get('min_co2', etat.min_co2)
+        
+        #etat.rendement = data.get('rendement', etat.rendement)
 
         db.session.commit()
         return jsonify(etat.to_dict()), 200

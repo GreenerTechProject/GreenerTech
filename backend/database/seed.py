@@ -209,7 +209,7 @@ def _create_alerts_for_bilan(bilan: Bilan, how_many: int = 5) -> None:
         for i in range(how_many):
             alerte = Alerte(
                 id_bilan=bilan.id,
-                status_alert=randint(1, 10),
+                status_alert=randint(0, 2),  # 0=Low/Faible, 1=Medium/Moyenne, 2=High/Critique
                 maladie=choice(maladies),
                 lien_image="https://picsum.photos/seed/gt{}/400/300".format(bilan.id * 100 + i),
                 x1=uniform(0.0, 1.0),

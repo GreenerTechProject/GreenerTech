@@ -92,25 +92,40 @@ def receive_controls():
             time.sleep(2)
 
 # -------------------- Sensor Data Simulation --------------------
-def simulate_sensor_data():
-    uri = "ws://{}:8080/service/sensor_data".format(host)
-    while True:
-        try:
-            ws = websocket.create_connection(uri)
-            while True:
-                data = {
-                    "temperature": round(random.uniform(20, 30000), 2),
-                    "humidity": round(random.uniform(50, 80), 2),
-                    "co2": round(random.uniform(300, 800), 2),
-                    "luminosite": round(random.uniform(100, 1000), 2),
-                    "x": round(random.uniform(-180.0, 180.0), 6),
-                    "y": round(random.uniform(-90.0, 90.0), 6)
-                }
-                ws.send(json.dumps(data))
+class SensorDataNode(Node):
+    def __init__(self):
+        super().__init__('sensor_data_node')
+        self.subscription = self.create_subscription(
+            String,
+            'arduino_data',  # le topic publié par serial_node.py
+            self.send_ws,
+            10
+        )
+        self.ws = None
+        self.host = host
+        self.uri = f"ws://{self.host}:8080/service/sensor_data"
+        threading.Thread(target=self.connect_ws, daemon=True).start()
+
+    def connect_ws(self):
+        while self.ws is None:
+            try:
+                self.ws = websocket.create_connection(self.uri)
+                print("Sensor WebSocket connected")
+            except Exception as e:
+                print(f"Sensor WS error: {e}. Retry in 2s...")
                 time.sleep(2)
+
+    def send_ws(self, msg):
+        try:
+            if self.ws:
+                # on envoie le message reçu du topic ROS2 vers le dashboard
+                data = {"data": msg.data}
+                self.ws.send(json.dumps(data))
         except Exception as e:
-            print("Sensor websocket error: {}. Retrying in 2s...".format(e))
-            time.sleep(2)
+            print(f"Error sending sensor data via WS: {e}")
+            self.ws = None
+            threading.Thread(target=self.connect_ws, daemon=True).start()
+
 
 # -------------------- Robot Reference --------------------
 def send_reference_to_api(reference):
@@ -166,5 +181,8 @@ if __name__ == "__main__":
     # Start threads for all tasks
     threading.Thread(target=send_video).start()
     threading.Thread(target=receive_controls).start()
-    threading.Thread(target=simulate_sensor_data).start()
+   # Initialiser ROS2 pour le subscriber capteur
+    rclpy.init(args=None)
+    sensor_node = SensorDataNode()
+    threading.Thread(target=rclpy.spin, args=(sensor_node,), daemon=True).start()
     threading.Thread(target=listen_missions, args=(robot_ref,)).start()

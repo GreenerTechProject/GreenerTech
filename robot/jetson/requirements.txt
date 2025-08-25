@@ -1,2 +1,5 @@
 websockets
 requests
+aiortc
+av
+aiohttp

@@ -311,7 +311,7 @@ export default function RobotControl() {
   const handleRobotChange = (robot: string) => {
     setSelectedRobot(robot);
     // Send robot selection command
-    sendCommand('SELECT_ROBOT');
+    //sendCommand('SELECT_ROBOT');
   };
 
   // Update selected robot when robots are loaded
@@ -327,9 +327,11 @@ export default function RobotControl() {
     sendCommand(mode);
   };
 
-  const handleButtonUp = () => {
-    console.log("Sending mode: STOP");
-    sendCommand("STOP");
+  const handleButtonUp = (mode?: string) => {
+    if (!mode || !["PAUSE_MISSION", "PLAY_MISSION"].includes(mode)) {
+      console.log("Sending mode: STOP");
+      sendCommand("STOP");
+    }
   };
   
   const [isMouseDown, setIsMouseDown] = useState(false);
@@ -347,12 +349,12 @@ export default function RobotControl() {
     }}
 	onMouseUp={() => {
       setIsMouseDown(false);
-      handleButtonUp();
+      handleButtonUp(mode);
     }}
 	onMouseLeave={() => {
       if (isMouseDown) {
         setIsMouseDown(false);
-        handleButtonUp();
+        handleButtonUp(mode);
       }
     }}
 	className={`w-full ${className} ${pressedButton === mode ? "ring-4 ring-yellow-300" : ""}`}
@@ -404,6 +406,7 @@ export default function RobotControl() {
 	
 	updateSelectedFromUrl();
 	
+    fetchRobots(); // Add this line
 	
     startWebRTC(selectedRobot, selectedCamera);
     initializeWebSockets(selectedRobot, selectedCamera);
@@ -540,7 +543,7 @@ export default function RobotControl() {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-2">
-              <Select value={selectedRobot} onValueChange={handleRobotChange} disabled={isLoadingRobots || robotsError}>
+              <Select value={selectedRobot} onValueChange={handleRobotChange} disabled={isLoadingRobots || !!robotsError}>
                 <SelectTrigger className="h-8 text-sm">
                   <SelectValue placeholder={isLoadingRobots ? "Chargement..." : robotsError ? "Erreur" : "Choisir un robot"} />
                 </SelectTrigger>
@@ -746,12 +749,12 @@ export default function RobotControl() {
 
                   {/* Camera Controls */}
                   <div className="flex gap-2 justify-center">
-                    <ControlButton mode="LEFT_CAM" className="bg-purple-500/90 hover:bg-purple-600/90 border-purple-400 text-white px-3 py-2">
-                      <ArrowLeft className="mr-1 h-4 w-4" />
+                    <ControlButton mode="TOP_CAM" className="bg-purple-500/90 hover:bg-purple-600/90 border-purple-400 text-white px-3 py-2">
+                      <ArrowUp className="mr-1 h-4 w-4" />
                       <span className="text-sm">Cam</span>
                     </ControlButton>
-                    <ControlButton mode="RIGHT_CAM" className="bg-purple-500/90 hover:bg-purple-600/90 border-purple-400 text-white px-3 py-2">
-                      <ArrowRight className="mr-1 h-4 w-4" />
+                    <ControlButton mode="DOWN_CAM" className="bg-purple-500/90 hover:bg-purple-600/90 border-purple-400 text-white px-3 py-2">
+                      <ArrowDown className="mr-1 h-4 w-4" />
                       <span className="text-sm">Cam</span>
                     </ControlButton>
                   </div>

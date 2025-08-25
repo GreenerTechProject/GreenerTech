@@ -55,8 +55,8 @@ def create_serre(current_user):
     serre = Serre(
         nom=data['nom'],
         surface = data.get('surface'),
-        center_lat=data['center']['latitude'] if data.get('center') else None,
-        center_lng=data['center']['longitude'] if data.get('center') else None,
+        center_lat=data.get('center', {}).get('latitude') if data.get('center') else None,
+        center_lng=data.get('center', {}).get('longitude') if data.get('center') else None,
         id_group_cor=id_group_cor,
         id_domaine=domaine.id
     )
@@ -136,10 +136,16 @@ def update_serre(current_user, id):
     if gps_points:
         GroupCor.query.filter_by(id_group_cor=serre.id_group_cor).delete()
         for point in gps_points:
+            # Accept both {lat,lng} and {latitude,longitude}
+            lat = point.get('latitude')
+            lng = point.get('longitude')
+            if lat is None or lng is None:
+                return jsonify({"message": "Chaque point doit contenir latitude/longitude"}), 400
+                
             new_point = GroupCor(
                 id_group_cor=serre.id_group_cor,
-                point_x=point['latitude'],
-                point_y=point['longitude'],
+                point_x=lat,
+                point_y=lng,
                 ordre=point.get('ordre', 0)
             )
             db.session.add(new_point)

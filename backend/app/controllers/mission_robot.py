@@ -29,6 +29,8 @@ def create_mission_robot(current_user):
         id_serre=id_serre,
         rep_jr=rep_jr,
         rep_sem=rep_sem,
+        id_user=current_user.id,  # 🔹 l’utilisateur connecté qui crée la mission
+        id_entreprise=current_user.id_entreprise,  
         # Don't set date_debut here - it will be set conditionally below
         # date_debut=date_debut,
         date_fin=date_fin,
@@ -75,6 +77,11 @@ def get_all_missions_robot(current_user):
     missions = MissionRobot.query.all()
     return jsonify([m.to_dict() for m in missions]), 200
 
+
+@token_required
+def get_missions_robot_by_user(current_user):
+    missions = MissionRobot.query.filter_by(id_user=current_user.id).all()
+    return jsonify([m.to_dict() for m in missions]), 200
 
 @token_required
 def get_mission_robot(current_user, mission_id):

@@ -22,7 +22,13 @@ import {
   Maximize,
   Minimize,
   Camera,
-  Bot
+  Bot,
+  ZoomIn,
+  ZoomOut,
+  Download,
+  Eye,
+  EyeOff,
+  Move
 } from 'lucide-react';
 import axios from 'axios';
 import { tokenManager } from "../services/authService";
@@ -64,13 +70,14 @@ export default function RobotControl() {
   const [selectedRobot, setSelectedRobot] = useState<string>('1');
   const [isFullScreen, setIsFullScreen] = useState<boolean>(false);
   const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
+  const [isAIDetectionEnabled, setIsAIDetectionEnabled] = useState<boolean>(false);
+  const [videoZoom, setVideoZoom] = useState<number>(1);
+  const [videoPosition, setVideoPosition] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
   
   // New state for robots
   const [robots, setRobots] = useState<Robot[]>([]);
   const [isLoadingRobots, setIsLoadingRobots] = useState<boolean>(false);
   const [robotsError, setRobotsError] = useState<string | null>(null);
-
-
   // WebSocket references
   const qrWsRef = useRef<WebSocket | null>(null);
   const controlWsRef = useRef<WebSocket | null>(null);
@@ -87,7 +94,7 @@ export default function RobotControl() {
       
       // Set the first robot as selected if no robot is currently selected
       if (fetchedRobots.length > 0 && !selectedRobot) {
-        setSelectedRobot(fetchedRobots[0].id.toString());
+        setSelectedRobot(fetchedRobots[0].referance.toString());
       }
     } catch (error: any) {
       console.error('Failed to fetch robots:', error);
@@ -259,6 +266,56 @@ export default function RobotControl() {
     }
   };
 
+  // Toggle AI detection
+  const toggleAIDetection = () => {
+    const newState = !isAIDetectionEnabled;
+    setIsAIDetectionEnabled(newState);
+    sendCommand(newState ? 'ENABLE_AI' : 'DISABLE_AI');
+  };
+
+  // Zoom controls
+  const zoomIn = () => {
+    setVideoZoom(prev => Math.min(prev + 0.25, 3));
+  };
+
+  const zoomOut = () => {
+    setVideoZoom(prev => Math.max(prev - 0.25, 0.5));
+  };
+
+  const resetZoom = () => {
+    setVideoZoom(1);
+    setVideoPosition({ x: 0, y: 0 });
+  };
+
+  // Capture image from video
+  const captureImage = () => {
+    if (videoRef.current) {
+      const video = videoRef.current;
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+
+      if (ctx) {
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        ctx.drawImage(video, 0, 0);
+
+        // Create download link
+        canvas.toBlob((blob) => {
+          if (blob) {
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `robot-${selectedRobot}-camera-${selectedCamera}-${new Date().toISOString().replace(/[:.]/g, '-')}.jpg`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+          }
+        }, 'image/jpeg', 0.9);
+      }
+    }
+  };
+
   // Refresh connections
   const refreshConnections = async () => {
     setIsRefreshing(true);
@@ -318,8 +375,8 @@ export default function RobotControl() {
 
   // Update selected robot when robots are loaded
   useEffect(() => {
-    if (robots.length > 0 && !robots.find(r => r.id.toString() === selectedRobot)) {
-      setSelectedRobot(robots[0].id.toString());
+    if (robots.length > 0 && !robots.find(r => r.referance.toString() === selectedRobot)) {
+      setSelectedRobot(robots[0].referance.toString());
     }
   }, [robots, selectedRobot]);
 
@@ -329,9 +386,11 @@ export default function RobotControl() {
     sendCommand(mode);
   };
 
-  const handleButtonUp = () => {
-    console.log("Sending mode: STOP");
-    sendCommand("STOP");
+  const handleButtonUp = (mode?: string) => {
+    if (!mode || !["PAUSE_MISSION", "PLAY_MISSION"].includes(mode)) {
+      console.log("Sending mode: STOP");
+      sendCommand("STOP");
+    }
   };
   
   const [isMouseDown, setIsMouseDown] = useState(false);
@@ -349,12 +408,12 @@ export default function RobotControl() {
     }}
 	onMouseUp={() => {
       setIsMouseDown(false);
-      handleButtonUp();
+      handleButtonUp(mode);
     }}
 	onMouseLeave={() => {
       if (isMouseDown) {
         setIsMouseDown(false);
-        handleButtonUp();
+        handleButtonUp(mode);
       }
     }}
 	className={`w-full ${className} ${pressedButton === mode ? "ring-4 ring-yellow-300" : ""}`}
@@ -376,7 +435,7 @@ export default function RobotControl() {
               <div key={index} className="ml-4">
                 {typeof item === "object" ? 
                   renderQRValue(`Item ${index + 1}`, item, depth + 1) : 
-                  <div>• {item}</div>
+                  <div>�� {item}</div>
                 }
               </div>
             ))}
@@ -492,6 +551,9 @@ export default function RobotControl() {
     if (sensorWsRef.current) sensorWsRef.current.close();
 
     initializeWebSockets(selectedRobot, selectedCamera);
+
+    // Reset sensor data
+    setSensorData(null);
     
     if (pcRef.current) pcRef.current.close();
     startWebRTC(selectedRobot, selectedCamera);
@@ -504,10 +566,6 @@ export default function RobotControl() {
     };
   }, [selectedRobot, selectedCamera]);
 
-  // Fetch robots on component mount
-  useEffect(() => {
-    fetchRobots();
-  }, []);
 
 
   return (
@@ -553,7 +611,7 @@ export default function RobotControl() {
                 </SelectTrigger>
                 <SelectContent>
                   {robots.map((robot) => (
-                    <SelectItem key={robot.id} value={robot.id.toString()}>
+                    <SelectItem key={robot.referance} value={robot.referance.toString()}>
                       {robot.nom} ({robot.referance})
                     </SelectItem>
                   ))}
@@ -571,11 +629,54 @@ export default function RobotControl() {
                 disabled={isLoadingRobots}
                 className="w-full h-6 text-xs"
                 variant="outline"
+                size="sm"
               >
                 <RefreshCw className={`h-3 w-3 mr-1 ${isLoadingRobots ? 'animate-spin' : ''}`} />
                 Actualiser les robots
               </Button>
+            </CardContent>
+          </Card>
 
+          {/* Video Controls */}
+          <Card className="text-sm">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm">Contrôles Vidéo</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              <div className="flex gap-1">
+                <Button
+                  onClick={zoomOut}
+                  className="flex-1 h-8 text-sm"
+                  variant="outline"
+                  disabled={videoZoom <= 0.5}
+                >
+                  <ZoomOut className="h-3 w-3" />
+                </Button>
+                <Button
+                  onClick={resetZoom}
+                  className="flex-1 h-8 text-sm"
+                  variant="outline"
+                >
+                  {Math.round(videoZoom * 100)}%
+                </Button>
+                <Button
+                  onClick={zoomIn}
+                  className="flex-1 h-8 text-sm"
+                  variant="outline"
+                  disabled={videoZoom >= 3}
+                >
+                  <ZoomIn className="h-3 w-3" />
+                </Button>
+              </div>
+
+              <Button
+                onClick={captureImage}
+                className="w-full h-8 text-sm"
+                variant="outline"
+              >
+                <Download className="h-3 w-3 mr-1" />
+                Capturer Image
+              </Button>
             </CardContent>
           </Card>
 
@@ -612,6 +713,28 @@ export default function RobotControl() {
                   </>
                 )}
               </Button>
+
+              <Button
+                onClick={toggleAIDetection}
+                className={`w-full h-8 text-sm ${
+                  isAIDetectionEnabled
+                    ? 'bg-green-500 hover:bg-green-600 text-white'
+                    : 'bg-gray-200 hover:bg-gray-300 text-gray-800'
+                }`}
+                variant="outline"
+              >
+                {isAIDetectionEnabled ? (
+                  <>
+                    <Eye className="h-3 w-3 mr-1" />
+                    IA Activée
+                  </>
+                ) : (
+                  <>
+                    <EyeOff className="h-3 w-3 mr-1" />
+                    IA Désactivée
+                  </>
+                )}
+              </Button>
             </CardContent>
           </Card>
 
@@ -638,13 +761,17 @@ export default function RobotControl() {
 
         {/* Full Screen Video Area */}
         <div className="flex-1 relative">
-          <div className="absolute inset-0 bg-black">
+          <div className="absolute inset-0 bg-black overflow-hidden">
             <video
               ref={videoRef}
               autoPlay
               playsInline
               muted
-              className="w-full h-full bg-black object-contain"
+              className="w-full h-full bg-black object-contain transition-transform duration-200"
+              style={{
+                transform: `scale(${videoZoom}) translate(${videoPosition.x}px, ${videoPosition.y}px)`,
+                transformOrigin: 'center center'
+              }}
             />
 
             {/* Sensor Data Overlay - Top Left */}
@@ -772,15 +899,15 @@ export default function RobotControl() {
               <div className="text-sm space-y-1">
                 <div className="flex items-center gap-2">
                   <Bot className="h-3 w-3 text-blue-400" />
-                  <span>Robot: {robots.find(r => r.id.toString() === selectedRobot)?.nom || 'Chargement...'}</span>
+                  <span>Robot: {robots.find(r => r.referance.toString() === selectedRobot)?.nom || 'Chargement...'}</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <Camera className="h-3 w-3 text-green-400" />
                   <span>Caméra: {selectedCamera === 'left' ? 'Gauche' : 'Droite'}</span>
                 </div>
-                {robots.find(r => r.id.toString() === selectedRobot)?.referance && (
+                {robots.find(r => r.referance.toString() === selectedRobot)?.referance && (
                   <div className="flex items-center gap-2 text-xs text-gray-300">
-                    <span>Ref: {robots.find(r => r.id.toString() === selectedRobot)?.referance}</span>
+                    <span>Ref: {robots.find(r => r.referance.toString() === selectedRobot)?.referance}</span>
                   </div>
                 )}
               </div>
