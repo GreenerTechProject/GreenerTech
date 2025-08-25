@@ -87,7 +87,8 @@ export default function TechnicianReportCreation() {
       
       // Redirect to reports page after a short delay
       setTimeout(() => {
-        navigate("/technician/reports");
+        const reportsPath = user?.role === "technicien_superieur" ? "/technicien-sup/reports" : "/technician/reports";
+        navigate(reportsPath);
       }, 2000);
       
     } catch (error: any) {
@@ -98,7 +99,8 @@ export default function TechnicianReportCreation() {
   };
 
   const handleCancel = () => {
-    navigate("/technician/reports");
+    const reportsPath = user?.role === "technicien_superieur" ? "/technicien-sup/reports" : "/technician/reports";
+    navigate(reportsPath);
   };
 
   const formatDateForInput = (date: Date) => {

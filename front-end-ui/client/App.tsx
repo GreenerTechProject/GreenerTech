@@ -360,6 +360,7 @@ const App = () => {
               <Route path="interventions" element={<TechnicienSupInterventions />} />
               <Route path="intervention-request/:id" element={<InterventionRequestDetails />} />
               <Route path="reports" element={<TechnicienSupReports />} />
+              <Route path="reports/create" element={<TechnicianReportCreation />} />
               <Route path="authorizations" element={<TechnicienSupAuthorizations />} />
               <Route path="team" element={<TechnicienSupTeamManagement />} />
               <Route path="notifications" element={<TechSupNotificationsPage />} />
