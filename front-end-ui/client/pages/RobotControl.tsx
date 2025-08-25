@@ -27,8 +27,11 @@ import {
   Download,
   Eye,
   EyeOff,
-  Move
+  Move,
+  GripVertical,
+  X
 } from 'lucide-react';
+import TechHeader from '@/components/TechHeader';
 
 interface QRData {
   [key: string]: any;
@@ -77,7 +80,43 @@ export default function RobotControl() {
   const [isAIDetectionEnabled, setIsAIDetectionEnabled] = useState<boolean>(false);
   const [videoZoom, setVideoZoom] = useState<number>(1);
   const [videoPosition, setVideoPosition] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
-  
+
+  // Control button states
+  const [pressedButton, setPressedButton] = useState<string>('');
+  const [isMouseDown, setIsMouseDown] = useState<boolean>(false);
+  const [buttonSize, setButtonSize] = useState<'sm' | 'default' | 'lg'>('default');
+
+  // Panel states for draggable panels
+  const [controlPanelPos, setControlPanelPos] = useState<PanelPosition>({ x: 50, y: 100, width: 300, height: 400 });
+  const [sensorPanelPos, setSensorPanelPos] = useState<PanelPosition>({ x: 400, y: 100, width: 250, height: 200 });
+  const [qrPanelPos, setQrPanelPos] = useState<PanelPosition>({ x: 700, y: 100, width: 300, height: 300 });
+  const [settingsPanelPos, setSettingsPanelPos] = useState<PanelPosition>({ x: 50, y: 550, width: 300, height: 250 });
+
+  const [panelSizes, setPanelSizes] = useState<{
+    control: PanelPosition;
+    sensor: PanelPosition;
+    qr: PanelPosition;
+    settings: PanelPosition;
+  }>({
+    control: { x: 0, y: 0, width: 300, height: 400 },
+    sensor: { x: 0, y: 0, width: 250, height: 200 },
+    qr: { x: 0, y: 0, width: 300, height: 300 },
+    settings: { x: 0, y: 0, width: 300, height: 250 }
+  });
+
+  const [showControlPanel, setShowControlPanel] = useState<boolean>(true);
+  const [showSensorPanel, setShowSensorPanel] = useState<boolean>(true);
+  const [showQrPanel, setShowQrPanel] = useState<boolean>(true);
+  const [showSettingsPanel, setShowSettingsPanel] = useState<boolean>(false);
+
+  // Dragging and resizing states
+  const [isDragging, setIsDragging] = useState<string | null>(null);
+  const [isResizing, setIsResizing] = useState<string | null>(null);
+  const [dragOffset, setDragOffset] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
+
+  // Panel refs
+  const panelRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
+
   // New state for robots
   const [robots, setRobots] = useState<Robot[]>([]);
   const [isLoadingRobots, setIsLoadingRobots] = useState<boolean>(false);
@@ -375,6 +414,103 @@ export default function RobotControl() {
     //sendCommand('SELECT_ROBOT');
   };
 
+  // Dragging and resizing functions
+  const handleMouseDown = (e: React.MouseEvent, action: 'drag' | 'resize', panelId: string) => {
+    e.preventDefault();
+
+    if (action === 'drag') {
+      setIsDragging(panelId);
+      const panel = panelRefs.current[panelId];
+      if (panel) {
+        const rect = panel.getBoundingClientRect();
+        setDragOffset({
+          x: e.clientX - rect.left,
+          y: e.clientY - rect.top
+        });
+      }
+    } else if (action === 'resize') {
+      setIsResizing(panelId);
+    }
+  };
+
+  const handleMouseMove = (e: MouseEvent) => {
+    if (isDragging) {
+      const panelId = isDragging;
+      const panel = panelRefs.current[panelId];
+      if (panel) {
+        const container = panel.parentElement;
+        if (container) {
+          const containerRect = container.getBoundingClientRect();
+          const newX = e.clientX - dragOffset.x - containerRect.left;
+          const newY = e.clientY - dragOffset.y - containerRect.top;
+
+          // Update panel position based on panelId
+          if (panelId === 'control') {
+            setControlPanelPos(prev => ({ ...prev, x: Math.max(0, newX), y: Math.max(0, newY) }));
+          } else if (panelId === 'sensor') {
+            setSensorPanelPos(prev => ({ ...prev, x: Math.max(0, newX), y: Math.max(0, newY) }));
+          } else if (panelId === 'qr') {
+            setQrPanelPos(prev => ({ ...prev, x: Math.max(0, newX), y: Math.max(0, newY) }));
+          } else if (panelId === 'settings') {
+            setSettingsPanelPos(prev => ({ ...prev, x: Math.max(0, newX), y: Math.max(0, newY) }));
+          }
+        }
+      }
+    } else if (isResizing) {
+      const panelId = isResizing;
+      const panel = panelRefs.current[panelId];
+      if (panel) {
+        const rect = panel.getBoundingClientRect();
+        const newWidth = e.clientX - rect.left;
+        const newHeight = e.clientY - rect.top;
+
+        // Update panel size based on panelId
+        if (panelId === 'control') {
+          setPanelSizes(prev => ({
+            ...prev,
+            control: {
+              ...prev.control,
+              width: Math.max(200, newWidth),
+              height: Math.max(150, newHeight)
+            }
+          }));
+        } else if (panelId === 'sensor') {
+          setPanelSizes(prev => ({
+            ...prev,
+            sensor: {
+              ...prev.sensor,
+              width: Math.max(200, newWidth),
+              height: Math.max(150, newHeight)
+            }
+          }));
+        } else if (panelId === 'qr') {
+          setPanelSizes(prev => ({
+            ...prev,
+            qr: {
+              ...prev.qr,
+              width: Math.max(200, newWidth),
+              height: Math.max(150, newHeight)
+            }
+          }));
+        } else if (panelId === 'settings') {
+          setPanelSizes(prev => ({
+            ...prev,
+            settings: {
+              ...prev.settings,
+              width: Math.max(200, newWidth),
+              height: Math.max(150, newHeight)
+            }
+          }));
+        }
+      }
+    }
+  };
+
+  const handleMouseUp = () => {
+    setIsDragging(null);
+    setIsResizing(null);
+  };
+
   // Update selected robot when robots are loaded
   useEffect(() => {
     if (robots.length > 0 && !robots.find(r => r.referance.toString() === selectedRobot)) {
@@ -465,6 +601,84 @@ export default function RobotControl() {
     </Button>
   );
 
+  // DraggablePanel component
+  const DraggablePanel: React.FC<{
+    id: string;
+    title: string;
+    position: PanelPosition;
+    onPositionChange: (pos: PanelPosition) => void;
+    size: PanelPosition;
+    onSizeChange?: (size: PanelPosition) => void;
+    isVisible: boolean;
+    onToggle: () => void;
+    onClose: () => void;
+    children: React.ReactNode;
+    className?: string;
+  }> = ({ id, title, position, onPositionChange, size, onSizeChange, isVisible, onToggle, onClose, children, className = "" }) => {
+    if (!isVisible) return null;
+
+    return (
+      <div
+        ref={(el) => {
+          if (el) {
+            panelRefs.current[id] = el;
+          }
+        }}
+        className={`absolute bg-black/90 backdrop-blur-sm text-white rounded-lg border border-white/30 shadow-2xl ${className}`}
+        style={{
+          left: position.x,
+          top: position.y,
+          width: size.width,
+          height: size.height,
+          zIndex: isDragging === id ? 1000 : 100
+        }}
+      >
+        {/* Panel Header */}
+        <div
+          className="flex items-center justify-between p-3 border-b border-white/20 cursor-move select-none"
+          onMouseDown={(e) => handleMouseDown(e, 'drag', id)}
+        >
+          <div className="flex items-center gap-2">
+            <GripVertical className="h-4 w-4 text-white/60" />
+            <span className="font-semibold text-sm">{title}</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onToggle}
+              className="h-6 w-6 p-0 text-white/60 hover:text-white hover:bg-white/10"
+            >
+              <Minimize className="h-3 w-3" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onClose}
+              className="h-6 w-6 p-0 text-white/60 hover:text-white hover:bg-white/10"
+            >
+              <X className="h-3 w-3" />
+            </Button>
+          </div>
+        </div>
+
+        {/* Panel Content */}
+        <div className="p-3 h-full overflow-y-auto">
+          {children}
+        </div>
+
+        {/* Resize Handle */}
+        {onSizeChange && (
+          <div
+            className="absolute bottom-0 right-0 w-4 h-4 cursor-se-resize opacity-50 hover:opacity-100"
+            onMouseDown={(e) => handleMouseDown(e, 'resize', id)}
+          >
+            <div className="w-0 h-0 border-l-[8px] border-l-transparent border-b-[8px] border-b-white/40"></div>
+          </div>
+        )}
+      </div>
+    );
+  };
 
   // Render QR data recursively
   const renderQRValue = (key: string, value: any, depth = 0): React.ReactNode => {
@@ -517,89 +731,6 @@ export default function RobotControl() {
       setIsFullScreen(!!document.fullscreenElement);
     };
 
-    useEffect(() => {
-      if (isDragging === id || isResizing) {
-        document.addEventListener('mousemove', handleMouseMove);
-        document.addEventListener('mouseup', handleMouseUp);
-        return () => {
-          document.removeEventListener('mousemove', handleMouseMove);
-          document.removeEventListener('mouseup', handleMouseUp);
-        };
-      }
-    }, [isDragging, isResizing, id]);
-
-    if (!isVisible) return null;
-
-    return (
-      <div
-        ref={panelRef}
-        className={`absolute bg-black/90 backdrop-blur-sm text-white rounded-lg border border-white/30 shadow-2xl ${className}`}
-        style={{
-          left: position.x,
-          top: position.y,
-          width: size.width,
-          height: size.height,
-          zIndex: isDragging === id ? 1000 : 100
-        }}
-      >
-        {/* Panel Header */}
-        <div 
-          className="flex items-center justify-between p-3 border-b border-white/20 cursor-move select-none"
-          onMouseDown={(e) => handleMouseDown(e, 'drag')}
-        >
-          <div className="flex items-center gap-2">
-            <GripVertical className="h-4 w-4 text-white/60" />
-            <span className="font-semibold text-sm">{title}</span>
-          </div>
-          <div className="flex items-center gap-1">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={onToggle}
-              className="h-6 w-6 p-0 text-white/60 hover:text-white hover:bg-white/10"
-            >
-              <Minimize className="h-3 w-3" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={onClose}
-              className="h-6 w-6 p-0 text-white/60 hover:text-white hover:bg-white/10"
-            >
-              <X className="h-3 w-3" />
-            </Button>
-          </div>
-        </div>
-
-        {/* Panel Content */}
-        <div className="p-3 h-full overflow-y-auto">
-          {children}
-        </div>
-
-        {/* Resize Handle */}
-        {onSizeChange && (
-          <div
-            className="absolute bottom-0 right-0 w-4 h-4 cursor-se-resize opacity-50 hover:opacity-100"
-            onMouseDown={(e) => handleMouseDown(e, 'resize')}
-          >
-            <div className="w-0 h-0 border-l-[8px] border-l-transparent border-b-[8px] border-b-white/40"></div>
-          </div>
-        )}
-      </div>
-    );
-  };
-
-  // Initialize connections on component mount
-  useEffect(() => {
-    updateSelectedFromUrl();
-    fetchRobots();
-    startWebRTC(selectedRobot, selectedCamera);
-    initializeWebSockets(selectedRobot, selectedCamera);
-
-    const handleFullscreenChange = () => {
-      setIsFullScreen(!!document.fullscreenElement);
-    };
-
     const handleResize = () => {
       // Reposition panels on screen resize
       setQrPanelPos(prev => ({ ...prev, x: window.innerWidth - 320 }));
@@ -630,7 +761,7 @@ export default function RobotControl() {
 
     // Reset sensor data
     setSensorData(null);
-    
+
     if (pcRef.current) pcRef.current.close();
     startWebRTC(selectedRobot, selectedCamera);
 
@@ -641,6 +772,21 @@ export default function RobotControl() {
       if (pcRef.current) pcRef.current.close();
     };
   }, [selectedRobot, selectedCamera]);
+
+  // Handle mouse events for dragging and resizing
+  useEffect(() => {
+    const handleMouseMoveGlobal = (e: MouseEvent) => handleMouseMove(e);
+    const handleMouseUpGlobal = () => handleMouseUp();
+
+    if (isDragging || isResizing) {
+      document.addEventListener('mousemove', handleMouseMoveGlobal);
+      document.addEventListener('mouseup', handleMouseUpGlobal);
+      return () => {
+        document.removeEventListener('mousemove', handleMouseMoveGlobal);
+        document.removeEventListener('mouseup', handleMouseUpGlobal);
+      };
+    }
+  }, [isDragging, isResizing]);
 
 
 
@@ -929,16 +1075,14 @@ export default function RobotControl() {
             {/* Mission Controls */}
             <div className="flex flex-col gap-2">
               <div className="flex gap-2">
-                <ControlButton 
-                  mode="PAUSE_MISSION" 
-                  size={buttonSize}
+                <ControlButton
+                  mode="PAUSE_MISSION"
                   className="bg-amber-600/90 hover:bg-amber-700/90 border-amber-500 text-white flex-1"
                 >
                   <Pause className="h-4 w-4" />
                 </ControlButton>
-                <ControlButton 
-                  mode="PLAY_MISSION" 
-                  size={buttonSize}
+                <ControlButton
+                  mode="PLAY_MISSION"
                   className="bg-emerald-600/90 hover:bg-emerald-700/90 border-emerald-500 text-white flex-1"
                 >
                   <Play className="h-4 w-4" />
@@ -949,18 +1093,16 @@ export default function RobotControl() {
             {/* Movement Controls - Cross Pattern */}
             <div className="grid grid-cols-3 gap-2 justify-items-center">
               <div></div>
-              <ControlButton 
-                mode="TOP" 
-                size={buttonSize}
+              <ControlButton
+                mode="TOP"
                 className="bg-slate-600/90 hover:bg-slate-700/90 border-slate-500 text-white"
               >
                 <ArrowUp className="h-4 w-4" />
               </ControlButton>
               <div></div>
 
-              <ControlButton 
-                mode="LEFT" 
-                size={buttonSize}
+              <ControlButton
+                mode="LEFT"
                 className="bg-slate-600/90 hover:bg-slate-700/90 border-slate-500 text-white"
               >
                 <ArrowLeft className="h-4 w-4" />
@@ -970,18 +1112,16 @@ export default function RobotControl() {
                   <div className="w-2 h-2 rounded-full bg-white"></div>
                 </div>
               </div>
-              <ControlButton 
-                mode="RIGHT" 
-                size={buttonSize}
+              <ControlButton
+                mode="RIGHT"
                 className="bg-slate-600/90 hover:bg-slate-700/90 border-slate-500 text-white"
               >
                 <ArrowRight className="h-4 w-4" />
               </ControlButton>
 
               <div></div>
-              <ControlButton 
-                mode="DOWN" 
-                size={buttonSize}
+              <ControlButton
+                mode="DOWN"
                 className="bg-slate-600/90 hover:bg-slate-700/90 border-slate-500 text-white"
               >
                 <ArrowDown className="h-4 w-4" />
@@ -991,16 +1131,14 @@ export default function RobotControl() {
 
             {/* Camera Controls */}
             <div className="flex gap-2">
-              <ControlButton 
-                mode="TOP_CAM" 
-                size={buttonSize}
+              <ControlButton
+                mode="TOP_CAM"
                 className="bg-indigo-600/90 hover:bg-indigo-700/90 border-indigo-500 text-white flex-1"
               >
                 <ArrowUp className="h-4 w-4" />
               </ControlButton>
-              <ControlButton 
-                mode="DOWN_CAM" 
-                size={buttonSize}
+              <ControlButton
+                mode="DOWN_CAM"
                 className="bg-indigo-600/90 hover:bg-indigo-700/90 border-indigo-500 text-white flex-1"
               >
                 <ArrowDown className="h-4 w-4" />
@@ -1030,9 +1168,34 @@ export default function RobotControl() {
                   <div className="font-semibold">{sensorData.temperature}°C</div>
                 </div>
               </div>
+              <div className="flex items-center gap-2 p-2 bg-white/10 rounded">
+                <Droplets className="h-4 w-4 text-blue-400" />
+                <div>
+                  <div className="text-xs text-gray-300">Humidité</div>
+                  <div className="font-semibold">{sensorData.humidity}%</div>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 p-2 bg-white/10 rounded">
+                <Zap className="h-4 w-4 text-green-400" />
+                <div>
+                  <div className="text-xs text-gray-300">CO₂</div>
+                  <div className="font-semibold">{sensorData.co2} ppm</div>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 p-2 bg-white/10 rounded">
+                <Sun className="h-4 w-4 text-yellow-400" />
+                <div>
+                  <div className="text-xs text-gray-300">Luminosité</div>
+                  <div className="font-semibold">{sensorData.luminosite} lux</div>
+                </div>
+              </div>
             </div>
+          ) : (
+            <p className="text-gray-300 text-sm">Waiting for sensor data...</p>
+          )}
+        </DraggablePanel>
 
-            {/* Current Robot/Camera Info Overlay - Bottom Left */}
+        {/* Current Robot/Camera Info Overlay - Bottom Left */}
             <div className="absolute bottom-4 left-4 bg-black/80 backdrop-blur-sm text-white p-3 rounded-lg border border-white/20">
               <div className="text-sm space-y-1">
                 <div className="flex items-center gap-2">

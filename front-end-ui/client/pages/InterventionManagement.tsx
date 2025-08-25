@@ -73,6 +73,9 @@ export default function InterventionManagement() {
   const [startDateFilter, setStartDateFilter] = useState<string>("");
   const [activeFilters, setActiveFilters] = useState<{[key: string]: string}>({});
 
+  // Intervention form state
+  const [isInterventionFormOpen, setIsInterventionFormOpen] = useState<boolean>(false);
+
   useEffect(() => {
     loadInterventions();
   }, []);
@@ -275,6 +278,20 @@ export default function InterventionManagement() {
 
   const refreshData = () => {
     loadInterventions();
+  };
+
+  // Intervention form handlers
+  const handleSubmitIntervention = (data: any) => {
+    console.log("Intervention submitted:", data);
+    // Refresh the interventions list after successful submission
+    loadInterventions();
+    setIsInterventionFormOpen(false);
+  };
+
+  const handleSaveDraft = () => {
+    console.log("Save draft functionality - not implemented yet");
+    // TODO: Implement draft saving functionality
+    setIsInterventionFormOpen(false);
   };
 
   const handlePageChange = (page: number) => {
@@ -492,9 +509,18 @@ export default function InterventionManagement() {
         {/* Interventions Table */}
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              Interventions ({filteredInterventions.length})
-            </CardTitle>
+            <div className="flex items-center justify-between">
+              <CardTitle className="flex items-center gap-2">
+                Interventions ({filteredInterventions.length})
+              </CardTitle>
+              <Button
+                onClick={() => setIsInterventionFormOpen(true)}
+                className="flex items-center gap-2"
+              >
+                <Plus className="h-4 w-4" />
+                Nouvelle intervention
+              </Button>
+            </div>
           </CardHeader>
           <CardContent>
             <div className="overflow-x-auto">
@@ -612,7 +638,6 @@ export default function InterventionManagement() {
         isOpen={isInterventionFormOpen}
         onClose={() => setIsInterventionFormOpen(false)}
         onSubmit={handleSubmitIntervention}
-        onSaveDraft={handleSaveDraft}
       />
     </div>
   );
