@@ -125,7 +125,7 @@ export default function TechnicianDashboard() {
         
         // Fetch all data in parallel
         const [alertsData, missionsData, serresData, domainsData, bilansData, robotsData, interventionsData, notificationsData, reportsData] = await Promise.all([
-          AlertService.getAllAlerts(1, 1000),
+          AlertService.getAlertsByAssignedSerres(),
           missionService.getAllMissions(),
           serreService.getAllSerres(),
           domainService.getMyCompanyDomains(),
@@ -136,7 +136,9 @@ export default function TechnicianDashboard() {
           ReportService.getReportsByAssignedSerres()
         ]);
 
-        setAlerts(alertsData.alerts || []);
+        setAlerts(alertsData || []);
+        console.log("[DEBUG] TechnicianDashboard - Alerts data:", alertsData);
+        console.log("[DEBUG] TechnicianDashboard - Sample alert severity values:", alertsData?.slice(0, 5).map(a => ({ id: a.id, status_alert: a.status_alert, maladie: a.maladie })));
         setMissions(missionsData);
         setSerres(serresData);
         setDomains(domainsData);
@@ -146,12 +148,16 @@ export default function TechnicianDashboard() {
         setNotifications(notificationsData);
         setReports(reportsData);
       } catch (error) {
+        console.error("[ERROR] TechnicianDashboard - Failed to fetch dashboard data:", error);
         setAlerts([]);
         setMissions([]);
         setSerres([]);
         setDomains([]);
         setBilans([]);
         setRobots([]);
+        setInterventions([]);
+        setNotifications([]);
+        setReports([]);
       } finally {
         setLoading(false);
       }
@@ -297,12 +303,26 @@ export default function TechnicianDashboard() {
   }).length;
   const pendingSerres = serres.length - completedSerres;
   
-  // Additional real data calculations
+  // Additional real data calculations with improved severity mapping
   const alertsBySeverity = {
-    low: alerts.filter(a => (a.status_alert as number) == 0).length,
-    medium: alerts.filter(a => (a.status_alert as number) ==1).length,
-    high: alerts.filter(a => (a.status_alert as number) == 2).length
+    low: alerts.filter(a => {
+      const severity = a.status_alert as number;
+      return severity >= 0 && severity <= 2; // Low severity: 0-2
+    }).length,
+    medium: alerts.filter(a => {
+      const severity = a.status_alert as number;
+      return severity >= 3 && severity <= 5; // Medium severity: 3-5
+    }).length,
+    high: alerts.filter(a => {
+      const severity = a.status_alert as number;
+      return severity >= 6; // High severity: 6+
+    }).length
   };
+
+  console.log("[DEBUG] TechnicianDashboard - Alert severity breakdown:", alertsBySeverity);
+  console.log("[DEBUG] TechnicianDashboard - Total alerts count:", alerts.length);
+  console.log("[DEBUG] TechnicianDashboard - Unresolved alerts:", unresolvedAlerts);
+  console.log("[DEBUG] TechnicianDashboard - Urgent alerts:", urgentAlerts);
   
   const recentAlerts = alerts.filter(a => {
     if (!a.date) return false;
@@ -455,8 +475,8 @@ export default function TechnicianDashboard() {
                       ) : alerts.slice(0, 5).map(alert => (
                         <div key={alert.id} className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl border border-gray-200 hover:bg-gray-100 transition-colors">
                           <div className={`w-3 h-3 rounded-full ${
-                            alert.status_alert === 0 ? 'bg-greener-500' :
-                            alert.status_alert === 1 ? 'bg-orange-500' : 'bg-red-500'
+                            (alert.status_alert as number) >= 0 && (alert.status_alert as number) <= 2 ? 'bg-greener-500' :
+                            (alert.status_alert as number) >= 3 && (alert.status_alert as number) <= 5 ? 'bg-orange-500' : 'bg-red-500'
                           }`}></div>
                           <div className="flex-1 min-w-0">
                             <div className="text-sm font-medium truncate">{alert.maladie}</div>
