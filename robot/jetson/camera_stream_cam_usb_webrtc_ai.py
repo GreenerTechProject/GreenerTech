@@ -104,7 +104,7 @@ class CameraVideoTrack(VideoStreamTrack):
         else :
           pipeline = gstreamer_pipeline(device)
 
-        self.cap = detect_frame(cv2.VideoCapture(pipeline, cv2.CAP_GSTREAMER))
+        self.cap = cv2.VideoCapture(pipeline, cv2.CAP_GSTREAMER)
         
         #self.cap = cv2.VideoCapture(device)
         #self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, width)
@@ -203,12 +203,12 @@ async def send_video(robot_ref, camera, idcamera, type=0):
 # import json
 
 # # Configuration du port série (à adapter selon ton OS ou port réel)
-# try:
-#     arduino = serial.Serial('/dev/ttyACM0', 9600)
-#     print("✅ Port série vers Arduino ouvert.")
-# except Exception as e:
-#     print(f"❌ Erreur ouverture port série : {e}")
-#     arduino = None
+try:
+    arduino = serial.Serial('/dev/ttyACM0', 9600)
+    print("✅ Port série vers Arduino ouvert.")
+except Exception as e:
+    print(f"❌ Erreur ouverture port série : {e}")
+    arduino = None
 
 # host = "192.168.10.237" # adresse IP de ton serveur de contrôle ou localhost si en local
 

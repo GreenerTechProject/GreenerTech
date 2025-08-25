@@ -3,8 +3,8 @@ from app.models.robot import Robot
 from database.config import db
 from app.utils.security import token_required, role_required
 
-@token_required
-@role_required("directeur")
+#@token_required The robot does not need a director's role.
+#@role_required("directeur")
 def create_robot(current_user):
     data = request.get_json()
     
