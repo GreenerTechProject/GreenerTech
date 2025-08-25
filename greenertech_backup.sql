@@ -628,7 +628,7 @@ ALTER SEQUENCE public.rapport_id_seq OWNED BY public.rapport.id;
 
 CREATE TABLE public.robots (
     id integer NOT NULL,
-    nom character varying(100) NOT NULL,
+    nom character varying(100),
     referance character varying(100),
     id_entreprise integer
 );
