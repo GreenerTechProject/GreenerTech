@@ -2,6 +2,24 @@ from flask import jsonify, request
 from app.models.notification import Notification
 from database.config import db
 from app.utils.security import token_required, role_required
+from datetime import datetime, timedelta, timezone
+
+
+def serialize_datetime_utc_plus_1(dt):
+    """
+    Serialize datetime to ISO format ensuring UTC+1 timezone information is preserved.
+    If the datetime is naive, assume it's UTC and convert to UTC+1.
+    If the datetime is timezone-aware, convert it to UTC+1.
+    """
+    if dt.tzinfo is None:
+        # Naive datetime - assume it's UTC and convert to UTC+1
+        dt = dt.replace(tzinfo=timezone.utc)
+        dt = dt.astimezone(timezone(timedelta(hours=1)))
+    else:
+        # Timezone-aware datetime - convert to UTC+1
+        dt = dt.astimezone(timezone(timedelta(hours=1)))
+
+    return dt.isoformat()
 
 
 # ✅ Récupérer les notifications par utilisateur, avec option de filtrage par type
@@ -17,7 +35,7 @@ def get_notifications_by_user(current_user):
         'id': n.id,
         'description': n.description,
         'status': n.status,
-        'date': n.date.isoformat(),
+        'date': serialize_datetime_utc_plus_1(n.date),
         'id_intervention': n.id_intervention,
         'type_notification': n.type_notification
     } for n in notifs]), 200
@@ -30,7 +48,7 @@ def get_all_notifications():
         'id': n.id,
         'description': n.description,
         'status': n.status,
-        'date': n.date.isoformat(),
+        'date': serialize_datetime_utc_plus_1(n.date),
         'id_user': n.id_user,
         'id_intervention': n.id_intervention,
         'type_notification': n.type_notification
