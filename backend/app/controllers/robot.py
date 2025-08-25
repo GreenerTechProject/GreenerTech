@@ -94,9 +94,16 @@ def delete_robot(current_user, robot_id):
         return jsonify({"status": "error", "message": "Accès non autorisé à ce robot"}), 403
 
     try:
+        # First, delete all missions associated with this robot
+        from app.models.mission_robot import MissionRobot
+        missions_to_delete = MissionRobot.query.filter_by(id_robot=robot_id).all()
+        for mission in missions_to_delete:
+            db.session.delete(mission)
+
+        # Then delete the robot
         db.session.delete(robot)
         db.session.commit()
-        return jsonify({"status": "success", "message": "Robot supprimé"}), 200
+        return jsonify({"status": "success", "message": f"Robot et ses {len(missions_to_delete)} missions associées supprimés"}), 200
     except Exception as e:
         db.session.rollback()
         return jsonify({"status": "error", "message": str(e)}), 400
