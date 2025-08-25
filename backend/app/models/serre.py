@@ -19,6 +19,11 @@ class Serre(db.Model):
         lazy="joined",
         viewonly=True
     )
+    
+    domaine = relationship("Domaine", back_populates="serres")
+
+    interventions = relationship("Intervention", backref="serre", cascade="all, delete-orphan")
+    rapports = relationship("Rapport", backref="serre", cascade="all, delete-orphan")
 
     def to_dict(self):
         return {

@@ -1,4 +1,4 @@
-from flask import Flask
+from flask import Flask, request, jsonify
 from flask_cors import CORS
 
 from dotenv import load_dotenv
@@ -14,7 +14,14 @@ from app.config import Config
 def create_app():
     app = Flask(__name__)
     load_dotenv()
-    CORS(app)
+    
+    # Configure CORS to handle preflight requests properly
+    CORS(app, 
+          origins="*",  # Allow all origins for development
+          methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+          allow_headers=["Content-Type", "Authorization"],
+          supports_credentials=False)  # Set to False when using origins="*"
+    
     app.config['SECRET_KEY'] = os.getenv("SECRET_KEY")
 
     app.config.from_object(Config)
@@ -22,6 +29,16 @@ def create_app():
     mail.init_app(app)
     # Initialiser la base de données
     init_db(app)
+
+    # Global OPTIONS handler for preflight requests
+    @app.before_request
+    def handle_preflight():
+        if request.method == "OPTIONS":
+            response = jsonify({"status": "ok"})
+            response.headers.add("Access-Control-Allow-Origin", "*")
+            response.headers.add("Access-Control-Allow-Headers", "Content-Type,Authorization")
+            response.headers.add("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,OPTIONS")
+            return response
 
     # Enregistrer les Blueprints
     app.register_blueprint(all_bp, url_prefix='/api')

@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import axios from "axios";
+import { CheckCircle } from "lucide-react";
 
 
 export default function VerifyEmail() {
@@ -60,15 +61,39 @@ export default function VerifyEmail() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-50 flex items-center justify-center p-6">
-      <div className="w-full max-w-md bg-white rounded-xl shadow-md overflow-hidden border border-gray-200">
-        <div className="p-8 text-center">
+    <div className="min-h-screen bg-gradient-to-br from-[#EAF4E1] via-[#FCFEFF] to-[#EAF4E1] flex flex-col lg:flex-row">
+      {/* Background Image Section */}
+      <div className="hidden lg:block flex-1 relative min-h-[40vh] lg:min-h-screen">
+        <img
+          src="https://cdn.builder.io/api/v1/image/assets%2Fe15cdeeaccbb4f9394b3b7b30742eb8c%2F97c345a448194346ad4e8ebc4b57f88f?format=webp&width=1200"
+          alt="Agriculture intelligente"
+          className="absolute inset-0 w-full h-full object-cover"
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
+      </div>
+
+      {/* Verification Form Section */}
+      <div className="w-full lg:w-[845px] bg-white/95 backdrop-blur lg:rounded-l-[28px] shadow-xl flex flex-col items-center justify-center px-6 sm:px-8 py-10 lg:py-12 min-h-screen">
+        {/* Greener Tech Logo */}
+        <div className="mb-6 lg:mb-8">
+          <img
+            src="/GreenerTech-Logo4T.png"
+            alt="Greener Tech Logo"
+            className="w-[220px] sm:w-[260px] lg:w-[320px] h-auto mx-auto"
+          />
+        </div>
+        <p className="text-center text-gray-600 mb-8">
+          Rejoignez la révolution verte avec GreenerTech
+        </p>
+
+        {/* Verification Content */}
+        <div className="w-full max-w-[416px] text-center">
           {/* Icon / Loader */}
-          <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full mb-4 bg-gray-100">
+          <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full mb-4 bg-green-100 shadow-lg">
             {status === "loading" && (
               // Spinner
               <svg
-                className="animate-spin h-8 w-8 text-gray-600"
+                className="animate-spin h-8 w-8 text-[#2E7D32]"
                 xmlns="http://www.w3.org/2000/svg"
                 viewBox="0 0 24 24"
                 fill="none"
@@ -90,19 +115,7 @@ export default function VerifyEmail() {
             )}
 
             {status === "success" && (
-              // Check icon
-              <svg
-                className="h-8 w-8 text-green-600"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeWidth="2"
-                  d="M5 13l4 4L19 7"
-                />
-              </svg>
+              <CheckCircle className="w-8 h-8 text-[#2E7D32] drop-shadow-sm" />
             )}
 
             {status === "error" && (
@@ -154,7 +167,7 @@ export default function VerifyEmail() {
             {(status === "success" || status === "missing") && (
               <button
                 onClick={() => navigate("/login")}
-                className="px-6 py-3 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg transition-colors"
+                className="px-6 py-3 bg-[#2E7D32] text-white font-medium rounded-lg hover:bg-[#276A2B] transition-colors shadow-md hover:shadow-lg"
               >
                 Go to Login
               </button>
@@ -163,7 +176,7 @@ export default function VerifyEmail() {
             {status === "success" && (
               <button
                 onClick={() => navigate("/")}
-                className="px-6 py-3 text-gray-700 hover:text-gray-900 font-medium rounded-lg border border-gray-300 hover:bg-gray-50 transition"
+                className="px-6 py-3 text-[#2E7D32] hover:text-[#276A2B] font-medium rounded-lg border border-[#2E7D32] hover:bg-[#2E7D32] hover:text-white transition-colors"
               >
                 Home
               </button>
@@ -173,14 +186,14 @@ export default function VerifyEmail() {
               <>
                 <button
                   onClick={handleRetry}
-                  className="px-6 py-3 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg transition-colors"
+                  className="px-6 py-3 bg-[#2E7D32] text-white font-medium rounded-lg hover:bg-[#276A2B] transition-colors shadow-md hover:shadow-lg"
                 >
                   Try Again
                 </button>
 
                 <button
                   onClick={() => navigate("/")}
-                  className="px-6 py-3 text-gray-700 hover:text-gray-900 font-medium rounded-lg border border-gray-300 hover:bg-gray-50 transition"
+                  className="px-6 py-3 text-[#2E7D32] hover:text-[#276A2B] font-medium rounded-lg border border-[#2E7D32] hover:bg-[#2E7D32] hover:text-white transition-colors"
                 >
                   Home
                 </button>
@@ -190,7 +203,7 @@ export default function VerifyEmail() {
             {status === "missing" && (
               <button
                 onClick={() => navigate("/")}
-                className="px-6 py-3 text-gray-700 hover:text-gray-900 font-medium rounded-lg border border-gray-300 hover:bg-gray-50 transition"
+                className="px-6 py-3 text-[#2E7D32] hover:text-[#276A2B] font-medium rounded-lg border border-[#2E7D32] hover:bg-[#2E7D32] hover:text-white transition-colors"
               >
                 Home
               </button>

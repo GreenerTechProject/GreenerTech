@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -16,7 +16,6 @@ import { serreService } from '../services/serreService';
 import { toast } from 'sonner';
 import { MissionCreation } from '../components/MissionCreation';
 import { MissionEdit } from '../components/MissionEdit';
-import TechHeader from '../components/TechHeader';
 import { useAuth } from '../contexts/AuthContext';
 
 // Define Mission interface to match the service
@@ -204,9 +203,6 @@ export const MissionManagement: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* TechHeader for Technician */}
-      <TechHeader role={userRole} />
-      
       <div className="container mx-auto p-3 sm:p-4 md:p-6 space-y-4 sm:space-y-6">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 sm:gap-6">

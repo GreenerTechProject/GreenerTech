@@ -31,8 +31,10 @@ interface MapComponentProps {
   existingShapes: DrawnShape[];
   drawingMode: "domain" | "serre" | null;
   selectedDomainId?: string;
+  selectedSerreId?: string; // Add selected serre ID prop
   className?: string;
   onShapeClick?: (shape: DrawnShape) => void; // New prop for shape clicks
+  onMapClick?: () => void; // Add map click handler prop
   hideZoomControls?: boolean;
   hideInfoPanel?: boolean;
   focusPath?: { lat: number; lng: number }[] | null;
@@ -56,7 +58,6 @@ interface MapComponentProps {
 const mapContainerStyle = {
   width: "100%",
   height: "100%",
-  minHeight: "400px",
   minWidth: "300px",
 };
 
@@ -65,8 +66,10 @@ export default function MapComponent({
   existingShapes,
   drawingMode,
   selectedDomainId,
+  selectedSerreId,
   className = "w-full h-full",
   onShapeClick,
+  onMapClick,
   hideZoomControls = false,
   hideInfoPanel = false,
   focusPath = null,
@@ -520,17 +523,17 @@ export default function MapComponent({
   console.log("MapComponent - selectedDomainId:", selectedDomainId);
 
   return (
-    <div className={`relative w-full h-full min-h-[400px] ${className}`}>
+    <div className={`relative w-full h-full ${className}`}>
       {/* Search Controls */}
-      <div className="absolute top-4 left-4 z-10 flex gap-2">
-        <form onSubmit={handleSearchSubmit} className="flex gap-2">
+      <div className="absolute top-4 left-4 z-10 flex gap-1 sm:gap-2 max-w-[calc(100%-7rem)] sm:max-w-[calc(100%-8rem)]">
+        <form onSubmit={handleSearchSubmit} className="flex gap-1 sm:gap-2 flex-1 min-w-0">
           <Input
             ref={searchInputRef}
             type="text"
             placeholder="Search for a location..."
-            className="w-64 bg-white shadow-lg"
+            className="w-full min-w-0 bg-white shadow-lg text-sm sm:text-base"
           />
-          <Button type="submit" size="sm" variant="default">
+          <Button type="submit" size="sm" variant="default" className="flex-shrink-0 px-1.5 sm:px-3">
             <Search className="h-4 w-4" />
           </Button>
         </form>
@@ -539,7 +542,7 @@ export default function MapComponent({
           size="sm"
           variant="outline"
           onClick={goToCurrentLocation}
-          className="bg-white shadow-lg"
+          className="bg-white shadow-lg flex-shrink-0 px-1.5 sm:px-3"
         >
           <MapPin className="h-4 w-4" />
         </Button>
@@ -553,8 +556,9 @@ export default function MapComponent({
         mapTypeId="hybrid"
         onLoad={onLoad}
         onUnmount={onUnmount}
+        onClick={onMapClick} // Add map click handler
         options={{
-          zoomControl: true,
+          zoomControl: !hideZoomControls,
           streetViewControl: false,
           mapTypeControl: false,
           fullscreenControl: true,
@@ -574,6 +578,10 @@ export default function MapComponent({
           let strokeWeight = 2;
           let zIndex = 1;
           let hoverColor = "#FFD700"; // Gold hover color
+          
+          // Check if this shape is selected
+          const isSelectedDomain = shape.type === 'domain' && shape.id === selectedDomainId;
+          const isSelectedSerre = shape.type === 'serre' && shape.id === selectedSerreId;
           
           if (!fillColor) {
             switch (shape.type) {
@@ -600,6 +608,19 @@ export default function MapComponent({
                 fillColor = "#9E9E9E";
                 strokeColor = "#616161";
             }
+          }
+          
+          // Apply selection highlighting
+          if (isSelectedDomain) {
+            strokeColor = "#FFD700"; // Gold for selected domain
+            strokeWeight = 4;
+            fillOpacity = 0.6;
+            zIndex = 10;
+          } else if (isSelectedSerre) {
+            strokeColor = "#FFD700"; // Gold for selected serre
+            strokeWeight = 4;
+            fillOpacity = 0.7;
+            zIndex = 11;
           }
           
           return (
@@ -659,7 +680,7 @@ export default function MapComponent({
               ></div>
               <span className="text-sm font-medium text-gray-500 uppercase tracking-wide">
                 {selectedShape.type === 'domain' ? 'Domaine' : 
-                 selectedShape.type === 'serre' ? 'Serre' : 'Bilan'}
+                 selectedShape.type === 'serre' ? 'Serre' : 'Billon'}
               </span>
             </div>
             <button
@@ -707,7 +728,7 @@ export default function MapComponent({
               onClick={() => zoomToShape(selectedShape)}
               className="w-full bg-blue-600 text-white text-sm font-medium py-2 px-3 rounded-md hover:bg-blue-700 transition-colors"
             >
-              🔍 Zoom sur la zone
+              Zoom sur la zone
             </button>
           </div>
         </div>
@@ -753,7 +774,7 @@ export default function MapComponent({
           <div className="font-medium">{hoveredShape.name}</div>
           <div className="text-gray-300">
             {hoveredShape.type === 'domain' ? 'Domaine' : 
-             hoveredShape.type === 'serre' ? 'Serre' : 'Bilan'} • 
+             hoveredShape.type === 'serre' ? 'Serre' : 'Billon'} • 
             {(hoveredShape.area / 10000).toFixed(2)} ha
           </div>
         </div>

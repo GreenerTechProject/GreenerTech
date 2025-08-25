@@ -8,7 +8,7 @@ from multirobotcam.mission_data_handler import mission_data_handler
 
 async def start_all():
     app = web.Application()
-    app.router.add_get("/video/", index)
+    #app.router.add_get("/video/", index)
     app.router.add_post("/service/video_stream_service", offer)
     app.router.add_route("OPTIONS", "/service/video_stream_service", offer)  # preflight
     #app.router.add_get("/service/video_stream_handler", video_stream_handler)

@@ -20,7 +20,7 @@ export const useAuthRedirect = (redirectTo: string = "/dashboard") => {
       else if (user?.role === "technicien") {
         navigate("/technician", { replace: true });
       } else if (user?.role === "technicien_superieur") {
-        navigate("/technicien-sup", { replace: true });
+        navigate("/technicien-sup/map", { replace: true });
       } else {
         navigate(redirectTo, { replace: true });
       }
@@ -33,7 +33,7 @@ export const useAuthRedirect = (redirectTo: string = "/dashboard") => {
 /**
  * Hook to require authentication and redirect if not authenticated
  */
-export const useRequireAuth = (redirectTo: string = "/login") => {
+export const useRequireAuth = (redirectTo: string = "/") => {
   const { isAuthenticated, isLoading, user } = useAuth();
   const navigate = useNavigate();
 

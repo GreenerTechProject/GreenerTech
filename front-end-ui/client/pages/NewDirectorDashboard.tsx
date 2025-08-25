@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useAuth } from "../contexts/AuthContext";
-import { useSidebar } from "@/hooks/useSidebar";
+import { useIsMobile } from "@/hooks/use-mobile";
+
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import DirectorSidebar from "../components/DirectorSidebar";
-import DirectorHeader from "@/components/DirectorHeader";
+import DirectorLayout from "../components/DirectorLayout";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
@@ -70,8 +70,8 @@ interface DashboardStats {
 
 export default function DirectorDashboard() {
   const { user, logout } = useAuth();
-  const { isOpen, setIsOpen, toggleSidebar } = useSidebar();
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [stats, setStats] = useState<StatCard[]>([]);
@@ -135,8 +135,9 @@ export default function DirectorDashboard() {
 
       const totalAlerts = (alerts as any[])?.length || 0;
       const criticalAlerts = (alerts as any[])?.filter((a: any) => {
-        // Critical severity by status_alert value 2
-        return typeof a.status_alert === 'number' && a.status_alert === 2;
+        // Critical severity by priority/status_alert value 2
+        const priority = a?.priority ?? a?.status_alert;
+        return typeof priority === 'number' && priority === 2;
       }).length || 0;
 
       const totalDomains = domains.length;
@@ -312,7 +313,6 @@ export default function DirectorDashboard() {
 
       // Build monthly alerts distribution (Low, Medium, High)
       try {
-        console.log('[NewDirectorDashboard] Alerts data:', alerts);
         const now = new Date();
         const monthKeys: string[] = [];
         const monthLabels: string[] = [];
@@ -322,41 +322,90 @@ export default function DirectorDashboard() {
           monthKeys.push(key);
           monthLabels.push(d.toLocaleString("fr-FR", { month: "short", year: "2-digit" }));
         }
+        
         const L: Record<string, number> = {};
         const M: Record<string, number> = {};
         const H: Record<string, number> = {};
-        (alerts as any[]).forEach((a: any) => {
-          const when = a?.date;
-          if (!when) {
-            console.log('[NewDirectorDashboard] Alert without date:', a);
-            return;
-          }
-          
-          let dateObj: Date;
-          try {
-            dateObj = new Date(when);
-            if (isNaN(dateObj.getTime())) {
-              console.log('[NewDirectorDashboard] Invalid date format:', when);
+        
+        // Initialize all months with 0
+        monthKeys.forEach(key => {
+          L[key] = 0;
+          M[key] = 0;
+          H[key] = 0;
+        });
+        
+        if (Array.isArray(alerts) && alerts.length > 0) {
+          // Debug: Log the first few alerts to understand the data structure
+          console.log('[DEBUG] First alert structure:', alerts[0]);
+          console.log('[DEBUG] Total alerts:', alerts.length);
+
+          alerts.forEach((a: any) => {
+            // Try different possible date fields - backend returns 'timestamp' for alerts
+            const when = a?.timestamp || a?.date || a?.created_at || a?.date_creation || a?.date_alerte;
+            if (!when) {
               return;
             }
-          } catch (error) {
-            console.log('[NewDirectorDashboard] Date parsing error:', error, 'for date:', when);
-            return;
-          }
-          
-          const key = dateObj.toISOString().slice(0, 7);
-          const sev = Number(a?.status_alert) || 0;
-          console.log('[NewDirectorDashboard] Processing alert:', { when, key, sev, alert: a });
-          if (sev === 2) H[key] = (H[key] || 0) + 1;
-          else if (sev === 1) M[key] = (M[key] || 0) + 1;
-          else if (sev === 0) L[key] = (L[key] || 0) + 1;
+            
+            let dateObj: Date;
+            try {
+              dateObj = new Date(when);
+              if (isNaN(dateObj.getTime())) {
+                return;
+              }
+            } catch (error) {
+              return;
+            }
+            
+            const key = dateObj.toISOString().slice(0, 7);
+            // The backend returns 'priority' instead of 'status_alert', and 'type' instead of 'maladie'
+            const sev = Number(a?.priority ?? a?.status_alert) || 0;
+            const alertType = (a?.type ?? a?.maladie ?? '').toLowerCase();
+
+            // Debug: Log classification details for first few alerts
+            if (alerts.indexOf(a) < 3) {
+              console.log(`[DEBUG] Alert ${alerts.indexOf(a) + 1}: sev=${sev}, alertType="${alertType}", priority=${a?.priority}, status_alert=${a?.status_alert}`);
+            }
+            
+            if (monthKeys.includes(key)) {
+              // Primary classification based on priority/status_alert value
+              if (sev === 2 || String(sev) === '2') {
+                H[key] = (H[key] || 0) + 1;
+              } else if (sev === 1 || String(sev) === '1') {
+                M[key] = (M[key] || 0) + 1;
+              } else if (sev === 0 || String(sev) === '0') {
+                L[key] = (L[key] || 0) + 1;
+              } else {
+                // Fallback classification based on alert type keywords when priority is unclear
+                if (alertType.includes('critique') || alertType.includes('élevée') || alertType.includes('dangereuse') ||
+                    alertType.includes('mildiou') || alertType.includes('maladie grave') || alertType.includes('infestation grave')) {
+                  H[key] = (H[key] || 0) + 1;
+                } else if (alertType.includes('moyenne') || alertType.includes('modérée') || alertType.includes('température') ||
+                          alertType.includes('humidité') || alertType.includes('légère infestation')) {
+                  M[key] = (M[key] || 0) + 1;
+                } else {
+                  L[key] = (L[key] || 0) + 1;
+                }
+              }
+            }
+          });
+        }
+        
+        const lowCounts = monthKeys.map((k) => L[k] || 0);
+        const mediumCounts = monthKeys.map((k) => M[k] || 0);
+        const highCounts = monthKeys.map((k) => H[k] || 0);
+
+        // Debug: Log the final counts
+        console.log('[DEBUG] Final alert counts by month:');
+        monthLabels.forEach((label, i) => {
+          console.log(`  ${label}: Low=${lowCounts[i]}, Medium=${mediumCounts[i]}, High=${highCounts[i]}`);
         });
-        console.log('[NewDirectorDashboard] Monthly counts:', { L, M, H });
+        console.log(`[DEBUG] Total: Low=${lowCounts.reduce((a,b)=>a+b,0)}, Medium=${mediumCounts.reduce((a,b)=>a+b,0)}, High=${highCounts.reduce((a,b)=>a+b,0)}`);
+        
         setAlertsMonthly({
           labels: monthLabels,
-          low: monthKeys.map((k) => L[k] || 0),
-          medium: monthKeys.map((k) => M[k] || 0),
-          high: monthKeys.map((k) => H[k] || 0),
+          low: lowCounts,
+          medium: mediumCounts,
+          high: highCounts,
         });
       } catch (error) {
         console.error('[NewDirectorDashboard] Error building alerts chart:', error);
@@ -457,33 +506,25 @@ export default function DirectorDashboard() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex">
-        <DirectorSidebar isOpen={isOpen} setIsOpen={setIsOpen} />
-        <div className="flex-1 flex items-center justify-center">
+      <DirectorLayout>
+        <div className="flex items-center justify-center min-h-[400px]">
           <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto"></div>
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-greener-600 mx-auto"></div>
             <p className="mt-4 text-gray-600">Chargement du tableau de bord...</p>
           </div>
         </div>
-      </div>
+      </DirectorLayout>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex">
-      <DirectorSidebar isOpen={isOpen} setIsOpen={setIsOpen} />
-      
-      <div className="flex-1 transition-all duration-300">
-        <DirectorHeader isSidebarOpen={isOpen} onMenuClick={() => setIsOpen(!isOpen)} />
-
-        {/* Dashboard Content */}
-        <main className="p-4 sm:p-6 lg:p-8 space-y-6">
-          {/* Header with Refresh Button */}
-          <div className="flex justify-between items-center">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">Tableau de bord</h1>
-              <p className="text-gray-600">Vue d'ensemble de votre entreprise</p>
-            </div>
+    <DirectorLayout>
+      {/* Header with Refresh Button */}
+      <div className="flex justify-between items-center">
+        <div>
+          {!isMobile && <h1 className="text-2xl font-bold text-gray-900">Tableau de bord</h1>}
+          {!isMobile && <p className="text-gray-600">Vue d'ensemble de votre entreprise</p>}
+        </div>
             <div className="flex items-center space-x-4">
               {error && (
                 <div className="px-4 py-2 bg-red-50 border border-red-200 rounded-lg">
@@ -493,7 +534,7 @@ export default function DirectorDashboard() {
               <Button onClick={handleRefresh} variant="outline" className="flex items-center space-x-2" disabled={refreshing}>
                 {refreshing ? (
                   <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-green-600"></div>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-greener-600"></div>
                     <span>Actualisation...</span>
                   </>
                 ) : (
@@ -552,6 +593,168 @@ export default function DirectorDashboard() {
           </div>
 
 
+          <div className="grid grid-cols-1 lg:grid-cols-6 gap-6">
+            {/* Recent Activities */}
+            <Card className="lg:col-span-2">
+              <CardHeader>
+                <CardTitle className="flex items-center space-x-2">
+                  <Activity className="h-5 w-5" />
+                  <span>Activités récentes</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {recentActivities.length > 0 ? (
+                  <div className="space-y-4">
+                    {recentActivities.map((activity) => {
+                      const ActivityIcon = getActivityIcon(activity.type);
+                      return (
+                        <div key={activity.id} className="flex items-start space-x-3 p-3 hover:bg-gray-50 rounded-lg">
+                          <div className={cn(
+                            "p-2 rounded-full",
+                            activity.status === "warning" ? "bg-yellow-100" :
+                            activity.status === "success" ? "bg-green-100" : "bg-blue-100"
+                          )}>
+                            <ActivityIcon className={cn(
+                              "h-4 w-4",
+                              activity.status === "warning" ? "text-yellow-600" :
+                              activity.status === "success" ? "text-green-600" : "text-blue-600"
+                            )} />
+                    </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-gray-900">{activity.message}</p>
+                            <p className="text-xs text-gray-500">{activity.time}</p>
+                </div>
+                </div>
+                      );
+                    })}
+                    </div>
+                  ) : (
+                  <div className="text-center py-8 text-gray-500">
+                    <Activity className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                    <p>Aucune activité récente</p>
+                </div>
+                )}
+              </CardContent>
+            </Card>
+            {/* Alerts by month (stacked bar) */}
+          <Card className="lg:col-span-2">
+              <CardHeader>
+                <CardTitle className="flex items-center space-x-2">
+                  <AlertTriangle className="h-5 w-5" />
+                  <span>Alertes par mois</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                
+                <div className="w-full h-96 min-h-[24rem]">
+                  {alertsMonthly.labels.length > 0 ? (
+                    <Chart
+                      type="bar"
+                      data={{
+                        labels: alertsMonthly.labels,
+                        datasets: [
+                          {
+                            label: "Faible",
+                            data: alertsMonthly.low,
+                            backgroundColor: "rgba(34,197,94,0.6)",
+                            borderColor: "rgba(34,197,94,1)",
+                            borderWidth: 1,
+                            stack: "alerts",
+                          },
+                          {
+                            label: "Moyenne",
+                            data: alertsMonthly.medium,
+                            backgroundColor: "rgba(245,158,11,0.6)",
+                            borderColor: "rgba(245,158,11,1)",
+                            borderWidth: 1,
+                            stack: "alerts",
+                          },
+                          {
+                            label: "Critique",
+                            data: alertsMonthly.high,
+                            backgroundColor: "rgba(239,68,68,0.6)",
+                            borderColor: "rgba(239,68,68,1)",
+                            borderWidth: 1,
+                            stack: "alerts",
+                          },
+                        ],
+                      }}
+                      options={{
+                        maintainAspectRatio: false,
+                        responsive: true,
+                        plugins: {
+                          legend: { 
+                            position: "top",
+                            labels: {
+                              usePointStyle: true,
+                              padding: 20
+                            }
+                          },
+                          title: { display: false, text: "" },
+                        },
+                        interaction: { mode: "index", intersect: false },
+                        scales: {
+                          x: { 
+                            stacked: true,
+                            grid: {
+                              display: true
+                            }
+                          },
+                          y: { 
+                            stacked: true, 
+                            title: { display: true, text: "Nombre d'alertes" },
+                            beginAtZero: true,
+                            ticks: {
+                              stepSize: 1
+                            }
+                          },
+                        },
+                        elements: {
+                          bar: {
+                            borderRadius: 4
+                          }
+                        }
+                      }}
+                    />
+                  ) : (
+                    <div className="h-full flex items-center justify-center text-gray-500">
+                      Aucune donnée d'alertes disponible
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+                          {/* Recent Reports */}
+            <Card className="lg:col-span-2">
+              <CardHeader>
+                <CardTitle className="flex items-center space-x-2">
+                  <FileText className="h-5 w-5" />
+                  <span>Rapports récents</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="min-h-[24rem] flex flex-col">
+                  {recentReports.length > 0 ? (
+                    <div className="space-y-3">
+                      {recentReports.map((r) => (
+                        <div key={r.id} className="p-3 border border-gray-200 rounded-lg">
+                          <div className="text-sm font-medium text-gray-900 truncate">Rapport #{r.id} {r.serre ? `• ${r.serre}` : ''}</div>
+                          <div className="text-xs text-gray-500">{r.date ? new Date(r.date).toLocaleDateString('fr-FR') : '—'}</div>
+                          {r.lien_pdf && (
+                            <div className="mt-2">
+                              <Button size="sm" variant="outline" onClick={() => ReportService.downloadReport(r.lien_pdf!, `rapport_${r.id}.pdf`)}>Télécharger</Button>
+                          </div>
+                          )}
+                          </div>
+                      ))}
+                        </div>
+                  ) : (
+                    <div className="flex-1 flex items-center justify-center text-gray-500 text-sm">Aucun rapport récent</div>
+                  )}
+                  </div>
+              </CardContent>
+            </Card>
+          </div>
           {/* Charts & Affiliation Row (second row after stats) */}
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
             {/* Duo Chart: Interventions (bar) + Charges (line) */}
@@ -633,8 +836,8 @@ export default function DirectorDashboard() {
                   ) : (
                     <div className="h-full flex items-center justify-center text-gray-500">
                       Aucune donnée disponible
-                    </div>
-                  )}
+                  </div>
+                )}
                 </div>
               </CardContent>
             </Card>
@@ -662,163 +865,14 @@ export default function DirectorDashboard() {
           
             {/* Alerts by month & Recent Reports Row */}
             <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-              {/* Recent Reports */}
-            <Card className="lg:col-span-1">
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2">
-                  <FileText className="h-5 w-5" />
-                  <span>Rapports récents</span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="min-h-[24rem] flex flex-col">
-                  {recentReports.length > 0 ? (
-                    <div className="space-y-3">
-                      {recentReports.map((r) => (
-                        <div key={r.id} className="p-3 border border-gray-200 rounded-lg">
-                          <div className="text-sm font-medium text-gray-900 truncate">Rapport #{r.id} {r.serre ? `• ${r.serre}` : ''}</div>
-                          <div className="text-xs text-gray-500">{r.date ? new Date(r.date).toLocaleDateString('fr-FR') : '—'}</div>
-                          {r.lien_pdf && (
-                            <div className="mt-2">
-                              <Button size="sm" variant="outline" onClick={() => ReportService.downloadReport(r.lien_pdf!, `rapport_${r.id}.pdf`)}>Télécharger</Button>
-                            </div>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="flex-1 flex items-center justify-center text-gray-500 text-sm">Aucun rapport récent</div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-            {/* Alerts by month (stacked bar) */}
-            <Card className="lg:col-span-3">
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2">
-                  <AlertTriangle className="h-5 w-5" />
-                  <span>Alertes par mois</span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                {/* Debug section - temporary */}
-                <div className="mb-4 p-3 bg-gray-100 rounded text-xs">
-                  <strong>Debug Info:</strong><br/>
-                  Alerts count: {alertsMonthly.labels.length > 0 ? 'Data loaded' : 'No data'}<br/>
-                  Labels: {alertsMonthly.labels.join(', ')}<br/>
-                  Low: {alertsMonthly.low.join(', ')}<br/>
-                  Medium: {alertsMonthly.medium.join(', ')}<br/>
-                  High: {alertsMonthly.high.join(', ')}
-                </div>
-                
-                <div className="w-full h-96 min-h-[24rem]">
-                  {alertsMonthly.labels.length > 0 ? (
-                    <Chart
-                      type="bar"
-                      data={{
-                        labels: alertsMonthly.labels,
-                        datasets: [
-                          {
-                            label: "Faible",
-                            data: alertsMonthly.low,
-                            backgroundColor: "rgba(34,197,94,0.6)",
-                            borderColor: "rgba(34,197,94,1)",
-                            borderWidth: 1,
-                            stack: "alerts",
-                          },
-                          {
-                            label: "Moyenne",
-                            data: alertsMonthly.medium,
-                            backgroundColor: "rgba(245,158,11,0.6)",
-                            borderColor: "rgba(245,158,11,1)",
-                            borderWidth: 1,
-                            stack: "alerts",
-                          },
-                          {
-                            label: "Critique",
-                            data: alertsMonthly.high,
-                            backgroundColor: "rgba(239,68,68,0.6)",
-                            borderColor: "rgba(239,68,68,1)",
-                            borderWidth: 1,
-                            stack: "alerts",
-                          },
-                        ],
-                      }}
-                      options={{
-                        maintainAspectRatio: false,
-                        responsive: true,
-                        plugins: {
-                          legend: { position: "top" },
-                          title: { display: false, text: "" },
-                        },
-                        interaction: { mode: "index", intersect: false },
-                        scales: {
-                          x: { stacked: true },
-                          y: { stacked: true, title: { display: true, text: "Nombre d'alertes" } },
-                        },
-                      }}
-                    />
-                  ) : (
-                    <div className="h-full flex items-center justify-center text-gray-500">
-                      Aucune donnée d'alertes disponible
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
+
 
             
           </div>
 
 
-          <div className="grid grid-cols-1 lg:grid-cols-1 gap-6">
-            {/* Recent Activities */}
-            <Card className="lg:col-span-2">
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2">
-                  <Activity className="h-5 w-5" />
-                  <span>Activités récentes</span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                {recentActivities.length > 0 ? (
-                  <div className="space-y-4">
-                    {recentActivities.map((activity) => {
-                      const ActivityIcon = getActivityIcon(activity.type);
-                      return (
-                        <div key={activity.id} className="flex items-start space-x-3 p-3 hover:bg-gray-50 rounded-lg">
-                          <div className={cn(
-                            "p-2 rounded-full",
-                            activity.status === "warning" ? "bg-yellow-100" :
-                            activity.status === "success" ? "bg-green-100" : "bg-blue-100"
-                          )}>
-                            <ActivityIcon className={cn(
-                              "h-4 w-4",
-                              activity.status === "warning" ? "text-yellow-600" :
-                              activity.status === "success" ? "text-green-600" : "text-blue-600"
-                            )} />
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium text-gray-900">{activity.message}</p>
-                            <p className="text-xs text-gray-500">{activity.time}</p>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                ) : (
-                  <div className="text-center py-8 text-gray-500">
-                    <Activity className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-                    <p>Aucune activité récente</p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </div>
 
 
-        </main>
-      </div>
-    </div>
-  );
-}
+      </DirectorLayout>
+    );
+  }

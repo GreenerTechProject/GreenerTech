@@ -12,36 +12,68 @@ import {
   Phone, 
   Mail, 
   Calendar,
-  Sprout
+  Building2,
+  Sprout,
+  Trash2
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import TechHeader from "@/components/TechHeader";
+import { companyService } from "../services/companyService";
 
 export default function Profile() {
-  const { user, logout } = useAuth();
+  const { user, logout, deleteUser } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [userInfo, setUserInfo] = useState<any>(null);
+  const [companyInfo, setCompanyInfo] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (user) {
-      // Format user data for display
-      const formattedUser = {
-        ...user,
-        // Split name into first and last name if available
-        firstName: user.name ? user.name.split(' ')[0] : '',
-        lastName: user.name ? user.name.split(' ').slice(1).join(' ') : '',
-        // Format role display
-        roleDisplay: getRoleDisplayName(user.role),
-        // Use actual user data or provide defaults
-        telephone: user.telephone || "Non renseigné",
-        birthday: user.birthday ? formatBirthday(user.birthday) : "Non renseigné",
-        domaine: "Domaine Ait Melloul", // This would come from user's assigned domaine
-        serre: "Serre 1" // This would come from user's assigned serre
-      };
-      setUserInfo(formattedUser);
-    }
-  }, [user]);
+    const fetchUserAndCompanyData = async () => {
+      if (user) {
+        try {
+          setLoading(true);
+          
+          // Fetch company data for the user via company ID
+          let companyData = null;
+          try {
+            const companyId = user.id_entreprise != null ? Number(user.id_entreprise) : undefined;
+            if (companyId) {
+              companyData = await companyService.getCompanyById(companyId);
+            }
+          } catch (error) {
+            console.warn("Could not fetch company data:", error);
+          }
+
+          // Format user data for display
+          const formattedUser = {
+            ...user,
+            // Split name into first and last name if available
+            firstName: user.name ? user.name.split(' ')[0] : '',
+            lastName: user.name ? user.name.split(' ').slice(1).join(' ') : '',
+            // Format role display
+            roleDisplay: getRoleDisplayName(user.role),
+            // Use actual user data or provide defaults
+            telephone: user.telephone || "Non renseigné",
+            birthday: user.birthday ? formatBirthday(user.birthday) : "Non renseigné",
+          };
+          
+          setUserInfo(formattedUser);
+          setCompanyInfo(companyData);
+        } catch (error) {
+          console.error("Error fetching user data:", error);
+          toast({
+            title: "Erreur",
+            description: "Erreur lors du chargement des données",
+            variant: "destructive",
+          });
+        } finally {
+          setLoading(false);
+        }
+      }
+    };
+
+    fetchUserAndCompanyData();
+  }, [user, toast]);
 
   const formatBirthday = (birthday: string) => {
     try {
@@ -75,7 +107,7 @@ export default function Profile() {
       case "technicien":
         return "bg-blue-100 text-blue-800";
       case "technicien_superieur":
-        return "bg-purple-100 text-purple-800";
+        return "bg-green-100 text-green-800";
       case "directeur":
         return "bg-green-100 text-green-800";
       default:
@@ -86,7 +118,7 @@ export default function Profile() {
   const handleLogout = async () => {
     try {
       await logout();
-      navigate("/login");
+              navigate("/");
     } catch (error) {
       toast({
         title: "Erreur",
@@ -100,24 +132,52 @@ export default function Profile() {
     if (userInfo.role === "technicien_superieur") {
       navigate("/technicien-sup/profile/edit");
     } else {
-      navigate("/technicien/profile/edit");
+      navigate("/technician/profile/edit");
     }
   };
+
+  const handleDeleteAccount = async () => {
+    if (window.confirm("Êtes-vous sûr de vouloir supprimer votre compte ? Cette action est irréversible.")) {
+      try {
+        await deleteUser();
+        toast({
+          title: "Compte supprimé",
+          description: "Votre compte a été supprimé avec succès",
+        });
+      } catch (error) {
+        toast({
+          title: "Erreur",
+          description: "Erreur lors de la suppression du compte",
+          variant: "destructive",
+        });
+      }
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Chargement du profil...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (!userInfo) {
     return (
       <div className="min-h-screen bg-white flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600"></div>
+        <div className="text-center">
+          <p className="text-gray-600">Impossible de charger les données utilisateur</p>
+        </div>
       </div>
     );
   }
 
   return (
     <div className="min-h-screen bg-white">
-      {/* Show TechHeader for all technician users */}
-      {(userInfo.role === "technicien" || userInfo.role === "technicien_superieur") && (
-        <TechHeader role={userInfo.role === "technicien_superieur" ? "technicien_sup" : "technicien"} />
-      )}
+      {/* Header removed: provided by TechnicianLayout */}
       
       <div className="flex items-center justify-center p-4">
         {/* Back button */}
@@ -164,15 +224,17 @@ export default function Profile() {
 
         {/* User Details */}
         <CardContent className="p-6 space-y-4">
-          {/* Domaine and Serre */}
+          {/* Company Information */}
           <div className="flex items-center space-x-3">
             <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
-              <Sprout className="w-4 h-4 text-green-600" />
+              <Building2 className="w-4 h-4 text-green-600" />
             </div>
             <div>
-              <div className="text-sm text-gray-600">Domaine</div>
-              <div className="font-medium text-gray-900">{userInfo.domaine}</div>
-              <div className="text-sm text-gray-600">{userInfo.serre}</div>
+              <div className="text-sm text-gray-600">Entreprise</div>
+              <div className="font-medium text-gray-900">{companyInfo?.nom || companyInfo?.name || "Non renseigné"}</div>
+              {companyInfo?.adresse && (
+                <div className="text-sm text-gray-600">{companyInfo.adresse}</div>
+              )}
             </div>
           </div>
 
@@ -211,21 +273,29 @@ export default function Profile() {
         </CardContent>
 
         {/* Action Buttons */}
-        <div className="p-6 pt-0 flex flex-col sm:flex-row gap-3">
+        <div className="p-6 pt-0 flex flex-col space-y-3">
           <Button
             variant="outline"
             onClick={handleLogout}
-            className="flex-1 border-gray-300 text-gray-700 hover:bg-gray-50"
+            className="w-full border-gray-300 text-gray-700 hover:bg-gray-50"
           >
-            <ArrowLeft className="w-4 h-4 mr-2" />
+            <ArrowLeft className="h-4 w-4 mr-2" />
             Se déconnecter
           </Button>
           <Button
             onClick={handleEditProfile}
-            className="flex-1 bg-green-600 hover:bg-green-700 text-white"
+            className="w-full bg-green-600 hover:bg-green-700 text-white"
           >
-            <Edit className="w-4 h-4 mr-2" />
+            <Edit className="h-4 w-4 mr-2" />
             Modifier le profil
+          </Button>
+          <Button 
+            onClick={handleDeleteAccount}
+            variant="outline"
+            className="w-full border-red-300 text-red-700 hover:bg-red-50"
+          >
+            <Trash2 className="h-4 w-4 mr-2" />
+            Supprimer le compte
           </Button>
         </div>
       </Card>

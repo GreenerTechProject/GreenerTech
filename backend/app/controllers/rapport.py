@@ -16,6 +16,9 @@ from app.models.domaine import Domaine
 from app.models.entreprise import Entreprise
 from app.models.autorisation_serre import Autorisation_serre
 
+import boto3
+from io import BytesIO
+
 # @token_required
 # @role_required("technicien", "directeur")
 # def create_rapport(current_user):
@@ -182,11 +185,12 @@ def create_rapport(current_user):
     user = User.query.get(current_user.id)
     nom_user = user.name
 
-    generer_pdf_rapport(description, nom_user, id_serre, chemin_pdf, etat_bilan, alertes)
+    url_pdf = generer_pdf_rapport(description, nom_user, id_serre, chemin_pdf, etat_bilan, alertes)
 
     rapport = Rapport(
         description=description,
-        lien_pdf="static/rapports/" + nom_pdf,
+        #lien_pdf="static/rapports/" + nom_pdf,
+        lien_pdf=url_pdf,
         id_serre=id_serre,
         user_id=current_user.id,
         date=date.today()
@@ -200,7 +204,7 @@ def create_rapport(current_user):
 
 # get rapport by user 
 @token_required
-@role_required("technicien", "directeur")
+@role_required("technicien", "technicien_superieur", "directeur")
 def get_rapports_by_user(current_user):
     rapports = Rapport.query.filter_by(user_id=current_user.id).all()
     if not rapports:
@@ -294,6 +298,7 @@ def delete_rapport(id, current_user):
         return jsonify({"error": str(e)}), 500
 
 
+
 def generer_pdf_rapport(description, nom, id_serre, output_path, etat_bilan, alertes):
     html = render_template(
         "rapport_template.html",
@@ -304,7 +309,30 @@ def generer_pdf_rapport(description, nom, id_serre, output_path, etat_bilan, ale
         etat_bilan=etat_bilan,
         alertes=alertes
     )
+    
+    
+    
     HTML(string=html).write_pdf(output_path)
+    
+    
+    try:
+        s3_client = boto3.client('s3', region_name='us-east-1')
+        bucket_name = 'bucket-greenertech'
+        
+        pdf_bytes = BytesIO()
+        HTML(string=html).write_pdf(pdf_bytes)
+        pdf_bytes.seek(0)
+
+        nom_pdf_s3 = f"rapports/rapport_{uuid.uuid4().hex}.pdf"
+
+        s3_client.upload_fileobj(pdf_bytes, bucket_name, nom_pdf_s3, ExtraArgs={'ContentType': 'application/pdf'})
+
+        url_pdf = f"https://{bucket_name}.s3.amazonaws.com/{nom_pdf_s3}"
+        
+    except Exception as e:
+        print(f"❌ Error: {e}")
+        return output_path
+    return url_pdf
 
 
 @token_required
@@ -320,11 +348,13 @@ def get_rapports_by_director_entreprise(current_user):
                 s.nom AS serre_nom,
                 s.id AS serre_id,
                 d.nom AS domaine_nom,
-                e.nom AS entreprise_nom
+                e.nom AS entreprise_nom,
+                u.name AS user_nom
             FROM rapport r
             JOIN serres s ON r.id_serre = s.id
             JOIN domaines d ON s.id_domaine = d.id
             JOIN entreprises e ON d.id_entreprise = e.id
+            JOIN users u ON r.user_id = u.id
             WHERE e.id_user = :user_id
             ORDER BY r.date DESC
         """
@@ -344,10 +374,11 @@ def get_rapports_by_director_entreprise(current_user):
                 "date": row["date"].isoformat() if row["date"] else None,
                 "description": row["description"],
                 "lien_pdf": row["lien_pdf"],
-                "serre": row["serre_nom"],
+                "serre_nom": row["serre_nom"],
                 "serre_id": row["serre_id"],
-                "domaine": row["domaine_nom"],
-                "entreprise": row["entreprise_nom"],
+                "domaine_nom": row["domaine_nom"],
+                "entreprise_nom": row["entreprise_nom"],
+                "user_nom": row["user_nom"],
                 "bilans": bilan_names,
             })
 

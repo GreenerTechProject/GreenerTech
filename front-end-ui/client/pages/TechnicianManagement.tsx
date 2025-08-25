@@ -1,11 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { useSidebar } from '@/hooks/useSidebar';
-import DirectorSidebar from '../components/DirectorSidebar';
+import DirectorLayout from '../components/DirectorLayout';
 import { useToast } from '@/hooks/use-toast';
 import { technicianService, Technician } from '../services/technicianService';
 import {
-  Menu,
   Plus,
   Search,
   Filter,
@@ -52,7 +50,6 @@ import { Textarea } from '@/components/ui/textarea';
 
 export default function TechnicianManagement() {
   const { user } = useAuth();
-  const { isOpen, setIsOpen, toggleSidebar } = useSidebar();
   const { toast } = useToast();
   
   const [technicians, setTechnicians] = useState<Technician[]>([]);
@@ -82,8 +79,7 @@ export default function TechnicianManagement() {
       try {
         setLoading(true);
         setError(null);
-        
-        console.log('[TechManagement] Fetching technicians for company:', user.id_entreprise);
+
         const techniciansData = await technicianService.getAllTechniciansByCompany(user.id_entreprise);
         
         // Transform backend data to match our interface
@@ -122,10 +118,8 @@ export default function TechnicianManagement() {
           })
         );
         
-        console.log('[TechManagement] Transformed technicians:', transformedTechnicians);
         setTechnicians(transformedTechnicians);
       } catch (error: any) {
-        console.error('[TechManagement] Error fetching technicians:', error);
         setError(error.message || 'Failed to fetch technicians');
         toast({
           title: "Erreur",
@@ -185,7 +179,7 @@ export default function TechnicianManagement() {
       
       setTechnicians(transformedTechnicians);
     } catch (error: any) {
-      console.error('Error refreshing technicians:', error);
+      // Error refreshing technicians
     } finally {
       setLoading(false);
     }
@@ -257,7 +251,6 @@ export default function TechnicianManagement() {
         await refreshTechnicians();
       }
     } catch (error: any) {
-      console.error('Error creating technician:', error);
       toast({
         title: "Erreur",
         description: error.message || "Erreur lors de la création du technicien",
@@ -299,7 +292,6 @@ export default function TechnicianManagement() {
       // Refresh the list to get the latest data
       await refreshTechnicians();
     } catch (error: any) {
-      console.error('Error updating technician:', error);
       toast({
         title: "Erreur",
         description: error.message || "Erreur lors de la modification du technicien",
@@ -325,7 +317,6 @@ export default function TechnicianManagement() {
       // Refresh the list to get the latest data
       await refreshTechnicians();
     } catch (error: any) {
-      console.error('Error deleting technician:', error);
       toast({
         title: "Erreur",
         description: error.message || "Erreur lors de la suppression du technicien",
@@ -393,410 +384,381 @@ export default function TechnicianManagement() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex">
-      <DirectorSidebar isOpen={isOpen} setIsOpen={setIsOpen} />
-
-      <div className="flex-1 transition-all duration-300">
-        {/* Header */}
-        <header className="bg-white shadow-sm border-b sticky top-0 z-30">
-          <div className="px-4 sm:px-6 lg:px-8">
-            <div className="flex justify-between items-center py-4">
-              <div className="flex items-center space-x-4">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={toggleSidebar}
-                  className="lg:hidden"
-                >
-                  <Menu className="h-5 w-5" />
-                </Button>
-                <div>
-                  <h1 className="text-xl font-semibold text-gray-900">
-                    Gestion des Techniciens
-                  </h1>
-                  <p className="text-sm text-gray-600">
-                    Gérer les comptes et les accès des techniciens
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex items-center space-x-4">
-                <Button
-                  onClick={() => setIsCreateModalOpen(true)}
-                  className="bg-greener hover:bg-greener-600"
-                >
-                  <Plus className="h-4 w-4 mr-2" />
-                  Ajouter un Technicien
-                </Button>
-              </div>
-            </div>
-          </div>
-        </header>
-
-        {/* Content */}
-        <div className="flex-1 p-4 sm:p-6 lg:p-8">
-          {/* Filters and Search */}
-          <div className="mb-6">
-            <div className="flex flex-col sm:flex-row gap-4">
-              <div className="flex-1">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-                  <Input
-                    placeholder="Rechercher par nom ou email..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10"
-                  />
-                </div>
-              </div>
-              
-              <div className="flex gap-2">
-                <Select value={statusFilter} onValueChange={setStatusFilter}>
-                  <SelectTrigger className="w-32">
-                    <SelectValue placeholder="Statut" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Tous les statuts</SelectItem>
-                    <SelectItem value="active">Actif</SelectItem>
-                    <SelectItem value="inactive">Inactif</SelectItem>
-                    <SelectItem value="pending">En attente</SelectItem>
-                  </SelectContent>
-                </Select>
-                
-                <Select value={roleFilter} onValueChange={setRoleFilter}>
-                  <SelectTrigger className="w-40">
-                    <SelectValue placeholder="Rôle" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Tous les rôles</SelectItem>
-                    <SelectItem value="technicien">Technicien</SelectItem>
-                    <SelectItem value="technicien_superieur">Technicien Supérieur</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-          </div>
-
-          {/* Loading State */}
-          {loading && (
-            <div className="flex items-center justify-center py-12">
-              <div className="text-center">
-                <Loader2 className="h-12 w-12 text-greener animate-spin mx-auto mb-4" />
-                <p className="text-gray-600">Chargement des techniciens...</p>
-              </div>
-            </div>
-          )}
-
-          {/* Error State */}
-          {error && !loading && (
-            <div className="flex items-center justify-center py-12">
-              <div className="text-center">
-                <div className="text-red-500 mb-4">
-                  <UserX className="h-12 w-12 mx-auto" />
-                </div>
-                <p className="text-red-600 mb-4">{error}</p>
-                <Button 
-                  onClick={() => window.location.reload()} 
-                  variant="outline"
-                >
-                  Réessayer
-                </Button>
-              </div>
-            </div>
-          )}
-
-          {/* Technicians List */}
-          {!loading && !error && (
-            <>
-              {/* Results Summary */}
-              <div className="mb-4 text-sm text-gray-600">
-                {filteredTechnicians.length} technicien{filteredTechnicians.length !== 1 ? 's' : ''} trouvé{filteredTechnicians.length !== 1 ? 's' : ''}
-                {searchTerm && ` pour "${searchTerm}"`}
-              </div>
-
-              {/* Technicians Grid */}
-              {filteredTechnicians.length > 0 ? (
-                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                  {filteredTechnicians.map((technician) => (
-                    <Card key={technician.id} className="hover:shadow-md transition-shadow">
-                      <CardHeader className="pb-3">
-                        <div className="flex items-start justify-between">
-                          <div className="flex-1">
-                            <CardTitle className="text-lg font-semibold text-gray-900">
-                              {technician.fullName}
-                            </CardTitle>
-                            <p className="text-sm text-gray-600 mt-1">{technician.email}</p>
-                          </div>
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                                <MoreVertical className="h-4 w-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuItem onClick={() => openEditModal(technician)}>
-                                <Edit className="h-4 w-4 mr-2" />
-                                Modifier
-                              </DropdownMenuItem>
-                              <DropdownMenuItem 
-                                onClick={() => handleDeleteTechnician(technician.id)}
-                                className="text-red-600"
-                              >
-                                <Trash2 className="h-4 w-4 mr-2" />
-                                Supprimer
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </div>
-                      </CardHeader>
-                      
-                      <CardContent className="space-y-3">
-                        <div className="flex items-center justify-between">
-                          {getRoleBadge(technician.role)}
-                          {getStatusBadge(technician.status)}
-                        </div>
-                        
-                        {technician.telephone && (
-                          <div className="flex items-center text-sm text-gray-600">
-                            <Phone className="h-4 w-4 mr-2" />
-                            {technician.telephone}
-                          </div>
-                        )}
-                        
-                        <div className="flex items-center text-sm text-gray-600">
-                          <Calendar className="h-4 w-4 mr-2" />
-                          Membre depuis {technician.created_at ? technician.created_at.split('T')[0] : 'N/A'}
-                        </div>
-                        
-                        {/* Additional technician information */}
-                        <div className="space-y-2 pt-2 border-t border-gray-100">
-                          <div className="flex items-center justify-between text-xs text-gray-500">
-                            <span>Compte configuré:</span>
-                            <Badge variant={technician.setup_completed ? "default" : "secondary"} className="text-xs">
-                              {technician.setup_completed ? "Oui" : "Non"}
-                            </Badge>
-                          </div>
-                          
-                          <div className="flex items-center justify-between text-xs text-gray-500">
-                            <span>Email vérifié:</span>
-                            <Badge variant={technician.email_valide ? "default" : "secondary"} className="text-xs">
-                              {technician.email_valide ? "Oui" : "Non"}
-                            </Badge>
-                          </div>
-                          
-                          {technician.birthday && (
-                            <div className="flex items-center justify-between text-xs text-gray-500">
-                              <span>Date de naissance:</span>
-                              <span>{technician.birthday}</span>
-                            </div>
-                          )}
-                        </div>
-                        
-                        {technician.assignedSerres.length > 0 && (
-                          <div>
-                            <p className="text-sm font-medium text-gray-700 mb-2">Serres assignées:</p>
-                            <div className="flex flex-wrap gap-1">
-                              {technician.assignedSerres.map((serre, index) => (
-                                <Badge key={index} variant="secondary" className="text-xs">
-                                  {serre}
-                                </Badge>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-                        
-                        <div className="pt-2 border-t">
-                          <div className="flex justify-between text-sm">
-                            <span className="text-gray-600">Interventions:</span>
-                            <span className="font-medium">
-                              {technician.interventions.completed}/{technician.interventions.total}
-                            </span>
-                          </div>
-                          <div className="w-full bg-gray-200 rounded-full h-2 mt-1">
-                            <div 
-                              className="bg-greener h-2 rounded-full transition-all duration-300"
-                              style={{ 
-                                width: `${technician.interventions.total > 0 
-                                  ? (technician.interventions.completed / technician.interventions.total) * 100 
-                                  : 0}%` 
-                              }}
-                            />
-                          </div>
-                          
-                          {/* Show intervention details if there are any */}
-                          {technician.interventions.total > 0 && (
-                            <div className="mt-2 text-xs text-gray-500">
-                              <div className="flex justify-between">
-                                <span>En cours: {technician.interventions.inProgress}</span>
-                                <span>Terminées: {technician.interventions.completed}</span>
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-12">
-                  <div className="text-gray-400 mb-4">
-                    <UserX className="h-16 w-16 mx-auto" />
-                  </div>
-                  <p className="text-gray-600 mb-2">Aucun technicien trouvé</p>
-                  <p className="text-sm text-gray-500">
-                    {searchTerm || statusFilter !== 'all' || roleFilter !== 'all' 
-                      ? 'Essayez de modifier vos filtres de recherche'
-                      : 'Commencez par ajouter votre premier technicien'
-                    }
-                  </p>
-                </div>
-              )}
-            </>
-          )}
+    <DirectorLayout title="Gestion des Techniciens" subtitle="Gérer les comptes et les accès des techniciens">
+      {/* Content */}
+      <div className="space-y-6">
+        {/* Header Actions */}
+        <div className="flex justify-end">
+          <Button
+            onClick={() => setIsCreateModalOpen(true)}
+            className="bg-greener hover:bg-greener-600"
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            Ajouter un Technicien
+          </Button>
         </div>
 
-        {/* Create Technician Modal */}
-        <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
-          <DialogContent className="max-w-md">
-            <DialogHeader>
-              <DialogTitle>Ajouter un Technicien</DialogTitle>
-              <DialogDescription>
-                Créer un nouveau compte technicien
-              </DialogDescription>
-            </DialogHeader>
-            <div className="space-y-4">
-              <div>
-                <Label htmlFor="fullName">Nom complet *</Label>
+        {/* Filters and Search */}
+        <div className="space-y-4">
+          <div className="flex flex-col sm:flex-row gap-4">
+            <div className="flex-1">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
                 <Input
-                  id="fullName"
-                  value={formData.fullName}
-                  onChange={(e) => setFormData({...formData, fullName: e.target.value})}
-                  placeholder="Jean Dupont"
-                  required
+                  placeholder="Rechercher par nom ou email..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10"
                 />
-              </div>
-              <div>
-                <Label htmlFor="email">Email *</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={formData.email}
-                  onChange={(e) => setFormData({...formData, email: e.target.value})}
-                  placeholder="jean.dupont@email.com"
-                  required
-                />
-              </div>
-              <div>
-                <Label htmlFor="role">Rôle *</Label>
-                <Select value={formData.role} onValueChange={(value: 'technicien' | 'technicien_superieur') => setFormData({...formData, role: value})}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Sélectionner un rôle" />
-                  </SelectTrigger>
-                  <SelectContent position="item-aligned" className="z-[70] overflow-auto">
-                    <SelectItem value="technicien">Technicien</SelectItem>
-                    <SelectItem value="technicien_superieur">Technicien Supérieur</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="flex justify-end space-x-2">
-                <Button variant="outline" onClick={() => setIsCreateModalOpen(false)}>
-                  Annuler
-                </Button>
-                <Button onClick={handleCreateTechnician} className="bg-greener hover:bg-greener-600">
-                  Créer
-                </Button>
               </div>
             </div>
-          </DialogContent>
-        </Dialog>
+            
+            <div className="flex gap-2">
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger className="w-32">
+                  <SelectValue placeholder="Statut" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Tous les statuts</SelectItem>
+                  <SelectItem value="active">Actif</SelectItem>
+                  <SelectItem value="inactive">Inactif</SelectItem>
+                  <SelectItem value="pending">En attente</SelectItem>
+                </SelectContent>
+              </Select>
+              
+              <Select value={roleFilter} onValueChange={setRoleFilter}>
+                <SelectTrigger className="w-40">
+                  <SelectValue placeholder="Rôle" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Tous les rôles</SelectItem>
+                  <SelectItem value="technicien">Technicien</SelectItem>
+                  <SelectItem value="technicien_superieur">Technicien Supérieur</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        </div>
 
-        {/* Edit Technician Modal */}
-        <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
-          <DialogContent className="max-w-md">
-            <DialogHeader>
-              <DialogTitle>Modifier le Technicien</DialogTitle>
-              <DialogDescription>
-                Mettre à jour les informations du technicien
-              </DialogDescription>
-            </DialogHeader>
-            <div className="space-y-4">
-              <div>
-                <Label htmlFor="edit-fullName">Nom complet *</Label>
-                <Input
-                  id="edit-fullName"
-                  value={formData.fullName}
-                  onChange={(e) => setFormData({...formData, fullName: e.target.value})}
-                  required
-                />
+        {/* Loading State */}
+        {loading && (
+          <div className="flex items-center justify-center py-12">
+            <div className="text-center">
+              <Loader2 className="h-12 w-12 text-greener animate-spin mx-auto mb-4" />
+              <p className="text-gray-600">Chargement des techniciens...</p>
+            </div>
+          </div>
+        )}
+
+        {/* Error State */}
+        {error && !loading && (
+          <div className="flex items-center justify-center py-12">
+            <div className="text-center">
+              <div className="text-red-500 mb-4">
+                <UserX className="h-12 w-12 mx-auto" />
               </div>
-              <div>
-                <Label htmlFor="edit-email">Email *</Label>
-                <Input
-                  id="edit-email"
-                  type="email"
-                  value={formData.email}
-                  onChange={(e) => setFormData({...formData, email: e.target.value})}
-                  required
-                />
+              <p className="text-red-600 mb-4">{error}</p>
+              <Button 
+                onClick={() => window.location.reload()} 
+                variant="outline"
+              >
+                Réessayer
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {/* Technicians List */}
+        {!loading && !error && (
+          <>
+            {/* Results Summary */}
+            <div className="mb-4 text-sm text-gray-600">
+              {filteredTechnicians.length} technicien{filteredTechnicians.length !== 1 ? 's' : ''} trouvé{filteredTechnicians.length !== 1 ? 's' : ''}
+              {searchTerm && ` pour "${searchTerm}"`}
+            </div>
+
+            {/* Technicians Grid */}
+            {filteredTechnicians.length > 0 ? (
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                {filteredTechnicians.map((technician) => (
+                  <Card key={technician.id} className="hover:shadow-md transition-shadow">
+                    <CardHeader className="pb-3">
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <CardTitle className="text-lg font-semibold text-gray-900">
+                            {technician.fullName}
+                          </CardTitle>
+                          <p className="text-sm text-gray-600 mt-1">{technician.email}</p>
+                        </div>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                              <MoreVertical className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => openEditModal(technician)}>
+                              <Edit className="h-4 w-4 mr-2" />
+                              Modifier
+                            </DropdownMenuItem>
+                            <DropdownMenuItem 
+                              onClick={() => handleDeleteTechnician(technician.id)}
+                              className="text-red-600"
+                            >
+                              <Trash2 className="h-4 w-4 mr-2" />
+                              Supprimer
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
+                    </CardHeader>
+                    
+                    <CardContent className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        {getRoleBadge(technician.role)}
+                        {getStatusBadge(technician.status)}
+                      </div>
+                      
+                      {technician.telephone && (
+                        <div className="flex items-center text-sm text-gray-600">
+                          <Phone className="h-4 w-4 mr-2" />
+                          {technician.telephone}
+                        </div>
+                      )}
+                      
+                      <div className="flex items-center text-sm text-gray-600">
+                        <Calendar className="h-4 w-4 mr-2" />
+                        Membre depuis {technician.created_at ? technician.created_at.split('T')[0] : 'N/A'}
+                      </div>
+                      
+                      {/* Additional technician information */}
+                      <div className="space-y-2 pt-2 border-t border-gray-100">
+                        <div className="flex items-center justify-between text-xs text-gray-500">
+                          <span>Compte configuré:</span>
+                          <Badge variant={technician.setup_completed ? "default" : "secondary"} className="text-xs">
+                            {technician.setup_completed ? "Oui" : "Non"}
+                          </Badge>
+                        </div>
+                        
+                        <div className="flex items-center justify-between text-xs text-gray-500">
+                          <span>Email vérifié:</span>
+                          <Badge variant={technician.email_valide ? "default" : "secondary"} className="text-xs">
+                            {technician.email_valide ? "Oui" : "Non"}
+                          </Badge>
+                        </div>
+                        
+                        {technician.birthday && (
+                          <div className="flex items-center justify-between text-xs text-gray-500">
+                            <span>Date de naissance:</span>
+                            <span>{technician.birthday}</span>
+                          </div>
+                        )}
+                      </div>
+                      
+                      {technician.assignedSerres.length > 0 && (
+                        <div>
+                          <p className="text-sm font-medium text-gray-700 mb-2">Serres assignées:</p>
+                          <div className="flex flex-wrap gap-1">
+                            {technician.assignedSerres.map((serre, index) => (
+                              <Badge key={index} variant="secondary" className="text-xs">
+                                {serre}
+                              </Badge>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      
+                      <div className="pt-2 border-t">
+                        <div className="flex justify-between text-sm">
+                          <span className="text-gray-600">Interventions:</span>
+                          <span className="font-medium">
+                            {technician.interventions.completed}/{technician.interventions.total}
+                          </span>
+                        </div>
+                        <div className="w-full bg-gray-200 rounded-full h-2 mt-1">
+                          <div 
+                            className="bg-greener h-2 rounded-full transition-all duration-300"
+                            style={{ 
+                              width: `${technician.interventions.total > 0 
+                                ? (technician.interventions.completed / technician.interventions.total) * 100 
+                                : 0}%` 
+                            }}
+                          />
+                        </div>
+                        
+                        {/* Show intervention details if there are any */}
+                        {technician.interventions.total > 0 && (
+                          <div className="mt-2 text-xs text-gray-500">
+                            <div className="flex justify-between">
+                              <span>En cours: {technician.interventions.inProgress}</span>
+                              <span>Terminées: {technician.interventions.completed}</span>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
               </div>
-              <div>
-                <Label htmlFor="edit-role">Rôle *</Label>
-                <Select value={formData.role} onValueChange={(value: 'technicien' | 'technicien_superieur') => setFormData({...formData, role: value})}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Sélectionner un rôle" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="technicien">Technicien</SelectItem>
-                    <SelectItem value="technicien_superieur">Technicien Supérieur</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div className="space-y-3 pt-4 border-t">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label className="text-sm text-gray-600">Téléphone</Label>
-                    <p className="text-sm font-medium">{selectedTechnician?.telephone || 'Non renseigné'}</p>
-                  </div>
-                  <div>
-                    <Label className="text-sm text-gray-600">Date de naissance</Label>
-                    <p className="text-sm font-medium">{selectedTechnician?.birthday || 'Non renseigné'}</p>
-                  </div>
+            ) : (
+              <div className="text-center py-12">
+                <div className="text-gray-400 mb-4">
+                  <UserX className="h-16 w-16 mx-auto" />
                 </div>
-                
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label className="text-sm text-gray-600">Compte configuré</Label>
-                    <Badge variant={selectedTechnician?.setup_completed ? "default" : "secondary"} className="text-xs">
-                      {selectedTechnician?.setup_completed ? "Oui" : "Non"}
-                    </Badge>
-                  </div>
-                  <div>
-                    <Label className="text-sm text-gray-600">Email vérifié</Label>
-                    <Badge variant={selectedTechnician?.email_valide ? "default" : "secondary"} className="text-xs">
-                      {selectedTechnician?.email_valide ? "Oui" : "Non"}
-                    </Badge>
-                  </div>
-                </div>
-                
+                <p className="text-gray-600 mb-2">Aucun technicien trouvé</p>
+                <p className="text-sm text-gray-500">
+                  {searchTerm || statusFilter !== 'all' || roleFilter !== 'all' 
+                    ? 'Essayez de modifier vos filtres de recherche'
+                    : 'Commencez par ajouter votre premier technicien'
+                  }
+                </p>
+              </div>
+            )}
+          </>
+        )}
+      </div>
+
+      {/* Create Technician Modal */}
+      <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Ajouter un Technicien</DialogTitle>
+            <DialogDescription>
+              Créer un nouveau compte technicien
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="fullName">Nom complet *</Label>
+              <Input
+                id="fullName"
+                value={formData.fullName}
+                onChange={(e) => setFormData({...formData, fullName: e.target.value})}
+                placeholder="Jean Dupont"
+                required
+              />
+            </div>
+            <div>
+              <Label htmlFor="email">Email *</Label>
+              <Input
+                id="email"
+                type="email"
+                value={formData.email}
+                onChange={(e) => setFormData({...formData, email: e.target.value})}
+                placeholder="jean.dupont@email.com"
+                required
+              />
+            </div>
+            <div>
+              <Label htmlFor="role">Rôle *</Label>
+              <Select value={formData.role} onValueChange={(value: 'technicien' | 'technicien_superieur') => setFormData({...formData, role: value})}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Sélectionner un rôle" />
+                </SelectTrigger>
+                <SelectContent position="item-aligned" className="z-[70] overflow-auto">
+                  <SelectItem value="technicien">Technicien</SelectItem>
+                  <SelectItem value="technicien_superieur">Technicien Supérieur</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex justify-end space-x-2">
+              <Button variant="outline" onClick={() => setIsCreateModalOpen(false)}>
+                Annuler
+              </Button>
+              <Button onClick={handleCreateTechnician} className="bg-greener hover:bg-greener-600">
+                Créer
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Technician Modal */}
+      <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Modifier le Technicien</DialogTitle>
+            <DialogDescription>
+              Mettre à jour les informations du technicien
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="edit-fullName">Nom complet *</Label>
+              <Input
+                id="edit-fullName"
+                value={formData.fullName}
+                onChange={(e) => setFormData({...formData, fullName: e.target.value})}
+                required
+              />
+            </div>
+            <div>
+              <Label htmlFor="edit-email">Email *</Label>
+              <Input
+                id="edit-email"
+                type="email"
+                value={formData.email}
+                onChange={(e) => setFormData({...formData, email: e.target.value})}
+                required
+              />
+            </div>
+            <div>
+              <Label htmlFor="edit-role">Rôle *</Label>
+              <Select value={formData.role} onValueChange={(value: 'technicien' | 'technicien_superieur') => setFormData({...formData, role: value})}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Sélectionner un rôle" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="technicien">Technicien</SelectItem>
+                  <SelectItem value="technicien_superieur">Technicien Supérieur</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="space-y-3 pt-4 border-t">
+              <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label className="text-sm text-gray-600">Membre depuis</Label>
-                  <p className="text-sm font-medium">{selectedTechnician?.created_at}</p>
+                  <Label className="text-sm text-gray-600">Téléphone</Label>
+                  <p className="text-sm font-medium">{selectedTechnician?.telephone || 'Non renseigné'}</p>
+                </div>
+                <div>
+                  <Label className="text-sm text-gray-600">Date de naissance</Label>
+                  <p className="text-sm font-medium">{selectedTechnician?.birthday || 'Non renseigné'}</p>
                 </div>
               </div>
               
-              <div className="flex justify-end space-x-2">
-                <Button variant="outline" onClick={() => setIsEditModalOpen(false)}>
-                  Annuler
-                </Button>
-                <Button onClick={handleEditTechnician} className="bg-greener hover:bg-greener-600">
-                  Sauvegarder
-                </Button>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-sm text-gray-600">Compte configuré</Label>
+                  <Badge variant={selectedTechnician?.setup_completed ? "default" : "secondary"} className="text-xs">
+                    {selectedTechnician?.setup_completed ? "Oui" : "Non"}
+                  </Badge>
+                </div>
+                <div>
+                  <Label className="text-sm text-gray-600">Email vérifié</Label>
+                  <Badge variant={selectedTechnician?.email_valide ? "default" : "secondary"} className="text-xs">
+                    {selectedTechnician?.email_valide ? "Oui" : "Non"}
+                  </Badge>
+                </div>
+              </div>
+              
+              <div>
+                <Label className="text-sm text-gray-600">Membre depuis</Label>
+                <p className="text-sm font-medium">{selectedTechnician?.created_at}</p>
               </div>
             </div>
-          </DialogContent>
-        </Dialog>
-      </div>
-    </div>
+            
+            <div className="flex justify-end space-x-2">
+              <Button variant="outline" onClick={() => setIsEditModalOpen(false)}>
+                Annuler
+              </Button>
+              <Button onClick={handleEditTechnician} className="bg-greener hover:bg-greener-600">
+                Sauvegarder
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </DirectorLayout>
   );
 }

@@ -8,7 +8,7 @@ class Entreprise(db.Model):
 
     id = Column(Integer, primary_key=True, index=True)
     nom = Column(String, nullable=False)
-    id_user = Column(Integer, ForeignKey('users.id'), nullable=False)
+    id_user = Column(Integer, ForeignKey('users.id', ondelete='CASCADE'), nullable=False)
     status_juridique = Column(String)
     adresse = Column(String)
     cie = Column(String)
@@ -26,7 +26,20 @@ class Entreprise(db.Model):
     membres = relationship(
         "User",
         back_populates="entreprise",
-        foreign_keys="[User.id_entreprise]"
+        foreign_keys="[User.id_entreprise]",
+        cascade="all, delete-orphan"
+    )
+
+    domaines = relationship(
+        "Domaine",
+        backref="entreprise",
+        cascade="all, delete-orphan"
+    )
+
+    robots = relationship(
+        "Robot",
+        backref="entreprise",
+        cascade="all, delete-orphan"
     )
 
 

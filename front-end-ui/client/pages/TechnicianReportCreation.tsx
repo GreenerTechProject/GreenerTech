@@ -24,7 +24,6 @@ import {
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import ReportService from "../services/reportService";
 import { serreService } from "../services/serreService";
-import TechHeader from "../components/TechHeader";
 
 interface Serre {
   id: number;
@@ -57,7 +56,6 @@ export default function TechnicianReportCreation() {
       const serres = await serreService.getSerresByUser();
       setAvailableSerres(serres);
     } catch (error) {
-      console.error("Error fetching available serres:", error);
       setError("Erreur lors du chargement des serres disponibles");
     }
   };
@@ -93,7 +91,6 @@ export default function TechnicianReportCreation() {
       }, 2000);
       
     } catch (error: any) {
-      console.error("Error creating report:", error);
       setError(error.response?.data?.message || "Erreur lors de la création du rapport");
     } finally {
       setLoading(false);
@@ -132,7 +129,7 @@ export default function TechnicianReportCreation() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <TechHeader role="technicien" />
+      {/* Header removed: provided by TechnicianLayout */}
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="mb-8">

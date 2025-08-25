@@ -1,955 +1,525 @@
 import React, { useState, useEffect } from 'react';
-import { useAuth } from '../contexts/AuthContext';
-import { useSidebar } from '@/hooks/useSidebar';
-import DirectorSidebar from '../components/DirectorSidebar';
-import DirectorHeader from '@/components/DirectorHeader';
-import { useToast } from '@/hooks/use-toast';
-import {
-  Menu,
-  Plus,
-  Search,
-  Folder,
-  File,
-  FileText,
-  Download,
-  Edit,
-  Trash2,
-  Eye,
-  FolderPlus,
-  Upload,
-  Calendar,
-  User,
-  Clock,
-  Share,
-  Filter,
-  MoreVertical
-} from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { cn } from '@/lib/utils';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
+import { Input } from '../components/ui/input';
+import { Badge } from '../components/ui/badge';
+import { Button } from '../components/ui/button';
+import { Label } from '../components/ui/label';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { ReportService, ApiReport } from '@/services/reportService';
+} from '../components/ui/select';
+import {
+  Search,
+  FileText,
+  Calendar,
+  MapPin,
+  Building,
+  Filter,
+  Download,
+  Trash2,
+  Eye,
+  Plus,
+  AlertTriangle,
+  CheckCircle,
+  Clock,
+} from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
+import { useSidebar } from '@/hooks/useSidebar';
+import DirectorHeader from '@/components/DirectorHeader';
+import DirectorSidebar from '@/components/DirectorSidebar';
+import ReportService, { ApiReport } from '../services/reportService';
+import { serreService } from '../services/serreService';
+import { domainService } from '../services/domainService';
+import { useToast } from '../hooks/use-toast';
 
-interface ReportFolder {
-  id: string;
-  name: string;
-  description?: string;
-  parentId?: string;
-  createdDate: string;
-  createdBy: string;
-  reportCount: number;
-  color?: string;
-}
-
-interface Report {
-  id: string;
-  title: string;
-  description?: string;
-  content: string;
-  type: 'weekly' | 'monthly' | 'quarterly' | 'annual' | 'custom' | 'incident';
-  status: 'draft' | 'review' | 'approved' | 'published' | 'archived';
-  folderId?: string;
-  createdDate: string;
-  createdBy: string;
-  lastModified: string;
-  lastModifiedBy: string;
-  tags: string[];
-  format: 'html' | 'pdf' | 'markdown';
-  size: number; // in KB
-  downloadCount: number;
-  viewCount: number;
-  attachments: {
-    id: string;
-    name: string;
-    size: number;
-    url: string;
-  }[];
-}
-
-const mockFolders: ReportFolder[] = [
-  {
-    id: '1',
-    name: 'Rapports Hebdomadaires',
-    description: 'Rapports de performance hebdomadaire',
-    createdDate: '2024-01-01',
-    createdBy: 'Directeur',
-    reportCount: 12,
-    color: '#3b82f6'
-  },
-  {
-    id: '2',
-    name: 'Rapports Mensuels',
-    description: 'Analyses mensuelles et bilans',
-    createdDate: '2024-01-01',
-    createdBy: 'Directeur',
-    reportCount: 8,
-    color: '#10b981'
-  },
-  {
-    id: '3',
-    name: 'Incidents & Interventions',
-    description: 'Rapports d\'incidents et interventions d\'urgence',
-    createdDate: '2024-01-05',
-    createdBy: 'Directeur',
-    reportCount: 5,
-    color: '#f59e0b'
-  },
-  {
-    id: '4',
-    name: 'Analyses Techniques',
-    description: 'Rapports techniques et diagnostics',
-    createdDate: '2024-01-10',
-    createdBy: 'Jean Dupont',
-    reportCount: 15,
-    color: '#8b5cf6'
-  }
-];
-
-const mockReports: Report[] = [
-  {
-    id: '1',
-    title: 'Rapport Hebdomadaire - Semaine 3',
-    description: 'Performance des serres et interventions de la semaine',
-    content: '<h1>Rapport Hebdomadaire</h1><p>Résumé des activités...</p>',
-    type: 'weekly',
-    status: 'published',
-    folderId: '1',
-    createdDate: '2024-01-15',
-    createdBy: 'Marie Martin',
-    lastModified: '2024-01-16',
-    lastModifiedBy: 'Directeur',
-    tags: ['performance', 'serres', 'automatisation'],
-    format: 'pdf',
-    size: 245,
-    downloadCount: 8,
-    viewCount: 23,
-    attachments: [
-      { id: '1', name: 'graphiques_performance.xlsx', size: 125, url: '/files/graph1.xlsx' }
-    ]
-  },
-  {
-    id: '2',
-    title: 'Analyse Mensuelle Janvier 2024',
-    description: 'Bilan complet du mois de janvier',
-    content: '<h1>Analyse Mensuelle</h1><h2>Objectifs atteints</h2><p>...</p>',
-    type: 'monthly',
-    status: 'approved',
-    folderId: '2',
-    createdDate: '2024-01-31',
-    createdBy: 'Sophie Dubois',
-    lastModified: '2024-02-01',
-    lastModifiedBy: 'Sophie Dubois',
-    tags: ['mensuel', 'kpi', 'objectifs'],
-    format: 'html',
-    size: 189,
-    downloadCount: 15,
-    viewCount: 45,
-    attachments: []
-  },
-  {
-    id: '3',
-    title: 'Incident Température Critique - Serre A1',
-    description: 'Rapport d\'incident sur la panne du système de climatisation',
-    content: '<h1>Rapport d\'Incident</h1><h2>Chronologie</h2><p>14h35 - Alerte température...</p>',
-    type: 'incident',
-    status: 'review',
-    folderId: '3',
-    createdDate: '2024-01-18',
-    createdBy: 'Jean Dupont',
-    lastModified: '2024-01-19',
-    lastModifiedBy: 'Jean Dupont',
-    tags: ['incident', 'température', 'critique', 'serre-a1'],
-    format: 'pdf',
-    size: 156,
-    downloadCount: 3,
-    viewCount: 12,
-    attachments: [
-      { id: '2', name: 'photos_incident.zip', size: 2340, url: '/files/photos.zip' },
-      { id: '3', name: 'logs_systeme.txt', size: 45, url: '/files/logs.txt' }
-    ]
-  }
-];
-
-export default function DirectorReportManagement() {
+const DirectorReportManagement: React.FC = () => {
   const { user } = useAuth();
-  const { isOpen, setIsOpen, toggleSidebar } = useSidebar();
+  const { isOpen, setIsOpen } = useSidebar();
   const { toast } = useToast();
-  
-  const [enterpriseReports, setEnterpriseReports] = useState<ApiReport[]>([]);
-  const [loadingEnterpriseReports, setLoadingEnterpriseReports] = useState<boolean>(false);
-  const [viewPdfUrl, setViewPdfUrl] = useState<string | null>(null);
-
-  const [folders, setFolders] = useState<ReportFolder[]>(mockFolders);
-  const [reports, setReports] = useState<Report[]>(mockReports);
-  const [selectedFolder, setSelectedFolder] = useState<string | null>(null);
-  const [viewMode, setViewMode] = useState<'folders' | 'reports'>('folders');
+  const [reports, setReports] = useState<ApiReport[]>([]);
+  const [filteredReports, setFilteredReports] = useState<ApiReport[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
-  const [typeFilter, setTypeFilter] = useState<string>('all');
-  const [statusFilter, setStatusFilter] = useState<string>('all');
-  const [selectedReport, setSelectedReport] = useState<Report | null>(null);
-  const [isReportDetailOpen, setIsReportDetailOpen] = useState(false);
-  const [isCreateFolderOpen, setIsCreateFolderOpen] = useState(false);
-  const [isCreateReportOpen, setIsCreateReportOpen] = useState(false);
-  const [isEditorOpen, setIsEditorOpen] = useState(false);
-  const [folderForm, setFolderForm] = useState({
-    name: '',
-    description: '',
-    color: '#3b82f6'
-  });
-  const [reportForm, setReportForm] = useState({
-    title: '',
-    description: '',
-    type: 'custom' as Report['type'],
-    folderId: '',
-    content: '',
-    tags: [] as string[]
-  });
+  const [filterSerre, setFilterSerre] = useState<string>("all");
+  const [filterDomaine, setFilterDomaine] = useState<string>("all");
+  const [loading, setLoading] = useState(true);
+  const [availableSerres, setAvailableSerres] = useState<any[]>([]);
+  const [availableDomaines, setAvailableDomaines] = useState<any[]>([]);
 
-  const filteredReports = reports.filter(report => {
-    const matchesSearch = report.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         report.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         report.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()));
-    const matchesType = typeFilter === 'all' || report.type === typeFilter;
-    const matchesStatus = statusFilter === 'all' || report.status === statusFilter;
-    const matchesFolder = !selectedFolder || report.folderId === selectedFolder;
-    return matchesSearch && matchesType && matchesStatus && matchesFolder;
-  });
+  useEffect(() => {
+    fetchReports();
+    fetchEnterpriseData();
+  }, []);
 
-  const filteredEnterpriseReports = enterpriseReports.filter((r) => {
-    const term = searchTerm.toLowerCase();
-    return (
-      (r.description || '').toLowerCase().includes(term) ||
-      (r.serre || '').toLowerCase().includes(term) ||
-      (r.domaine || '').toLowerCase().includes(term) ||
-      (r.entreprise || '').toLowerCase().includes(term)
-    );
-  });
-
-  const handleCreateFolder = () => {
-    const newFolder: ReportFolder = {
-      id: Date.now().toString(),
-      name: folderForm.name,
-      description: folderForm.description,
-      createdDate: new Date().toISOString().split('T')[0],
-      createdBy: user?.name || user?.email || 'Directeur',
-      reportCount: 0,
-      color: folderForm.color
-    };
-    
-    setFolders([...folders, newFolder]);
-    setIsCreateFolderOpen(false);
-    setFolderForm({ name: '', description: '', color: '#3b82f6' });
-    
-    toast({
-      title: "Dossier créé",
-      description: `Le dossier "${folderForm.name}" a été créé avec succès.`,
-    });
-  };
-
-  const handleCreateReport = () => {
-    const newReport: Report = {
-      id: Date.now().toString(),
-      title: reportForm.title,
-      description: reportForm.description,
-      content: reportForm.content || '<p>Nouveau rapport...</p>',
-      type: reportForm.type,
-      status: 'draft',
-      folderId: reportForm.folderId || undefined,
-      createdDate: new Date().toISOString().split('T')[0],
-      createdBy: user?.name || user?.email || 'Directeur',
-      lastModified: new Date().toISOString().split('T')[0],
-      lastModifiedBy: user?.name || user?.email || 'Directeur',
-      tags: reportForm.tags,
-      format: 'html',
-      size: Math.floor(Math.random() * 200) + 50,
-      downloadCount: 0,
-      viewCount: 0,
-      attachments: []
-    };
-    
-    setReports([...reports, newReport]);
-    
-    // Update folder report count
-    if (reportForm.folderId) {
-      setFolders(folders.map(folder =>
-        folder.id === reportForm.folderId
-          ? { ...folder, reportCount: folder.reportCount + 1 }
-          : folder
-      ));
-    }
-    
-    setIsCreateReportOpen(false);
-    setReportForm({
-      title: '',
-      description: '',
-      type: 'custom',
-      folderId: '',
-      content: '',
-      tags: []
-    });
-    
-    toast({
-      title: "Rapport créé",
-      description: `Le rapport "${reportForm.title}" a été créé en brouillon.`,
-    });
-  };
-
-  const handleDeleteFolder = (folderId: string) => {
-    const folderReports = reports.filter(r => r.folderId === folderId);
-    if (folderReports.length > 0) {
+  const fetchEnterpriseData = async () => {
+    try {
+      // Fetch all serres and domaines from the enterprise
+      const [serresData, domainesData] = await Promise.all([
+        serreService.getAllSerres(),
+        domainService.getMyCompanyDomains()
+      ]);
+      
+      setAvailableSerres(serresData);
+      setAvailableDomaines(domainesData);
+    } catch (error) {
+      console.error("Error fetching enterprise data:", error);
       toast({
-        title: "Impossible de supprimer",
-        description: "Le dossier contient des rapports. Veuillez d'abord les déplacer ou les supprimer.",
-        variant: "destructive"
-      });
-      return;
-    }
-    
-    setFolders(folders.filter(f => f.id !== folderId));
-    toast({
-      title: "Dossier supprimé",
-      description: "Le dossier a été supprimé avec succès.",
-      variant: "destructive"
-    });
-  };
-
-  const handleDeleteReport = (reportId: string) => {
-    const report = reports.find(r => r.id === reportId);
-    setReports(reports.filter(r => r.id !== reportId));
-    
-    // Update folder report count
-    if (report?.folderId) {
-      setFolders(folders.map(folder =>
-        folder.id === report.folderId
-          ? { ...folder, reportCount: Math.max(0, folder.reportCount - 1) }
-          : folder
-      ));
-    }
-    
-    toast({
-      title: "Rapport supprimé",
-      description: "Le rapport a été supprimé avec succès.",
-      variant: "destructive"
-    });
-  };
-
-  const handleUpdateReportStatus = (reportId: string, newStatus: Report['status']) => {
-    setReports(reports.map(report =>
-      report.id === reportId
-        ? { ...report, status: newStatus, lastModified: new Date().toISOString().split('T')[0] }
-        : report
-    ));
-    
-    toast({
-      title: "Statut mis à jour",
-      description: `Le rapport a été marqué comme ${newStatus}.`,
-    });
-  };
-
-  const openReportDetail = (report: Report) => {
-    setSelectedReport(report);
-    setIsReportDetailOpen(true);
-    
-    // Increment view count
-    setReports(reports.map(r =>
-      r.id === report.id
-        ? { ...r, viewCount: r.viewCount + 1 }
-        : r
-    ));
-  };
-
-  const openEditor = (report?: Report) => {
-    if (report) {
-      setSelectedReport(report);
-      setReportForm({
-        title: report.title,
-        description: report.description || '',
-        type: report.type,
-        folderId: report.folderId || '',
-        content: report.content,
-        tags: report.tags
+        title: "Erreur",
+        description: "Impossible de charger les données de l'entreprise",
+        variant: "destructive",
       });
     }
-    setIsEditorOpen(true);
   };
 
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'draft':
-        return <Badge className="bg-gray-100 text-gray-800 border-gray-200">Brouillon</Badge>;
-      case 'review':
-        return <Badge className="bg-yellow-100 text-yellow-800 border-yellow-200">En révision</Badge>;
-      case 'approved':
-        return <Badge className="bg-green-100 text-green-800 border-green-200">Approuvé</Badge>;
-      case 'published':
-        return <Badge className="bg-blue-100 text-blue-800 border-blue-200">Publié</Badge>;
-      case 'archived':
-        return <Badge className="bg-gray-100 text-gray-800 border-gray-200">Archivé</Badge>;
-      default:
-        return <Badge variant="outline">{status}</Badge>;
+  const fetchReports = async () => {
+    try {
+      setLoading(true);
+      const data = await ReportService.getReportsByDirectorEnterprise();
+      setReports(data);
+      setFilteredReports(data);
+    } catch (error) {
+      console.error("Error fetching reports:", error);
+      setReports([]);
+      setFilteredReports([]);
+      toast({
+        title: "Erreur",
+        description: "Impossible de charger les rapports",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
     }
-  };
-
-  const getTypeBadge = (type: string) => {
-    const typeLabels = {
-      weekly: 'Hebdomadaire',
-      monthly: 'Mensuel',
-      quarterly: 'Trimestriel',
-      annual: 'Annuel',
-      custom: 'Personnalisé',
-      incident: 'Incident'
-    };
-    return <Badge variant="secondary">{typeLabels[type as keyof typeof typeLabels] || type}</Badge>;
-  };
-
-  const formatFileSize = (kb: number) => {
-    if (kb < 1024) return `${kb} KB`;
-    return `${(kb / 1024).toFixed(1)} MB`;
-  };
-
-  const stats = {
-    totalReports: enterpriseReports.length,
-    serres: new Set(enterpriseReports.map(r => (r.serre_id ?? r.serre))).size,
-    domaines: new Set(enterpriseReports.map(r => r.domaine).filter(Boolean)).size,
-    withPdf: enterpriseReports.filter(r => r.lien_pdf).length,
-    last30Days: enterpriseReports.filter(r => {
-      if (!r.date) return false;
-      const d = new Date(r.date);
-      const now = new Date();
-      const diff = (now.getTime() - d.getTime()) / (1000 * 60 * 60 * 24);
-      return diff <= 30;
-    }).length,
   };
 
   useEffect(() => {
-    const fetchEnterpriseReports = async () => {
-      try {
-        setLoadingEnterpriseReports(true);
-        const data = await ReportService.getReportsByDirectorEnterprise();
-        setEnterpriseReports(data);
-      } catch (error: any) {
-        console.error('Erreur lors du chargement des rapports:', error);
-        toast({
-          title: 'Erreur',
-          description: "Impossible de récupérer les rapports de l'entreprise",
-          variant: 'destructive'
-        });
-      } finally {
-        setLoadingEnterpriseReports(false);
-      }
-    };
+    const filtered = reports.filter((report) => {
+      const matchesSearch = 
+        report.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (report.serre_nom && report.serre_nom.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (report.domaine_nom && report.domaine_nom.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (report.user_nom && report.user_nom.toLowerCase().includes(searchTerm.toLowerCase()));
+      
+      const matchesSerre = filterSerre === "all" || report.serre_id?.toString() === filterSerre;
+      const matchesDomaine = filterDomaine === "all" || report.domaine_nom === filterDomaine;
+      
+      return matchesSearch && matchesSerre && matchesDomaine;
+    });
+    setFilteredReports(filtered);
+  }, [searchTerm, filterSerre, filterDomaine, reports]);
 
-    fetchEnterpriseReports();
-  }, []);
+  const handleDownloadReport = async (rapport: ApiReport) => {
+    if (rapport.lien_pdf) {
+      try {
+        await ReportService.downloadReport(rapport.lien_pdf, `rapport_${rapport.id}.pdf`);
+        toast({
+          title: "Téléchargement réussi",
+          description: "Le rapport a été téléchargé",
+        });
+      } catch (error) {
+        console.error("Error downloading report:", error);
+        toast({
+          title: "Erreur",
+          description: "Impossible de télécharger le rapport",
+          variant: "destructive",
+        });
+      }
+    }
+  };
+
+  const handleDeleteReport = async (reportId: number) => {
+    try {
+      await ReportService.deleteReport(reportId);
+      setReports(reports.filter(r => r.id !== reportId));
+      toast({
+        title: "Rapport supprimé",
+        description: "Le rapport a été supprimé avec succès",
+      });
+    } catch (error) {
+      console.error("Error deleting report:", error);
+      toast({
+        title: "Erreur",
+        description: "Impossible de supprimer le rapport",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const getStatusBadge = (date: string | null) => {
+    if (!date) return { label: "En cours", color: "bg-yellow-100 text-yellow-800 border-yellow-300" };
+    
+    const reportDate = new Date(date);
+    const now = new Date();
+    const diffDays = Math.floor((now.getTime() - reportDate.getTime()) / (1000 * 60 * 60 * 24));
+    
+    if (diffDays <= 7) {
+      return { label: "Récent", color: "bg-[#B4CC5F]/20 text-[#9BB84F] border-[#B4CC5F]/30" };
+    } else if (diffDays <= 30) {
+      return { label: "Mois dernier", color: "bg-blue-100 text-blue-800 border-blue-300" };
+    } else {
+      return { label: "Ancien", color: "bg-muted text-muted-foreground border-border" };
+    }
+  };
+
+  const stats = {
+    totalReports: reports.length,
+    coveredSerres: availableSerres.length,
+    domains: availableDomaines.length,
+    withPDF: reports.filter(r => r.lien_pdf).length,
+    last30Days: reports.filter(r => {
+      if (!r.date) return false;
+      const reportDate = new Date(r.date);
+      const now = new Date();
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+      return reportDate >= thirtyDaysAgo;
+    }).length
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-white dark:bg-gray-900">
+        <DirectorHeader isSidebarOpen={isOpen} onMenuClick={() => setIsOpen(!isOpen)} />
+        <div className="flex">
+          <DirectorSidebar isOpen={isOpen} setIsOpen={setIsOpen} />
+          <div className="flex-1 transition-all duration-300 ease-in-out">
+            <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
+              <div className="flex items-center justify-center min-h-[calc(100vh-200px)]">
+                <div className="text-center">
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto"></div>
+                  <p className="mt-4 text-muted-foreground">Chargement des rapports...</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex">
-      <DirectorSidebar isOpen={isOpen} setIsOpen={setIsOpen} />
+    <div className="min-h-screen bg-white dark:bg-gray-900">
+      <DirectorHeader isSidebarOpen={isOpen} onMenuClick={() => setIsOpen(!isOpen)} />
+      <div className="flex">
+        <DirectorSidebar isOpen={isOpen} setIsOpen={setIsOpen} />
+        <div className="flex-1 transition-all duration-300 ease-in-out">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
 
-      <div className="flex-1 transition-all duration-300">
-        <DirectorHeader isSidebarOpen={isOpen} onMenuClick={() => setIsOpen(!isOpen)} />
+            {/* Header */}
+            <div className="mb-8">
+              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 mb-2">
+                Gestion des Rapports
+              </h1>
+              <p className="text-gray-600 text-sm sm:text-base">
+                Gérez et consultez tous les rapports de votre entreprise
+              </p>
+            </div>
 
-        {/* Content */}
-        <main className="p-4 sm:p-6 lg:p-8">
-          {/* Stats Cards (from backend data) */}
-          <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
-            <Card>
-              <CardContent className="p-4">
-                <div className="text-2xl font-bold text-greener-600">{stats.totalReports}</div>
-                <div className="text-sm text-gray-600">Rapports</div>
+            {/* Stats Cards */}
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4 lg:gap-6 mb-6 sm:mb-8">
+              <Card className="hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
+                <CardContent className="p-3 sm:p-4 lg:p-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-xs sm:text-sm font-medium text-muted-foreground mb-1">Total Rapports</p>
+                      <p className="text-xl sm:text-2xl lg:text-3xl font-bold text-[#B4CC5F]">
+                        {stats.totalReports}
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-1 hidden sm:block">Tous les rapports</p>
+                    </div>
+                    <div className="h-8 w-8 sm:h-10 sm:w-10 lg:h-12 lg:w-12 rounded-xl bg-[#B4CC5F] flex items-center justify-center shadow-lg hover:shadow-xl transition-shadow duration-300">
+                      <FileText className="h-4 w-4 sm:h-5 sm:w-5 lg:h-7 lg:w-7 text-white" />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+              
+              <Card className="hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
+                <CardContent className="p-3 sm:p-4 lg:p-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-xs sm:text-sm font-medium text-muted-foreground mb-1">Serres Couvertes</p>
+                      <p className="text-xl sm:text-2xl lg:text-3xl font-bold text-blue-600">
+                        {stats.coveredSerres}
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-1 hidden sm:block">Serres avec rapports</p>
+                    </div>
+                    <div className="h-8 w-8 sm:h-10 sm:w-10 lg:h-12 lg:w-12 rounded-xl bg-blue-600 flex items-center justify-center shadow-lg hover:shadow-xl transition-shadow duration-300">
+                      <Building className="h-4 w-4 sm:h-5 sm:w-5 lg:h-7 lg:w-7 text-white" />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
+                <CardContent className="p-3 sm:p-4 lg:p-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-xs sm:text-sm font-medium text-muted-foreground mb-1">Domaines</p>
+                      <p className="text-xl sm:text-2xl lg:text-3xl font-bold text-purple-600">
+                        {stats.domains}
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-1 hidden sm:block">Domaines couverts</p>
+                    </div>
+                    <div className="h-8 w-8 sm:h-10 sm:w-10 lg:h-12 lg:w-12 rounded-xl bg-purple-600 flex items-center justify-center shadow-lg hover:shadow-xl transition-shadow duration-300">
+                      <MapPin className="h-4 w-4 sm:h-5 sm:w-5 lg:h-7 lg:w-7 text-white" />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
+                <CardContent className="p-3 sm:p-4 lg:p-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-xs sm:text-sm font-medium text-muted-foreground mb-1">Avec PDF</p>
+                      <p className="text-xl sm:text-2xl lg:text-3xl font-bold text-green-600">
+                        {stats.withPDF}
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-1 hidden sm:block">Rapports téléchargeables</p>
+                    </div>
+                    <div className="h-8 w-8 sm:h-10 sm:w-10 lg:h-12 lg:w-12 rounded-xl bg-green-600 flex items-center justify-center shadow-lg hover:shadow-xl transition-shadow duration-300">
+                      <FileText className="h-4 w-4 sm:h-5 sm:w-5 lg:h-7 lg:w-7 text-white" />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="hover:shadow-lg transition-all duration-300 hover:-translate-y-1 col-span-2 lg:col-span-1">
+                <CardContent className="p-3 sm:p-4 lg:p-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-xs sm:text-sm font-medium text-muted-foreground mb-1">30 Derniers Jours</p>
+                      <p className="text-xl sm:text-2xl lg:text-3xl font-bold text-orange-600">
+                        {stats.last30Days}
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-1 hidden sm:block">Rapports récents</p>
+                    </div>
+                    <div className="h-8 w-8 sm:h-10 sm:w-10 lg:h-12 lg:w-12 rounded-xl bg-orange-600 flex items-center justify-center shadow-lg hover:shadow-xl transition-shadow duration-300">
+                      <Calendar className="h-4 w-4 sm:h-5 sm:w-5 lg:h-7 lg:w-7 text-white" />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Filters and Search */}
+            <Card className="mb-6 sm:mb-8 hover:shadow-md transition-shadow duration-300">
+              <CardHeader className="pb-3 sm:pb-4">
+                <CardTitle className="flex items-center space-x-2 text-base sm:text-lg">
+                  <div className="h-6 w-6 sm:h-8 sm:w-8 rounded-lg bg-[#B4CC5F] flex items-center justify-center">
+                    <Filter className="h-3 w-3 sm:h-5 sm:w-5 text-white" />
+                  </div>
+                  <span>Filtres et Recherche</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+                  <div className="sm:col-span-2 lg:col-span-1">
+                    <Label htmlFor="search" className="text-xs sm:text-sm font-medium text-foreground">Rechercher</Label>
+                    <div className="relative mt-1">
+                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
+                      <Input
+                        id="search"
+                        type="text"
+                        placeholder="Description, serre, domaine, utilisateur..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="pl-8 sm:pl-10 h-8 sm:h-10 text-xs sm:text-sm border-border focus:border-[#B4CC5F] focus:ring-[#B4CC5F] transition-colors duration-200"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <Label htmlFor="serre-filter" className="text-xs sm:text-sm font-medium text-foreground">Filtrer par Serre</Label>
+                    <Select value={filterSerre} onValueChange={setFilterSerre}>
+                      <SelectTrigger className="mt-1 h-8 sm:h-10 text-xs sm:text-sm border-border focus:border-[#B4CC5F] focus:ring-[#B4CC5F] transition-colors duration-200">
+                        <SelectValue placeholder="Toutes les serres" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Toutes les serres</SelectItem>
+                        {availableSerres.map((serre) => (
+                          <SelectItem key={serre.id} value={serre.id?.toString() || ""}>
+                            {serre.nom || `Serre ${serre.id}`}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div>
+                    <Label htmlFor="domaine-filter" className="text-xs sm:text-sm font-medium text-foreground">Filtrer par Domaine</Label>
+                    <Select value={filterDomaine} onValueChange={setFilterDomaine}>
+                      <SelectTrigger className="mt-1 h-8 sm:h-10 text-xs sm:text-sm border-border focus:border-[#B4CC5F] focus:ring-[#B4CC5F] transition-colors duration-200">
+                        <SelectValue placeholder="Tous les domaines" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Tous les domaines</SelectItem>
+                        {availableDomaines.map((domaine) => (
+                          <SelectItem key={domaine.id} value={domaine.nom}>
+                            {domaine.nom}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="sm:col-span-2 lg:col-span-1 flex items-end">
+                    <Button 
+                      className="w-full bg-[#B4CC5F] hover:bg-[#9BB84F] text-white font-medium transition-all duration-200 hover:scale-105 active:scale-95 shadow-lg hover:shadow-xl h-8 sm:h-10 text-xs sm:text-sm"
+                    >
+                      <Plus className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                      Nouveau Rapport
+                    </Button>
+                  </div>
+                </div>
               </CardContent>
             </Card>
-            <Card>
-              <CardContent className="p-4">
-                <div className="text-2xl font-bold text-blue-600">{stats.serres}</div>
-                <div className="text-sm text-gray-600">Serres couvertes</div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="p-4">
-                <div className="text-2xl font-bold text-gray-600">{stats.domaines}</div>
-                <div className="text-sm text-gray-600">Domaines</div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="p-4">
-                <div className="text-2xl font-bold text-green-600">{stats.withPdf}</div>
-                <div className="text-sm text-gray-600">Avec PDF</div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="p-4">
-                <div className="text-2xl font-bold text-purple-600">{stats.last30Days}</div>
-                <div className="text-sm text-gray-600">Sur 30 jours</div>
+
+            {/* Reports List */}
+            <Card className="hover:shadow-md transition-shadow duration-300">
+              <CardHeader className="pb-3 sm:pb-4">
+                <CardTitle className="flex items-center space-x-2 text-base sm:text-lg">
+                  <div className="h-6 w-6 sm:h-8 sm:w-8 rounded-lg bg-[#B4CC5F] flex items-center justify-center">
+                    <FileText className="h-3 w-3 sm:h-5 sm:w-5 text-white" />
+                  </div>
+                  <span>Rapports ({filteredReports.length})</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {filteredReports.length === 0 ? (
+                  <div className="text-center py-8 sm:py-12 text-muted-foreground">
+                    <div className="h-16 w-16 sm:h-20 sm:w-20 rounded-full bg-[#B4CC5F]/20 mx-auto mb-4 flex items-center justify-center">
+                      <FileText className="h-8 w-8 sm:h-10 sm:w-10 text-[#B4CC5F]" />
+                    </div>
+                    <h3 className="text-lg sm:text-xl font-semibold mb-2 text-foreground">Aucun rapport trouvé</h3>
+                    <p className="text-xs sm:text-sm mb-4 text-muted-foreground max-w-md mx-auto">
+                      {reports.length === 0 
+                        ? "Aucun rapport n'a été créé dans votre entreprise"
+                        : "Aucun rapport ne correspond à vos critères de recherche"
+                      }
+                    </p>
+                    <Button 
+                      className="bg-[#B4CC5F] hover:bg-[#9BB84F] transition-all duration-200 hover:scale-105 active:scale-95 shadow-lg hover:shadow-xl h-8 sm:h-10 text-xs sm:text-sm"
+                    >
+                      <Plus className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                      Créer le premier rapport
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="space-y-3 sm:space-y-4">
+                    {filteredReports.map((report) => {
+                      const statusBadge = getStatusBadge(report.date);
+                      return (
+                        <div
+                          key={report.id}
+                          className="flex flex-col sm:flex-row sm:items-start space-y-3 sm:space-y-0 sm:space-x-4 p-3 sm:p-4 lg:p-6 border rounded-lg hover:bg-muted hover:shadow-md transition-all duration-300 hover:-translate-y-1 border-border"
+                        >
+                          <div className="flex-shrink-0">
+                            <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-xl bg-[#B4CC5F] flex items-center justify-center shadow-lg hover:shadow-xl transition-shadow duration-300">
+                              <FileText className="h-5 w-5 sm:h-7 sm:w-7 text-white" />
+                            </div>
+                          </div>
+                          
+                          <div className="flex-1 min-w-0">
+                            <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between space-y-3 lg:space-y-0">
+                              <div className="flex-1">
+                                <h3 className="text-base sm:text-lg font-medium text-foreground mb-2">
+                                  {report.description}
+                                </h3>
+                                
+                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4 mb-3">
+                                  <div className="flex items-center space-x-2">
+                                    <span className="text-xs sm:text-sm font-medium text-muted-foreground">Serre:</span>
+                                    <span className="text-xs sm:text-sm text-foreground">{report.serre_nom || `Serre ${report.serre_id}`}</span>
+                                  </div>
+                                  
+                                  {report.domaine_nom && (
+                                    <div className="flex items-center space-x-2">
+                                      <span className="text-xs sm:text-sm font-medium text-muted-foreground">Domaine:</span>
+                                      <span className="text-xs sm:text-sm text-foreground">{report.domaine_nom}</span>
+                                    </div>
+                                  )}
+                                  
+                                  {report.user_nom && (
+                                    <div className="flex items-center space-x-2">
+                                      <span className="text-xs sm:text-sm font-medium text-muted-foreground">Créé par:</span>
+                                      <span className="text-xs sm:text-sm text-foreground">{report.user_nom}</span>
+                                    </div>
+                                  )}
+                                  
+                                  {report.entreprise_nom && (
+                                    <div className="flex items-center space-x-2">
+                                      <span className="text-xs sm:text-sm font-medium text-muted-foreground">Entreprise:</span>
+                                      <span className="text-xs sm:text-sm text-foreground">{report.entreprise_nom}</span>
+                                    </div>
+                                  )}
+                                </div>
+                                
+                                {report.date && (
+                                  <div className="flex items-center space-x-2 text-xs sm:text-sm text-muted-foreground">
+                                    <Calendar className="h-3 w-3 sm:h-4 sm:w-4" />
+                                    <span>Créé le {new Date(report.date).toLocaleDateString("fr-FR")}</span>
+                                  </div>
+                                )}
+                              </div>
+                              
+                              <div className="flex flex-col items-start sm:items-end space-y-3">
+                                <Badge
+                                  variant="outline"
+                                  className={`${statusBadge.color} text-xs`}
+                                >
+                                  {statusBadge.label}
+                                </Badge>
+                                
+                                <div className="flex space-x-2">
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="h-8 w-8 sm:h-10 sm:w-10 p-0 border-blue-500 text-blue-500 hover:bg-blue-500 hover:text-white transition-all duration-200 hover:scale-105 active:scale-95"
+                                    title="Voir le rapport"
+                                  >
+                                    <Eye className="h-4 w-4 sm:h-5 sm:w-5" />
+                                  </Button>
+                                  
+                                  {report.lien_pdf && (
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() => handleDownloadReport(report)}
+                                      className="h-8 w-8 sm:h-10 sm:w-10 p-0 border-[#B4CC5F] text-[#B4CC5F] hover:bg-[#B4CC5F] hover:text-white transition-all duration-200 hover:scale-105 active:scale-95"
+                                      title="Télécharger le rapport"
+                                    >
+                                      <Download className="h-4 w-4 sm:h-5 sm:w-5" />
+                                    </Button>
+                                  )}
+                                  
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => handleDeleteReport(report.id)}
+                                    className="h-8 w-8 sm:h-10 sm:w-10 p-0 border-red-500 text-red-500 hover:bg-red-500 hover:text-white transition-all duration-200 hover:scale-105 active:scale-95"
+                                    title="Supprimer le rapport"
+                                  >
+                                    <Trash2 className="h-4 w-4 sm:h-5 sm:w-5" />
+                                  </Button>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
               </CardContent>
             </Card>
           </div>
-
-          {/* Breadcrumb */}
-          {selectedFolder && viewMode === 'reports' && (
-            <div className="mb-4 flex items-center space-x-2 text-sm text-gray-600">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setSelectedFolder(null)}
-              >
-                Tous les rapports
-              </Button>
-              <span>/</span>
-              <span className="font-medium">
-                {folders.find(f => f.id === selectedFolder)?.name}
-              </span>
-            </div>
-          )}
-
-          {/* Filters for Enterprise Reports */}
-          <Card className="mb-6">
-            <CardContent className="p-4">
-              <div className="flex flex-col lg:flex-row gap-4">
-                <div className="flex-1">
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-                    <Input
-                      placeholder="Rechercher par description, serre, domaine ou entreprise..."
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      className="pl-10"
-                    />
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Enterprise Reports from Backend */}
-          <Card>
-                <CardHeader>
-                  <CardTitle>Rapports de l'entreprise ({filteredEnterpriseReports.length})</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {loadingEnterpriseReports ? (
-                    <div className="text-sm text-gray-500">Chargement...</div>
-                  ) : filteredEnterpriseReports.length === 0 ? (
-                    <div className="text-sm text-gray-500">Aucun rapport</div>
-                  ) : (
-                    <div className="space-y-3">
-                      {filteredEnterpriseReports.map((r) => (
-                        <div key={r.id} className="flex items-center justify-between p-3 border rounded-lg">
-                          <div className="min-w-0">
-                            <div className="font-medium text-gray-900 truncate">{r.description}</div>
-                            <div className="text-xs text-gray-600">
-                              {r.date ? new Date(r.date).toLocaleDateString('fr-FR') : '—'} • Serre: {r.serre || '—'} • Domaine: {r.domaine || '—'}
-                            </div>
-                            {Array.isArray(r.bilans) && r.bilans.length > 0 && (
-                              <div className="text-xs text-gray-600 mt-1 truncate">Bilans: {r.bilans.join(', ')}</div>
-                            )}
-                          </div>
-                          <div className="flex items-center gap-2">
-                            {r.lien_pdf && (
-                              <>
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => setViewPdfUrl(ReportService.getReportPdfUrl(r.lien_pdf))}
-                                >
-                                  <Eye className="h-4 w-4 mr-1" /> Voir PDF
-                                </Button>
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => ReportService.downloadReport(r.lien_pdf!, `rapport_${r.id}.pdf`)}
-                                >
-                                  <Download className="h-4 w-4 mr-1" /> Télécharger
-                                </Button>
-                              </>
-                            )}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-          
-        </main>
-
-        {/* Create Folder Modal */}
-        <Dialog open={isCreateFolderOpen} onOpenChange={setIsCreateFolderOpen}>
-          <DialogContent className="max-w-md">
-            <DialogHeader>
-              <DialogTitle>Créer un Nouveau Dossier</DialogTitle>
-              <DialogDescription>
-                Organiser vos rapports par dossiers thématiques
-              </DialogDescription>
-            </DialogHeader>
-            <div className="space-y-4">
-              <div>
-                <Label htmlFor="folder-name">Nom du dossier</Label>
-                <Input
-                  id="folder-name"
-                  value={folderForm.name}
-                  onChange={(e) => setFolderForm({...folderForm, name: e.target.value})}
-                  placeholder="Ex: Rapports Hebdomadaires"
-                />
-              </div>
-              <div>
-                <Label htmlFor="folder-description">Description (optionnel)</Label>
-                <Textarea
-                  id="folder-description"
-                  value={folderForm.description}
-                  onChange={(e) => setFolderForm({...folderForm, description: e.target.value})}
-                  placeholder="Description du contenu du dossier..."
-                />
-              </div>
-              <div>
-                <Label htmlFor="folder-color">Couleur</Label>
-                <div className="flex space-x-2 mt-2">
-                  {['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ef4444', '#06b6d4'].map(color => (
-                    <button
-                      key={color}
-                      type="button"
-                      className={cn(
-                        "w-8 h-8 rounded-full border-2 transition-all",
-                        folderForm.color === color ? "border-gray-900" : "border-gray-300"
-                      )}
-                      style={{ backgroundColor: color }}
-                      onClick={() => setFolderForm({...folderForm, color})}
-                    />
-                  ))}
-                </div>
-              </div>
-              <div className="flex justify-end space-x-2">
-                <Button variant="outline" onClick={() => setIsCreateFolderOpen(false)}>
-                  Annuler
-                </Button>
-                <Button onClick={handleCreateFolder} className="bg-greener hover:bg-greener-600">
-                  Créer le Dossier
-                </Button>
-              </div>
-            </div>
-          </DialogContent>
-        </Dialog>
-
-        {/* Create Report Modal */}
-        <Dialog open={isCreateReportOpen} onOpenChange={setIsCreateReportOpen}>
-          <DialogContent className="max-w-2xl">
-            <DialogHeader>
-              <DialogTitle>Créer un Nouveau Rapport</DialogTitle>
-              <DialogDescription>
-                Démarrer la création d'un nouveau rapport
-              </DialogDescription>
-            </DialogHeader>
-            <div className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="md:col-span-2">
-                  <Label htmlFor="report-title">Titre du rapport</Label>
-                  <Input
-                    id="report-title"
-                    value={reportForm.title}
-                    onChange={(e) => setReportForm({...reportForm, title: e.target.value})}
-                    placeholder="Ex: Rapport Hebdomadaire - Semaine 4"
-                  />
-                </div>
-                
-                <div>
-                  <Label htmlFor="report-type">Type de rapport</Label>
-                  <Select value={reportForm.type} onValueChange={(value: Report['type']) => setReportForm({...reportForm, type: value})}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="weekly">Hebdomadaire</SelectItem>
-                      <SelectItem value="monthly">Mensuel</SelectItem>
-                      <SelectItem value="quarterly">Trimestriel</SelectItem>
-                      <SelectItem value="annual">Annuel</SelectItem>
-                      <SelectItem value="custom">Personnalisé</SelectItem>
-                      <SelectItem value="incident">Incident</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                
-                <div>
-                  <Label htmlFor="report-folder">Dossier (optionnel)</Label>
-                  <Select value={reportForm.folderId} onValueChange={(value) => setReportForm({...reportForm, folderId: value})}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Choisir un dossier..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="">Aucun dossier</SelectItem>
-                      {folders.map(folder => (
-                        <SelectItem key={folder.id} value={folder.id}>{folder.name}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                
-                <div className="md:col-span-2">
-                  <Label htmlFor="report-description">Description</Label>
-                  <Textarea
-                    id="report-description"
-                    value={reportForm.description}
-                    onChange={(e) => setReportForm({...reportForm, description: e.target.value})}
-                    placeholder="Description du rapport..."
-                  />
-                </div>
-              </div>
-              
-              <div className="flex justify-end space-x-2">
-                <Button variant="outline" onClick={() => setIsCreateReportOpen(false)}>
-                  Annuler
-                </Button>
-                <Button onClick={handleCreateReport} className="bg-greener hover:bg-greener-600">
-                  Créer le Rapport
-                </Button>
-              </div>
-            </div>
-          </DialogContent>
-        </Dialog>
-
-        {/* Report Detail Modal */}
-        <Dialog open={isReportDetailOpen} onOpenChange={setIsReportDetailOpen}>
-          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>Détails du Rapport</DialogTitle>
-              <DialogDescription>
-                Informations complètes et contenu du rapport
-              </DialogDescription>
-            </DialogHeader>
-            {selectedReport && (
-              <div className="space-y-6">
-                {/* Basic Info */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <h3 className="font-semibold text-gray-900 mb-2">Informations Générales</h3>
-                    <div className="space-y-2 text-sm">
-                      <p><strong>Titre:</strong> {selectedReport.title}</p>
-                      <p><strong>Type:</strong> {getTypeBadge(selectedReport.type)}</p>
-                      <p><strong>Statut:</strong> {getStatusBadge(selectedReport.status)}</p>
-                      <p><strong>Format:</strong> {selectedReport.format.toUpperCase()}</p>
-                      <p><strong>Taille:</strong> {formatFileSize(selectedReport.size)}</p>
-                    </div>
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-gray-900 mb-2">Historique</h3>
-                    <div className="space-y-2 text-sm">
-                      <p><strong>Créé par:</strong> {selectedReport.createdBy}</p>
-                      <p><strong>Date de création:</strong> {new Date(selectedReport.createdDate).toLocaleDateString('fr-FR')}</p>
-                      <p><strong>Dernière modification:</strong> {new Date(selectedReport.lastModified).toLocaleDateString('fr-FR')}</p>
-                      <p><strong>Modifié par:</strong> {selectedReport.lastModifiedBy}</p>
-                      <p><strong>Vues:</strong> {selectedReport.viewCount}</p>
-                      <p><strong>Téléchargements:</strong> {selectedReport.downloadCount}</p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Description */}
-                {selectedReport.description && (
-                  <div>
-                    <h3 className="font-semibold text-gray-900 mb-2">Description</h3>
-                    <p className="text-sm text-gray-700 bg-gray-50 p-3 rounded-lg">
-                      {selectedReport.description}
-                    </p>
-                  </div>
-                )}
-
-                {/* Tags */}
-                {selectedReport.tags.length > 0 && (
-                  <div>
-                    <h3 className="font-semibold text-gray-900 mb-2">Tags</h3>
-                    <div className="flex flex-wrap gap-2">
-                      {selectedReport.tags.map((tag, index) => (
-                        <Badge key={index} variant="outline">{tag}</Badge>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Content Preview */}
-                <div>
-                  <h3 className="font-semibold text-gray-900 mb-2">Aperçu du Contenu</h3>
-                  <div 
-                    className="prose max-w-none bg-gray-50 p-4 rounded-lg border"
-                    dangerouslySetInnerHTML={{ __html: selectedReport.content }}
-                  />
-                </div>
-
-                {/* Attachments */}
-                {selectedReport.attachments.length > 0 && (
-                  <div>
-                    <h3 className="font-semibold text-gray-900 mb-2">Pièces Jointes</h3>
-                    <div className="space-y-2">
-                      {selectedReport.attachments.map((attachment) => (
-                        <div key={attachment.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                          <div className="flex items-center space-x-3">
-                            <File className="h-4 w-4 text-gray-500" />
-                            <div>
-                              <div className="text-sm font-medium">{attachment.name}</div>
-                              <div className="text-xs text-gray-500">{formatFileSize(attachment.size)}</div>
-                            </div>
-                          </div>
-                          <Button variant="outline" size="sm">
-                            <Download className="h-3 w-3 mr-1" />
-                            Télécharger
-                          </Button>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                <div className="flex justify-end space-x-2 pt-4 border-t">
-                  <Button
-                    onClick={() => openEditor(selectedReport)}
-                    variant="outline"
-                  >
-                    <Edit className="h-4 w-4 mr-2" />
-                    Éditer
-                  </Button>
-                  <Button onClick={() => setIsReportDetailOpen(false)}>
-                    Fermer
-                  </Button>
-                </div>
-              </div>
-            )}
-          </DialogContent>
-        </Dialog>
-
-        {/* Simple WYSIWYG Editor Modal */}
-        <Dialog open={isEditorOpen} onOpenChange={setIsEditorOpen}>
-          <DialogContent className="max-w-6xl max-h-[90vh] overflow-hidden">
-            <DialogHeader>
-              <DialogTitle>Éditeur de Rapport</DialogTitle>
-              <DialogDescription>
-                Éditeur WYSIWYG pour créer et modifier vos rapports
-              </DialogDescription>
-            </DialogHeader>
-            <div className="space-y-4 overflow-y-auto max-h-[70vh]">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="editor-title">Titre</Label>
-                  <Input
-                    id="editor-title"
-                    value={reportForm.title}
-                    onChange={(e) => setReportForm({...reportForm, title: e.target.value})}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="editor-type">Type</Label>
-                  <Select value={reportForm.type} onValueChange={(value: Report['type']) => setReportForm({...reportForm, type: value})}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="weekly">Hebdomadaire</SelectItem>
-                      <SelectItem value="monthly">Mensuel</SelectItem>
-                      <SelectItem value="quarterly">Trimestriel</SelectItem>
-                      <SelectItem value="annual">Annuel</SelectItem>
-                      <SelectItem value="custom">Personnalisé</SelectItem>
-                      <SelectItem value="incident">Incident</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              <div>
-                <Label htmlFor="editor-content">Contenu (HTML)</Label>
-                <Textarea
-                  id="editor-content"
-                  value={reportForm.content}
-                  onChange={(e) => setReportForm({...reportForm, content: e.target.value})}
-                  className="min-h-[300px] font-mono text-sm"
-                  placeholder="<h1>Titre du rapport</h1>
-<h2>Section 1</h2>
-<p>Contenu du rapport...</p>
-<ul>
-  <li>Point 1</li>
-  <li>Point 2</li>
-</ul>"
-                />
-              </div>
-
-              <div>
-                <Label>Aperçu</Label>
-                <div 
-                  className="prose max-w-none bg-gray-50 p-4 rounded-lg border min-h-[200px]"
-                  dangerouslySetInnerHTML={{ __html: reportForm.content || '<p>Aucun contenu à afficher</p>' }}
-                />
-              </div>
-            </div>
-
-            <div className="flex justify-end space-x-2 pt-4 border-t">
-              <Button variant="outline" onClick={() => setIsEditorOpen(false)}>
-                Annuler
-              </Button>
-              <Button 
-                onClick={() => {
-                  if (selectedReport) {
-                    // Update existing report
-                    setReports(reports.map(r =>
-                      r.id === selectedReport.id
-                        ? {
-                            ...r,
-                            title: reportForm.title,
-                            type: reportForm.type,
-                            content: reportForm.content,
-                            lastModified: new Date().toISOString().split('T')[0],
-                            lastModifiedBy: user?.name || user?.email || 'Directeur'
-                          }
-                        : r
-                    ));
-                    toast({
-                      title: "Rapport mis à jour",
-                      description: "Les modifications ont été sauvegardées.",
-                    });
-                  }
-                  setIsEditorOpen(false);
-                  setSelectedReport(null);
-                }}
-                className="bg-greener hover:bg-greener-600"
-              >
-                Sauvegarder
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
-
-        {/* PDF Viewer Modal */}
-        <Dialog open={!!viewPdfUrl} onOpenChange={() => setViewPdfUrl(null)}>
-          <DialogContent className="sm:max-w-5xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>Prévisualisation du PDF</DialogTitle>
-            </DialogHeader>
-            {viewPdfUrl && (
-              <div className="h-[75vh]">
-                <iframe src={viewPdfUrl} title="Rapport PDF" className="w-full h-full" />
-              </div>
-            )}
-          </DialogContent>
-        </Dialog>
+        </div>
       </div>
     </div>
   );
-}
+};
+
+export default DirectorReportManagement;

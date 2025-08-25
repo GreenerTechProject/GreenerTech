@@ -20,10 +20,15 @@ import TechnicienRegistration from "./pages/TechnicienRegistration";
 import DirecteurSetup from "./pages/DirecteurSetup";
 import TechnicianDashboard from "./pages/TechnicianDashboard";
 import TechnicianMap from "./pages/TechnicianMap";
+import TechnicianLayout from "./components/TechnicianLayout";
 import TechnicienSupDashboard from "./pages/TechnicienSupDashboard";
+import TechnicienSupHome from "./pages/TechnicienSupHome";
 import TechnicienSupAlerts from "./pages/TechnicienSupAlerts";
 import TechnicienSupInterventions from "./pages/TechnicienSupInterventions";
+import TechnicienSupReports from "./pages/TechnicienSupReports";
 import TechnicienSupLayout from "./components/TechnicienSupLayout";
+import TechnicienSupAuthorizations from "./pages/TechnicienSupAuthorizations";
+import TechnicienSupTeamManagement from "./pages/TechnicienSupTeamManagement";
 import Accueil from "./pages/Accueil";
 import ReportsPage from "./pages/ReportsPage";
 import Alerts from "./pages/Alerts";
@@ -33,6 +38,7 @@ import Profile from "./pages/Profile";
 import ProfileEdit from "./pages/ProfileEdit";
 import NotFound from "./pages/NotFound";
 import TechnicienSupProfile from "./pages/TechnicienSupProfile";
+import LandingPage from "./pages/LandingPage";
 
 // New Director Pages
 import NewDirectorDashboard from "./pages/NewDirectorDashboard";
@@ -50,6 +56,13 @@ import { MissionManagement } from "./pages/MissionManagement";
 import RobotControl from "./pages/RobotControl";
 import TechnicianReportsPage from "./pages/TechnicianReportsPage";
 import TechnicianReportCreation from "./pages/TechnicianReportCreation";
+import TechSupNotificationsPage from "./pages/TechSupNotificationsPage";
+import AssignmentManagement from "./pages/AssignmentManagement";
+import RobotConfig from "./pages/RobotConfig";
+import CompanyUpdate from "./pages/CompanyUpdate";
+import InterventionRequestDetails from "./pages/InterventionRequestDetails";
+import DirectorParameters from "./pages/DirectorParameters";
+import DirectorPermissionsAssignments from "./pages/DirectorPermissionsAssignments";
 
 const queryClient = new QueryClient();
 
@@ -68,18 +81,54 @@ const RoleHomeRedirect = () => {
       ? "/technician"
       : user?.role === "technicien_superieur"
         ? "/technicien-sup/map"
-        : "/login";
+        : "/";  // Fallback to landing page, NOT /login
   return <Navigate to={target} replace />;
 };
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <AuthProvider>
-          <Routes>
+const RootRoute = () => {
+  console.log("RootRoute component starting to render");
+  
+  const { user, isLoading } = useAuth();
+  
+  console.log("RootRoute - user:", user);
+  console.log("RootRoute - isLoading:", isLoading);
+  console.log("RootRoute - user?.role:", user?.role);
+  console.log("RootRoute - user?.id:", user?.id);
+  console.log("RootRoute - user?.email:", user?.email);
+  
+  if (isLoading) {
+    console.log("RootRoute - Still loading...");
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#B4CC5F]"></div>
+      </div>
+    );
+  }
+  
+  // If user is authenticated, redirect to their dashboard
+  if (user && user.role) {
+    console.log("RootRoute - User authenticated, redirecting to dashboard");
+    return <RoleHomeRedirect />;
+  }
+  
+  // If user is not authenticated, show the landing page
+  console.log("RootRoute - User not authenticated, showing landing page");
+  console.log("RootRoute - About to render LandingPage component");
+  return <LandingPage />;
+};
+
+const App = () => {
+  console.log("App component rendering");
+  console.log("Current window.location.pathname:", window.location.pathname);
+  
+  return (
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <AuthProvider>
+            <Routes>
             {/* Public Routes */}
             <Route path="/login" element={<Index />} />
             <Route path="/role-selection" element={<RoleSelection />} />
@@ -88,7 +137,7 @@ const App = () => (
             <Route path="/email-verification" element={<EmailVerification />} />
             <Route path="/verify-email" element={<VerifyEmail />} />
             <Route path="/technicien-registration" element={<TechnicienRegistration />} />
-
+      
             {/* Dashboard alias -> role home redirect */}
             <Route
               path="/dashboard"
@@ -129,6 +178,26 @@ const App = () => (
               }
             />
 
+            {/* Robot Configuration */}
+            <Route
+              path="/directeur/robot-config"
+              element={
+                <ProtectedRoute requiredRole="directeur">
+                  <RobotConfig />
+                </ProtectedRoute>
+              }
+            />
+
+            {/* Company Update */}
+            <Route
+              path="/directeur/company-update"
+              element={
+                <ProtectedRoute requiredRole="directeur">
+                  <CompanyUpdate />
+                </ProtectedRoute>
+              }
+            />
+
             {/* Director Profile Routes */}
             <Route
               path="/directeur/profile"
@@ -144,6 +213,26 @@ const App = () => (
               element={
                 <ProtectedRoute requiredRole="directeur">
                   <DirectorProfileEdit />
+                </ProtectedRoute>
+              }
+            />
+
+            {/* Director Parameters */}
+            <Route
+              path="/directeur/parameters"
+              element={
+                <ProtectedRoute requiredRole="directeur">
+                  <DirectorParameters />
+                </ProtectedRoute>
+              }
+            />
+
+            {/* Director Permissions and Assignments */}
+            <Route
+              path="/directeur/permissions-assignments"
+              element={
+                <ProtectedRoute requiredRole="directeur">
+                  <DirectorPermissionsAssignments />
                 </ProtectedRoute>
               }
             />
@@ -211,92 +300,51 @@ const App = () => (
               }
             />
 
+            {/* Robot Configuration */}
+            <Route
+              path="/directeur/robot-config"
+              element={
+                <ProtectedRoute requiredRole="directeur">
+                  <RobotConfig />
+                </ProtectedRoute>
+              }
+            />
 
-            {/* Technician Routes */}
+            {/* Company Update */}
+            <Route
+              path="/directeur/company-update"
+              element={
+                <ProtectedRoute requiredRole="directeur">
+                  <CompanyUpdate />
+                </ProtectedRoute>
+              }
+            />
+
+
+            {/* Technician Routes wrapped with TechnicianLayout to always render header */}
             <Route
               path="/technician"
               element={
                 <ProtectedRoute requiredRole="technicien">
-                  <TechnicianMap />
+                  <TechnicianLayout />
                 </ProtectedRoute>
               }
-            />
+            >
+              <Route index element={<TechnicianMap />} />
+              <Route path="map" element={<Navigate to="/technician" replace />} />
+              <Route path="dashboard" element={<TechnicianDashboard />} />
+              <Route path="robot-control" element={<RobotControl />} />
+              <Route path="alerts" element={<Alerts />} />
+              <Route path="interventions" element={<Interventions />} />
+              <Route path="missions" element={<MissionManagement />} />
+              <Route path="reports" element={<TechnicianReportsPage />} />
+              <Route path="reports/create" element={<TechnicianReportCreation />} />
+              <Route path="notifications" element={<TechSupNotificationsPage />} />
+              <Route path="profile" element={<Profile />} />
+              <Route path="profile/edit" element={<ProfileEdit />} />
+            </Route>
 
-            <Route
-              path="/technician/map"
-              element={
-                <ProtectedRoute requiredRole="technicien">
-                  <Navigate to="/technician" replace />
-                </ProtectedRoute>
-              }
-            />
-
-           
-
-            <Route
-              path="/technician/dashboard"
-              element={
-                <ProtectedRoute requiredRole="technicien">
-                  <TechnicianDashboard />
-                </ProtectedRoute>
-              }
-            />
-
-            <Route
-              path="/technician/robot-control"
-              element={
-                <ProtectedRoute requiredRole="technicien">
-                  <RobotControl/>
-                </ProtectedRoute>
-              }
-            />
-
-            <Route
-              path="/technician/alerts"
-              element={
-                <ProtectedRoute requiredRole="technicien">
-                  <Alerts />
-                </ProtectedRoute>
-              }
-            />
-
-            <Route
-              path="/technician/interventions"
-              element={
-                <ProtectedRoute requiredRole="technicien">
-                  <Interventions />
-                </ProtectedRoute>
-              }
-            />
-
-            <Route
-              path="/technician/missions"
-              element={
-                <ProtectedRoute requiredRole="technicien">
-                  <MissionManagement />
-                </ProtectedRoute>
-              }
-            />
-
-            <Route
-              path="/technician/reports"
-              element={
-                <ProtectedRoute requiredRole="technicien">
-                  <TechnicianReportsPage />
-                </ProtectedRoute>
-              }
-            />
-
-            <Route
-              path="/technician/reports/create"
-              element={
-                <ProtectedRoute requiredRole="technicien">
-                  <TechnicianReportCreation />
-                </ProtectedRoute>
-              }
-            />
-
-            {/* Technicien Sup Routes with Persistent Header */}
+            {/* Technicien Sup Routes wrapped with TechnicienSupLayout */}
             <Route
               path="/technicien-sup"
               element={
@@ -305,14 +353,18 @@ const App = () => (
                 </ProtectedRoute>
               }
             >
-              <Route index element={<TechnicienSupDashboard />} />
+              <Route index element={<TechnicienSupHome />} />
+              <Route path="home" element={<TechnicienSupHome />} />
               <Route path="map" element={<TechnicienSupDashboard />} />
-              <Route path="home" element={<Accueil />} />
-              <Route path="dashboard" element={<TechnicienSupDashboard />} />
               <Route path="alerts" element={<TechnicienSupAlerts />} />
               <Route path="interventions" element={<TechnicienSupInterventions />} />
-              <Route path="reports" element={<ReportsPage />} />
-              <Route path="missions" element={<MissionManagement />} />
+              <Route path="intervention-request/:id" element={<InterventionRequestDetails />} />
+              <Route path="reports" element={<TechnicienSupReports />} />
+              <Route path="authorizations" element={<TechnicienSupAuthorizations />} />
+              <Route path="team" element={<TechnicienSupTeamManagement />} />
+              <Route path="notifications" element={<TechSupNotificationsPage />} />
+              <Route path="profile" element={<TechnicienSupProfile />} />
+              <Route path="profile/edit" element={<ProfileEdit />} />
             </Route>
 
             <Route
@@ -355,24 +407,6 @@ const App = () => (
 
             {/* Profile Routes */}
             <Route
-              path="/technicien/profile"
-              element={
-                <ProtectedRoute>
-                  <Profile />
-                </ProtectedRoute>
-              }
-            />
-
-            <Route
-              path="/technicien/profile/edit"
-              element={
-                <ProtectedRoute>
-                  <ProfileEdit />
-                </ProtectedRoute>
-              }
-            />
-
-            <Route
               path="/technicien-sup/profile"
               element={
                 <ProtectedRoute requiredRole="technicien_superieur">
@@ -390,14 +424,13 @@ const App = () => (
               }
             />
 
-            {/* Redirect root based on role */}
+            {/* Landing page route */}
+            <Route path="/landing" element={<LandingPage />} />
+
+            {/* Root route: Landing page for unauthenticated users, dashboard for authenticated users */}
             <Route
               path="/"
-              element={
-                <ProtectedRoute>
-                  <RoleHomeRedirect />
-                </ProtectedRoute>
-              }
+              element={<RootRoute />}
             />
 
             {/* Catch-all */}
@@ -407,6 +440,7 @@ const App = () => (
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
-);
+  );
+};
 
 export default App;

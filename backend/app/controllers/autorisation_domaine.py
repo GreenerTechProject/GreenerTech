@@ -37,8 +37,8 @@ def get_autorisation_domaine(current_user, id_domaine):
 
 @token_required
 @role_required("directeur", "technicien_superieur")
-def delete_autorisation_domaine(current_user, autorisation_domaine_id):
-    autorisation_domaine = Autorisation_domaine.query.get(autorisation_domaine_id)
+def delete_autorisation_domaine(current_user, autorisation_id):
+    autorisation_domaine = Autorisation_domaine.query.get(autorisation_id)
     if not autorisation_domaine:
         return jsonify({"status": "error", "message": "Autorisation_domaine non trouvée"}), 404
 
@@ -47,7 +47,7 @@ def delete_autorisation_domaine(current_user, autorisation_domaine_id):
         db.session.commit()
         return jsonify({
             "status": "success",
-            "message": f"Autorisation_domaine {autorisation_domaine_id} supprimée avec succès"
+            "message": f"Autorisation_domaine {autorisation_id} supprimée avec succès"
         }), 200
 
     except Exception as e:
