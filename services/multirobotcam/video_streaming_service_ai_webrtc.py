@@ -61,6 +61,19 @@ def get_key_from_request(request):
     camera_id = request.query.get("camera", "right")
     return f"{robot_id}_{camera_id}"
 
+async def process_ai_task(key):
+    while True:
+        frame = stream_data[key]["latest_frame"]
+        if frame is not None and is_ai_enabled():
+            try:
+                bilan = predict_frame(frame)
+                print(bilan)
+                #stream_data[key]["latest_bilan"] = bilan
+            except Exception as e:
+                print(f"[{key}] ❌ Error in AI processing: {e}")
+        await asyncio.sleep(2)
+
+
 class RelayStreamTrack(VideoStreamTrack):
     def __init__(self, key):
         super().__init__()
@@ -78,8 +91,8 @@ class RelayStreamTrack(VideoStreamTrack):
         if is_ai_enabled():
             frame_to_use = detect_frame(data["latest_frame"]) if data["latest_frame"] is not None else self.fallback_frame
             
-            Billan_dicts = predict_frame(data["latest_frame"]) if data["latest_frame"] is not None else self.fallback_frame
-            print (Billan_dicts)
+            #Billan_dicts = predict_frame(data["latest_frame"]) if data["latest_frame"] is not None else self.fallback_frame
+            #print (Billan_dicts)
         
         #frame_to_use = data["latest_frame"] or self.fallback_frame
         #if AI_ENABLED and data["latest_frame"] is not None:
@@ -248,6 +261,7 @@ async def video_stream_handler(request):
             print(f"[{key}] 📡 Robot stream track received: {track.kind}")
             if track.kind == "video":
                 asyncio.ensure_future(process_robot_video(track, key))
+                asyncio.ensure_future(process_ai_task(key))
 
         await pc.setRemoteDescription(
             RTCSessionDescription(sdp=offer["sdp"], type=offer["type"])
