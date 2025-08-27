@@ -11,6 +11,12 @@ import time
 import requests
 from collections import defaultdict
 
+from PIL import Image
+from dotenv import load_dotenv
+
+import boto3
+from io import BytesIO
+
 from multirobotcam.robotcontrole_service import is_ai_enabled
 #AI_ENABLED = False
 
@@ -64,10 +70,86 @@ def get_key_from_request(request):
 async def process_ai_task(key):
     while True:
         frame = stream_data[key]["latest_frame"]
-        if frame is not None and is_ai_enabled():
+        #if frame is not None and is_ai_enabled():
+        if frame is not None:
             try:
                 bilan = predict_frame(frame)
                 print(bilan)
+                
+                
+                warnings = []
+                if bilan["Virus de la feuille jaune en boucle de la tomate"] = 0:
+                    warnings.append("Virus de la feuille jaune en boucle de la tomate")
+                if bilan["powdery_mildew"] = 0:
+                    warnings.append("powdery_mildew")
+                    
+                sensor_data = get_latest_sensor_data(key)
+                s3 = boto3.client("s3")
+                bucket_name = "bucket-greenertech"
+                region = "eu-west-1"
+                
+                for warning in warnings:
+                    latest_qr = stream_data[key]["latest_qr_results"] if key in stream_data else None
+                    latest_frame = stream_data[key]["latest_frame"] if key in stream_data else None
+                    if latest_qr and latest_frame is not None:
+                        qrdata = json.loads(latest_qr[0])
+                        print(f"[{key}] Anomalie in: {qrdata['nom']}")
+                        print(warning)
+
+                        # Convert BGR (OpenCV) to RGB (PIL)
+                        pil_img = Image.fromarray(latest_frame[:, :, ::-1])
+                        
+                        os.makedirs("../backend/app/static/images", exist_ok=True)
+                        timanow = datetime.now().strftime("%Y%m%d%H%M%S")
+                        image_filename = f"{qrdata['id']}_{timanow}.jpg"
+                        image_path = f"../backend/app/static/images/{image_filename}"
+                        pil_img.save(image_path, format="JPEG", quality=95)
+                        
+                        
+                        try:
+                            s3 = boto3.client("s3")
+                            bucket_name = "bucket-greenertech"
+                            region = "eu-west-1"
+
+                            timanow = datetime.now().strftime("%Y%m%d%H%M%S")
+                            image_filename = f"{qrdata['id']}_{timanow}.jpg"
+                            s3_key = f"images/{image_filename}"
+
+                            buffer = BytesIO()
+                            pil_img.save(buffer, format="JPEG", quality=95)
+                            buffer.seek(0)
+
+                            s3.upload_fileobj(buffer, bucket_name, s3_key)
+
+                            print(f"✅ Image saved to s3://{bucket_name}/{s3_key}")
+                        
+                            
+                        except Exception as e:
+                            print(f"❌ Error: {e}")
+
+
+                                     
+                    # Send alert
+                    alert_data = {
+                        "id_bilan": qrdata["id"],
+                        "status_alert": 3, #1, 2, 3
+                        "maladie": warning,
+                        #"lien_image": f"/static/images/{image_filename}",
+                        "lien_image": f"https://{bucket_name}.s3.{region}.amazonaws.com/{s3_key}",
+                        "x1": sensor_data["x"],
+                        "y1": sensor_data["y"],
+                        "status": "non_vue" #non_vue vue résolue
+                    }
+                    try:
+                        response = requests.post(
+                            os.getenv("BACKTEND_URL", "http://localhost:5000") + "/api/alerte",
+                            json=alert_data
+                        )
+                        print(f"[{key}] ✅ Alert sent:", response.status_code, response.text)
+                    except Exception as e:
+                        print(f"[{key}] ❌ Failed to send alert:", e)
+                    await asyncio.sleep(5)
+                    
                 #stream_data[key]["latest_bilan"] = bilan
             except Exception as e:
                 print(f"[{key}] ❌ Error in AI processing: {e}")

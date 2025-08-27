@@ -27,8 +27,8 @@ if os.getcwd() not in sys.path:
     sys.path.insert(0, os.getcwd())
 
 # import the functions
-from detectobjects import detect_frame#, predict_frame
 #from ALL import detect_frame, predict_frame
+#from detectobjects import detect_frame, predict_frame
 
 # return to original working directory
 os.chdir(cwd)
@@ -132,6 +132,7 @@ class CameraVideoTrack(VideoStreamTrack):
         
         #if AI_ENABLED:
         #    frame = detect_frame(frame)  # only apply detection when enabled
+        #    bilan = predict_frame(frame)
 
         # BGR → RGB → VideoFrame
         frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
