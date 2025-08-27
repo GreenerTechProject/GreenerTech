@@ -77,6 +77,9 @@ class RelayStreamTrack(VideoStreamTrack):
         frame_to_use = data["latest_frame"] if data["latest_frame"] is not None else self.fallback_frame
         if is_ai_enabled():
             frame_to_use = detect_frame(data["latest_frame"]) if data["latest_frame"] is not None else self.fallback_frame
+            
+        _, Billan_dicts = predict_frame(latest_frame) if latest_frame is not None else self.fallback_frame, 111
+        print (Billan_dicts)
         
         #frame_to_use = data["latest_frame"] or self.fallback_frame
         #if AI_ENABLED and data["latest_frame"] is not None:
