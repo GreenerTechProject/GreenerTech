@@ -60,3 +60,15 @@ async def control_handler(request):
         print(f"🔌 Control client disconnected (robot {robot_id})")
 
     return ws
+
+
+
+# robotcontrole_service.py
+
+async def send_control_command(robot_id, command):
+    """Send control command to all connected clients of the given robot"""
+    for client_ws, client_robot_id in list(control_clients.items()):
+        if not client_ws.closed and client_robot_id == robot_id:
+            await client_ws.send_str(json.dumps({
+                "control_mode": command
+            }))

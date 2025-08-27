@@ -21,7 +21,7 @@ from dotenv import load_dotenv
 import boto3
 from io import BytesIO
 
-from multirobotcam.robotcontrole_service import is_ai_enabled
+from multirobotcam.robotcontrole_service import send_control_command, is_ai_enabled
 #AI_ENABLED = False
 
 
@@ -263,6 +263,8 @@ async def process_robot_video(track, key):
                                     if data2["id"] == last_bilan or data["nom"] == "-Fin-" :
                                         print ("You are in last bilan")
                                         #data2['id']
+                                        robot_reference = request.query.get("robot")
+                                        await send_control_command(robot_reference, "STOP")
                                         
                                         await conn.execute(f"""
                                             UPDATE missions_robot SET date_fin = $1
