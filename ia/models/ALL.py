@@ -3,7 +3,7 @@ from ultralytics import YOLO
 import torch
 from MaClass import TomatoClassifier,process_image
 device = '0' if torch.cuda.is_available() else 'cpu'
-model = YOLO("my_model.pt").to(device)  #load the Model
+model = YOLO("new_yolo_model.pt").to(device)  #load the Model
 """
 def detect_frame(bgr_frame):
     # Detection
@@ -23,7 +23,7 @@ def detect_frame(bgr_frame):
         classes = result.boxes.cls.cpu().numpy()
         confidences = result.boxes.conf.cpu().numpy()
         for box,cls,conf in zip(boxes,classes,confidences):
-            if conf>0.7:
+            if conf>0.8:
                 x1,y1,x2,y2=map(int,box)
                 cv2.rectangle(bgr_frame,(x1,y1),(x2,y2),(255,0,0),2)
                 cv2.rectangle(bgr_frame,(x1,y1-25),(x1+80,y1),(255,0,0),-1)
