@@ -33,12 +33,19 @@ from detectobjects import detect_frame#, predict_frame
 # return to original working directory
 os.chdir(cwd)
 
-"""
-def usb_camera_pipeline(device=0, width=1280, height=720, fps=30):
+
+#def usb_camera_pipeline(device=0, width=1280, height=720, fps=30):
+"""def usb_camera_pipeline(device=0, width=640, height=480, fps=30):
     return (
         f"v4l2src device=/dev/video{device} ! "
         f"image/jpeg, width={width}, height={height}, framerate={fps}/1 ! "
         f"appsink drop=true max-buffers=1"
+    )"""
+
+"""return (
+        f"v4l2src device=/dev/video{device} ! "
+        f"image/jpeg,width={width},height={height},framerate={fps}/1 ! "
+        f"jpegdec ! videoconvert ! appsink drop=true max-buffers=1"
     )"""
 
 
@@ -51,7 +58,7 @@ def usb_camera_pipeline(device=0, width=1280, height=720, fps=30):
     )
 
 """
-def usb_camera_pipeline(device=0, width=640, height=480, fps=10):
+def usb_camera_pipeline(device=0, width=640, height=480, fps=30):
     return f"v4l2src device=/dev/video{device} ! video/x-raw, width={width}, height={height}, framerate={fps}/1 ! videoconvert ! video/x-raw, format=BGR ! appsink"
 """
 """
@@ -116,9 +123,6 @@ class CameraVideoTrack(VideoStreamTrack):
 
         #self.cap = cv2.VideoCapture(device)
         
-        #self.cap = cv2.VideoCapture(pipeline, cv2.CAP_GSTREAMER)
-        
-        #self.cap = cv2.VideoCapture(device)
         #self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, width)
         #self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
         #self.cap.set(cv2.CAP_PROP_FPS, fps)
@@ -216,11 +220,11 @@ async def send_video(robot_ref, camera, idcamera, type=0):
 
 # # Configuration du port série (à adapter selon ton OS ou port réel)
 try:
-    arduino = serial.Serial('/dev/ttyACM0', 9600)
-    print("✅ Port série vers Arduino ouvert.")
+     arduino = serial.Serial('/dev/ttyACM0', 9600)
+     print("✅ Port série vers Arduino ouvert.")
 except Exception as e:
-    print(f"❌ Erreur ouverture port série : {e}")
-    arduino = None
+     print(f"❌ Erreur ouverture port série : {e}")
+     arduino = None
 
 # host = "192.168.10.237" # adresse IP de ton serveur de contrôle ou localhost si en local
 
@@ -471,8 +475,8 @@ async def main():
         send_video(robot_ref, "right", 0, "usb"),
 #        send_video(robot_ref, "left", 1, "usb"),
         receive_controls(robot_ref),
-        #simulate_sensor_data(robot_ref),
-        spin_sensor_node(robot_ref),
+        simulate_sensor_data(robot_ref),
+        #spin_sensor_node(robot_ref),
         listen_missions(robot_ref)
         )
 

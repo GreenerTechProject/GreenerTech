@@ -8,6 +8,7 @@ def get_robot_id(request):
     return request.query.get("robot", "1")
 
 async def control_handler(request):
+    global AI_ENABLED
     robot_id = get_robot_id(request)
     ws = web.WebSocketResponse()
     await ws.prepare(request)
@@ -24,6 +25,11 @@ async def control_handler(request):
                         control_mode = data["control_mode"]
                         print(f"[Robot {robot_id}] Control mode received: {control_mode}")
 
+                        if control_mode == "ENABLE_AI":
+                            AI_ENABLED = True
+                        elif control_mode == "DISABLE_AI":
+                            AI_ENABLED = False
+                        
                         if control_mode == "PAUSE_MISSION" :
                             control_mode == "STOP"
                         elif control_mode == "PLAY_MISSION" :
