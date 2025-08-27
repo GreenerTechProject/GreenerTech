@@ -105,7 +105,7 @@ class CameraVideoTrack(VideoStreamTrack):
           pipeline = gstreamer_pipeline(device)
 
         #self.cap = cv2.VideoCapture(pipeline, cv2.CAP_GSTREAMER)
-        self.cap = cv2.VideoCapture("/dev/video"+device, cv2.CAP_V4L2)
+        self.cap = cv2.VideoCapture("/dev/video"+str(device), cv2.CAP_V4L2)
         
         fps = self.cap.get(cv2.CAP_PROP_FPS)
         print("FPS actuel:", fps)
