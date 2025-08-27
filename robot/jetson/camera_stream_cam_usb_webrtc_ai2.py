@@ -134,8 +134,8 @@ class CameraVideoTrack(VideoStreamTrack):
         if not ret:
             raise Exception("❌ Failed to read from camera")
         
-        if AI_ENABLED:
-            frame = detect_frame(frame)  # only apply detection when enabled
+        #if AI_ENABLED:
+        #    frame = detect_frame(frame)  # only apply detection when enabled
 
         # BGR → RGB → VideoFrame
         frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
