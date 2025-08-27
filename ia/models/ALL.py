@@ -31,11 +31,11 @@ def detect_frame(bgr_frame):
 
     return bgr_frame 
 
-
+yolo = model
 def predict_frame(bgr_frame):
+    #device = '0' if torch.cuda.is_available() else 'cpu'
+    #yolo = YOLO("new_yolo_model.pt").to(device)
     cnn_classes =['Tomate malsaine','Tomate saine','Virus de la feuille jaune en boucle de la tomate','powdery_mildew']
-    device = '0' if torch.cuda.is_available() else 'cpu'
-    yolo = YOLO("new_yolo_model.pt").to(device)
     cnn = TomatoClassifier().to(device)
     cnn.load_state_dict(torch.load(f="best_modelV2.pth",map_location=device)["model_state_dict"])
 
