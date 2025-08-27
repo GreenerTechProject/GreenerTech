@@ -35,9 +35,9 @@ async def control_handler(request):
                             shared_state["AI_ENABLED"] = False
                         
                         if control_mode == "PAUSE_MISSION" :
-                            control_mode == "STOP"
+                            control_mode = "STOP"
                         elif control_mode == "PLAY_MISSION" :
-                            control_mode == "LEFT"
+                            control_mode = "LEFT"
                         
                         # Broadcast ONLY to clients of the same robot
                         for client_ws, client_robot_id in control_clients.items():

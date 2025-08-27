@@ -286,11 +286,6 @@ async def receive_controls(robot_ref):
                         elif data['control_mode'] == "DISABLE_AI":
                             AI_ENABLED = False
 
-                        if data['control_mode'] == "PAUSE_MISSION":
-                            data['control_mode'] = "STOP"
-                        elif data['control_mode'] == "PLAY_MISSION":
-                            data['control_mode'] = "LEFT"
-
 
                         arduino.write((data['control_mode'] + "\n").encode())
 
