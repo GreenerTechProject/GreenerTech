@@ -438,7 +438,7 @@ async def listen_missions(robot_referance):
     while True:
         try:
             print("Tentative de connexion au serveur mission...")
-            control_uri = "ws://"+host+":8080/service/missions?robot="+robot_referance+"&referance="+robot_referance
+            control_uri = "ws://"+host+":8080/service/missions?referance="+robot_referance
             async with websockets.connect(control_uri) as websocket:
                 print(f"Connected to mission websocket for robot '{robot_referance}'")
                 async for msg in websocket:

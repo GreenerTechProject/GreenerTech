@@ -38,20 +38,20 @@ async def mission_data_handler(request):
             try:
             
                 now = datetime.now(timezone(timedelta(hours=1)))
-                #print("""
-                #    SELECT * FROM missions_robot 
-                #    WHERE referance = $1 
-                #      AND EXTRACT(YEAR FROM date_debut) = $2
-                #      AND EXTRACT(MONTH FROM date_debut) = $3
-                #      AND EXTRACT(DAY FROM date_debut) = $4
-                #      AND EXTRACT(HOUR FROM date_debut) = $5
-                #      AND EXTRACT(MINUTE FROM date_debut) <= $6
-                #    ORDER BY id DESC 
-                #    LIMIT 1
-                #    """,
-                #    robot_referance,
-                #    now.year, now.month, now.day, now.hour, now.minute, now.second
-                #)
+                print("""
+                    SELECT * FROM missions_robot 
+                    WHERE referance = $1 
+                      AND EXTRACT(YEAR FROM date_debut) = $2
+                      AND EXTRACT(MONTH FROM date_debut) = $3
+                      AND EXTRACT(DAY FROM date_debut) = $4
+                      AND EXTRACT(HOUR FROM date_debut) = $5
+                      AND EXTRACT(MINUTE FROM date_debut) <= $6
+                    ORDER BY id DESC 
+                    LIMIT 1
+                    """,
+                    robot_referance,
+                    now.year, now.month, now.day, now.hour, now.minute, now.second
+                )
                 #0000-00-00 00:00:00
                 rows = await conn.fetch("""
                     SELECT * FROM missions_robot 

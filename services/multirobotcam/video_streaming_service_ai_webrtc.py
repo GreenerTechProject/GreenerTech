@@ -346,7 +346,7 @@ async def video_stream_handler(request):
             print(f"[{key}] 📡 Robot stream track received: {track.kind}")
             if track.kind == "video":
                 asyncio.ensure_future(process_robot_video(track, key))
-                asyncio.ensure_future(process_ai_task(key))
+                #asyncio.ensure_future(process_ai_task(key))
 
         await pc.setRemoteDescription(
             RTCSessionDescription(sdp=offer["sdp"], type=offer["type"])
