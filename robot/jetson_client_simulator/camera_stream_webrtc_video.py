@@ -10,7 +10,7 @@ host = "greenertech.mywire.org"
 
 AI_ENABLED = False
 
-
+"""
 import os
 import sys
 
@@ -30,7 +30,7 @@ from detectobjects import detect_frame#, predict_frame
 
 # return to original working directory
 os.chdir(cwd)
-
+"""
 
 
 import cv2

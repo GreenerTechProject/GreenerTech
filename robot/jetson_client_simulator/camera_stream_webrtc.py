@@ -6,7 +6,7 @@ import json
 #import serial
 
 
-host = "localhost"
+host = "greenertech.mywire.org"
 
 
 
@@ -356,7 +356,7 @@ async def main():
     robot_ref = get_or_create_robot_referance()
     await asyncio.gather(
         send_video(robot_ref, "right", 0),
-        # send_video(robot_ref, "left", 1),
+        send_video(robot_ref, "left", 1),
         receive_controls(robot_ref),
         simulate_sensor_data(robot_ref),
         #spin_sensor_node(robot_ref),

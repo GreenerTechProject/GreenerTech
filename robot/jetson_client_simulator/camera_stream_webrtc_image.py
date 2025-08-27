@@ -9,7 +9,7 @@ import json
 host = "greenertech.mywire.org"
 
 
-
+"""
 import os
 import sys
 
@@ -28,7 +28,7 @@ from ALL import detect_frame, predict_frame
 
 # return to original working directory
 os.chdir(cwd)
-
+"""
 
 
 import cv2
@@ -41,7 +41,7 @@ class CameraVideoTrack(VideoStreamTrack):
     def __init__(self, device=0, width=640, height=480, fps=30, type=0):
         super().__init__()
         #self.cap = cv2.VideoCapture(device)
-        self.cap = detect_frame(cv2.imread("image.jpg"))
+        self.cap = cv2.imread("image.jpg")
         #self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, width)
         #self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
         #self.cap.set(cv2.CAP_PROP_FPS, fps)

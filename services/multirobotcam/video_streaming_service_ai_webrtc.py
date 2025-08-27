@@ -11,8 +11,6 @@ import time
 import requests
 from collections import defaultdict
 
-AI_ENABLED = False
-
 
 import sys
 
@@ -71,16 +69,10 @@ class RelayStreamTrack(VideoStreamTrack):
         self.cached_frame = None
 
     async def recv(self):
-        global AI_ENABLED
         data = stream_data[self.key]
         pts, time_base = await self.next_timestamp()
-        #frame_to_use = data["latest_frame"] if data["latest_frame"] is not None else self.fallback_frame
-        #if AI_ENABLED:
-        #    frame_to_use = detect_frame(data["latest_frame"]) if data["latest_frame"] is not None else self.fallback_frame
-        
-        frame_to_use = data["latest_frame"] or self.fallback_frame
-        if AI_ENABLED and data["latest_frame"] is not None:
-            frame_to_use = detect_frame(frame_to_use)
+        frame_to_use = data["latest_frame"] if data["latest_frame"] is not None else self.fallback_frame
+        #frame_to_use = detect_frame(data["latest_frame"]) if data["latest_frame"] is not None else self.fallback_frame
 
         if frame_to_use is None:
             raise Exception("No video stream and no fallback image found!")
