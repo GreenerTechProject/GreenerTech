@@ -27,21 +27,21 @@ if os.getcwd() not in sys.path:
     sys.path.insert(0, os.getcwd())
 
 # import the functions
-from detectobjects import detect_frame#, predict_frame
 #from ALL import detect_frame, predict_frame
+#from detectobjects import detect_frame, predict_frame
 
 # return to original working directory
 os.chdir(cwd)
 
-
+"""
 def usb_camera_pipeline(device=0, width=1280, height=720, fps=30):
     return (
         f"v4l2src device=/dev/video{device} ! "
         f"image/jpeg, width={width}, height={height}, framerate={fps}/1 ! "
         f"appsink drop=true max-buffers=1"
-    )
+    )"""
 
-"""
+
 def usb_camera_pipeline(device=0, width=1280, height=720, fps=30):
     return (
         f"v4l2src device=/dev/video{device} ! "
@@ -49,9 +49,9 @@ def usb_camera_pipeline(device=0, width=1280, height=720, fps=30):
         f"jpegdec ! videoconvert ! video/x-raw, format=BGR ! "
         f"appsink drop=true max-buffers=1"
     )
+
 """
-"""
-def usb_camera_pipeline(device=0, width=1920, height=1080, fps=30):
+def usb_camera_pipeline(device=0, width=640, height=480, fps=10):
     return f"v4l2src device=/dev/video{device} ! video/x-raw, width={width}, height={height}, framerate={fps}/1 ! videoconvert ! video/x-raw, format=BGR ! appsink"
 """
 """
@@ -104,7 +104,19 @@ class CameraVideoTrack(VideoStreamTrack):
         else :
           pipeline = gstreamer_pipeline(device)
 
-        self.cap = cv2.VideoCapture(pipeline, cv2.CAP_GSTREAMER)
+        #self.cap = cv2.VideoCapture(pipeline, cv2.CAP_GSTREAMER)
+        self.cap = cv2.VideoCapture("/dev/video"+device, cv2.CAP_V4L2)
+        
+        fps = self.cap.get(cv2.CAP_PROP_FPS)
+        print("FPS actuel:", fps)
+        
+        width = self.cap.get(cv2.CAP_PROP_FRAME_WIDTH)
+        height = self.cap.get(cv2.CAP_PROP_FRAME_HEIGHT)
+        print(f"Resolution actuelle: {width}x{height}")
+
+        #self.cap = cv2.VideoCapture(device)
+        
+        #self.cap = cv2.VideoCapture(pipeline, cv2.CAP_GSTREAMER)
         
         #self.cap = cv2.VideoCapture(device)
         #self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, width)
@@ -118,8 +130,9 @@ class CameraVideoTrack(VideoStreamTrack):
         if not ret:
             raise Exception("❌ Failed to read from camera")
         
-        if AI_ENABLED:
-            frame = detect_frame(frame)  # only apply detection when enabled
+        #if AI_ENABLED:
+        #    frame = detect_frame(frame)  # only apply detection when enabled
+        #    bilan = predict_frame(frame)
 
         # BGR → RGB → VideoFrame
         frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)

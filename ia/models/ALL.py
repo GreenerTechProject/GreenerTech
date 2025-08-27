@@ -3,7 +3,19 @@ from ultralytics import YOLO
 import torch
 from MaClass import TomatoClassifier,process_image
 device = '0' if torch.cuda.is_available() else 'cpu'
-model = YOLO("new_yolo_model.pt").to(device)  #load the Model
+model = YOLO("my_model.pt").to(device)  #load the Model
+#model = YOLO("new_yolo_model.pt").to(device)  #load the Model
+"""
+def detect_frame(bgr_frame):
+    # Detection
+    results = model.predict(
+        source=bgr_frame,
+        imgsz=640,
+        conf=0.5,
+        device=device
+    )
+    return results[0].plot()
+"""
 def detect_frame(bgr_frame):
     bgr_frame = cv2.resize(bgr_frame,(640,640))
     results = model(bgr_frame)
@@ -12,7 +24,7 @@ def detect_frame(bgr_frame):
         classes = result.boxes.cls.cpu().numpy()
         confidences = result.boxes.conf.cpu().numpy()
         for box,cls,conf in zip(boxes,classes,confidences):
-            if conf>0.8:
+            if conf>0.7:
                 x1,y1,x2,y2=map(int,box)
                 cv2.rectangle(bgr_frame,(x1,y1),(x2,y2),(255,0,0),2)
                 cv2.rectangle(bgr_frame,(x1,y1-25),(x1+80,y1),(255,0,0),-1)
@@ -20,10 +32,11 @@ def detect_frame(bgr_frame):
 
     return bgr_frame 
 
+yolo = model
 def predict_frame(bgr_frame):
+    #device = '0' if torch.cuda.is_available() else 'cpu'
+    #yolo = YOLO("new_yolo_model.pt").to(device)
     cnn_classes =['Tomate malsaine','Tomate saine','Virus de la feuille jaune en boucle de la tomate','powdery_mildew']
-    device = '0' if torch.cuda.is_available() else 'cpu'
-    yolo = YOLO("new_yolo_model.pt").to(device)
     cnn = TomatoClassifier().to(device)
     cnn.load_state_dict(torch.load(f="best_modelV2.pth",map_location=device)["model_state_dict"])
 
@@ -60,9 +73,9 @@ def predict_frame(bgr_frame):
                         if cnn_classes[index] in ['Virus de la feuille jaune en boucle de la tomate','powdery_mildew']:
                             Billan_dicts[cnn_classes[index]]+=1
 
-                cv2.rectangle(frame_yolo,(x1,y1),(x2,y2),(255,0,0),2)
-                cv2.rectangle(frame_yolo,(x1,y1-25),(x1+80,y1),(255,0,0),-1)
-                cv2.putText(frame_yolo,str(yolo.names[int(cls)]),(x1,y1-5),cv2.FONT_HERSHEY_SIMPLEX,0.7,(255,255,255),2)
+                #cv2.rectangle(frame_yolo,(x1,y1),(x2,y2),(255,0,0),2)
+                #cv2.rectangle(frame_yolo,(x1,y1-25),(x1+80,y1),(255,0,0),-1)
+                #cv2.putText(frame_yolo,str(yolo.names[int(cls)]),(x1,y1-5),cv2.FONT_HERSHEY_SIMPLEX,0.7,(255,255,255),2)
     
     return Billan_dicts
 
