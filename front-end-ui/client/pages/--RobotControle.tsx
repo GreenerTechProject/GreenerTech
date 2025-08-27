@@ -164,7 +164,6 @@ export default function RobotControl() {
     qrWsRef.current = qrWs;
 
     qrWs.onopen = () => {
-      console.log("QR WebSocket connected");
       setConnectionStatus(prev => ({ ...prev, qr: true }));
     };
 
@@ -187,7 +186,6 @@ export default function RobotControl() {
     };
 
     qrWs.onclose = () => {
-      console.log("QR WebSocket disconnected");
       setConnectionStatus(prev => ({ ...prev, qr: false }));
     };
 
@@ -201,12 +199,10 @@ export default function RobotControl() {
     controlWsRef.current = controlWs;
 
     controlWs.onopen = () => {
-      console.log("Control WebSocket connected");
       setConnectionStatus(prev => ({ ...prev, control: true }));
     };
 
     controlWs.onclose = () => {
-      console.log("Control WebSocket disconnected");
       setConnectionStatus(prev => ({ ...prev, control: false }));
     };
 
@@ -220,7 +216,6 @@ export default function RobotControl() {
     sensorWsRef.current = sensorWs;
 
     sensorWs.onopen = () => {
-      console.log("Sensor WebSocket connected");
       setConnectionStatus(prev => ({ ...prev, sensor: true }));
     };
 
@@ -234,7 +229,6 @@ export default function RobotControl() {
     };
 
     sensorWs.onclose = () => {
-      console.log("Sensor WebSocket disconnected");
       setConnectionStatus(prev => ({ ...prev, sensor: false }));
     };
 
@@ -252,8 +246,6 @@ export default function RobotControl() {
         camera: selectedCamera,
         robot: selectedRobot
       }));
-    } else {
-      console.warn("Control WebSocket not open");
     }
   };
 
@@ -323,13 +315,11 @@ export default function RobotControl() {
 
   // Handle button press/release
   const handleButtonDown = (mode: string) => {
-    console.log("Sending mode:", mode);
     sendCommand(mode);
   };
 
   const handleButtonUp = (mode?: string) => {
     if (!mode || !["PAUSE_MISSION", "PLAY_MISSION"].includes(mode)) {
-      console.log("Sending mode: STOP");
       sendCommand("STOP");
     }
   };

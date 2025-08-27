@@ -83,8 +83,7 @@ export const MissionManagement: React.FC = () => {
     setError(null);
     try {
       const missionsData = await missionService.getAllMissions();
-      console.log('Missions data received:', missionsData);
-      
+
       // Ensure missionsData is an array
       if (Array.isArray(missionsData)) {
         setMissions(missionsData);
@@ -108,8 +107,7 @@ export const MissionManagement: React.FC = () => {
   const fetchRobots = async () => {
     try {
       const robotsData = await robotService.getAllRobots();
-      console.log('Robots data received:', robotsData);
-      
+
       if (Array.isArray(robotsData)) {
         setRobots(robotsData);
       } else {
@@ -126,7 +124,6 @@ export const MissionManagement: React.FC = () => {
     try {
       // For mission management, only show serres the current user has access to
       const serresData = await serreService.getSerresByCurrentUser();
-      console.log('Serres data received for current user:', serresData);
       if (Array.isArray(serresData)) {
         setSerres(serresData);
       } else {

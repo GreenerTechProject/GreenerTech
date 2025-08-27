@@ -283,17 +283,13 @@ export const serreService = {
 
   getAllSerresWithTechnicians: async (): Promise<any[]> => {
     try {
-      console.log('DEBUG: getAllSerresWithTechnicians called');
-      
       // First get all serres in the company
       const allSerresResponse = await axios.get(`${API_BASE_URL}/serre`, createAuthenticatedRequest());
       const allSerres = allSerresResponse.data;
-      console.log('DEBUG: All serres fetched:', allSerres);
-      
+
       // Get all technicians in the company
       const currentUserResponse = await axios.get(`${API_BASE_URL}/user`, createAuthenticatedRequest());
       const currentUser = currentUserResponse.data;
-      console.log('DEBUG: Current user:', currentUser);
       
       let companyTechnicians: any[] = [];
       let companySupervisors: any[] = [];
@@ -314,9 +310,6 @@ export const serreService = {
           
           companyTechnicians = techResponse.data?.technicians || [];
           companySupervisors = supResponse.data?.supervisors || [];
-          
-          console.log('DEBUG: Company technicians fetched:', companyTechnicians);
-          console.log('DEBUG: Company supervisors fetched:', companySupervisors);
         }
       } catch (techError) {
         console.error('Could not fetch company technicians/supervisors:', techError);
@@ -328,7 +321,6 @@ export const serreService = {
               createAuthenticatedRequest()
             );
             companyTechnicians = techResponse.data?.technicians || [];
-            console.log('DEBUG: Company technicians fetched (fallback):', companyTechnicians);
           }
         } catch (fallbackError) {
           console.error('Could not fetch company technicians in fallback:', fallbackError);
@@ -337,13 +329,10 @@ export const serreService = {
       
       // Combine technicians and supervisors for lookup
       const allCompanyUsers = [...companyTechnicians, ...companySupervisors];
-      console.log('DEBUG: All company users for lookup:', allCompanyUsers);
       
       // For each serre, get the assigned technicians
       const results: any[] = [];
       for (const serre of allSerres) {
-        console.log(`DEBUG: Processing serre ${serre.id} (${serre.nom})`);
-        
         try {
           const techResponse = await axios.get(
             `${API_BASE_URL}/autorisation_serre`,
@@ -352,17 +341,14 @@ export const serreService = {
               params: { id_serre: serre.id },
             }
           );
-          
+
           const technicianAuths = techResponse.data?.data || [];
-          console.log(`DEBUG: Autorisations for serre ${serre.id}:`, technicianAuths);
           
           if (technicianAuths.length > 0) {
             const assignedTechnicians = [];
             for (const techAuth of technicianAuths) {
-              console.log(`DEBUG: Processing auth for user ${techAuth.id_user}`);
               const companyTech = allCompanyUsers.find((ct: any) => ct.id === techAuth.id_user);
-              console.log(`DEBUG: Found company tech:`, companyTech);
-              
+
               if (companyTech) {
                 const techData = {
                   id: companyTech.id,
@@ -370,19 +356,13 @@ export const serreService = {
                   name: companyTech.name || companyTech.fullName || companyTech.email,
                   email: companyTech.email
                 };
-                console.log(`DEBUG: Adding tech data:`, techData);
                 assignedTechnicians.push(techData);
               }
             }
-            
-            console.log(`DEBUG: Final assigned technicians for serre ${serre.id}:`, assignedTechnicians);
-            
+
             if (assignedTechnicians.length > 0) {
               serre.assignedTechnicians = assignedTechnicians;
-              console.log(`DEBUG: Set assignedTechnicians for serre ${serre.id}:`, serre.assignedTechnicians);
             }
-          } else {
-            console.log(`DEBUG: No autorisations found for serre ${serre.id}`);
           }
           
           results.push(serre);
@@ -391,8 +371,7 @@ export const serreService = {
           results.push(serre);
         }
       }
-      
-      console.log('DEBUG: Final results:', results);
+
       return results;
     } catch (error: any) {
       console.error('Error in getAllSerresWithTechnicians:', error);
@@ -494,12 +473,8 @@ export const serreService = {
     payload: { id_user: number; id_serre: number }
   ): Promise<AutorisationSerre> => {
     try {
-      console.log('Creating autorisation serre with payload:', payload);
-      console.log('API URL:', `${API_BASE_URL}/autorisation_serre`);
-      
       const requestConfig = createAuthenticatedRequest();
-      console.log('Request config:', requestConfig);
-      
+
       const response = await axios.post<AutorisationSerre>(
         `${API_BASE_URL}/autorisation_serre`,
         payload,
