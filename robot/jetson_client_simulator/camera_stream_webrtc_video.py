@@ -10,7 +10,7 @@ host = "greenertech.mywire.org"
 
 AI_ENABLED = False
 
-
+"""
 import os
 import sys
 
@@ -30,7 +30,7 @@ from detectobjects import detect_frame#, predict_frame
 
 # return to original working directory
 os.chdir(cwd)
-
+"""
 
 
 import cv2
@@ -62,8 +62,8 @@ class CameraVideoTrack(VideoStreamTrack):
                 raise RuntimeError("❌ Failed to read frame from video")
         #print("📹 Capturing frame")
         
-        if AI_ENABLED:
-            frame = detect_frame(frame)  # only apply detection when enabled
+        #if AI_ENABLED:
+        #    frame = detect_frame(frame)  # only apply detection when enabled
 
         frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         av_frame = VideoFrame.from_ndarray(frame_rgb, format="rgb24")

@@ -199,7 +199,8 @@ CREATE TABLE public.bilans (
     center_lat double precision NOT NULL,
     center_lng double precision NOT NULL,
     id_group_cor integer NOT NULL,
-    id_serre integer NOT NULL
+    id_serre integer NOT NULL,
+    created_by integer NOT NULL
 );
 
 
@@ -627,7 +628,7 @@ ALTER SEQUENCE public.rapport_id_seq OWNED BY public.rapport.id;
 
 CREATE TABLE public.robots (
     id integer NOT NULL,
-    nom character varying(100) NOT NULL,
+    nom character varying(100),
     referance character varying(100),
     id_entreprise integer
 );
@@ -959,9 +960,9 @@ COPY public.autorisations_serre (id, id_user, id_serre) FROM stdin;
 -- Data for Name: bilans; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.bilans (id, nom, surface, center_lat, center_lng, id_group_cor, id_serre) FROM stdin;
-1	Bilan1	4	34.123	-6.789	3	1
-2	Bilan2	4	34.123	-6.789	4	1
+COPY public.bilans (id, nom, surface, center_lat, center_lng, id_group_cor, id_serre, created_by) FROM stdin;
+1	Bilan1	4	34.123	-6.789	3	1	3
+2	Bilan2	4	34.123	-6.789	4	1	3
 \.
 
 
@@ -1466,6 +1467,14 @@ ALTER TABLE ONLY public.autorisations_serre
 
 ALTER TABLE ONLY public.bilans
     ADD CONSTRAINT bilans_id_serre_fkey FOREIGN KEY (id_serre) REFERENCES public.serres(id);
+
+
+--
+-- Name: bilans bilans_created_by_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.bilans
+    ADD CONSTRAINT bilans_created_by_fkey FOREIGN KEY (created_by) REFERENCES public.users(id);
 
 
 --

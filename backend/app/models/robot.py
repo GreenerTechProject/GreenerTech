@@ -5,7 +5,7 @@ class Robot(db.Model):
     __tablename__ = 'robots'
 
     id = Column(Integer, primary_key=True)
-    nom = Column(String(100), nullable=False)
+    nom = Column(String(100), nullable=True)
     referance = Column(String(100))
     id_entreprise = Column(Integer, ForeignKey('entreprises.id'), nullable=True)
 

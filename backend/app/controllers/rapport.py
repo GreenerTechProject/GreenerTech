@@ -120,7 +120,7 @@ from io import BytesIO
 
 
 @token_required
-@role_required("technicien", "directeur")
+@role_required("technicien", "technicien_superieur", "directeur")
 def create_rapport(current_user):
     data = request.get_json()
     description = data.get("description")
@@ -179,6 +179,10 @@ def create_rapport(current_user):
     output_dir = "app/static/rapports"
     os.makedirs(output_dir, exist_ok=True)
 
+    # Also ensure the relative path exists for Flask static serving
+    static_dir = "static/rapports"
+    os.makedirs(static_dir, exist_ok=True)
+
     nom_pdf = f"rapport_{uuid.uuid4().hex}.pdf"
     chemin_pdf = os.path.join(output_dir, nom_pdf)
 
@@ -202,15 +206,43 @@ def create_rapport(current_user):
 
 
 
-# get rapport by user 
+# get rapport by user
 @token_required
 @role_required("technicien", "technicien_superieur", "directeur")
 def get_rapports_by_user(current_user):
-    rapports = Rapport.query.filter_by(user_id=current_user.id).all()
+    rapports = Rapport.query.filter_by(user_id=current_user.id).order_by(Rapport.date.desc()).all()
     if not rapports:
         return jsonify({"message": "Aucun rapport trouvé pour cet utilisateur"}), 404
-    result = [rapport.to_dict() for rapport in rapports]
-    return jsonify(result), 200
+
+    # Enhance report data with serre and domaine information
+    enhanced_rapports = []
+    for rapport in rapports:
+        enhanced_rapport = rapport.to_dict()
+
+        # Get serre information
+        serre = db.session.query(Serre).filter_by(id=rapport.id_serre).first()
+        if serre:
+            enhanced_rapport['serre_nom'] = serre.nom
+            enhanced_rapport['serre_id'] = serre.id
+
+            # Get domaine information
+            domaine = db.session.query(Domaine).filter_by(id=serre.id_domaine).first()
+            if domaine:
+                enhanced_rapport['domaine_nom'] = domaine.nom
+
+                # Get entreprise information
+                entreprise = db.session.query(Entreprise).filter_by(id=domaine.id_entreprise).first()
+                if entreprise:
+                    enhanced_rapport['entreprise_nom'] = entreprise.nom
+
+        # Get user information
+        user = User.query.get(rapport.user_id)
+        if user:
+            enhanced_rapport['user_nom'] = user.name
+
+        enhanced_rapports.append(enhanced_rapport)
+
+    return jsonify(enhanced_rapports), 200
 
 @token_required
 @role_required("directeur")
@@ -224,8 +256,8 @@ def get_all_rapports(current_user):
         return jsonify({"error": str(e)}), 500
 
 @token_required
-@role_required("technicien", "directeur")
-def get_rapport(id, current_user):
+@role_required("technicien", "technicien_superieur", "directeur")
+def get_rapport(current_user, id):
     rapport = Rapport.query.get(id)
     if not rapport:
         return jsonify({"message": "Rapport non trouvé"}), 404
@@ -274,7 +306,7 @@ def update_rapport(id):
 
 @token_required
 @role_required("directeur")
-def delete_rapport(id, current_user):
+def delete_rapport(current_user, id):
     """Delete a rapport - only accessible by directors"""
     try:
         rapport = Rapport.query.get(id)
@@ -284,9 +316,25 @@ def delete_rapport(id, current_user):
         # Delete the PDF file if it exists
         if rapport.lien_pdf:
             try:
-                pdf_path = os.path.join("app", rapport.lien_pdf)
-                if os.path.exists(pdf_path):
-                    os.remove(pdf_path)
+                # Handle both absolute paths and relative paths
+                if rapport.lien_pdf.startswith('http'):
+                    # Skip deletion for S3 URLs or external URLs
+                    print(f"Skipping deletion of external PDF: {rapport.lien_pdf}")
+                else:
+                    # Try multiple possible paths for local files
+                    possible_paths = [
+                        os.path.join("app", rapport.lien_pdf),
+                        os.path.join("app", "static", "rapports", os.path.basename(rapport.lien_pdf)),
+                        rapport.lien_pdf
+                    ]
+
+                    for pdf_path in possible_paths:
+                        if os.path.exists(pdf_path):
+                            os.remove(pdf_path)
+                            print(f"Successfully deleted PDF: {pdf_path}")
+                            break
+                    else:
+                        print(f"Warning: PDF file not found in any expected location: {rapport.lien_pdf}")
             except Exception as e:
                 print(f"Warning: Could not delete PDF file: {e}")
         

@@ -12,23 +12,36 @@ import requests
 from collections import defaultdict
 
 
-#import sys
-#
-## save current working directory
-#cwd = os.getcwd()
-#
-## change to ia/models so ALL.py can find the model file
-#os.chdir(os.path.join(cwd, '../ia/models'))
-#
-## ensure this path is in sys.path for the import
-#if os.getcwd() not in sys.path:
-#    sys.path.insert(0, os.getcwd())
-#
-## import the functions
-#from ALL import detect_frame, predict_frame
-#
-## return to original working directory
-#os.chdir(cwd)
+
+from multirobotcam.sensors_realtime_service import get_latest_sensor_data
+
+from PIL import Image
+from dotenv import load_dotenv
+
+import boto3
+from io import BytesIO
+
+from multirobotcam.robotcontrole_service import is_ai_enabled
+#AI_ENABLED = False
+
+
+import sys
+
+# save current working directory
+cwd = os.getcwd()
+
+# change to ia/models so ALL.py can find the model file
+os.chdir(os.path.join(cwd, '../ia/models'))
+
+# ensure this path is in sys.path for the import
+if os.getcwd() not in sys.path:
+    sys.path.insert(0, os.getcwd())
+
+# import the functions
+from ALL import detect_frame, predict_frame
+
+# return to original working directory
+os.chdir(cwd)
 
 
 
@@ -58,6 +71,95 @@ def get_key_from_request(request):
     camera_id = request.query.get("camera", "right")
     return f"{robot_id}_{camera_id}"
 
+async def process_ai_task(key):
+    while True:
+        frame = stream_data[key]["latest_frame"]
+        #if frame is not None and is_ai_enabled():
+        if frame is not None:
+            try:
+                bilan = predict_frame(frame)
+                print(bilan)
+                
+                
+                warnings = []
+                if bilan["Virus de la feuille jaune en boucle de la tomate"] == 0:
+                    warnings.append("Virus de la feuille jaune en boucle de la tomate")
+                if bilan["powdery_mildew"] == 0:
+                    warnings.append("powdery_mildew")
+                    
+                sensor_data = get_latest_sensor_data(key)
+                s3 = boto3.client("s3")
+                bucket_name = "bucket-greenertech"
+                region = "eu-west-1"
+                
+                for warning in warnings:
+                    latest_qr = stream_data[key]["latest_qr_results"] if key in stream_data else None
+                    latest_frame = stream_data[key]["latest_frame"] if key in stream_data else None
+                    if latest_qr and latest_frame is not None:
+                        qrdata = json.loads(latest_qr[0])
+                        print(f"[{key}] Anomalie in: {qrdata['nom']}")
+                        print(warning)
+
+                        # Convert BGR (OpenCV) to RGB (PIL)
+                        pil_img = Image.fromarray(latest_frame[:, :, ::-1])
+                        
+                        os.makedirs("../backend/app/static/images", exist_ok=True)
+                        timanow = datetime.now().strftime("%Y%m%d%H%M%S")
+                        image_filename = f"{qrdata['id']}_{timanow}.jpg"
+                        image_path = f"../backend/app/static/images/{image_filename}"
+                        pil_img.save(image_path, format="JPEG", quality=95)
+                        
+                        
+                        try:
+                            s3 = boto3.client("s3")
+                            bucket_name = "bucket-greenertech"
+                            region = "eu-west-1"
+
+                            timanow = datetime.now().strftime("%Y%m%d%H%M%S")
+                            image_filename = f"{qrdata['id']}_{timanow}.jpg"
+                            s3_key = f"images/{image_filename}"
+
+                            buffer = BytesIO()
+                            pil_img.save(buffer, format="JPEG", quality=95)
+                            buffer.seek(0)
+
+                            s3.upload_fileobj(buffer, bucket_name, s3_key)
+
+                            print(f"✅ Image saved to s3://{bucket_name}/{s3_key}")
+                        
+                            
+                        except Exception as e:
+                            print(f"❌ Error: {e}")
+
+
+                                     
+                        # Send alert
+                        alert_data = {
+                            "id_bilan": qrdata["id"],
+                            "status_alert": 3, #1, 2, 3
+                            "maladie": warning,
+                            #"lien_image": f"/static/images/{image_filename}",
+                            "lien_image": f"https://{bucket_name}.s3.{region}.amazonaws.com/{s3_key}",
+                            "x1": sensor_data["x"],
+                            "y1": sensor_data["y"],
+                            "status": "non_vue" #non_vue vue résolue
+                        }
+                        try:
+                            response = requests.post(
+                                os.getenv("BACKTEND_URL", "http://localhost:5000") + "/api/alerte",
+                                json=alert_data
+                            )
+                            print(f"[{key}] ✅ Alert sent:", response.status_code, response.text)
+                        except Exception as e:
+                            print(f"[{key}] ❌ Failed to send alert:", e)
+                        await asyncio.sleep(5)
+                    
+                #stream_data[key]["latest_bilan"] = bilan
+            except Exception as e:
+                print(f"[{key}] ❌ Error in AI processing: {e}")
+        await asyncio.sleep(2)
+
+
 class RelayStreamTrack(VideoStreamTrack):
     def __init__(self, key):
         super().__init__()
@@ -72,7 +174,15 @@ class RelayStreamTrack(VideoStreamTrack):
         data = stream_data[self.key]
         pts, time_base = await self.next_timestamp()
         frame_to_use = data["latest_frame"] if data["latest_frame"] is not None else self.fallback_frame
-        #frame_to_use = detect_frame(data["latest_frame"]) if data["latest_frame"] is not None else self.fallback_frame
+        if is_ai_enabled():
+            frame_to_use = detect_frame(data["latest_frame"]) if data["latest_frame"] is not None else self.fallback_frame
+            
+            #Billan_dicts = predict_frame(data["latest_frame"]) if data["latest_frame"] is not None else self.fallback_frame
+            #print (Billan_dicts)
+        
+        #frame_to_use = data["latest_frame"] or self.fallback_frame
+        #if AI_ENABLED and data["latest_frame"] is not None:
+        #    frame_to_use = detect_frame(frame_to_use)
 
         if frame_to_use is None:
             raise Exception("No video stream and no fallback image found!")
@@ -220,7 +330,6 @@ async def process_robot_video(track, key):
 
 
 async def video_stream_handler(request):
-    from multirobotcam.sensors_realtime_service import get_latest_sensor_data
     key = get_key_from_request(request)
     try:
         params = await request.json()
@@ -237,6 +346,7 @@ async def video_stream_handler(request):
             print(f"[{key}] 📡 Robot stream track received: {track.kind}")
             if track.kind == "video":
                 asyncio.ensure_future(process_robot_video(track, key))
+                asyncio.ensure_future(process_ai_task(key))
 
         await pc.setRemoteDescription(
             RTCSessionDescription(sdp=offer["sdp"], type=offer["type"])

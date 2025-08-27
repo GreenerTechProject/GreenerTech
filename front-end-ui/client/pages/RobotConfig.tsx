@@ -66,15 +66,15 @@ const RobotConfig: React.FC = () => {
     }
 
     try {
-      const response = await robotService.createRobot({
+      const robot = await robotService.updateRobotByReference({
         nom: formData.nom,
         referance: formData.referance
       });
 
-      if (response.status === "success") {
+      if (robot && robot.id) {
         toast({
           title: "Succès",
-          description: response.message || "Robot créé avec succès"
+          description: "Robot mis à jour avec succès"
         });
         setIsCreateDialogOpen(false);
         setFormData({ nom: '', referance: '' });
@@ -82,16 +82,25 @@ const RobotConfig: React.FC = () => {
       } else {
         toast({
           title: "Erreur",
-          description: response.message || "Erreur lors de la création",
+          description: "Erreur lors de la mise à jour",
           variant: "destructive"
         });
       }
     } catch (error: any) {
+      const isRobotNotFound = error.status === 404;
+      const isPermissionError = error.status === 403;
+
       toast({
-        title: "Erreur",
-        description: error.message || "Erreur lors de la création",
+        title: isRobotNotFound ? "Robot introuvable" : isPermissionError ? "Accès refusé" : "Erreur",
+        description: error.message || "Erreur lors de la configuration",
         variant: "destructive"
       });
+
+      // If robot not found, keep the form open so user can correct the reference
+      if (!isRobotNotFound) {
+        setIsCreateDialogOpen(false);
+        setFormData({ nom: '', referance: '' });
+      }
     }
   };
 
@@ -199,14 +208,14 @@ const RobotConfig: React.FC = () => {
                     <DialogTrigger asChild>
                       <Button onClick={resetForm} className="w-full sm:w-auto text-sm sm:text-base">
                         <Plus className="w-3 h-3 sm:w-4 sm:h-4 mr-2" />
-                        Nouveau Robot
+                        Configurer Robot
                       </Button>
                     </DialogTrigger>
                     <DialogContent className="sm:max-w-md">
                       <DialogHeader>
                         <DialogTitle className="flex items-center space-x-2 text-sm sm:text-base">
                           <Bot className="h-4 w-4 sm:h-5 sm:w-5 text-green-600" />
-                          <span>Créer un nouveau robot</span>
+                          <span>Configurer un robot</span>
                         </DialogTitle>
                       </DialogHeader>
                       <div className="space-y-4">
@@ -216,7 +225,7 @@ const RobotConfig: React.FC = () => {
                             id="nom"
                             value={formData.nom}
                             onChange={(e) => setFormData({ ...formData, nom: e.target.value })}
-                            placeholder="Nom du robot"
+                            placeholder="Entrez le nom du robot"
                             className="mt-1 text-sm sm:text-base"
                           />
                         </div>
@@ -226,7 +235,7 @@ const RobotConfig: React.FC = () => {
                             id="referance"
                             value={formData.referance}
                             onChange={(e) => setFormData({ ...formData, referance: e.target.value })}
-                            placeholder="Référence du robot"
+                            placeholder="Entrez la référence du robot"
                             className="mt-1 text-sm sm:text-base"
                           />
                         </div>
@@ -238,7 +247,7 @@ const RobotConfig: React.FC = () => {
                             Annuler
                           </Button>
                           <Button onClick={handleCreateRobot} className="w-full sm:w-auto text-sm sm:text-base">
-                            Créer
+                            Configurer
                           </Button>
                         </div>
                       </div>
@@ -271,10 +280,10 @@ const RobotConfig: React.FC = () => {
                   <div className="text-center py-12 px-4">
                     <Bot className="h-12 w-12 sm:h-16 sm:w-16 text-gray-300 mx-auto mb-4" />
                     <h3 className="text-base sm:text-lg font-medium text-gray-900 mb-2">Aucun robot configuré</h3>
-                    <p className="text-sm sm:text-base text-gray-500 mb-6">Commencez par créer votre premier robot pour automatiser vos tâches agricoles.</p>
+                    <p className="text-sm sm:text-base text-gray-500 mb-6">Configurez vos robots en entrant leur référence et nom pour les gérer efficacement.</p>
                     <Button onClick={() => setIsCreateDialogOpen(true)} className="text-sm sm:text-base">
                       <Plus className="w-3 h-3 sm:w-4 sm:h-4 mr-2" />
-                      Créer le premier robot
+                      Configurer un robot
                     </Button>
                   </div>
                 ) : (

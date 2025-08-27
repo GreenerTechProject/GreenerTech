@@ -3,25 +3,25 @@ from app.models.robot import Robot
 from database.config import db
 from app.utils.security import token_required, role_required
 
-@token_required
-@role_required("directeur")
-def create_robot(current_user):
+#@token_required The robot does not need a director's role.
+#@role_required("directeur")    current_user
+def create_robot():
     data = request.get_json()
     
-    # Validate required fields
-    if not data.get('nom') or not data.get('referance'):
+    # Validate required fields not data.get('nom') or 
+    if not data.get('referance'):
         return jsonify({"status": "error", "message": "Nom et référence sont requis"}), 400
     
     # Get the director's company ID
-    if not current_user.id_entreprise:
-        return jsonify({"status": "error", "message": "Directeur non associé à une entreprise"}), 400
+    #if not current_user.id_entreprise:
+    #    return jsonify({"status": "error", "message": "Directeur non associé à une entreprise"}), 400
     
     try:
         # Create robot with name, reference, and company ID
         robot = Robot(
-            nom=data['nom'],
+            #nom=data['nom'],
             referance=data['referance'],
-            id_entreprise=current_user.id_entreprise
+            #id_entreprise=current_user.id_entreprise
         )
         db.session.add(robot)
         db.session.commit()
@@ -94,9 +94,16 @@ def delete_robot(current_user, robot_id):
         return jsonify({"status": "error", "message": "Accès non autorisé à ce robot"}), 403
 
     try:
+        # First, delete all missions associated with this robot
+        from app.models.mission_robot import MissionRobot
+        missions_to_delete = MissionRobot.query.filter_by(id_robot=robot_id).all()
+        for mission in missions_to_delete:
+            db.session.delete(mission)
+
+        # Then delete the robot
         db.session.delete(robot)
         db.session.commit()
-        return jsonify({"status": "success", "message": "Robot supprimé"}), 200
+        return jsonify({"status": "success", "message": f"Robot et ses {len(missions_to_delete)} missions associées supprimés"}), 200
     except Exception as e:
         db.session.rollback()
         return jsonify({"status": "error", "message": str(e)}), 400

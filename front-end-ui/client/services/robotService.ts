@@ -82,7 +82,7 @@ export const robotService = {
     }
   },
 
-  // Update robot
+  // Update robot by ID
   updateRobot: async (robotId: number, robotData: Partial<Robot>): Promise<Robot> => {
     try {
       const response = await axios.put<Robot>(
@@ -92,11 +92,48 @@ export const robotService = {
       );
       return response.data;
     } catch (error: any) {
-      const errorMessage = error.response?.data?.message || 
+      const errorMessage = error.response?.data?.message ||
         "Erreur lors de la mise à jour du robot";
       throw {
         message: errorMessage,
         status: error.response?.status || 500,
+      } as ApiError;
+    }
+  },
+
+  // Update robot by reference
+  updateRobotByReference: async (robotData: { nom: string; referance: string }): Promise<Robot> => {
+    try {
+      const response = await axios.put(
+        `${API_BASE_URL}/robot`,
+        robotData,
+        createAuthenticatedRequest()
+      );
+
+      // Backend returns Robot object directly on success
+      return response.data;
+    } catch (error: any) {
+      const status = error.response?.status;
+      const errorData = error.response?.data;
+
+      let errorMessage = "Erreur lors de la mise à jour du robot";
+
+      // Handle specific error cases with user-friendly messages
+      if (status === 404) {
+        errorMessage = `Aucun robot trouvé avec la référence "${robotData.referance}". Vérifiez que la référence est correcte ou créez d'abord le robot.`;
+      } else if (status === 403) {
+        errorMessage = "Vous n'avez pas l'autorisation de modifier ce robot.";
+      } else if (status === 400) {
+        errorMessage = errorData?.message || "Données invalides. Vérifiez le nom et la référence du robot.";
+      } else if (errorData?.message) {
+        errorMessage = errorData.message;
+      } else if (errorData?.status === "error") {
+        errorMessage = "Robot introuvable ou accès non autorisé";
+      }
+
+      throw {
+        message: errorMessage,
+        status: status || 500,
       } as ApiError;
     }
   },
