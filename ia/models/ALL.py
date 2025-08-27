@@ -3,8 +3,8 @@ from ultralytics import YOLO
 import torch
 from MaClass import TomatoClassifier,process_image
 device = '0' if torch.cuda.is_available() else 'cpu'
-#model = YOLO("my_model.pt").to(device)  #load the Model
-model = YOLO("new_yolo_model.pt").to(device)  #load the Model
+model = YOLO("my_model.pt").to(device)  #load the Model
+#model = YOLO("new_yolo_model.pt").to(device)  #load the Model
 """
 def detect_frame(bgr_frame):
     # Detection
