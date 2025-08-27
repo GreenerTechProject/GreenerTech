@@ -47,6 +47,8 @@ export const MissionEdit: React.FC<MissionEditProps> = ({ mission, onMissionUpda
     id_serre: mission.id_serre,
     date_debut: mission.date_debut ? mission.date_debut.split('T')[0] : '',
     date_fin: mission.date_fin ? mission.date_fin.split('T')[0] : '',
+    date_heure: mission.date_debut ? new Date(mission.date_debut).getHours() : null,
+    date_minute: mission.date_debut ? new Date(mission.date_debut).getMinutes() : null,
     rep_jr: mission.rep_jr,
     rep_sem: mission.rep_sem,
     jour: mission.jour || 0,
@@ -117,7 +119,9 @@ export const MissionEdit: React.FC<MissionEditProps> = ({ mission, onMissionUpda
         setFormData(prev => ({
           ...prev,
           date_debut: '',
-          date_fin: ''
+          date_fin: '',
+          date_heure: null,
+          date_minute: null
         }));
       }
     } else {
@@ -142,8 +146,14 @@ export const MissionEdit: React.FC<MissionEditProps> = ({ mission, onMissionUpda
       };
 
       if (missionType === 'date') {
-        // Date-based mission
-        missionData.date_debut = formData.date_debut || null;
+        // Date-based mission - combine date and time
+        if (formData.date_debut && formData.date_heure !== null && formData.date_minute !== null) {
+          const combinedDateTime = new Date(formData.date_debut);
+          combinedDateTime.setHours(formData.date_heure, formData.date_minute, 0, 0);
+          missionData.date_debut = combinedDateTime.toISOString();
+        } else {
+          missionData.date_debut = formData.date_debut || null;
+        }
         missionData.date_fin = formData.date_fin || null;
         missionData.rep_jr = 0;
         missionData.rep_sem = 0;
@@ -174,9 +184,10 @@ export const MissionEdit: React.FC<MissionEditProps> = ({ mission, onMissionUpda
 
   const isSubmitDisabled = () => {
     if (missionType === 'date') {
-      return !formData.id_robot || !formData.id_serre || !formData.date_debut;
+      return !formData.id_robot || !formData.id_serre || !formData.date_debut ||
+             formData.date_heure === null || formData.date_minute === null;
     } else {
-      return !formData.id_robot || !formData.id_serre || 
+      return !formData.id_robot || !formData.id_serre ||
              !formData.rep_jr && !formData.rep_sem ||
              (formData.rep_sem && (formData.jour === 0 || formData.heure === 0 || formData.minute === 0)) ||
              (formData.rep_jr && (formData.heure === 0 || formData.minute === 0));
@@ -292,7 +303,7 @@ export const MissionEdit: React.FC<MissionEditProps> = ({ mission, onMissionUpda
                       required
                     />
                   </div>
-                  
+
                   <div className="space-y-2">
                     <Label htmlFor="date_fin">Date de fin (optionnel)</Label>
                     <Input
@@ -302,6 +313,47 @@ export const MissionEdit: React.FC<MissionEditProps> = ({ mission, onMissionUpda
                       onChange={(e) => handleInputChange('date_fin', e.target.value)}
                       min={formData.date_debut}
                     />
+                  </div>
+                </div>
+
+                {/* Time Selection for Date-based Missions */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="date_heure">Heure d'exécution *</Label>
+                    <Select
+                      value={formData.date_heure?.toString() || ""}
+                      onValueChange={(value) => handleInputChange('date_heure', parseInt(value))}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Sélectionnez l'heure" />
+                      </SelectTrigger>
+                      <SelectContent className="z-[9999] bg-white border border-gray-200 shadow-lg">
+                        {Array.from({ length: 24 }, (_, i) => (
+                          <SelectItem key={i} value={i.toString()}>
+                            {i.toString().padStart(2, '0')}h
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="date_minute">Minute d'exécution *</Label>
+                    <Select
+                      value={formData.date_minute?.toString() || ""}
+                      onValueChange={(value) => handleInputChange('date_minute', parseInt(value))}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Sélectionnez la minute" />
+                      </SelectTrigger>
+                      <SelectContent className="z-[9999] bg-white border border-gray-200 shadow-lg">
+                        {Array.from({ length: 60 }, (_, i) => (
+                          <SelectItem key={i} value={i.toString()}>
+                            {i.toString().padStart(2, '0')}min
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
                 </div>
               </div>
