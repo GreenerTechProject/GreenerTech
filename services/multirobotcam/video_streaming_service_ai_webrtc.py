@@ -11,6 +11,10 @@ import time
 import requests
 from collections import defaultdict
 
+
+
+from multirobotcam.sensors_realtime_service import get_latest_sensor_data
+
 from PIL import Image
 from dotenv import load_dotenv
 
@@ -326,7 +330,6 @@ async def process_robot_video(track, key):
 
 
 async def video_stream_handler(request):
-    from multirobotcam.sensors_realtime_service import get_latest_sensor_data
     key = get_key_from_request(request)
     try:
         params = await request.json()
