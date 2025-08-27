@@ -4,6 +4,7 @@ import torch
 from MaClass import TomatoClassifier,process_image
 device = '0' if torch.cuda.is_available() else 'cpu'
 model = YOLO("my_model.pt").to(device)  #load the Model
+"""
 def detect_frame(bgr_frame):
     # Detection
     results = model.predict(
@@ -29,7 +30,7 @@ def detect_frame(bgr_frame):
                 cv2.putText(bgr_frame,str(model.names[int(cls)]),(x1,y1-5),cv2.FONT_HERSHEY_SIMPLEX,0.7,(255,255,255),2)
 
     return bgr_frame 
-"""
+
 
 def predict_frame(bgr_frame):
     cnn_classes =['Tomate malsaine','Tomate saine','Virus de la feuille jaune en boucle de la tomate','powdery_mildew']
