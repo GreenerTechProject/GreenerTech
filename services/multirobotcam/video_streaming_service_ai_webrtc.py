@@ -260,7 +260,7 @@ async def process_robot_video(track, key):
                                         raise ValueError(f"Invalid bilans format: {mission['bilans']}")
                                     
                                 
-                                    if data2["id"] == last_bilan or data["nom"] == "--Fin--" :
+                                    if data2["id"] == last_bilan or data["nom"] == "-Fin-" :
                                         print ("You are in last bilan")
                                         #data2['id']
                                         
