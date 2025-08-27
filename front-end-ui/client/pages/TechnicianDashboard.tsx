@@ -137,8 +137,6 @@ export default function TechnicianDashboard() {
         ]);
 
         setAlerts(alertsData || []);
-        console.log("[DEBUG] TechnicianDashboard - Alerts data:", alertsData);
-        console.log("[DEBUG] TechnicianDashboard - Sample alert severity values:", alertsData?.slice(0, 5).map(a => ({ id: a.id, status_alert: a.status_alert, maladie: a.maladie })));
         setMissions(missionsData);
         setSerres(serresData);
         setDomains(domainsData);
@@ -320,11 +318,6 @@ export default function TechnicianDashboard() {
     }).length
   };
 
-  console.log("[DEBUG] TechnicianDashboard - Alert severity breakdown:", alertsBySeverity);
-  console.log("[DEBUG] TechnicianDashboard - Total alerts count:", alerts.length);
-  console.log("[DEBUG] TechnicianDashboard - Unresolved alerts:", unresolvedAlerts);
-  console.log("[DEBUG] TechnicianDashboard - Urgent alerts:", urgentAlerts);
-  
   const recentAlerts = alerts.filter(a => {
     if (!a.date) return false;
     const alertDate = new Date(a.date);
