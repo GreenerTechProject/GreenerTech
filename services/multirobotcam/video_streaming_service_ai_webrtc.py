@@ -133,26 +133,26 @@ async def process_ai_task(key):
 
 
                                      
-                    # Send alert
-                    alert_data = {
-                        "id_bilan": qrdata["id"],
-                        "status_alert": 3, #1, 2, 3
-                        "maladie": warning,
-                        #"lien_image": f"/static/images/{image_filename}",
-                        "lien_image": f"https://{bucket_name}.s3.{region}.amazonaws.com/{s3_key}",
-                        "x1": sensor_data["x"],
-                        "y1": sensor_data["y"],
-                        "status": "non_vue" #non_vue vue résolue
-                    }
-                    try:
-                        response = requests.post(
-                            os.getenv("BACKTEND_URL", "http://localhost:5000") + "/api/alerte",
-                            json=alert_data
-                        )
-                        print(f"[{key}] ✅ Alert sent:", response.status_code, response.text)
-                    except Exception as e:
-                        print(f"[{key}] ❌ Failed to send alert:", e)
-                    await asyncio.sleep(5)
+                        # Send alert
+                        alert_data = {
+                            "id_bilan": qrdata["id"],
+                            "status_alert": 3, #1, 2, 3
+                            "maladie": warning,
+                            #"lien_image": f"/static/images/{image_filename}",
+                            "lien_image": f"https://{bucket_name}.s3.{region}.amazonaws.com/{s3_key}",
+                            "x1": sensor_data["x"],
+                            "y1": sensor_data["y"],
+                            "status": "non_vue" #non_vue vue résolue
+                        }
+                        try:
+                            response = requests.post(
+                                os.getenv("BACKTEND_URL", "http://localhost:5000") + "/api/alerte",
+                                json=alert_data
+                            )
+                            print(f"[{key}] ✅ Alert sent:", response.status_code, response.text)
+                        except Exception as e:
+                            print(f"[{key}] ❌ Failed to send alert:", e)
+                        await asyncio.sleep(5)
                     
                 #stream_data[key]["latest_bilan"] = bilan
             except Exception as e:
