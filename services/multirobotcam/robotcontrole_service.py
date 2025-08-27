@@ -1,6 +1,11 @@
 from aiohttp import web, WSMsgType
 import json
 
+shared_state = {"AI_ENABLED": False}
+
+def is_ai_enabled():
+    return shared_state["AI_ENABLED"]
+
 # Dictionary of connected clients: {ws: robot_id}
 control_clients = {}
 
@@ -8,7 +13,6 @@ def get_robot_id(request):
     return request.query.get("robot", "1")
 
 async def control_handler(request):
-    global AI_ENABLED
     robot_id = get_robot_id(request)
     ws = web.WebSocketResponse()
     await ws.prepare(request)
@@ -26,9 +30,9 @@ async def control_handler(request):
                         print(f"[Robot {robot_id}] Control mode received: {control_mode}")
 
                         if control_mode == "ENABLE_AI":
-                            AI_ENABLED = True
+                            shared_state["AI_ENABLED"] = True
                         elif control_mode == "DISABLE_AI":
-                            AI_ENABLED = False
+                            shared_state["AI_ENABLED"] = False
                         
                         if control_mode == "PAUSE_MISSION" :
                             control_mode == "STOP"

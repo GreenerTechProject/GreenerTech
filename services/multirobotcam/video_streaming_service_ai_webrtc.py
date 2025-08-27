@@ -11,7 +11,8 @@ import time
 import requests
 from collections import defaultdict
 
-AI_ENABLED = False
+from multirobotcam.robotcontrole_service import is_ai_enabled
+#AI_ENABLED = False
 
 
 import sys
@@ -71,11 +72,10 @@ class RelayStreamTrack(VideoStreamTrack):
         self.cached_frame = None
 
     async def recv(self):
-        global AI_ENABLED
         data = stream_data[self.key]
         pts, time_base = await self.next_timestamp()
         frame_to_use = data["latest_frame"] if data["latest_frame"] is not None else self.fallback_frame
-        if AI_ENABLED:
+        if is_ai_enabled():
             frame_to_use = detect_frame(data["latest_frame"]) if data["latest_frame"] is not None else self.fallback_frame
         
         #frame_to_use = data["latest_frame"] or self.fallback_frame
