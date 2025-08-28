@@ -82,9 +82,9 @@ async def process_ai_task(key):
                 
                 
                 warnings = []
-                if bilan["Virus de la feuille jaune en boucle de la tomate"] == 0:
+                if bilan["Virus de la feuille jaune en boucle de la tomate"] > 0:
                     warnings.append("Virus de la feuille jaune en boucle de la tomate")
-                if bilan["powdery_mildew"] == 0:
+                if bilan["powdery_mildew"] > 0:
                     warnings.append("powdery_mildew")
                     
                 sensor_data = get_latest_sensor_data(key)
