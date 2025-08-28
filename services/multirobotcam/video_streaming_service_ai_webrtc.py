@@ -264,7 +264,6 @@ async def process_robot_video(track, key, robot_reference):
                                     if data2["id"] == last_bilan or data["nom"] == "-Fin-" :
                                         print ("You are in last bilan")
                                         #data2['id']
-                                        robot_reference = request.query.get("robot")
                                         await send_control_command(robot_reference, "STOP")
                                         
                                         await conn.execute(f"""
