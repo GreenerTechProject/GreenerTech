@@ -335,8 +335,9 @@ class SensorDataNode(Node):
     async def _send(self, msg: String):
         try:
             if self.ws:
+                print(f"📥 Données capteurs reçues du topic ROS2: {msg.data}")
                 #data = {"data": msg.data}
-                await self.ws.send(json.dumps(msg.data))
+                await self.ws.send(msg.data)
         except Exception as e:
             print(f"Error sending sensor data via WS: {e}")
             self.ws = None
