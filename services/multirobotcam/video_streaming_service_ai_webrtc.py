@@ -205,6 +205,7 @@ class RelayStreamTrack(VideoStreamTrack):
 
 
 async def process_robot_video(track, key, robot_reference):
+    from multirobotcam.sensors_realtime_service import get_latest_sensor_data
     global stream_data
     while True:
         frame = await track.recv()
