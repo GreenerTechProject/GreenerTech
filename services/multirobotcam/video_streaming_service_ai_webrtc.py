@@ -204,7 +204,7 @@ class RelayStreamTrack(VideoStreamTrack):
 
 
 
-async def process_robot_video(track, key):
+async def process_robot_video(track, key, robot_reference):
     global stream_data
     while True:
         frame = await track.recv()
@@ -234,7 +234,6 @@ async def process_robot_video(track, key):
                                 try:
                                     conn = await asyncpg.connect(DB_URL)
                                     
-                                    robot_reference = request.query.get("robot")
                                     
                                     robot = await conn.fetchrow(
                                         "SELECT id FROM robots WHERE referance = $1", 
@@ -347,7 +346,7 @@ async def video_stream_handler(request):
         def on_track(track):
             print(f"[{key}] 📡 Robot stream track received: {track.kind}")
             if track.kind == "video":
-                asyncio.ensure_future(process_robot_video(track, key))
+                asyncio.ensure_future(process_robot_video(track, key, request.query.get("robot")))
                 #asyncio.ensure_future(process_ai_task(key))
 
         await pc.setRemoteDescription(
