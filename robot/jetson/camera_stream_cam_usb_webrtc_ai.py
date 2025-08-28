@@ -105,7 +105,7 @@ class CameraVideoTrack(VideoStreamTrack):
           pipeline = gstreamer_pipeline(device)
 
         #self.cap = cv2.VideoCapture(pipeline, cv2.CAP_GSTREAMER)
-        self.cap = cv2.VideoCapture("/dev/video"+device, cv2.CAP_V4L2)
+        self.cap = cv2.VideoCapture("/dev/video"+str(device), cv2.CAP_V4L2)
         
         fps = self.cap.get(cv2.CAP_PROP_FPS)
         print("FPS actuel:", fps)
@@ -438,7 +438,7 @@ async def listen_missions(robot_referance):
     while True:
         try:
             print("Tentative de connexion au serveur mission...")
-            control_uri = "ws://"+host+":8080/service/missions?robot="+robot_referance+"&referance="+robot_referance
+            control_uri = "ws://"+host+":8080/service/missions?referance="+robot_referance
             async with websockets.connect(control_uri) as websocket:
                 print(f"Connected to mission websocket for robot '{robot_referance}'")
                 async for msg in websocket:
