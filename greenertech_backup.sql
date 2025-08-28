@@ -962,7 +962,7 @@ COPY public.autorisations_serre (id, id_user, id_serre) FROM stdin;
 
 COPY public.bilans (id, nom, surface, center_lat, center_lng, id_group_cor, id_serre, created_by) FROM stdin;
 1	Bilan1	4	34.123	-6.789	3	1	3
-2	Bilan2	4	34.123	-6.789	4	1	3
+2	-Fin-	4	34.123	-6.789	4	1	3
 \.
 
 

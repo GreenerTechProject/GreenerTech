@@ -35,9 +35,9 @@ async def control_handler(request):
                             shared_state["AI_ENABLED"] = False
                         
                         if control_mode == "PAUSE_MISSION" :
-                            control_mode == "STOP"
+                            control_mode = "STOP"
                         elif control_mode == "PLAY_MISSION" :
-                            control_mode == "LEFT"
+                            control_mode = "LEFT"
                         
                         # Broadcast ONLY to clients of the same robot
                         for client_ws, client_robot_id in control_clients.items():
@@ -60,3 +60,15 @@ async def control_handler(request):
         print(f"🔌 Control client disconnected (robot {robot_id})")
 
     return ws
+
+
+
+# robotcontrole_service.py
+
+async def send_control_command(robot_id, command):
+    """Send control command to all connected clients of the given robot"""
+    for client_ws, client_robot_id in list(control_clients.items()):
+        if not client_ws.closed and client_robot_id == robot_id:
+            await client_ws.send_str(json.dumps({
+                "control_mode": command
+            }))

@@ -36,6 +36,8 @@ interface MissionFormData {
   // Date-based mission fields
   date_debut: Date | null;
   date_fin: Date | null;
+  date_heure: number | null; // Hour for date-based missions (0-23)
+  date_minute: number | null; // Minute for date-based missions (0-59)
   // Repetition-based mission fields
   rep_jr: number;
   rep_sem: number;
@@ -56,6 +58,8 @@ export const MissionCreation: React.FC<MissionCreationProps> = ({ onMissionCreat
     missionType: 'date',
     date_debut: null,  // Start with null, not new Date()
     date_fin: null,
+    date_heure: null,
+    date_minute: null,
     rep_jr: 1,
     rep_sem: 1,
     jour: null,
@@ -115,8 +119,10 @@ export const MissionCreation: React.FC<MissionCreationProps> = ({ onMissionCreat
       if (field === 'missionType' && value === 'repetition') {
         newData.date_debut = null;
         newData.date_fin = null;
+        newData.date_heure = null;
+        newData.date_minute = null;
       }
-      
+
       // Clear repetition fields when switching to date mode
       if (field === 'missionType' && value === 'date') {
         newData.rep_jr = 0;
@@ -139,9 +145,15 @@ export const MissionCreation: React.FC<MissionCreationProps> = ({ onMissionCreat
     }
 
     // Validate based on mission type
-    if (formData.missionType === 'date' && !formData.date_debut) {
-      toast.error('Veuillez sélectionner une date de début pour la mission');
-      return;
+    if (formData.missionType === 'date') {
+      if (!formData.date_debut) {
+        toast.error('Veuillez sélectionner une date de début pour la mission');
+        return;
+      }
+      if (formData.date_heure === null || formData.date_minute === null) {
+        toast.error('Veuillez sélectionner une heure et une minute pour la mission');
+        return;
+      }
     }
 
     if (formData.missionType === 'repetition') {
@@ -171,7 +183,12 @@ export const MissionCreation: React.FC<MissionCreationProps> = ({ onMissionCreat
 
       // Add fields based on mission type
       if (formData.missionType === 'date') {
-        missionData.date_debut = formData.date_debut?.toISOString();
+        // Combine date and time for date-based missions
+        if (formData.date_debut && formData.date_heure !== null && formData.date_minute !== null) {
+          const combinedDateTime = new Date(formData.date_debut);
+          combinedDateTime.setHours(formData.date_heure, formData.date_minute, 0, 0);
+          missionData.date_debut = combinedDateTime.toISOString();
+        }
         missionData.date_fin = formData.date_fin?.toISOString() || null;
         // Set repetition to 0 for date-based missions
         missionData.rep_jr = 0;
@@ -204,6 +221,8 @@ export const MissionCreation: React.FC<MissionCreationProps> = ({ onMissionCreat
         missionType: 'date',
         date_debut: null,
         date_fin: null,
+        date_heure: null,
+        date_minute: null,
         rep_jr: 1,
         rep_sem: 1,
         jour: null,
@@ -457,49 +476,92 @@ export const MissionCreation: React.FC<MissionCreationProps> = ({ onMissionCreat
 
           {/* Date Settings - Only show for date missions */}
           {formData.missionType === 'date' && (
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Date de début *</Label>
-                <div className="relative">
-                  <input
-                    type="date"
-                    value={formData.date_debut ? formData.date_debut.toISOString().split('T')[0] : ''}
-                                      onChange={(e) => {
-                    const date = e.target.value ? new Date(e.target.value) : null;
-                    handleInputChange('date_debut', date);
-                  }}
-                    className="w-full p-3 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    required
-                  />
-                  <CalendarIcon className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
+            <>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Date de début *</Label>
+                  <div className="relative">
+                    <input
+                      type="date"
+                      value={formData.date_debut ? formData.date_debut.toISOString().split('T')[0] : ''}
+                                        onChange={(e) => {
+                      const date = e.target.value ? new Date(e.target.value) : null;
+                      handleInputChange('date_debut', date);
+                    }}
+                      className="w-full p-3 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      required
+                    />
+                    <CalendarIcon className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Date de fin (optionnel)</Label>
+                  <div className="relative">
+                    <input
+                      type="date"
+                      value={formData.date_fin ? formData.date_fin.toISOString().split('T')[0] : ''}
+                                        onChange={(e) => {
+                      const date = e.target.value ? new Date(e.target.value) : null;
+                      handleInputChange('date_fin', date);
+                    }}
+                      min={formData.date_debut ? formData.date_debut.toISOString().split('T')[0] : undefined}
+                      className="w-full p-3 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    />
+                    <CalendarIcon className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
+                  </div>
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <Label>Date de fin (optionnel)</Label>
-                <div className="relative">
-                  <input
-                    type="date"
-                    value={formData.date_fin ? formData.date_fin.toISOString().split('T')[0] : ''}
-                                      onChange={(e) => {
-                    const date = e.target.value ? new Date(e.target.value) : null;
-                    handleInputChange('date_fin', date);
-                  }}
-                    min={formData.date_debut ? formData.date_debut.toISOString().split('T')[0] : undefined}
-                    className="w-full p-3 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
-                  <CalendarIcon className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
+              {/* Time Selection for Date-based Missions */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="date_heure">Heure d'exécution *</Label>
+                  <Select
+                    value={formData.date_heure?.toString() || ""}
+                    onValueChange={(value) => handleInputChange('date_heure', parseInt(value))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Sélectionnez l'heure" />
+                    </SelectTrigger>
+                    <SelectContent className="z-[9999] bg-white border border-gray-200 shadow-lg">
+                      {Array.from({ length: 24 }, (_, i) => (
+                        <SelectItem key={i} value={i.toString()}>
+                          {i.toString().padStart(2, '0')}h
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="date_minute">Minute d'exécution *</Label>
+                  <Select
+                    value={formData.date_minute?.toString() || ""}
+                    onValueChange={(value) => handleInputChange('date_minute', parseInt(value))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Sélectionnez la minute" />
+                    </SelectTrigger>
+                    <SelectContent className="z-[9999] bg-white border border-gray-200 shadow-lg">
+                      {Array.from({ length: 60 }, (_, i) => (
+                        <SelectItem key={i} value={i.toString()}>
+                          {i.toString().padStart(2, '0')}min
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
-            </div>
+            </>
           )}
 
           {/* Submit Button */}
           <Button
             type="submit"
             className="w-full"
-            disabled={loading || !formData.id_robot || !formData.id_serre || 
-              (formData.missionType === 'date' && !formData.date_debut) ||
+            disabled={loading || !formData.id_robot || !formData.id_serre ||
+              (formData.missionType === 'date' && (!formData.date_debut || formData.date_heure === null || formData.date_minute === null)) ||
               (formData.missionType === 'repetition' && (
                 (formData.rep_jr < 1 && formData.rep_sem < 1) ||
                 (formData.rep_sem >= 1 && (!formData.jour || formData.heure === null || formData.minute === null)) ||

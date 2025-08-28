@@ -1,6 +1,5 @@
 from aiohttp import web, WSMsgType
 import json
-from multirobotcam.video_streaming_service_ai import get_stream_data  # use the updated dict
 from PIL import Image
 from datetime import datetime
 import requests
@@ -11,7 +10,6 @@ from dotenv import load_dotenv
 import boto3
 from io import BytesIO
 
-stream_data = get_stream_data()
 
 # Load environment variables
 load_dotenv()
@@ -50,6 +48,8 @@ def update_bounds(key, metric, value):
     bounds["mean"] = round(bounds["sum"] / bounds["count"], 2)
 
 async def sensor_data_handler(request):
+    from multirobotcam.video_streaming_service_ai_webrtc import get_stream_data  # use the updated dict
+    stream_data = get_stream_data()
     key = get_key_from_request(request)
     init_bounds_for_key(key)
     ws = web.WebSocketResponse()

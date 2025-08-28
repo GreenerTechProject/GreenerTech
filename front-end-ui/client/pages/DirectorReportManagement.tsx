@@ -39,9 +39,7 @@ import {
   AlertCircle,
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
-import { useSidebar } from '@/hooks/useSidebar';
-import DirectorHeader from '@/components/DirectorHeader';
-import DirectorSidebar from '@/components/DirectorSidebar';
+import DirectorLayout from '@/components/DirectorLayout';
 import ReportService, { ApiReport } from '../services/reportService';
 import { serreService } from '../services/serreService';
 import { domainService } from '../services/domainService';
@@ -49,7 +47,6 @@ import { useToast } from '../hooks/use-toast';
 
 const DirectorReportManagement: React.FC = () => {
   const { user } = useAuth();
-  const { isOpen, setIsOpen } = useSidebar();
   const { toast } = useToast();
   const [reports, setReports] = useState<ApiReport[]>([]);
   const [filteredReports, setFilteredReports] = useState<ApiReport[]>([]);
@@ -277,32 +274,20 @@ const DirectorReportManagement: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-white dark:bg-gray-900">
-        <DirectorHeader isSidebarOpen={isOpen} onMenuClick={() => setIsOpen(!isOpen)} />
-        <div className="flex">
-          <DirectorSidebar isOpen={isOpen} setIsOpen={setIsOpen} />
-          <div className="flex-1 transition-all duration-300 ease-in-out">
-            <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
-              <div className="flex items-center justify-center min-h-[calc(100vh-200px)]">
-                <div className="text-center">
-                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto"></div>
-                  <p className="mt-4 text-muted-foreground">Chargement des rapports...</p>
-                </div>
-              </div>
-            </div>
+      <DirectorLayout>
+        <div className="flex items-center justify-center min-h-[calc(100vh-200px)]">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto"></div>
+            <p className="mt-4 text-muted-foreground">Chargement des rapports...</p>
           </div>
         </div>
-      </div>
+      </DirectorLayout>
     );
   }
 
   return (
-    <div className="min-h-screen bg-white dark:bg-gray-900">
-      <DirectorHeader isSidebarOpen={isOpen} onMenuClick={() => setIsOpen(!isOpen)} />
-      <div className="flex">
-        <DirectorSidebar isOpen={isOpen} setIsOpen={setIsOpen} />
-        <div className="flex-1 transition-all duration-300 ease-in-out">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+    <DirectorLayout>
+      <div className="max-w-7xl mx-auto space-y-6">
 
             {/* Header */}
             <div className="mb-8">
@@ -615,8 +600,6 @@ const DirectorReportManagement: React.FC = () => {
                 )}
               </CardContent>
             </Card>
-          </div>
-        </div>
       </div>
 
       {/* Report Creation Modal */}
@@ -745,7 +728,7 @@ const DirectorReportManagement: React.FC = () => {
           </form>
         </DialogContent>
       </Dialog>
-    </div>
+    </DirectorLayout>
   );
 };
 

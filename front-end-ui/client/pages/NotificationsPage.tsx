@@ -72,20 +72,10 @@ export default function NotificationsPage() {
   };
 
   const handleNotificationClick = async (notification: Notification) => {
-    console.log('🔔 NotificationsPage - Notification clicked:', {
-      id: notification.id,
-      type: notification.type_notification,
-      description: notification.description,
-      status: notification.status,
-      date: notification.date,
-      id_intervention: notification.id_intervention
-    });
-
     if (notification.status === 'non_vue') {
       try {
         await notificationService.markAsSeen(notification.id);
-        console.log('✅ NotificationsPage - Notification marked as seen');
-        
+
         // Update local state
         setNotifications(prev => prev.map(n => 
           n.id === notification.id ? { ...n, status: 'vue' as const } : n

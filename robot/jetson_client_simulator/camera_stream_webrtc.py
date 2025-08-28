@@ -223,7 +223,7 @@ class SensorDataNode(Node):
         try:
             if self.ws:
                 #data = {"data": msg.data}
-                await self.ws.send(json.dumps(msg.data))
+                await self.ws.send(msg.data)
         except Exception as e:
             print(f"Error sending sensor data via WS: {e}")
             self.ws = None
