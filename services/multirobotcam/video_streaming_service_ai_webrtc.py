@@ -254,7 +254,9 @@ async def process_robot_video(track, key, robot_reference):
                                     
                                     try:
                                         bilans = json.loads(mission['bilans']) if isinstance(mission['bilans'], str) else mission['bilans']
-                                        last_bilan = {'id': max(bilans)}
+                                        last_bilan = None
+                                        if bilans : 
+                                            last_bilan = {'id': max(bilans)}
                                     except (json.JSONDecodeError, TypeError, ValueError) as e:
                                         raise ValueError(f"Invalid bilans format: {mission['bilans']}")
                                     
