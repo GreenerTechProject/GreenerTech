@@ -204,7 +204,7 @@ const TechHeader: React.FC<TechHeaderProps> = ({ role, onMenuClick, isSidebarOpe
             <img 
               src="/GreenerTech-logo2.jpg" 
               alt="GreenerTech"
-              className="h-10 w-auto object-contain cursor-pointer md:hidden"
+              className="h-10 w-auto object-contain cursor-pointer md:h-8 lg:hidden"
               title="Accueil"
               role="button"
               tabIndex={0}
@@ -214,7 +214,7 @@ const TechHeader: React.FC<TechHeaderProps> = ({ role, onMenuClick, isSidebarOpe
             <img
               src="/GreenerTech-Logo4T.png"
               alt="GreenerTech"
-              className="h-6 w-auto object-contain cursor-pointer hidden md:block"
+              className="h-6 w-auto object-contain cursor-pointer hidden lg:block"
               title="Accueil"
               role="button"
               tabIndex={0}
