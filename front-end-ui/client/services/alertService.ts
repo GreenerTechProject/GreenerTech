@@ -55,13 +55,10 @@ export const AlertService = {
 
   getAlertsByAssignedSerres: async (): Promise<Alert[]> => {
     try {
-      console.log("[DEBUG] Calling API endpoint:", `${API_BASE_URL}/alerte/assigned-serres`);
       const response = await axios.get(`${API_BASE_URL}/alerte/assigned-serres`, createAuthenticatedRequest());
-      console.log("[DEBUG] API response status:", response.status);
-      console.log("[DEBUG] API response data:", response.data);
       return response.data || [];
     } catch (error: any) {
-      console.error("[DEBUG] API error:", error);
+      console.error("API error:", error);
       const errorMessage = error.response?.data?.message || "Erreur lors de la récupération des alertes par serres assignées";
       throw { message: errorMessage, status: error.response?.status || 500 } as ApiError;
     }

@@ -120,7 +120,7 @@ from io import BytesIO
 
 
 @token_required
-@role_required("technicien", "directeur")
+@role_required("technicien", "technicien_superieur", "directeur")
 def create_rapport(current_user):
     data = request.get_json()
     description = data.get("description")
@@ -256,7 +256,7 @@ def get_all_rapports(current_user):
         return jsonify({"error": str(e)}), 500
 
 @token_required
-@role_required("technicien", "directeur")
+@role_required("technicien", "technicien_superieur", "directeur")
 def get_rapport(current_user, id):
     rapport = Rapport.query.get(id)
     if not rapport:

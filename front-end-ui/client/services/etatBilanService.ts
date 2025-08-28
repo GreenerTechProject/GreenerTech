@@ -77,17 +77,15 @@ export const etatBilanService = {
   // Create new etat de bilan
   createEtatBilan: async (etatData: Partial<EtatBilan>): Promise<EtatBilan> => {
     try {
-      console.log('[EtatBilanService] Creating etat de bilan:', etatData);
       const response = await axios.post<EtatBilan>(
         `${API_BASE_URL}/etat_bilan`,
         etatData,
         createAuthenticatedRequest()
       );
-      
-      console.log('[EtatBilanService] Created:', response.data);
+
       return response.data;
     } catch (error: any) {
-      console.error('[EtatBilanService] Error:', error);
+      console.error('Error creating etat de bilan:', error);
       const errorMessage = error.response?.data?.message || 
         "Erreur lors de la création de l'état de bilan";
       throw {
@@ -100,17 +98,15 @@ export const etatBilanService = {
   // Update etat de bilan
   updateEtatBilan: async (etatId: number, etatData: Partial<EtatBilan>): Promise<EtatBilan> => {
     try {
-      console.log('[EtatBilanService] Updating etat de bilan:', etatId, etatData);
       const response = await axios.put<EtatBilan>(
         `${API_BASE_URL}/etat_bilan/${etatId}`,
         etatData,
         createAuthenticatedRequest()
       );
-      
-      console.log('[EtatBilanService] Updated:', response.data);
+
       return response.data;
     } catch (error: any) {
-      console.error('[EtatBilanService] Error:', error);
+      console.error('Error updating etat de bilan:', error);
       const errorMessage = error.response?.data?.message || 
         "Erreur lors de la mise à jour de l'état de bilan";
       throw {

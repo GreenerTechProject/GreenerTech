@@ -72,20 +72,10 @@ export default function NotificationsPage() {
   };
 
   const handleNotificationClick = async (notification: Notification) => {
-    console.log('🔔 NotificationsPage - Notification clicked:', {
-      id: notification.id,
-      type: notification.type_notification,
-      description: notification.description,
-      status: notification.status,
-      date: notification.date,
-      id_intervention: notification.id_intervention
-    });
-
     if (notification.status === 'non_vue') {
       try {
         await notificationService.markAsSeen(notification.id);
-        console.log('✅ NotificationsPage - Notification marked as seen');
-        
+
         // Update local state
         setNotifications(prev => prev.map(n => 
           n.id === notification.id ? { ...n, status: 'vue' as const } : n
@@ -157,36 +147,59 @@ export default function NotificationsPage() {
 
   const getNotificationTime = (dateString: string) => {
     if (!dateString) return "Date inconnue";
-    
-    const date = new Date(dateString);
+
+    // Parse the date string - backend now sends UTC+1 timestamps
+    let date: Date;
+    if (dateString.includes('T')) {
+      // ISO format with timezone - parse directly (backend sends UTC+1)
+      if (dateString.includes('+01:00') || dateString.includes('+0100')) {
+        // Backend is sending UTC+1 - use directly
+        date = new Date(dateString);
+      } else if (dateString.includes('+') || dateString.includes('Z')) {
+        // Other timezone formats - parse normally
+        date = new Date(dateString);
+      } else {
+        // ISO format without timezone - assume it's UTC+1 from backend
+        date = new Date(dateString + '+01:00');
+      }
+    } else {
+      // For non-ISO formats, assume local time
+      date = new Date(dateString);
+    }
+
     const now = new Date();
-    
+
     // Check if the date is valid
     if (isNaN(date.getTime())) {
       return "Date invalide";
     }
-    
+
+    // Calculate time difference in UTC+1 context
     const diffInMs = now.getTime() - date.getTime();
+    const diffInSeconds = Math.floor(diffInMs / 1000);
     const diffInMinutes = Math.floor(diffInMs / (1000 * 60));
     const diffInHours = Math.floor(diffInMs / (1000 * 60 * 60));
     const diffInDays = Math.floor(diffInMs / (1000 * 60 * 60 * 24));
-    
-    if (diffInMinutes < 1) {
-      return "À l'instant";
-    } else if (diffInMinutes < 60) {
-      return `Il y a ${diffInMinutes}min`;
-    } else if (diffInHours < 24) {
-      return `Il y a ${diffInHours}h`;
-    } else if (diffInDays < 7) {
-      return `Il y a ${diffInDays}j`;
-    } else {
-      // For older notifications, show the actual date
-      return date.toLocaleDateString('fr-FR', { 
-        day: '2-digit', 
-        month: '2-digit',
-        year: 'numeric'
-      });
-    }
+
+    // Handle very recent notifications with more precision
+    if (diffInSeconds < 30) return "À l'instant";
+    if (diffInSeconds < 60) return `Il y a ${diffInSeconds}s`;
+    if (diffInMinutes < 60) return `Il y a ${diffInMinutes}min`;
+
+    // Handle hours more accurately
+    if (diffInHours === 1) return "Il y a 1h";
+    if (diffInHours < 24) return `Il y a ${diffInHours}h`;
+
+    // Handle days
+    if (diffInDays === 1) return "Hier";
+    if (diffInDays < 7) return `Il y a ${diffInDays}j`;
+
+    // For older notifications, show the actual date
+    return date.toLocaleDateString('fr-FR', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric'
+    });
   };
 
   const getNotificationTypeLabel = (type: string) => {
