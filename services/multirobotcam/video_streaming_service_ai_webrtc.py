@@ -266,10 +266,12 @@ async def process_robot_video(track, key, robot_reference):
                                         #data2['id']
                                         await send_control_command(robot_reference, "STOP")
                                         
-                                        await conn.execute(f"""
+                                        now = datetime.now(timezone(timedelta(hours=1))).replace(tzinfo=None)
+                                        await conn.execute("""
                                             UPDATE missions_robot SET date_fin = $1
                                             WHERE id = $2
-                                        """, datetime.now(timezone(timedelta(hours=1))), mission['id'])
+                                        """, now, mission['id'])
+
                                     
                                 except Exception as e:
                                     print(f"❌ Database error: {str(e)}")
