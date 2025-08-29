@@ -223,6 +223,7 @@ export default function RobotControl() {
               return { id: index, data: qrCodeStr };
             }
           });
+		  console.log(parsedQRCodes)
           setQrCodes(parsedQRCodes);
         }
       } catch (e) {
