@@ -27,6 +27,7 @@ from app.models.intervention import Intervention, StatutInterventionEnum
 from app.models.type_tache import TypeTache
 from app.models.rapport import Rapport
 from app.models.notification import Notification
+from app.models.robot import Robot
 
 
 def _ensure_polygon(group_id: int, center_lat: float, center_lng: float, size_deg: float = 0.001) -> None:
@@ -409,6 +410,54 @@ def _create_reports_for_serre(serre: Serre, user: User, count: int = 3) -> None:
         raise
 
 
+def _create_robots_for_company(company: Entreprise, count: int = 3) -> list:
+    """Create robots for a specific company"""
+    try:
+        # Check if robots already exist for this company
+        if Robot.query.filter_by(id_entreprise=company.id).first():
+            print(f"[seed] Robots already exist for company {company.nom}, skipping...")
+            return Robot.query.filter_by(id_entreprise=company.id).all()
+        
+        robot_names = [
+            "Robot Agricole Alpha",
+            "Robot Agricole Beta", 
+            "Robot Agricole Gamma",
+            "Robot Agricole Delta",
+            "Robot Agricole Epsilon",
+            "Robot Agricole Zeta",
+            "Robot Agricole Eta",
+            "Robot Agricole Theta"
+        ]
+        
+        robot_references = [
+            "GT-ROB-001",
+            "GT-ROB-002",
+            "GT-ROB-003", 
+            "GT-ROB-004",
+            "GT-ROB-005",
+            "GT-ROB-006",
+            "GT-ROB-007",
+            "GT-ROB-008"
+        ]
+        
+        created_robots = []
+        for i in range(min(count, len(robot_names))):
+            robot = Robot(
+                nom=robot_names[i],
+                referance=robot_references[i],
+                id_entreprise=company.id
+            )
+            db.session.add(robot)
+            db.session.flush()
+            created_robots.append(robot)
+            print(f"[seed] Created robot: {robot.nom} ({robot.referance}) for company {company.nom}")
+        
+        return created_robots
+    except Exception as e:
+        print(f"[seed] Error creating robots for company {company.nom}: {e}")
+        raise
+
+
 def seed() -> None:
     """Main seeding routine. Idempotent and safe to re-run."""
     try:
@@ -503,6 +552,10 @@ def seed() -> None:
             _create_reports_for_serre(serre_2, tech_sup, count=4)
             _create_reports_for_serre(serre_1, tech_sup, count=3)
 
+            # 11) Robots
+            print("[seed] Creating robots...")
+            _create_robots_for_company(company, count=3)
+
             print("[seed] Committing all changes to database...")
             db.session.commit()
             print("[seed] Database seeded successfully with mock data!")
@@ -521,6 +574,7 @@ def seed() -> None:
             print(f"  - Interventions: 0 (cleared)")
             print(f"  - Reports: {Rapport.query.count()}")
             print(f"  - Notifications: 0 (cleared)")
+            print(f"  - Robots: {Robot.query.count()}")
             
     except Exception as e:
         print(f"[seed] Error during seeding: {e}")
