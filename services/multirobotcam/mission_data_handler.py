@@ -64,9 +64,9 @@ async def mission_data_handler(request):
                       AND executed = False) 
                       
                       
-                      OR ( rep_jr = 1 AND heure = $5 AND minute <= $6 )
+                      OR ( rep_jr = 1 AND heure = $5 AND minute <= $6 AND executed = False )
                       
-                      OR ( rep_sem = 1 AND jour = EXTRACT(DOW FROM NOW()) AND heure = $5 AND minute <= $6 ) )
+                      OR ( rep_sem = 1 AND jour = EXTRACT(DOW FROM NOW()) AND heure = $5 AND minute <= $6 AND executed = False ) )
                     ORDER BY id DESC 
                     LIMIT 1
                     """,
