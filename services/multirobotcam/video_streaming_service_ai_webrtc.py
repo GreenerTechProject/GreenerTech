@@ -289,17 +289,17 @@ async def process_robot_video(track, key, robot_reference):
                                     "id_bilan": data2["id"],
                                     
                                     "mean_temperature": sensor_data.get("mean_temperature"),
-                                    "mean_humidity": sensor_data.get("mean_humidity"),
+                                    "mean_humidite": sensor_data.get("mean_humidity"),
                                     "mean_luminosite": sensor_data.get("mean_luminosite"),
                                     "mean_co2": sensor_data.get("mean_co2"),
                                     
                                     "max_temperature": sensor_data.get("max_temperature"),
-                                    "max_humidity": sensor_data.get("max_humidity"),
+                                    "max_humidite": sensor_data.get("max_humidity"),
                                     "max_luminosite": sensor_data.get("max_luminosite"),
                                     "max_co2": sensor_data.get("max_co2"),
                                     
                                     "min_temperature": sensor_data.get("min_temperature"),
-                                    "min_humidity": sensor_data.get("min_humidity"),
+                                    "min_humidite": sensor_data.get("min_humidity"),
                                     "min_luminosite": sensor_data.get("min_luminosite"),
                                     "min_co2": sensor_data.get("min_co2"),
                                     
