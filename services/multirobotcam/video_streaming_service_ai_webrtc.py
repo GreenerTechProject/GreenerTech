@@ -72,6 +72,7 @@ def get_key_from_request(request):
     return f"{robot_id}_{camera_id}"
 
 async def process_ai_task(key):
+    from multirobotcam.sensors_realtime_service import get_latest_sensor_data
     while True:
         frame = stream_data[key]["latest_frame"]
         if frame is not None and is_ai_enabled():
@@ -88,6 +89,8 @@ async def process_ai_task(key):
                     warnings.append("powdery_mildew")
                     
                 sensor_data = get_latest_sensor_data(key)
+                if sensor_data is None:
+                    sensor_data = {}
                 s3 = boto3.client("s3")
                 bucket_name = "bucket-greenertech"
                 region = "eu-west-1"
