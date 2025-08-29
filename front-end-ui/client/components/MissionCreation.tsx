@@ -185,11 +185,19 @@ export const MissionCreation: React.FC<MissionCreationProps> = ({ onMissionCreat
       if (formData.missionType === 'date') {
         // Combine date and time for date-based missions
         if (formData.date_debut && formData.date_heure !== null && formData.date_minute !== null) {
-          const combinedDateTime = new Date(formData.date_debut);
-          combinedDateTime.setHours(formData.date_heure, formData.date_minute, 0, 0);
-          missionData.date_debut = combinedDateTime.toISOString();
+          // Create date in local timezone to avoid UTC conversion
+          const year = formData.date_debut.getFullYear();
+          const month = formData.date_debut.getMonth();
+          const day = formData.date_debut.getDate();
+          
+          // Create date string in local timezone format (YYYY-MM-DDTHH:MM:SS)
+          const dateString = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}T${String(formData.date_heure).padStart(2, '0')}:${String(formData.date_minute).padStart(2, '0')}:00`;
+          
+          missionData.date_debut = dateString;
         }
-        missionData.date_fin = formData.date_fin?.toISOString() || null;
+        missionData.date_fin = formData.date_fin ? 
+          `${formData.date_fin.getFullYear()}-${String(formData.date_fin.getMonth() + 1).padStart(2, '0')}-${String(formData.date_fin.getDate()).padStart(2, '0')}` : 
+          null;
         // Set repetition to 0 for date-based missions
         missionData.rep_jr = 0;
         missionData.rep_sem = 0;

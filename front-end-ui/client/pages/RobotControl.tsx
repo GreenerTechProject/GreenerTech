@@ -81,10 +81,10 @@ export default function RobotControl() {
   const [isLoadingRobots, setIsLoadingRobots] = useState<boolean>(false);
   const [robotsError, setRobotsError] = useState<string | null>(null);
   
-     // New state for mobile responsiveness
-   const [isMobile, setIsMobile] = useState<boolean>(false);
-   const [isTablet, setIsTablet] = useState<boolean>(false);
-   const [showBottomPanel, setShowBottomPanel] = useState<boolean>(false);
+  // New state for mobile responsiveness
+  const [isMobile, setIsMobile] = useState<boolean>(false);
+  const [isTablet, setIsTablet] = useState<boolean>(false);
+  const [showBottomPanel, setShowBottomPanel] = useState<boolean>(false);
    const [bottomPanelHeight, setBottomPanelHeight] = useState<number>(320); // Default height in pixels
    const [isResizing, setIsResizing] = useState<boolean>(false);
   
@@ -385,16 +385,16 @@ export default function RobotControl() {
     }, 1000);
   };
 
-     // Toggle full screen
-   const toggleFullScreen = () => {
-     if (!document.fullscreenElement) {
-       videoRef.current?.requestFullscreen();
-       setIsFullScreen(true);
-     } else {
-       document.exitFullscreen();
-       setIsFullScreen(false);
-     }
-   };
+  // Toggle full screen
+  const toggleFullScreen = () => {
+    if (!document.fullscreenElement) {
+      videoRef.current?.requestFullscreen();
+      setIsFullScreen(true);
+    } else {
+      document.exitFullscreen();
+      setIsFullScreen(false);
+    }
+  };
 
    // Handle bottom panel resize
    const handleResizeStart = (e: React.MouseEvent | React.TouchEvent) => {
@@ -425,7 +425,7 @@ export default function RobotControl() {
 
    const handleResizeEnd = () => {
      setIsResizing(false);
-   };
+  };
 
   // Handle camera selection change
   const handleCameraChange = (camera: string) => {
@@ -567,10 +567,10 @@ export default function RobotControl() {
     };
   }, []);
 
-     // Fetch robots on component mount
-   useEffect(() => {
-     fetchRobots();
-   }, []);
+  // Fetch robots on component mount
+  useEffect(() => {
+    fetchRobots();
+  }, []);
 
    // Add resize event listeners
    useEffect(() => {
@@ -666,61 +666,61 @@ export default function RobotControl() {
     <div className="h-screen bg-gray-50 overflow-hidden">
       
              <div className={`${isMobile || isTablet ? 'flex flex-col w-full' : 'flex'} h-full ${isResizing ? 'select-none' : ''}`}>
-                 {/* Left Sidebar - Desktop Only */}
-         {!isMobile && !isTablet && (
+        {/* Left Sidebar - Desktop Only */}
+        {!isMobile && !isTablet && (
            <div className="w-60 bg-white shadow-lg p-1 overflow-hidden space-y-0.5 flex-shrink-0">
                          {/* Camera & Robot Selection - Combined */}
              <Card className="text-xs">
                <CardHeader className="pb-1">
                  <CardTitle className="text-xs flex items-center gap-1">
-                   <Camera className="h-3 w-3" />
+                  <Camera className="h-3 w-3" />
                    Caméra & Robot
-                 </CardTitle>
-               </CardHeader>
+                </CardTitle>
+              </CardHeader>
                <CardContent className="space-y-1">
                  <div className="grid grid-cols-2 gap-1">
-                   <Select value={selectedCamera} onValueChange={handleCameraChange}>
+                <Select value={selectedCamera} onValueChange={handleCameraChange}>
                      <SelectTrigger className="h-6 text-xs">
                        <SelectValue placeholder="Caméra" />
-                     </SelectTrigger>
-                     <SelectContent>
-                       <SelectItem value="left">Gauche</SelectItem>
-                       <SelectItem value="right">Droite</SelectItem>
-                     </SelectContent>
-                   </Select>
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="left">Gauche</SelectItem>
+                    <SelectItem value="right">Droite</SelectItem>
+                  </SelectContent>
+                </Select>
                    
-                   <Select value={selectedRobot} onValueChange={handleRobotChange} disabled={isLoadingRobots || !!robotsError}>
+                <Select value={selectedRobot} onValueChange={handleRobotChange} disabled={isLoadingRobots || !!robotsError}>
                      <SelectTrigger className="h-6 text-xs">
                        <SelectValue placeholder={isLoadingRobots ? "..." : robotsError ? "Erreur" : "Robot"} />
-                     </SelectTrigger>
-                     <SelectContent>
-                       {robots.map((robot) => (
-                         <SelectItem key={robot.referance} value={robot.referance.toString()}>
-                           {robot.nom} ({robot.referance})
-                         </SelectItem>
-                       ))}
-                     </SelectContent>
-                   </Select>
+                  </SelectTrigger>
+                  <SelectContent>
+                    {robots.map((robot) => (
+                      <SelectItem key={robot.referance} value={robot.referance.toString()}>
+                        {robot.nom} ({robot.referance})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
                  </div>
-                 
-                 {robotsError && (
+                
+                {robotsError && (
                    <div className="text-xs text-red-600 bg-red-50 p-1 rounded">
-                     {robotsError}
-                   </div>
-                 )}
-                 
-                 <Button
-                   onClick={fetchRobots}
-                   disabled={isLoadingRobots}
+                    {robotsError}
+                  </div>
+                )}
+                
+                <Button
+                  onClick={fetchRobots}
+                  disabled={isLoadingRobots}
                    className="w-full h-5 text-xs"
-                   variant="outline"
-                   size="sm"
-                 >
+                  variant="outline"
+                  size="sm"
+                >
                    <RefreshCw className={`h-2 w-2 mr-1 ${isLoadingRobots ? 'animate-spin' : ''}`} />
                    Actualiser
-                 </Button>
-               </CardContent>
-             </Card>
+                </Button>
+              </CardContent>
+            </Card>
 
                          {/* Sensor Data & QR Codes - Combined */}
              <Card className="text-xs">
@@ -729,7 +729,7 @@ export default function RobotControl() {
                    <Thermometer className="h-3 w-3" />
                    Capteurs & QR
                  </CardTitle>
-               </CardHeader>
+              </CardHeader>
                <CardContent className="space-y-1">
                  {sensorData ? (
                    <div className="grid grid-cols-2 gap-1">
@@ -789,60 +789,60 @@ export default function RobotControl() {
                </CardHeader>
                <CardContent className="space-y-1">
                  {/* Zoom Controls */}
-                 <div className="flex gap-1">
-                   <Button
-                     onClick={zoomOut}
+                <div className="flex gap-1">
+                  <Button
+                    onClick={zoomOut}
                      className="flex-1 h-5 text-xs"
-                     variant="outline"
-                     disabled={videoZoom <= 0.5}
-                   >
+                    variant="outline"
+                    disabled={videoZoom <= 0.5}
+                  >
                      <ZoomOut className="h-2 w-2" />
-                   </Button>
-                   <Button
-                     onClick={resetZoom}
+                  </Button>
+                  <Button
+                    onClick={resetZoom}
                      className="flex-1 h-5 text-xs"
-                     variant="outline"
-                   >
-                     {Math.round(videoZoom * 100)}%
-                   </Button>
-                   <Button
-                     onClick={zoomIn}
+                    variant="outline"
+                  >
+                    {Math.round(videoZoom * 100)}%
+                  </Button>
+                  <Button
+                    onClick={zoomIn}
                      className="flex-1 h-5 text-xs"
-                     variant="outline"
-                     disabled={videoZoom >= 3}
-                   >
+                    variant="outline"
+                    disabled={videoZoom >= 3}
+                  >
                      <ZoomIn className="h-2 w-2" />
-                   </Button>
-                 </div>
+                  </Button>
+                </div>
 
                  {/* Action Buttons - 2x2 Grid */}
                  <div className="grid grid-cols-2 gap-1">
-                   <Button
-                     onClick={captureImage}
+                <Button
+                  onClick={captureImage}
                      className="h-5 text-xs"
-                     variant="outline"
-                   >
+                  variant="outline"
+                >
                      <Download className="h-2 w-2 mr-1" />
                      Capture
-                   </Button>
-                   
-                   <Button
-                     onClick={toggleFullScreen}
+                </Button>
+
+                <Button
+                  onClick={toggleFullScreen}
                      className="h-5 text-xs"
-                     variant="outline"
-                   >
-                     {isFullScreen ? (
-                       <>
+                  variant="outline"
+                >
+                  {isFullScreen ? (
+                    <>
                          <Minimize className="h-2 w-2 mr-1" />
-                         Quitter
-                       </>
-                     ) : (
-                       <>
+                      Quitter
+                    </>
+                  ) : (
+                    <>
                          <Maximize className="h-2 w-2 mr-1" />
-                         Plein Écran
-                       </>
-                     )}
-                   </Button>
+                      Plein Écran
+                    </>
+                  )}
+                </Button>
                    
                    <Button
                      onClick={refreshConnections}
@@ -852,52 +852,52 @@ export default function RobotControl() {
                    >
                      <RefreshCw className={`h-2 w-2 mr-1 ${isRefreshing ? 'animate-spin' : ''}`} />
                      {isRefreshing ? '...' : 'Actualiser'}
-                   </Button>
-                   
-                   <Button
-                     onClick={toggleAIDetection}
+                </Button>
+
+                <Button
+                  onClick={toggleAIDetection}
                      className={`h-5 text-xs ${
-                       isAIDetectionEnabled
-                         ? 'bg-green-500 hover:bg-green-600 text-white'
-                         : 'bg-gray-200 hover:bg-gray-300 text-gray-800'
-                     }`}
-                     variant="outline"
-                   >
-                     {isAIDetectionEnabled ? (
-                       <>
+                    isAIDetectionEnabled
+                      ? 'bg-green-500 hover:bg-green-600 text-white'
+                      : 'bg-gray-200 hover:bg-gray-300 text-gray-800'
+                  }`}
+                  variant="outline"
+                >
+                  {isAIDetectionEnabled ? (
+                    <>
                          <Eye className="h-2 w-2 mr-1" />
                          IA ON
-                       </>
-                     ) : (
-                       <>
+                    </>
+                  ) : (
+                    <>
                          <EyeOff className="h-2 w-2 mr-1" />
                          IA OFF
-                       </>
-                     )}
-                   </Button>
+                    </>
+                  )}
+                </Button>
                  </div>
-               </CardContent>
-             </Card>
+              </CardContent>
+            </Card>
 
-                         {/* Connection Status */}
+            {/* Connection Status */}
              <Card className="text-xs">
                <CardHeader className="pb-1">
                  <CardTitle className="text-xs">Connexions</CardTitle>
-               </CardHeader>
-               <CardContent>
+              </CardHeader>
+              <CardContent>
                  <div className="grid grid-cols-2 gap-1">
-                   {Object.entries(connectionStatus).map(([key, connected]) => (
+                  {Object.entries(connectionStatus).map(([key, connected]) => (
                      <div key={key} className="flex items-center justify-between p-0.5 bg-gray-50 rounded">
                        <span className="text-xs capitalize">{key}</span>
                        <div className={`flex items-center gap-1 px-1 py-0.5 rounded text-xs ${connected ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
-                         <Wifi className="h-2 w-2" />
+                        <Wifi className="h-2 w-2" />
                          <span>{connected ? 'OK' : 'KO'}</span>
-                       </div>
-                     </div>
-                   ))}
-                 </div>
-               </CardContent>
-             </Card>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
           </div>
         )}
 
@@ -1050,8 +1050,8 @@ export default function RobotControl() {
           </div>
         </div>
 
-                 {/* Bottom Panel - Mobile/Tablet Only */}
-         {(isMobile || isTablet) && showBottomPanel && (
+        {/* Bottom Panel - Mobile/Tablet Only */}
+        {(isMobile || isTablet) && showBottomPanel && (
            <div 
              className="bg-white shadow-lg border-t border-gray-200 overflow-hidden relative"
              style={{ height: `${bottomPanelHeight}px` }}
@@ -1280,10 +1280,10 @@ export default function RobotControl() {
                 ))}
                 </div>
               </div>
+              </div>
             </div>
-             </div>
-           </div>
-         )}
+          </div>
+        )}
       </div>
     </div>
   );
