@@ -60,6 +60,7 @@ async def sensor_data_handler(request):
         async for msg in ws:
             if msg.type == WSMsgType.TEXT:
                 try:
+                    print (msg.data)
                     data = json.loads(msg.data)
                     temperature = data.get("temperature")
                     humidity = data.get("humidity")

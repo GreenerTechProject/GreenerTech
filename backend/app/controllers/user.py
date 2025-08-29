@@ -36,7 +36,7 @@ def register():
     # Envoi de l'email de vérification
     send_verification_email(new_user)
     return jsonify({
-        "message": "Utilisateur enregistré avec succès. Veuillez vérifier votre email pour activer votre compte.",
+        "message": "Utilisateur enregistré avec succès. Veuillez vérifier votre email pour activer votre compte. http://greenertech.mywire.org/verify-email?token="+new_user.verification_token,
     }), 201
 
 

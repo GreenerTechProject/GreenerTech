@@ -82,9 +82,9 @@ async def process_ai_task(key):
                 
                 
                 warnings = []
-                if bilan["Virus de la feuille jaune en boucle de la tomate"] == 0:
+                if bilan["Virus de la feuille jaune en boucle de la tomate"] > 0:
                     warnings.append("Virus de la feuille jaune en boucle de la tomate")
-                if bilan["powdery_mildew"] == 0:
+                if bilan["powdery_mildew"] > 0:
                     warnings.append("powdery_mildew")
                     
                 sensor_data = get_latest_sensor_data(key)
@@ -140,8 +140,8 @@ async def process_ai_task(key):
                             "maladie": warning,
                             #"lien_image": f"/static/images/{image_filename}",
                             "lien_image": f"https://{bucket_name}.s3.{region}.amazonaws.com/{s3_key}",
-                            "x1": sensor_data["x"],
-                            "y1": sensor_data["y"],
+                            "x1": sensor_data.get("x"),
+                            "y1": sensor_data.get("y"),
                             "status": "non_vue" #non_vue vue résolue
                         }
                         try:
@@ -204,7 +204,8 @@ class RelayStreamTrack(VideoStreamTrack):
 
 
 
-async def process_robot_video(track, key):
+async def process_robot_video(track, key, robot_reference):
+    from multirobotcam.sensors_realtime_service import get_latest_sensor_data
     global stream_data
     while True:
         frame = await track.recv()
@@ -234,7 +235,6 @@ async def process_robot_video(track, key):
                                 try:
                                     conn = await asyncpg.connect(DB_URL)
                                     
-                                    robot_reference = request.query.get("robot")
                                     
                                     robot = await conn.fetchrow(
                                         "SELECT id FROM robots WHERE referance = $1", 
@@ -255,7 +255,9 @@ async def process_robot_video(track, key):
                                     
                                     try:
                                         bilans = json.loads(mission['bilans']) if isinstance(mission['bilans'], str) else mission['bilans']
-                                        last_bilan = {'id': max(bilans)}
+                                        last_bilan = None
+                                        if bilans : 
+                                            last_bilan = {'id': max(bilans)}
                                     except (json.JSONDecodeError, TypeError, ValueError) as e:
                                         raise ValueError(f"Invalid bilans format: {mission['bilans']}")
                                     
@@ -263,13 +265,14 @@ async def process_robot_video(track, key):
                                     if data2["id"] == last_bilan or data["nom"] == "-Fin-" :
                                         print ("You are in last bilan")
                                         #data2['id']
-                                        robot_reference = request.query.get("robot")
                                         await send_control_command(robot_reference, "STOP")
                                         
-                                        await conn.execute(f"""
+                                        now = datetime.now(timezone(timedelta(hours=1))).replace(tzinfo=None)
+                                        await conn.execute("""
                                             UPDATE missions_robot SET date_fin = $1
                                             WHERE id = $2
-                                        """, datetime.now(timezone(timedelta(hours=1))), mission['id'])
+                                        """, now, mission['id'])
+
                                     
                                 except Exception as e:
                                     print(f"❌ Database error: {str(e)}")
@@ -280,23 +283,25 @@ async def process_robot_video(track, key):
                                 
                                 
                                 sensor_data = get_latest_sensor_data(key)
+                                if sensor_data is None:
+                                    sensor_data = {}
                                 data3 = {
                                     "id_bilan": data2["id"],
                                     
-                                    "mean_temperature": sensor_data["mean_temperature"],
-                                    "mean_humidite": sensor_data["mean_humidity"],
-                                    "mean_luminosite": sensor_data["mean_luminosite"],
-                                    "mean_co2": sensor_data["mean_co2"],
+                                    "mean_temperature": sensor_data.get("mean_temperature"),
+                                    "mean_humidite": sensor_data.get("mean_humidity"),
+                                    "mean_luminosite": sensor_data.get("mean_luminosite"),
+                                    "mean_co2": sensor_data.get("mean_co2"),
                                     
-                                    "max_temperature": sensor_data["max_temperature"],
-                                    "max_humidite": sensor_data["max_humidity"],
-                                    "max_luminosite": sensor_data["max_luminosite"],
-                                    "max_co2": sensor_data["max_co2"],
+                                    "max_temperature": sensor_data.get("max_temperature"),
+                                    "max_humidite": sensor_data.get("max_humidity"),
+                                    "max_luminosite": sensor_data.get("max_luminosite"),
+                                    "max_co2": sensor_data.get("max_co2"),
                                     
-                                    "min_temperature": sensor_data["min_temperature"],
-                                    "min_humidite": sensor_data["min_humidity"],
-                                    "min_luminosite": sensor_data["min_luminosite"],
-                                    "min_co2": sensor_data["min_co2"],
+                                    "min_temperature": sensor_data.get("min_temperature"),
+                                    "min_humidite": sensor_data.get("min_humidity"),
+                                    "min_luminosite": sensor_data.get("min_luminosite"),
+                                    "min_co2": sensor_data.get("min_co2"),
                                     
                                     "nombre_tomates_maladies": 0,
                                     "nombre_tomates_non_maladies": 0,
@@ -347,7 +352,7 @@ async def video_stream_handler(request):
         def on_track(track):
             print(f"[{key}] 📡 Robot stream track received: {track.kind}")
             if track.kind == "video":
-                asyncio.ensure_future(process_robot_video(track, key))
+                asyncio.ensure_future(process_robot_video(track, key, request.query.get("robot")))
                 #asyncio.ensure_future(process_ai_task(key))
 
         await pc.setRemoteDescription(

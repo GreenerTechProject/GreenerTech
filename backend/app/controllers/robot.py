@@ -74,9 +74,11 @@ def update_robot(current_user):
     try:
         robot.nom = data.get('nom', robot.nom)
         robot.referance = data.get('referance', robot.referance)
-        robot.id_entreprise = data.get('id_entreprise', robot.id_entreprise)
+        #robot.id_entreprise = data.get('id_entreprise', robot.id_entreprise)
+        robot.id_entreprise = current_user.id_entreprise
         db.session.commit()
-        return jsonify(robot.to_dict()), 200
+        #jsonify(robot.to_dict())
+        return jsonify({"status": current_user.id_entreprise}), 200
     except Exception as e:
         db.session.rollback()
         return jsonify({"status": "error", "message": str(e)}), 400

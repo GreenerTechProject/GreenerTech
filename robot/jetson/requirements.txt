@@ -3,3 +3,4 @@ requests
 aiortc
 av
 aiohttp
+cv2
