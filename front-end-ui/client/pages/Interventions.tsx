@@ -33,25 +33,17 @@ import {
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 import InterventionForm from "../components/InterventionForm";
-import { InterventionService, Intervention as InterventionData } from "../services/interventionService";
+import { InterventionService, Intervention } from "../services/interventionService";
 
-interface Intervention {
-  id: number;
-  description: string;
-  status: 'encours' | 'terminé';
-  id_user: number;
-  id_serre: number;
-  id_type_tache: number;
-  total_charges: number;
-  date_debut: string;
-  date_fin: string;
-  valid: boolean;
-  serre_nom?: string;
-  domaine_nom?: string;
-  type_nom?: string;
-  created_at?: string;
-  updated_at?: string;
-}
+// Add CSS for line-clamp utility
+const lineClampStyles = `
+  .line-clamp-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+`;
 
 const sortOptions = [
   { value: "date_debut", label: "Date de début", icon: Calendar },
@@ -68,6 +60,8 @@ const statusFilterOptions = [
   { value: "all", label: "Tous les statuts", icon: BarChart3 },
   { value: "encours", label: "En cours", icon: RefreshCw },
   { value: "terminé", label: "Terminé", icon: Calendar },
+  { value: "en_attente", label: "En attente", icon: RefreshCw },
+  { value: "rejetee", label: "Rejetée", icon: CheckCircle },
 ];
 
 export default function Interventions() {
@@ -85,8 +79,24 @@ export default function Interventions() {
   const [isStatusFilterOpen, setIsStatusFilterOpen] = useState(false);
   const [statusFilter, setStatusFilter] = useState<string>("all");
 
+  // Responsive state
+  const [isMobile, setIsMobile] = useState(false);
+  const [isTablet, setIsTablet] = useState(false);
+
   useEffect(() => {
     loadInterventions();
+    
+    // Check device type
+    const checkDeviceType = () => {
+      const width = window.innerWidth;
+      setIsMobile(width < 768);
+      setIsTablet(width >= 768 && width < 1024);
+    };
+    
+    checkDeviceType();
+    window.addEventListener('resize', checkDeviceType);
+    
+    return () => window.removeEventListener('resize', checkDeviceType);
   }, []);
 
   useEffect(() => {
@@ -283,11 +293,15 @@ export default function Interventions() {
     );
   };
 
-  const getStatusBadge = (status: 'encours' | 'terminé') => {
+  const getStatusBadge = (status: 'encours' | 'terminé' | 'en_attente' | 'rejetee') => {
     if (status === "terminé") {
       return <Badge variant="outline" className="bg-green-100 text-green-700 border-green-300 text-xs">Terminé</Badge>;
     } else if (status === "encours") {
       return <Badge className="bg-[#B4CC5F] text-white text-xs">En cours</Badge>;
+    } else if (status === "en_attente") {
+      return <Badge variant="outline" className="bg-yellow-100 text-yellow-700 border-yellow-300 text-xs">En attente</Badge>;
+    } else if (status === "rejetee") {
+      return <Badge variant="outline" className="bg-red-100 text-red-700 border-red-300 text-xs">Rejetée</Badge>;
     }
     return <Badge variant="outline" className="bg-gray-100 text-gray-700 border-gray-300 text-xs">{status}</Badge>;
   };
@@ -307,61 +321,63 @@ export default function Interventions() {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* Add line-clamp styles */}
+      <style dangerouslySetInnerHTML={{ __html: lineClampStyles }} />
       
       {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+      <div className="max-w-7xl mx-auto px-2 sm:px-4 md:px-6 lg:px-8 py-4 sm:py-6 lg:py-8">
           {/* Stats Section - Highlighted First */}
-          <div className="mb-8">
+          <div className="mb-6 sm:mb-8">
             {/* Charges Summary - Responsive Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6 mb-6">
-              <div className="bg-white rounded-lg px-3 sm:px-4 py-3 sm:py-4 shadow-md border border-gray-200 hover:shadow-lg transition-shadow">
-                <div className="flex items-center gap-2 sm:gap-3">
-                  <div className="p-2 bg-[#B4CC5F]/10 rounded-full flex-shrink-0">
-                    <Euro className="h-5 w-5 sm:h-6 sm:w-6 text-[#B4CC5F]" />
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-3 md:gap-4 lg:gap-6 mb-4 sm:mb-6">
+              <div className="bg-white rounded-lg px-2 sm:px-3 md:px-4 py-2 sm:py-3 md:py-4 shadow-md border border-gray-200 hover:shadow-lg transition-shadow">
+                <div className="flex flex-col sm:flex-row items-center gap-1 sm:gap-2 md:gap-3 text-center sm:text-left">
+                  <div className="p-1.5 sm:p-2 bg-[#B4CC5F]/10 rounded-full flex-shrink-0">
+                    <Euro className="h-4 w-4 sm:h-5 sm:w-5 md:h-6 md:w-6 text-[#B4CC5F]" />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="text-xs sm:text-sm text-gray-500 font-medium truncate">Total des Charges</p>
-                    <p className="text-lg sm:text-xl font-bold text-[#B4CC5F] truncate">
+                    <p className="text-xs text-gray-500 font-medium truncate">Total des Charges</p>
+                    <p className="text-sm sm:text-lg md:text-xl font-bold text-[#B4CC5F] truncate">
                       {interventions.reduce((sum, intervention) => sum + intervention.total_charges, 0).toFixed(2)} MAD
                     </p>
                   </div>
                 </div>
               </div>
             
-              <div className="bg-white rounded-lg px-3 sm:px-4 py-3 sm:py-4 shadow-md border border-gray-200 hover:shadow-lg transition-shadow">
-                <div className="flex items-center gap-2 sm:gap-3">
-                  <div className="p-2 bg-blue-100 rounded-full flex-shrink-0">
-                    <BarChart3 className="h-5 w-5 sm:h-6 sm:w-6 text-blue-600" />
+              <div className="bg-white rounded-lg px-2 sm:px-3 md:px-4 py-2 sm:py-3 md:py-4 shadow-md border border-gray-200 hover:shadow-lg transition-shadow">
+                <div className="flex flex-col sm:flex-row items-center gap-1 sm:gap-2 md:gap-3 text-center sm:text-left">
+                  <div className="p-1.5 sm:p-2 bg-blue-100 rounded-full flex-shrink-0">
+                    <BarChart3 className="h-4 w-4 sm:h-5 sm:w-5 md:h-6 md:w-6 text-blue-600" />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="text-xs sm:text-sm text-gray-500 font-medium truncate">Interventions</p>
-                    <p className="text-lg sm:text-xl font-bold text-blue-600 truncate">{interventions.length}</p>
+                    <p className="text-xs text-gray-500 font-medium truncate">Interventions</p>
+                    <p className="text-sm sm:text-lg md:text-xl font-bold text-blue-600 truncate">{interventions.length}</p>
                   </div>
                 </div>
               </div>
 
-              <div className="bg-white rounded-lg px-3 sm:px-4 py-3 sm:py-4 shadow-md border border-gray-200 hover:shadow-lg transition-shadow">
-                <div className="flex items-center gap-2 sm:gap-3">
-                  <div className="p-2 bg-green-100 rounded-full flex-shrink-0">
-                    <Calendar className="h-5 w-5 sm:h-6 sm:w-6 text-green-600" />
+              <div className="bg-white rounded-lg px-2 sm:px-3 md:px-4 py-2 sm:py-3 md:py-4 shadow-md border border-gray-200 hover:shadow-lg transition-shadow">
+                <div className="flex flex-col sm:flex-row items-center gap-1 sm:gap-2 md:gap-3 text-center sm:text-left">
+                  <div className="p-1.5 sm:p-2 bg-green-100 rounded-full flex-shrink-0">
+                    <Calendar className="h-4 w-4 sm:h-5 sm:w-5 md:h-6 md:w-6 text-green-600" />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="text-xs sm:text-sm text-gray-500 font-medium truncate">En Cours</p>
-                    <p className="text-lg sm:text-xl font-bold text-green-600 truncate">
+                    <p className="text-xs text-gray-500 font-medium truncate">En Cours</p>
+                    <p className="text-sm sm:text-lg md:text-xl font-bold text-green-600 truncate">
                       {interventions.filter(i => i.status === 'encours').length}
                     </p>
                   </div>
                 </div>
               </div>
 
-              <div className="bg-white rounded-lg px-3 sm:px-4 py-3 sm:py-4 shadow-md border border-gray-200 hover:shadow-lg transition-shadow">
-                <div className="flex items-center gap-2 sm:gap-3">
-                  <div className="p-2 bg-green-100 rounded-full flex-shrink-0">
-                    <CheckCircle className="h-5 w-5 sm:h-6 sm:w-6 text-green-600" />
+              <div className="bg-white rounded-lg px-2 sm:px-3 md:px-4 py-2 sm:py-3 md:py-4 shadow-md border border-gray-200 hover:shadow-lg transition-shadow">
+                <div className="flex flex-col sm:flex-row items-center gap-1 sm:gap-2 md:gap-3 text-center sm:text-left">
+                  <div className="p-1.5 sm:p-2 bg-green-100 rounded-full flex-shrink-0">
+                    <CheckCircle className="h-4 w-4 sm:h-5 sm:w-5 md:h-6 md:w-6 text-green-600" />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="text-xs sm:text-sm text-gray-500 font-medium truncate">Terminées</p>
-                    <p className="text-lg sm:text-xl font-bold text-green-600 truncate">
+                    <p className="text-xs text-gray-500 font-medium truncate">Terminées</p>
+                    <p className="text-sm sm:text-lg md:text-xl font-bold text-green-600 truncate">
                       {interventions.filter(i => i.status === 'terminé').length}
                     </p>
                   </div>
@@ -371,27 +387,27 @@ export default function Interventions() {
 
             {/* Search Bar - Mobile First */}
             <div className="mb-4 sm:mb-6">
-              <div className="relative w-full max-w-md">
+              <div className="relative w-full max-w-md mx-auto sm:mx-0">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
                 <Input
                   placeholder="Rechercher une intervention..."
                   value={searchTerm}
                   onChange={(e) => handleSearch(e.target.value)}
-                  className="pl-10 h-10 sm:h-11 bg-white border-gray-200 focus:border-[#B4CC5F] focus:ring-[#B4CC5F] text-sm w-full"
+                  className="pl-10 h-9 sm:h-10 md:h-11 bg-white border-gray-200 focus:border-[#B4CC5F] focus:ring-[#B4CC5F] text-sm w-full"
                 />
               </div>
             </div>
           </div>
 
           {/* Search and Actions Bar - Responsive */}
-          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 mb-4 sm:mb-6">
+          <div className="flex flex-col gap-3 mb-4 sm:mb-6">
             {/* Mobile: Stack vertically, Desktop: Side by side */}
             <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 flex-1">
               {/* Status Filter */}
-              <div className="relative w-full sm:w-auto" data-status-filter>
+              <div className="relative w-full" data-status-filter>
                 <Button
                   variant="outline"
-                  className="w-full sm:w-auto bg-white border-gray-300 text-gray-700 hover:bg-gray-50 text-sm h-10 px-3 min-h-[40px]"
+                  className="w-full bg-white border-gray-300 text-gray-700 hover:bg-gray-50 text-sm h-9 sm:h-10 px-3 min-h-[36px] sm:min-h-[40px]"
                   onClick={() => setIsStatusFilterOpen(!isStatusFilterOpen)}
                 >
                   <Filter className="h-4 w-4 mr-2 flex-shrink-0" />
@@ -434,10 +450,10 @@ export default function Interventions() {
               </div>
 
               {/* Sort Button */}
-              <div className="relative w-full sm:w-auto" data-sort-menu>
+              <div className="relative w-full" data-sort-menu>
                 <Button
                   variant="outline"
-                  className="w-full sm:w-auto bg-white border-gray-300 text-gray-700 hover:bg-gray-50 text-sm h-10 px-3 min-h-[40px]"
+                  className="w-full bg-white border-gray-300 text-gray-700 hover:bg-gray-50 text-sm h-9 sm:h-10 px-3 min-h-[36px] sm:min-h-[40px]"
                   onClick={() => setIsSortMenuOpen(!isSortMenuOpen)}
                 >
                   {sortOrder === "asc" ? <SortAsc className="h-4 w-4 mr-2 flex-shrink-0" /> : <SortDesc className="h-4 w-4 mr-2 flex-shrink-0" />}
@@ -492,30 +508,28 @@ export default function Interventions() {
 
               <Button
                 variant="outline"
-                className="w-full sm:w-auto bg-white border-gray-300 text-gray-700 hover:bg-gray-50 text-sm h-10 px-3 min-h-[40px]"
+                className="w-full bg-white border-gray-300 text-gray-700 hover:bg-gray-50 text-sm h-9 sm:h-10 px-3 min-h-[36px] sm:min-h-[40px]"
                 onClick={loadInterventions}
               >
                 <RefreshCw className="h-4 w-4 flex-shrink-0" />
-                <span className="hidden sm:inline ml-2">Actualiser</span>
-                <span className="sm:hidden ml-2">Actualiser</span>
+                <span className="ml-2">Actualiser</span>
               </Button>
             </div>
 
             {/* New Intervention Button */}
             <Button
-              className="w-full sm:w-auto bg-[#B4CC5F] hover:bg-[#9BB84F] text-white text-sm h-10 px-4 min-h-[40px] whitespace-nowrap"
+              className="w-full bg-[#B4CC5F] hover:bg-[#9BB84F] text-white text-sm h-9 sm:h-10 px-4 min-h-[36px] sm:min-h-[40px] whitespace-nowrap"
               onClick={openInterventionForm}
             >
               <FileText className="mr-2 h-4 w-4 flex-shrink-0" />
-              <span className="hidden sm:inline">Nouvelle intervention</span>
-              <span className="sm:hidden">Nouvelle</span>
+              <span>Nouvelle intervention</span>
             </Button>
           </div>
 
         {/* Interventions Table */}
-        <Card className="bg-white shadow-sm border-0 mb-6">
-          <CardHeader className="pb-4 px-4 sm:px-6">
-            <CardTitle className="text-base sm:text-lg font-semibold text-gray-900">
+        <Card className="bg-white shadow-sm border-0 mb-4 sm:mb-6">
+          <CardHeader className="pb-3 sm:pb-4 px-3 sm:px-4 md:px-6">
+            <CardTitle className="text-sm sm:text-base md:text-lg font-semibold text-gray-900">
               Interventions ({filteredInterventions.length})
             </CardTitle>
           </CardHeader>
@@ -523,7 +537,7 @@ export default function Interventions() {
             {/* Mobile Cards View */}
             <div className="block sm:hidden">
               {/* Sort Status Indicator for Mobile */}
-              <div className="px-3 sm:px-4 py-2 bg-gray-50 border-b border-gray-200">
+              <div className="px-3 py-2 bg-gray-50 border-b border-gray-200">
                 <div className="flex items-center justify-between text-xs text-gray-600">
                   <span className="truncate">
                     Trié par: <span className="font-medium text-[#B4CC5F]">
@@ -542,15 +556,15 @@ export default function Interventions() {
               </div>
 
               {currentInterventions.map((intervention) => (
-                <div key={intervention.id} className="border-b border-gray-200 p-3 sm:p-4 hover:bg-gray-50 transition-colors">
-                  <div className="space-y-2 sm:space-y-3">
+                <div key={intervention.id} className="border-b border-gray-200 p-3 hover:bg-gray-50 transition-colors">
+                  <div className="space-y-2">
                     {/* Header with icon and type */}
-                    <div className="flex items-start space-x-2 sm:space-x-3">
+                    <div className="flex items-start space-x-2">
                       <div className="flex-shrink-0">
                         {getInterventionTypeIcon(intervention.type_nom || '')}
                       </div>
                       <div className="min-w-0 flex-1">
-                        <h3 className="text-sm sm:text-base font-semibold text-gray-900 truncate">
+                        <h3 className="text-sm font-semibold text-gray-900 truncate">
                           {intervention.type_nom || 'Type non défini'}
                         </h3>
                       </div>
@@ -558,21 +572,21 @@ export default function Interventions() {
 
                     {/* Location */}
                     <div className="flex items-start space-x-2">
-                      <MapPin className="h-3 w-3 sm:h-4 sm:w-4 text-gray-400 mt-0.5 flex-shrink-0" />
-                      <span className="text-xs sm:text-sm text-gray-700 line-clamp-2">
+                      <MapPin className="h-3 w-3 text-gray-400 mt-0.5 flex-shrink-0" />
+                      <span className="text-xs text-gray-700 line-clamp-2">
                         {intervention.serre_nom || 'Serre inconnue'} / {intervention.domaine_nom || 'Domaine inconnu'}
                       </span>
                     </div>
 
                     {/* Description */}
                     {intervention.description && (
-                      <div className="text-xs sm:text-sm text-gray-600 line-clamp-2">
+                      <div className="text-xs text-gray-600 line-clamp-2">
                         {intervention.description}
                       </div>
                     )}
 
                     {/* Badges */}
-                    <div className="flex flex-wrap gap-1.5 sm:gap-2">
+                    <div className="flex flex-wrap gap-1">
                       {getStatusBadge(intervention.status)}
                       {intervention.valid && (
                         <Badge variant="outline" className="bg-green-100 text-green-700 border-green-300 text-xs px-2 py-0.5">
@@ -761,8 +775,7 @@ export default function Interventions() {
         {/* Pagination - Responsive */}
         <div className="flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-4">
           <div className="text-xs sm:text-sm text-gray-700 text-center sm:text-left w-full sm:w-auto">
-            <span className="sm:hidden">Affichage </span>
-            <span className="hidden sm:inline">Affichage de </span>
+            <span>Affichage de </span>
             {startIndex + 1} à {Math.min(endIndex, filteredInterventions.length)} sur {filteredInterventions.length} intervention{filteredInterventions.length !== 1 ? 's' : ''}
           </div>
 
@@ -773,13 +786,12 @@ export default function Interventions() {
               onClick={() => handlePageChange(currentPage - 1)}
               disabled={currentPage === 1}
               className={cn(
-                "bg-white border-gray-300 text-gray-700 hover:bg-gray-50 text-xs sm:text-sm px-2 sm:px-3 h-9 sm:h-9 min-w-[80px] sm:min-w-[90px]",
+                "bg-white border-gray-300 text-gray-700 hover:bg-gray-50 text-xs sm:text-sm px-2 sm:px-3 h-8 sm:h-9 min-w-[70px] sm:min-w-[90px]",
                 currentPage === 1 && "opacity-50 cursor-not-allowed"
               )}
             >
               <ChevronLeft className="h-3 w-3 sm:h-4 sm:w-4 mr-1 flex-shrink-0" />
-              <span className="hidden sm:inline">Précédent</span>
-              <span className="sm:hidden">Préc.</span>
+              <span>Précédent</span>
             </Button>
 
             {/* Desktop: Show page numbers */}
@@ -811,7 +823,7 @@ export default function Interventions() {
                   size="sm"
                   onClick={() => handlePageChange(1)}
                   disabled={currentPage === 1}
-                  className="h-8 w-8 p-0 text-xs hover:bg-gray-100 disabled:opacity-50"
+                  className="h-7 w-7 p-0 text-xs hover:bg-gray-100 disabled:opacity-50"
                 >
                   1
                 </Button>
@@ -820,7 +832,7 @@ export default function Interventions() {
                   <Button
                     variant="default"
                     size="sm"
-                    className="h-8 w-8 p-0 text-xs bg-[#B4CC5F] text-white hover:bg-[#9BB84F]"
+                    className="h-7 w-7 p-0 text-xs bg-[#B4CC5F] text-white hover:bg-[#9BB84F]"
                   >
                     {currentPage}
                   </Button>
@@ -832,7 +844,7 @@ export default function Interventions() {
                     size="sm"
                     onClick={() => handlePageChange(totalPages)}
                     disabled={currentPage === totalPages}
-                    className="h-8 w-8 p-0 text-xs hover:bg-gray-100 disabled:opacity-50"
+                    className="h-7 w-7 p-0 text-xs hover:bg-gray-100 disabled:opacity-50"
                   >
                     {totalPages}
                   </Button>
@@ -846,12 +858,11 @@ export default function Interventions() {
               onClick={() => handlePageChange(currentPage + 1)}
               disabled={currentPage === totalPages}
               className={cn(
-                "bg-white border-gray-300 text-gray-700 hover:bg-gray-50 text-xs sm:text-sm px-2 sm:px-3 h-9 sm:h-9 min-w-[80px] sm:min-w-[90px]",
+                "bg-white border-gray-300 text-gray-700 hover:bg-gray-50 text-xs sm:text-sm px-2 sm:px-3 h-8 sm:h-9 min-w-[70px] sm:min-w-[90px]",
                 currentPage === totalPages && "opacity-50 cursor-not-allowed"
               )}
             >
-              <span className="hidden sm:inline">Suivant</span>
-              <span className="sm:hidden">Suiv.</span>
+              <span>Suivant</span>
               <ChevronRight className="h-3 w-3 sm:h-4 sm:w-4 ml-1 flex-shrink-0" />
             </Button>
           </div>
