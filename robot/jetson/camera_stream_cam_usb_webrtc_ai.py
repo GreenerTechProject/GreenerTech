@@ -439,7 +439,7 @@ async def simulate_sensor_data(robot_ref):
         async with websockets.connect(uri) as ws:
             while True:
                 data = {
-                    "temperature": round(random.uniform(20, 30000), 2),
+                    "temperature": round(random.uniform(20, 60), 2),
                     "humidity": round(random.uniform(50, 80), 2),
                     "co2": round(random.uniform(300, 800), 2),
                     "luminosite": round(random.uniform(100, 1000), 2),
