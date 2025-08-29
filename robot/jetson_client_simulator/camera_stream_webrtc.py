@@ -10,8 +10,7 @@ host = "greenertech.mywire.org"
 
 
 
-import cv2
-import asyncio
+
 import aiohttp
 from aiortc import RTCPeerConnection, RTCSessionDescription, VideoStreamTrack
 from av import VideoFrame

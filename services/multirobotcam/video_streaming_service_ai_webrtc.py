@@ -140,8 +140,8 @@ async def process_ai_task(key):
                             "maladie": warning,
                             #"lien_image": f"/static/images/{image_filename}",
                             "lien_image": f"https://{bucket_name}.s3.{region}.amazonaws.com/{s3_key}",
-                            "x1": sensor_data["x"],
-                            "y1": sensor_data["y"],
+                            "x1": sensor_data.get("x"),
+                            "y1": sensor_data.get("y"),
                             "status": "non_vue" #non_vue vue résolue
                         }
                         try:
@@ -283,23 +283,25 @@ async def process_robot_video(track, key, robot_reference):
                                 
                                 
                                 sensor_data = get_latest_sensor_data(key)
+                                if sensor_data is None:
+                                    sensor_data = {}
                                 data3 = {
                                     "id_bilan": data2["id"],
                                     
-                                    "mean_temperature": sensor_data["mean_temperature"],
-                                    "mean_humidite": sensor_data["mean_humidity"],
-                                    "mean_luminosite": sensor_data["mean_luminosite"],
-                                    "mean_co2": sensor_data["mean_co2"],
+                                    "mean_temperature": sensor_data.get("mean_temperature"),
+                                    "mean_humidity": sensor_data.get("mean_humidity"),
+                                    "mean_luminosite": sensor_data.get("mean_luminosite"),
+                                    "mean_co2": sensor_data.get("mean_co2"),
                                     
-                                    "max_temperature": sensor_data["max_temperature"],
-                                    "max_humidite": sensor_data["max_humidity"],
-                                    "max_luminosite": sensor_data["max_luminosite"],
-                                    "max_co2": sensor_data["max_co2"],
+                                    "max_temperature": sensor_data.get("max_temperature"),
+                                    "max_humidity": sensor_data.get("max_humidity"),
+                                    "max_luminosite": sensor_data.get("max_luminosite"),
+                                    "max_co2": sensor_data.get("max_co2"),
                                     
-                                    "min_temperature": sensor_data["min_temperature"],
-                                    "min_humidite": sensor_data["min_humidity"],
-                                    "min_luminosite": sensor_data["min_luminosite"],
-                                    "min_co2": sensor_data["min_co2"],
+                                    "min_temperature": sensor_data.get("min_temperature"),
+                                    "min_humidity": sensor_data.get("min_humidity"),
+                                    "min_luminosite": sensor_data.get("min_luminosite"),
+                                    "min_co2": sensor_data.get("min_co2"),
                                     
                                     "nombre_tomates_maladies": 0,
                                     "nombre_tomates_non_maladies": 0,

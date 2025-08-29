@@ -90,8 +90,7 @@ def gstreamer_pipeline(sensor_id=0, width=640, height=480, fps=30, flip_method=0
 
 
 
-import cv2
-import asyncio
+
 import aiohttp
 from aiortc import RTCPeerConnection, RTCSessionDescription, VideoStreamTrack
 from av import VideoFrame
@@ -218,6 +217,7 @@ async def send_video(robot_ref, camera, idcamera, type=0):
 # # Configuration du port série (à adapter selon ton OS ou port réel)
 try:
     arduino = serial.Serial('/dev/ttyACM0', 9600)
+    arduino.write(("STOP\n").encode())
     print("✅ Port série vers Arduino ouvert.")
 except Exception as e:
     print(f"❌ Erreur ouverture port série : {e}")
@@ -306,10 +306,15 @@ import rclpy
 from rclpy.node import Node
 from std_msgs.msg import String
 
+import re
+
 # -------------------- Sensor Data --------------------
 class SensorDataNode(Node):
     def __init__(self, robot_ref):
         super().__init__('sensor_data_node')
+        self.buffer = {}
+        self.measurement_id = 0
+        
         self.subscription = self.create_subscription(
             String,
             'arduino_data',
@@ -318,6 +323,7 @@ class SensorDataNode(Node):
         )
         self.ws = None
         self.uri = f"ws://{host}:8080/service/sensor_data?robot="+robot_ref
+        
 
     async def connect_ws(self):
         while self.ws is None:
@@ -329,30 +335,99 @@ class SensorDataNode(Node):
                 print(f"Sensor WS error: {e}. Retry in 2s...")
                 await asyncio.sleep(2)
 
-    def send_ws(self, msg: String):
-        asyncio.create_task(self._send(msg))
+    #def send_ws(self, msg: String):
+    #    asyncio.create_task(self._send(msg))
+    
+    
 
-    async def _send(self, msg: String):
+    def send_ws(self, msg: String):
+        line = msg.data.strip()
+
+        if line.startswith("------ Nouvelle mesure ------"):
+            self.measurement_id += 1
+            self.buffer[self.measurement_id] = {}
+
+        elif line.startswith("🌡 Température"):
+            m_temp = re.search(r"Température:\s*([\d.]+)", line)
+            m_hum = re.search(r"Humidité:\s*([\d.]+)", line)
+            if m_temp and m_hum:
+                self.buffer[self.measurement_id]["temperature"] = float(m_temp.group(1))
+                self.buffer[self.measurement_id]["humidity"] = float(m_hum.group(1))
+            else:
+                self.buffer[self.measurement_id]["temperature"] = None
+                self.buffer[self.measurement_id]["humidity"] = None
+
+        #elif line.startswith("MQ135"):
+        #    m = re.search(r"MQ135.*:\s*(\d+)", line)
+        #    if m:
+        #        self.buffer[self.measurement_id]["co2"] = int(m.group(1))
+        #    else:
+        #        self.buffer[self.measurement_id]["co2"] = None
+        #
+        #elif line.startswith("Lumière"):
+        #    m = re.search(r"Lumière.*:\s*(\d+)", line)
+        #    if m:
+        #        self.buffer[self.measurement_id]["luminosite"] = int(m.group(1))
+        #    else:
+        #        self.buffer[self.measurement_id]["luminosite"] = None
+        
+        elif line.startswith("MQ135"):
+            m = re.search(r"MQ135.*:\s*(\d+)\s*\|\s*Etat:\s*(.+)", line)
+            if m:
+                self.buffer[self.measurement_id]["co2"] = int(m.group(1))
+                self.buffer[self.measurement_id]["co2_etat"] = m.group(2).strip()
+            else:
+                self.buffer[self.measurement_id]["co2"] = None
+                self.buffer[self.measurement_id]["co2_etat"] = None
+
+        elif line.startswith("Lumière"):
+            m = re.search(r"Lumière.*:\s*(\d+)\s*\|\s*Etat:\s*(.+)", line)
+            if m:
+                self.buffer[self.measurement_id]["luminosite"] = int(m.group(1))
+                self.buffer[self.measurement_id]["luminosite_etat"] = m.group(2).strip()
+            else:
+                self.buffer[self.measurement_id]["luminosite"] = None
+                self.buffer[self.measurement_id]["luminosite_etat"] = None
+                
+
+        elif line.startswith("Accel"):
+            m = re.findall(r"-?\d+", line)
+            self.buffer[self.measurement_id]["accel"] = [int(x) for x in m]
+
+        elif line.startswith("Gyro"):
+            m = re.findall(r"-?\d+", line)
+            self.buffer[self.measurement_id]["gyro"] = [int(x) for x in m]
+
+        elif line.startswith("--------------------------"):
+            asyncio.create_task(self._send_json(self.buffer[self.measurement_id]))
+            del self.buffer[self.measurement_id]
+
+    async def _send_json(self, data_dict):
         try:
             if self.ws:
-                print(f"📥 Données capteurs reçues du topic ROS2: {msg.data}")
-                #data = {"data": msg.data}
-                await self.ws.send(msg.data)
+                json_data = json.dumps(data_dict)
+                print(f"Envoi JSON: {json_data}")
+                await self.ws.send(json_data)
+                
         except Exception as e:
             print(f"Error sending sensor data via WS: {e}")
             self.ws = None
             asyncio.create_task(self.connect_ws())
 
-
+"""
 async def spin_sensor_node(robot_ref):
-    """Run ROS2 node in background inside asyncio loop"""
     rclpy.init(args=None)
     node = SensorDataNode(robot_ref)
     await node.connect_ws()
 
     loop = asyncio.get_running_loop()
     await loop.run_in_executor(None, rclpy.spin, node)
+"""
 
+async def spin_sensor_node(node):
+    while rclpy.ok():
+        rclpy.spin_once(node, timeout_sec=0.1)
+        await asyncio.sleep(0.01)
 
 
 import random
@@ -466,17 +541,59 @@ async def listen_missions(robot_referance):
             await asyncio.sleep(2)
 
 
+"""
 async def main():
     #robot_ref = "robot_123"
     robot_ref = get_or_create_robot_referance()
     await asyncio.gather(
-        send_video(robot_ref, "right", 0, "usb"),
+#        send_video(robot_ref, "right", 0, "usb"),
 #        send_video(robot_ref, "left", 1, "usb"),
         receive_controls(robot_ref),
         #simulate_sensor_data(robot_ref),
         spin_sensor_node(robot_ref),
         listen_missions(robot_ref)
         )
+"""
+
+"""
+async def main():
+    robot_ref = get_or_create_robot_referance()
+    node = SensorDataNode(robot_ref)
+    await node.connect_ws()
+    await asyncio.gather(
+        receive_controls(robot_ref),
+        spin_sensor_node(node)
+    )
+"""
+"""
+async def main():
+    robot_ref = get_or_create_robot_referance()
+    node = SensorDataNode(robot_ref)  # <-- هنا الخطأ
+    await node.connect_ws()
+    await asyncio.gather(
+        receive_controls(robot_ref),
+        spin_sensor_node(node)
+    )
+"""
+
+
+async def main():
+    rclpy.init()
+    try:
+        robot_ref = get_or_create_robot_referance()
+        node = SensorDataNode(robot_ref)
+        await node.connect_ws()
+        await asyncio.gather(
+            send_video(robot_ref, "right", 0, "usb"),
+    #        send_video(robot_ref, "left", 1, "usb"),
+            receive_controls(robot_ref),
+            #simulate_sensor_data(robot_ref),
+            spin_sensor_node(node),
+            listen_missions(robot_ref)
+        )
+    finally:
+        node.destroy_node()
+        rclpy.shutdown()
 
 
 if __name__ == "__main__":
