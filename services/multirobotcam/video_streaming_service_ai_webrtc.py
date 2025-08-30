@@ -72,10 +72,11 @@ def get_key_from_request(request):
     return f"{robot_id}_{camera_id}"
 
 async def process_ai_task(key):
+    from multirobotcam.sensors_realtime_service import get_latest_sensor_data
     while True:
         frame = stream_data[key]["latest_frame"]
-        #if frame is not None and is_ai_enabled():
-        if frame is not None:
+        if frame is not None and is_ai_enabled():
+        #if frame is not None:
             try:
                 bilan = predict_frame(frame)
                 print(bilan)
@@ -88,6 +89,8 @@ async def process_ai_task(key):
                     warnings.append("powdery_mildew")
                     
                 sensor_data = get_latest_sensor_data(key)
+                if sensor_data is None:
+                    sensor_data = {}
                 s3 = boto3.client("s3")
                 bucket_name = "bucket-greenertech"
                 region = "eu-west-1"
@@ -353,7 +356,7 @@ async def video_stream_handler(request):
             print(f"[{key}] 📡 Robot stream track received: {track.kind}")
             if track.kind == "video":
                 asyncio.ensure_future(process_robot_video(track, key, request.query.get("robot")))
-                #asyncio.ensure_future(process_ai_task(key))
+                asyncio.ensure_future(process_ai_task(key))
 
         await pc.setRemoteDescription(
             RTCSessionDescription(sdp=offer["sdp"], type=offer["type"])
