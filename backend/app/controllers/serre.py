@@ -29,7 +29,7 @@ def create_serre(current_user):
 
     entreprise = Entreprise.query.filter_by(id=current_user.id_entreprise).first()
     if not entreprise or domaine.id_entreprise != entreprise.id:
-        return jsonify({"message": "Non autorisé"}), 403
+        return jsonify({"message": "Non autorisé "+domaine.id_entreprise+" "+entreprise.id}), 403
 
     last_id_group_cor = db.session.query(func.max(GroupCor.id_group_cor)).scalar() or 0
     id_group_cor = last_id_group_cor + 1
