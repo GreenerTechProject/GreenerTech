@@ -4,7 +4,7 @@ from database.config import db
 class Autorisation_domaine(db.Model):
     __tablename__ = 'autorisations_domaine'
 
-    id = Column(Integer, primary_key=True)
+    id = Column(Integer, primary_key=True, autoincrement=True)
     id_user = Column(Integer, ForeignKey('users.id'), nullable=False)
     id_domaine = Column(Integer, ForeignKey('domaines.id'), nullable=False)
 
