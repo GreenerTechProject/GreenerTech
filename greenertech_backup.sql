@@ -1115,21 +1115,21 @@ SELECT pg_catalog.setval('public.alertes_id_seq', 1, true);
 -- Name: autorisations_bilan_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.autorisations_bilan_id_seq', 1, true);
+SELECT pg_catalog.setval('public.autorisations_bilan_id_seq', 3, true);
 
 
 --
 -- Name: autorisations_domaine_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.autorisations_domaine_id_seq', 1, true);
+SELECT pg_catalog.setval('public.autorisations_domaine_id_seq', 3, true);
 
 
 --
 -- Name: autorisations_serre_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.autorisations_serre_id_seq', 1, true);
+SELECT pg_catalog.setval('public.autorisations_serre_id_seq', 3, true);
 
 
 --
